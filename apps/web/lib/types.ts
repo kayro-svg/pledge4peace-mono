@@ -1,4 +1,22 @@
 import type React from "react";
+
+export interface HomePageData {
+  heroHeading: string;
+  heroSubheading: string;
+  heroPrimaryButtonText: string;
+  heroSecondaryButtonText: string;
+  heroVideo: {
+    asset: {
+      url: string;
+    };
+  };
+  heroImage: {
+    asset: {
+      url: string;
+    };
+  };
+}
+
 export interface SocialLink {
   href: string;
   label: string;
@@ -10,7 +28,7 @@ export interface FooterLink {
   label: string;
 }
 
-export interface Stat {
+export interface HeroStat {
   icon: React.ReactNode;
   value: string;
   label: string;

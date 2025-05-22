@@ -1,16 +1,15 @@
 "use client";
 
-import Image from "next/image";
-import Link from "next/link";
-import { Progress } from "@/components/ui/progress";
+import { InteractionProvider } from "@/components/pledge/shared/interaction-context";
 import PledgeForm from "@/components/pledge/shared/pledge-form";
-import TabsSection from "@/components/pledge/tabs/tabs-section";
 import SidebarSection from "@/components/pledge/sidebar/sidebar-section";
-import { ArrowLeft, ChevronLeft, ChevronRight, Check } from "lucide-react";
-import { useState } from "react";
+import TabsSection from "@/components/pledge/tabs/tabs-section";
 import PledgesProgressBar from "@/components/ui/pledges-progress-bar";
 import { Campaign, MediaItem } from "@/lib/types";
-import { InteractionProvider } from "@/components/pledge/shared/interaction-context";
+import { ArrowLeft } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
 
 interface MainContentSectionProps {
   campaign: Campaign;

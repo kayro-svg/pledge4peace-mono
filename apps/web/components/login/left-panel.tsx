@@ -18,7 +18,7 @@ export function LeftPanel() {
       {/* Content */}
       <div className="z-10">
         <p className="uppercase text-xs tracking-widest font-medium mb-8">
-          To Solve The World's Problems
+          To Solve The World&apos;s Problems
         </p>
       </div>
 

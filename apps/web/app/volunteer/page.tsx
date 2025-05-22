@@ -7,7 +7,7 @@ import VolunteerImpactMetrics from "@/components/volunteer/volunteer-impact-metr
 import WaysToVolunteer from "@/components/volunteer/ways-to-volunteer";
 import { Handshake, Megaphone, Users } from "lucide-react";
 
-export default function VolunteerPage() {
+export default function VolunteerPage(): JSX.Element {
   const volunteerWays = [
     {
       icon: <Users className="h-8 w-8 text-[#548281]" />,

@@ -48,8 +48,8 @@ export default function SupportBanner() {
             Impact of your support
           </h1>
           <p className="mb-6 max-w-lg text-lg text-emerald-50">
-            Your support has helped us achieve great things. Together, we're
-            making a real difference in communities around the world.
+            Your support has helped us achieve great things. Together,
+            we&apos;re making a real difference in communities around the world.
           </p>
           <div className="flex flex-wrap gap-4">
             <Button

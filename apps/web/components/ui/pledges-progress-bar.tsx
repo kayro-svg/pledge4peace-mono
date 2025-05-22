@@ -1,4 +1,4 @@
-import { useAnimatedNumber } from "@/lib/hooks/useAnimatedNumbers";
+import { useAnimatedNumber } from "@/hooks/useAnimatedNumbers";
 import { Progress } from "@/components/ui/progress";
 import { useEffect, useState } from "react";
 
@@ -12,7 +12,7 @@ export default function PledgesProgressBar({
   currentValue,
   goalValue,
   variant = "default",
-}: PledgesProgressBarProps) {
+}: PledgesProgressBarProps): JSX.Element {
   const [isHovered, setIsHovered] = useState(false);
   const [shouldAnimate, setShouldAnimate] = useState(false);
 

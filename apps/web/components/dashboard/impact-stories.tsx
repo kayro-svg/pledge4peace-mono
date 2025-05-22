@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { Badge } from "../ui/badge";
+import Image from "next/image";
 import { Button } from "../ui/button";
 import {
   Card,
@@ -8,7 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "../ui/card";
-import Image from "next/image";
 
 const impactStories = [
   {
@@ -31,7 +30,7 @@ const impactStories = [
   },
 ];
 
-export function ImpactStories() {
+export function ImpactStories(): JSX.Element {
   return (
     <div>
       <div className="mb-6 flex items-center justify-between mt-8">

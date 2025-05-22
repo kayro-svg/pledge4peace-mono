@@ -3,7 +3,7 @@
 import { Progress } from "@/components/ui/progress";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useAnimatedNumber } from "@/lib/hooks/useAnimatedNumbers";
+import { useAnimatedNumber } from "@/hooks/useAnimatedNumbers";
 import { useState, useEffect } from "react";
 import PledgesProgressBar from "@/components/ui/pledges-progress-bar";
 
