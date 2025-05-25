@@ -12,7 +12,7 @@ export default function ContactPage() {
           <ContactInfo />
         </div>
 
-        <ContactMap />
+        {/* <ContactMap /> */}
       </div>
     </main>
   );

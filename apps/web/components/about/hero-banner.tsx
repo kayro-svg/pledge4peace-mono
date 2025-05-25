@@ -5,9 +5,16 @@ import { Button } from "@/components/ui/button";
 interface HeroBannerProps {
   title: string;
   content: string;
+  noButton?: boolean;
+  fullWidth?: boolean;
 }
 
-export default function HeroBanner({ title, content }: HeroBannerProps) {
+export default function HeroBanner({
+  title,
+  content,
+  noButton = false,
+  fullWidth = false,
+}: HeroBannerProps) {
   return (
     <div className="relative w-full overflow-hidden">
       {/* Modern gradient background with curved bottom edge */}
@@ -25,7 +32,9 @@ export default function HeroBanner({ title, content }: HeroBannerProps) {
           />
         </div> */}
 
-        <div className="container mx-auto max-w-6xl relative z-10">
+        <div
+          className={`container mx-auto ${fullWidth ? "max-w-full" : "max-w-6xl"} relative z-10`}
+        >
           <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white">
             {title}
           </h1>
@@ -34,13 +43,15 @@ export default function HeroBanner({ title, content }: HeroBannerProps) {
             {content}
           </p>
 
-          <Button
-            className="bg-white text-[#548281] hover:bg-white/90 hover:text-[#2F4858] group rounded-full"
-            size="lg"
-          >
-            Make a Pledge
-            <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
-          </Button>
+          {!noButton && (
+            <Button
+              className="bg-white text-[#548281] hover:bg-white/90 hover:text-[#2F4858] group rounded-full"
+              size="lg"
+            >
+              Make a Pledge
+              <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+            </Button>
+          )}
         </div>
 
         {/* Curved edge at bottom */}

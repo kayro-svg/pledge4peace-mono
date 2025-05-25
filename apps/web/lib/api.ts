@@ -78,7 +78,22 @@ const MOCK_DATA = {
       {
         id: "1",
         slug: "strengthen-democracy-in-pakistan",
-        image: "/placeholder.svg?height=400&width=600",
+        featuredImage: {
+          asset: {
+            url: "/placeholder.svg?height=400&width=600",
+          },
+        },
+        gallery: [
+          {
+            type: "image" as const,
+            image: {
+              asset: {
+                url: "/placeholder.svg?height=500&width=800&text=Modern+Green+Chair",
+              },
+            },
+            alt: "Democracy in Pakistan",
+          },
+        ],
         title: "Strengthen Democracy In Pakistan",
         category: "Democracy",
         description:
@@ -292,7 +307,29 @@ const MOCK_DATA = {
       {
         id: "2",
         slug: "create-permanent-peace-strengthen-democracies-in-israel-and-palestine",
-        image: "/placeholder.svg?height=400&width=600",
+        featuredImage: {
+          asset: {
+            url: "/placeholder.svg?height=400&width=600",
+          },
+        },
+        gallery: [
+          {
+            type: "image" as const,
+            image: {
+              asset: {
+                url: "/placeholder.svg?height=500&width=800&text=Modern+Green+Chair",
+              },
+            },
+          },
+          {
+            type: "image" as const,
+            image: {
+              asset: {
+                url: "/placeholder.svg?height=500&width=800&text=Modern+Green+Chair",
+              },
+            },
+          },
+        ],
         title:
           "Create Permanent Peace & Strengthen Democracies In Israel & Palestine",
         category: "Peace",

@@ -1,4 +1,4 @@
-import { Users, Award, Globe } from "lucide-react";
+import { Users, Award, HandHelping, HeartHandshake } from "lucide-react";
 
 export default function ImpactStats() {
   return (
@@ -19,15 +19,15 @@ export default function ImpactStats() {
 
         <div className="bg-white/10 rounded-2xl p-6 text-center border border-white/20">
           <div className="bg-white/20 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4">
-            <Award className="h-8 w-8 text-white" />
+            <HandHelping className="h-8 w-8 text-white" />
           </div>
-          <span className="text-4xl font-bold text-white">100+</span>
-          <p className="text-white/80 mt-2">Political Parties</p>
+          <span className="text-4xl font-bold text-white">10+</span>
+          <p className="text-white/80 mt-2">Campaigns</p>
         </div>
 
         <div className="bg-white/10 rounded-2xl p-6 text-center border border-white/20">
           <div className="bg-white/20 w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4">
-            <Globe className="h-8 w-8 text-white" />
+            <HeartHandshake className="h-8 w-8 text-white" />
           </div>
           <span className="text-4xl font-bold text-white">100,000+</span>
           <p className="text-white/80 mt-2">Pledges Made</p>

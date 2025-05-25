@@ -47,6 +47,117 @@ const activityHistory = [
   },
 ];
 
+const totalUpvotesHistory = [
+  {
+    type: "upvote",
+    title: "Strengthen Democracy & Accountability within Political Parties",
+    category: "Democracy",
+    date: "2 days ago",
+  },
+  {
+    type: "upvote",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+  {
+    type: "upvote",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+  {
+    type: "upvote",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+  {
+    type: "upvote",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+  {
+    type: "upvote",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+];
+
+const totalDownvotesHistory = [
+  {
+    type: "downvote",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+  {
+    type: "downvote",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+  {
+    type: "downvote",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+  {
+    type: "downvote",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+  {
+    type: "downvote",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+  {
+    type: "downvote",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+];
+
+const totalCommentsHistory = [
+  {
+    type: "comment",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+  {
+    type: "comment",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+  {
+    type: "comment",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+  {
+    type: "comment",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+  {
+    type: "comment",
+    title: "Environmental Protection Initiative",
+    category: "Environment",
+    date: "2 days ago",
+  },
+];
+
 function getActivityIconBg(type: string) {
   switch (type) {
     case "upvote":

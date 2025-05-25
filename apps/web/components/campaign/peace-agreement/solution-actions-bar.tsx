@@ -15,7 +15,6 @@ export default function SolutionActionsBar({
   const { handleInteraction, getInteractionCount } = useInteractions();
 
   const handleCommentClick = () => {
-    console.log("solutionID", solutionId);
     // Find the comments tab section
     const commentsSection = document.querySelector(
       '[data-tab-value="comments"]'

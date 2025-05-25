@@ -1,11 +1,10 @@
 import { ChartNoAxesCombined, HandHeart, HeartHandshake } from "lucide-react";
 import HeroVideo from "../../ui/hero-video";
 import HeroStats from "./hero-stats";
-// import { useHomePageData } from "@/hooks/useSanityData";
-import { HomePageData } from "@/lib/types";
 import HeroButtons from "./hero-buttons";
+import { SanityHeroSection } from "@/lib/types";
 
-export default function HeroSection({ data }: { data: HomePageData }) {
+export default function HeroSection({ data }: { data: SanityHeroSection }) {
   const stats = [
     {
       icon: <ChartNoAxesCombined className="text-[#2F4858]" />,
@@ -92,7 +91,7 @@ export default function HeroSection({ data }: { data: HomePageData }) {
       </div>
 
       <div className="relative mr-[-50px] w-[55%] right-0">
-        <HeroVideo />
+        <HeroVideo videoUrl={heroData.heroVideo?.asset.url} />
       </div>
     </section>
   );

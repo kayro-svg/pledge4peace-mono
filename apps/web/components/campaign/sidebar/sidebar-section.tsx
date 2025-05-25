@@ -1,4 +1,4 @@
-import CommentsSection from "@/components/pledge/comments/comments-section";
+import CommentsSection from "@/components/campaign/comments/comments-section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
 import { getCampaignSolutionById } from "@/lib/api";

@@ -1,12 +1,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Calendar } from "lucide-react";
+import { SanitySlug } from "@/lib/types";
 
 interface ConferenceCardProps {
   image: string;
   date: string;
   title: string;
   description: string;
+  slug: string | SanitySlug;
 }
 
 export default function ConferenceCard({
@@ -14,6 +16,7 @@ export default function ConferenceCard({
   date,
   title,
   description,
+  slug,
 }: ConferenceCardProps) {
   return (
     <div className="rounded-2xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
@@ -35,7 +38,7 @@ export default function ConferenceCard({
         </h4>
         <p className="text-sm text-[#2F4858] line-clamp-3">{description}</p>
         <Link
-          href="/conference-details"
+          href={slug as string}
           className="inline-flex items-center text-[#548281] font-medium text-sm bg-brand-500 border border-[#548281] group-hover:bg-[#2F4858] group-hover:border-transparent group-hover:text-white transition-colors py-2 px-4 rounded-full group/btn w-fit"
         >
           Register Now{" "}

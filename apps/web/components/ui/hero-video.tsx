@@ -1,4 +1,8 @@
-export default function HeroVideo() {
+type HeroVideoProps = {
+  videoUrl: string | undefined;
+};
+
+export default function HeroVideo({ videoUrl }: HeroVideoProps) {
   return (
     <div className="w-full h-fit bg-background flex items-center justify-center px-4">
       <div className="relative w-full h-[600px]">
@@ -11,7 +15,7 @@ export default function HeroVideo() {
               playsInline
               className="w-full h-full object-cover"
             >
-              <source src="/pledge4peace_hero_video.mp4" type="video/mp4" />
+              <source src={videoUrl} type="video/mp4" />
             </video>
           </div>
         </div>

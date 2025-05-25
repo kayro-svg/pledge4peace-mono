@@ -4,7 +4,8 @@ import { cn } from "@/lib/utils";
 
 export const tabs = [
   { id: "solution-proposals", label: "Solution proposals" },
-  { id: "conference", label: "Upcoming conference" },
+  // { id: "conference", label: "Upcoming conference" },
+  { id: "ways-to-support", label: "Ways to support" },
 ];
 
 export interface TabHeaderProps {

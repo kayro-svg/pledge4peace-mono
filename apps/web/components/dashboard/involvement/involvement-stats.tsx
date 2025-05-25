@@ -1,10 +1,14 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MessageSquare, Vote, ThumbsUp, ThumbsDown } from "lucide-react";
+"use client";
+
+import { MessageSquare, ThumbsDown, ThumbsUp, Vote } from "lucide-react";
+import { useState } from "react";
 import { InvolvementStatsCard } from "./involvement-stats-card";
 
 export function InvolvementStats() {
+  const [activeCard, setActiveCard] = useState<string | null>(null);
   const involvementStatsInfo = [
     {
+      type: "total-votes",
       title: "Total Votes",
       value: "100",
       change: "5+ this month",
@@ -12,6 +16,7 @@ export function InvolvementStats() {
       color: "emerald",
     },
     {
+      type: "total-upvotes",
       title: "Total Upvotes",
       value: "50",
       change: "50% of your total votes",
@@ -19,6 +24,7 @@ export function InvolvementStats() {
       color: "blue",
     },
     {
+      type: "total-downvotes",
       title: "Total Downvotes",
       value: "50",
       change: "50% of your total votes",
@@ -26,6 +32,7 @@ export function InvolvementStats() {
       color: "orange",
     },
     {
+      type: "total-comments",
       title: "Total Comments",
       value: "100",
       change: "10+ this month",
@@ -56,6 +63,10 @@ export function InvolvementStats() {
             change={stat.change}
             icon={stat.icon}
             color={stat.color as "emerald" | "blue" | "orange" | "purple"}
+            isActive={activeCard === stat.type}
+            onClick={() =>
+              setActiveCard(stat.type === activeCard ? null : stat.type)
+            }
           />
         ))}
       </div>

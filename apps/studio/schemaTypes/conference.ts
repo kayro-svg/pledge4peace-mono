@@ -35,6 +35,25 @@ export default {
       description: 'Physical location or "Online" for virtual conferences',
     },
     {
+      name: 'organizer',
+      title: 'Organizer',
+      type: 'object',
+      fields: [
+        {
+          name: 'name',
+          title: 'Organizer Name',
+          type: 'string',
+          validation: (Rule: any) => Rule.required(),
+        },
+        {
+          name: 'logo',
+          title: 'Organizer Logo',
+          type: 'image',
+          options: {hotspot: true},
+        },
+      ],
+    },
+    {
       name: 'image',
       title: 'Conference Banner',
       type: 'image',
@@ -109,8 +128,19 @@ export default {
       title: 'title',
       subtitle: 'date',
       media: 'image',
+      organizerName: 'organizer.name',
     },
-    prepare({title, subtitle, media}: {title: string; subtitle: string; media: any}) {
+    prepare({
+      title,
+      subtitle,
+      media,
+      organizerName,
+    }: {
+      title: string
+      subtitle: string
+      media: any
+      organizerName: string
+    }) {
       const formattedDate = subtitle
         ? new Date(subtitle).toLocaleDateString('en-US', {
             year: 'numeric',
@@ -121,7 +151,7 @@ export default {
 
       return {
         title,
-        subtitle: formattedDate,
+        subtitle: `${organizerName ? `${organizerName} - ` : ''}${formattedDate}`,
         media,
       }
     },

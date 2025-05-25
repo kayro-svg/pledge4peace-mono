@@ -1,13 +1,6 @@
-import React from "react";
-
-interface Step {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-}
-
+import { SanityHowItWorksStep } from "@/lib/types";
 interface StepsDisplayProps {
-  steps: Step[];
+  steps: SanityHowItWorksStep[];
 }
 
 export default function StepsDisplay({ steps }: StepsDisplayProps) {

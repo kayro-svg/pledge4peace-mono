@@ -212,6 +212,45 @@ export default {
       group: 'waysToSupportSection',
     },
 
+    // Second Card Fields for Ways to Support Section
+    {
+      name: 'secondCardHeading',
+      title: 'Second Card Main Heading',
+      type: 'string',
+      group: 'waysToSupportSection',
+      description: 'The main heading for the second card',
+    },
+    {
+      name: 'secondCardDescription',
+      title: 'Second Card Description',
+      type: 'text',
+      rows: 3,
+      group: 'waysToSupportSection',
+      description: 'The main description text for the second card',
+    },
+    {
+      name: 'secondCardButtonText',
+      title: 'Second Card Button Text',
+      type: 'string',
+      group: 'waysToSupportSection',
+      description: 'The text to display on the button',
+    },
+    {
+      name: 'secondCardSecondHeading',
+      title: 'Second Card Secondary Heading',
+      type: 'string',
+      group: 'waysToSupportSection',
+      description: 'The secondary heading for the second card',
+    },
+    {
+      name: 'secondCardListOfSupportImpact',
+      title: 'Impact List',
+      type: 'array',
+      of: [{type: 'string'}],
+      group: 'waysToSupportSection',
+      description: 'List of impact statements to display in the second card',
+    },
+
     // ===== ARTICLES SECTION =====
     {
       name: 'articlesHeading',

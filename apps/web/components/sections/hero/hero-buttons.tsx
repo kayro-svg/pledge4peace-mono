@@ -3,9 +3,9 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { HomePageData } from "@/lib/types";
+import { SanityHeroSection } from "@/lib/types";
 
-export default function HeroButtons({ data }: { data: HomePageData }) {
+export default function HeroButtons({ data }: { data: SanityHeroSection }) {
   const router = useRouter();
 
   return (

@@ -16,7 +16,7 @@ export default function MissionPhilosophy({
   if (!sections || sections.length === 0) return null;
 
   return (
-    <div className="space-y-16 my-20">
+    <div className="my-20">
       {sections.map((section, index) => (
         <div
           key={index}

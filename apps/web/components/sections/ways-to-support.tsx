@@ -3,6 +3,7 @@ import { ReactNode } from "react";
 import { SupportCard } from "../ui/support-card";
 import { SupportIcon } from "../ui/support-icon";
 import { ImpactSection } from "../ui/impact-section";
+import { SanityIcon } from "../ui/sanity-icon";
 import {
   Users,
   HandCoins,
@@ -11,6 +12,7 @@ import {
   BriefcaseBusiness,
   CalendarCheck2,
 } from "lucide-react";
+import { SanityWaysToSupportSection } from "@/lib/types";
 
 interface SupportOption {
   icon: ReactNode;
@@ -20,7 +22,11 @@ interface SupportOption {
   linkHref: string;
 }
 
-export default function WaysToSupportSection() {
+export default function WaysToSupportSection({
+  data,
+}: {
+  data: SanityWaysToSupportSection;
+}) {
   const supportOptions: SupportOption[] = [
     {
       icon: <Handshake className="w-7 h-7 text-[#86AC9D]" />,
@@ -72,26 +78,63 @@ export default function WaysToSupportSection() {
     },
   ];
 
+  const DEFAULT_SECTION_DATA = {
+    waysToSupportHeading: "Ways to Support Our Mission",
+    waysToSupportDescription:
+      "There are many ways you can contribute to building a more peaceful world. Choose the option that works best for you.",
+    waysToSupportItems: supportOptions.map((option) => ({
+      title: option.title,
+      description: option.description,
+      buttonText: option.linkText,
+      buttonLink: option.linkHref,
+      icon: { asset: { url: "" } },
+    })),
+  };
+
+  const sectionData = {
+    waysToSupportHeading:
+      data?.waysToSupportHeading ?? DEFAULT_SECTION_DATA.waysToSupportHeading,
+    waysToSupportDescription:
+      data?.waysToSupportDescription ??
+      DEFAULT_SECTION_DATA.waysToSupportDescription,
+    waysToSupportItems:
+      data?.waysToSupportItems?.map((item) => ({
+        ...item,
+        buttonLink: item.buttonLink || "#",
+        buttonText: item.buttonText || "Learn More",
+      })) ?? DEFAULT_SECTION_DATA.waysToSupportItems,
+  };
+
   return (
-    <section className="py-16 bg-[#FDFDF0]">
-      <div className="container px-4 md:px-6">
-        <h2 className="text-5xl font-bold tracking-tighter text-center text-gray-900 mb-4">
-          Ways to <span className="text-[#548281]">Support Our Mission</span>
-        </h2>
-        <p className="text-center text-gray-600 mb-12 max-w-2xl mx-auto">
-          There are many ways you can contribute to building a more peaceful
-          world. Choose the option that works best for you.
-        </p>
+    <div className="bg-[#fdfdf0] container mx-auto px-6 py-20">
+      <div className="max-w-fit mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-[#2F4858] uppercase text-sm font-medium tracking-wider mb-4 border-b-2 w-fit mx-auto border-[#2F4858]">
+            WAYS TO SUPPORT
+          </h2>
+          <h1 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
+            {sectionData.waysToSupportHeading}
+          </h1>
+          <p className="text-[#2F4858] text-lg max-w-3xl mx-auto">
+            {sectionData.waysToSupportDescription}
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {supportOptions.map((option, index) => (
+          {sectionData.waysToSupportItems.map((option, index) => (
             <SupportCard
               key={index}
-              icon={option.icon}
+              icon={
+                option.icon?.asset?.url ? (
+                  <SanityIcon iconUrl={option.icon.asset.url} />
+                ) : (
+                  supportOptions[index]?.icon
+                )
+              }
               title={option.title}
               description={option.description}
-              linkText={option.linkText}
-              linkHref={option.linkHref}
+              linkText={option.buttonText}
+              linkHref={option.buttonLink}
             />
           ))}
         </div>
@@ -118,6 +161,6 @@ export default function WaysToSupportSection() {
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

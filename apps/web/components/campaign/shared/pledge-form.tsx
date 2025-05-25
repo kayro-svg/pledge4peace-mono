@@ -3,7 +3,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowRight } from "lucide-react";
 
 interface PledgeFormProps {
-  commitmentText: string;
+  commitmentText: string | undefined;
 }
 
 export default function PledgeForm({ commitmentText }: PledgeFormProps) {

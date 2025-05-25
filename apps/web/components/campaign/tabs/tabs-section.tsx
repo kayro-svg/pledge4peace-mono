@@ -4,14 +4,18 @@ import { useEffect, useState } from "react";
 import ConferenceTab from "../conference/conference-tab";
 import PeaceAgreementContent from "../peace-agreement/peace-agreement-content";
 import TabHeader from "./tab-header";
+import WaysToSupport from "../ways-to-support/ways-to-support";
+import { SanitySolutionsSection, SanityWaysToSupportTab } from "@/lib/types";
 
 interface TabsSectionProps {
-  campaignSlug: string;
+  solutionsSection: SanitySolutionsSection;
+  waysToSupportTabs: SanityWaysToSupportTab[];
   onSolutionChange?: (solutionId: string) => void;
 }
 
 export default function TabsSection({
-  campaignSlug,
+  solutionsSection,
+  waysToSupportTabs,
   onSolutionChange,
 }: TabsSectionProps) {
   const [activeTab, setActiveTab] = useState("solution-proposals");
@@ -33,16 +37,20 @@ export default function TabsSection({
       <TabHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Tab content */}
-      <div className="p-6 overflow-y-auto flex-1">
+      <div className="p-6 overflow-y-auto flex-1 h-full">
         {activeTab === "solution-proposals" && (
           <PeaceAgreementContent
-            campaignSlug={campaignSlug}
+            solutionsSection={solutionsSection}
             onSolutionChange={handleSolutionChange}
             activeSolutionId={activeSolutionId}
           />
         )}
-        {activeTab === "conference" && (
-          <ConferenceTab campaignSlug={campaignSlug} />
+        {activeTab === "ways-to-support" && (
+          <WaysToSupport
+            // mainTab="ways-to-support"
+            // campaignSlug={campaignSlug}
+            waysToSupportTabs={waysToSupportTabs}
+          />
         )}
       </div>
     </div>

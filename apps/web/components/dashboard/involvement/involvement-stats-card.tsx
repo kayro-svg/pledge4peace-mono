@@ -6,6 +6,8 @@ interface StatsCardProps {
   change: string;
   icon: React.ReactNode;
   color: "emerald" | "blue" | "orange" | "purple" | "cyan";
+  isActive: boolean;
+  onClick: () => void;
 }
 
 export function InvolvementStatsCard({
@@ -14,13 +16,15 @@ export function InvolvementStatsCard({
   change,
   icon,
   color,
+  isActive,
+  onClick,
 }: StatsCardProps) {
   const colorClasses = {
-    emerald: "bg-emerald-50 border-emerald-100",
-    blue: "bg-blue-50 border-blue-100",
-    orange: "bg-orange-50 border-orange-100",
-    purple: "bg-purple-50 border-purple-100",
-    cyan: "bg-cyan-50 border-cyan-100",
+    emerald: "bg-emerald-50 border-emerald-100 ring-emerald-500 cursor-pointer",
+    blue: "bg-blue-50 border-blue-100 ring-blue-500 cursor-pointer",
+    orange: "bg-orange-50 border-orange-100 ring-orange-500 cursor-pointer",
+    purple: "bg-purple-50 border-purple-100 ring-purple-500 cursor-pointer",
+    cyan: "bg-cyan-50 border-cyan-100 ring-cyan-500 cursor-pointer",
   };
 
   const textColorClasses = {
@@ -33,7 +37,8 @@ export function InvolvementStatsCard({
 
   return (
     <Card
-      className={`overflow-hidden rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md ${colorClasses[color]}`}
+      className={`overflow-hidden rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md ${colorClasses[color]} ${isActive ? "ring-2" : ""}`}
+      onClick={onClick}
     >
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">

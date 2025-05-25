@@ -34,14 +34,18 @@ export default async function AboutPage() {
 
   return (
     <main className="min-h-screen bg-[#FDFDF0]">
-      <HeroBanner title={aboutData.title} content={aboutData.content} />
+      <HeroBanner
+        title={aboutData.title}
+        content={aboutData.content}
+        noButton
+      />
       <WhoWeAre
         hasIntroParagraphs={hasIntroParagraphs}
         introParagraphs={introParagraphs}
       />
 
       <div className="container mx-auto px-4 max-w-6xl py-16">
-        <ImpactStats />
+        {/* <ImpactStats /> */}
 
         {hasSections && sections.length > 0 && (
           <MissionPhilosophy
@@ -52,9 +56,9 @@ export default async function AboutPage() {
         )}
 
         {/* Partnerships Section */}
-        {hasPartnershipsText && partnershipsText && (
+        {/* {hasPartnershipsText && partnershipsText && (
           <PartnershipsSection partnershipText={partnershipsText} />
-        )}
+        )} */}
 
         <NonprofitMission />
         <ContactInformation />

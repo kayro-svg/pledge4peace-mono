@@ -1,26 +1,210 @@
-import type React from "react";
+// lib/types.ts
 
-export interface HomePageData {
+// SECTION 1: SANITY CMS TYPES
+// ----------------------------------------------------------------------
+
+// Sanity Base Types
+export interface SanityImage {
+  asset: { url: string };
+}
+
+export interface SanitySlug {
+  _type: "slug";
+  current: string;
+}
+
+// Sanity Home Page Types
+export interface SanityHeroSection {
   heroHeading: string;
   heroSubheading: string;
   heroPrimaryButtonText: string;
   heroSecondaryButtonText: string;
-  heroVideo: {
-    asset: {
-      url: string;
-    };
-  };
-  heroImage: {
-    asset: {
-      url: string;
-    };
+  heroVideo?: { asset: { url: string } };
+  heroImage?: { asset: { url: string } };
+}
+
+export interface SanityHowItWorksStep {
+  title: string;
+  description: string;
+  icon: JSX.Element;
+}
+
+export interface SanityHowItWorksSection {
+  howItWorksHeading: string;
+  howItWorksDescription: string;
+  howItWorksSteps: SanityHowItWorksStep[];
+}
+
+export interface SanityWayToSupport {
+  title: string;
+  description: string;
+  icon: { asset: { url: string } };
+  buttonText: string;
+  buttonLink: string;
+}
+
+export interface SanityWaysToSupportSection {
+  waysToSupportHeading: string;
+  waysToSupportDescription: string;
+  waysToSupportItems: SanityWayToSupport[];
+  secondCardHeading: string;
+  secondCardDescription: string;
+  secondCardButtonText: string;
+  secondCardSecondHeading: string;
+  secondCardListOfSupportImpact: string[];
+}
+
+export interface SanityHomePage {
+  heroSection: SanityHeroSection;
+  howItWorksSection: SanityHowItWorksSection;
+  campaignsSection: SanityCampaignsSection;
+  waysToSupportSection: SanityWaysToSupportSection;
+  articlesSection: SanityArticlesSection;
+  conferencesSection: SanityConferencesSection;
+}
+
+// Sanity Campaign Types
+export interface SanityCampaignContentText {
+  title?: string;
+  paragraphs?: string[];
+}
+
+export interface SanityCampaignGalleryItem {
+  type: "image" | "video";
+  alt?: string;
+  image?: SanityImage;
+  video?: { asset: { url: string } };
+}
+
+export interface SanitySolution {
+  title: string;
+  description: string;
+}
+
+export interface SanitySolutionsSection {
+  heading: string;
+  paragraphs: string[];
+  subheading: string;
+  // solutions: SanitySolution[];
+}
+
+export interface SanityWaysToSupportTab {
+  type: "conference" | "donations" | "volunteering" | "share";
+  title: string;
+  content: string;
+  conferenceRef?: { _ref: string; _type: "reference" };
+  conferenceDetails?: {
+    date?: string;
+    registrationForm?: string;
+    description?: string;
   };
 }
 
+export interface SanityCampaign {
+  _id: string;
+  title: string;
+  slug: SanitySlug;
+  category?: "Peace" | "Democracy" | "Environment" | "Education" | "Health";
+  description: string;
+  goalPledges: number;
+  commitmentText?: string;
+  contentText?: SanityCampaignContentText;
+  featuredImage?: SanityImage;
+  gallery?: SanityCampaignGalleryItem[];
+  solutionsSection?: SanitySolutionsSection;
+  waysToSupportTabs?: SanityWaysToSupportTab[];
+}
+
+export interface SanityCampaignsSection {
+  campaignsHeading: string;
+  campaignsDescription: string;
+  campaigns: SanityCampaign[];
+}
+
+// Sanity Article Types
+export interface SanityAuthor {
+  _id: string;
+  name: string;
+  image?: SanityImage;
+  bio?: string;
+}
+
+export interface SanityCategory {
+  _id: string;
+  title: string;
+  description?: string;
+}
+
+export interface SanityArticle {
+  _id: string;
+  title: string;
+  slug: SanitySlug;
+  publishedAt: string;
+  image?: SanityImage;
+  excerpt?: string;
+  author?: SanityAuthor;
+  categories?: SanityCategory[];
+  content?: any[]; // Portable Text content
+}
+
+export interface SanityArticlesSection {
+  articlesHeading: string;
+  articlesDescription: string;
+  articles: SanityArticle[];
+}
+
+// Sanity Conference Types
+export interface SanitySpeaker {
+  _id: string;
+  name: string;
+  role?: string;
+  image?: SanityImage;
+}
+
+export interface SanityOrganizer {
+  name: string;
+  logo?: SanityImage;
+}
+
+export interface SanityConference {
+  _id: string;
+  title: string;
+  slug: SanitySlug;
+  date: string;
+  time?: string;
+  location: string;
+  image?: SanityImage;
+  description: string;
+  about?: string;
+  category?: string;
+  organizer?: SanityOrganizer;
+  price?: number;
+  registrationLink?: string;
+  speakers?: SanitySpeaker[];
+  gallery?: { url: string }[];
+  relatedCampaign?: {
+    _id: string;
+    title: string;
+    slug: SanitySlug;
+  };
+}
+
+export interface SanityConferencesSection {
+  conferencesHeading: string;
+  conferencesDescription: string;
+  conferences: SanityConference[];
+}
+
+// SECTION 2: APP INTERNAL TYPES
+// ----------------------------------------------------------------------
+
+import type { ReactNode } from "react";
+
+// Social and Navigation Types
 export interface SocialLink {
   href: string;
   label: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }
 
 export interface FooterLink {
@@ -28,48 +212,49 @@ export interface FooterLink {
   label: string;
 }
 
+// Hero Section Types
 export interface HeroStat {
-  icon: React.ReactNode;
+  icon: ReactNode;
   value: string;
   label: string;
 }
 
+// Process/How it Works Types
 export interface ProcessStep {
-  icon: React.ReactNode;
+  icon: ReactNode;
   title: string;
   description: string;
 }
 
-export interface Project {
-  image: string;
+// Solution Types
+export interface SolutionGuideline {
   title: string;
   description: string;
-  votes: number;
 }
 
-export interface Leader {
-  id: number;
-  image: string;
+export interface SolutionDetails {
+  intro: string;
+  guidelines: SolutionGuideline[];
+}
+
+export interface Solution {
+  id: string;
+  title: string;
+  description: string;
+  rank: string;
+  expanded?: boolean;
+  details?: SolutionDetails;
+}
+
+export interface PartySolutions {
+  id: string;
   name: string;
-  position: string;
+  partyNumber: number;
+  logo: string;
+  solutions: Solution[];
 }
 
-export interface Article {
-  image: string;
-  title: string;
-  description: string;
-  date?: string;
-}
-
-export interface Conference {
-  id: number;
-  image: string;
-  date: string;
-  title: string;
-  description: string;
-}
-
-// About page types
+// About Page Types
 export interface AboutSection {
   heading: string;
   content: string;
@@ -100,56 +285,67 @@ export interface TeamAboutPage extends AboutPageBase {
 
 export type AboutPage = MainAboutPage | TeamAboutPage | AboutPageBase;
 
-// Campaign/Pledge types
+// SECTION 3: APP DISPLAY TYPES (For UI rendering)
+// ----------------------------------------------------------------------
+
+// These types are used in the UI, often mapping from Sanity types to display types
+
+export interface Project {
+  image: string;
+  title: string;
+  description: string;
+  votes: number;
+}
+
+export interface Leader {
+  id: number;
+  image: string;
+  name: string;
+  position: string;
+}
+
+export interface Article {
+  image: string;
+  title: string;
+  description: string;
+  date?: string;
+}
+
+export interface Conference {
+  id: number;
+  image: string;
+  date: string;
+  title: string;
+  description: string;
+}
+
+// export interface MediaItem {
+//   type: "image" | "video";
+//   src: string;
+//   alt: string;
+// }
+
+export interface MediaItem {
+  type: "image" | "video";
+  image?: { asset: { url: string } };
+  video?: { asset: { url: string } };
+  alt?: string;
+}
+
 export interface Campaign {
   id: string;
   slug: string;
-  image: string;
+  featuredImage?: { asset: { url: string } };
+  gallery: MediaItem[];
   title: string;
   description: string;
   link: string;
   raisedPledges: number;
   goalPledges: number;
   commitmentText: string;
-  media?: MediaItem[];
   category: string;
 }
 
-export interface MediaItem {
-  type: "image" | "video";
-  src: string;
-  alt: string;
-}
-
-// Solution types for campaign details
-export interface SolutionGuideline {
-  title: string;
-  description: string;
-}
-
-export interface SolutionDetails {
-  intro: string;
-  guidelines: SolutionGuideline[];
-}
-
-export interface Solution {
-  id: string;
-  title: string;
-  description: string;
-  rank: string;
-  expanded?: boolean;
-  details?: SolutionDetails;
-}
-
-export interface PartySolutions {
-  id: string;
-  name: string;
-  partyNumber: number;
-  logo: string;
-  solutions: Solution[];
-}
-
-// Extended Campaign type with solutions
 export interface CampaignWithSolutions extends Campaign {
   partySolutions?: PartySolutions[];
   contentText?: {

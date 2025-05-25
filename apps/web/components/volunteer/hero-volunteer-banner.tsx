@@ -42,7 +42,7 @@ export default function HeroVolunteerBanner() {
             </p>
             <div className="flex flex-wrap gap-4">
               <Button
-                className="bg-[#86AC9D] text-white group"
+                className="bg-[#548281] text-white group"
                 onClick={handleJoinNowClick}
               >
                 Apply Now{" "}

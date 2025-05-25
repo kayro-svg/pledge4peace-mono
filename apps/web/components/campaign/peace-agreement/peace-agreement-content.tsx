@@ -1,14 +1,19 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { getCampaignBySlug } from "@/lib/api";
-import { CampaignWithSolutions, PartySolutions } from "@/lib/types";
+import { getCampaignBySlug } from "@/lib/sanity/queries";
+import {
+  CampaignWithSolutions,
+  PartySolutions,
+  SanitySolutionsSection,
+} from "@/lib/types";
 import { BadgeCheck, ChevronDown, ChevronUp, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import SolutionActionsBar from "./solution-actions-bar";
 
 interface PeaceAgreementContentProps {
-  campaignSlug: string;
+  solutionsSection: SanitySolutionsSection;
+  campaignSlug?: string;
   onSolutionChange?: (solutionId: string) => void;
   activeSolutionId?: string;
 }
@@ -17,34 +22,11 @@ export default function PeaceAgreementContent({
   campaignSlug,
   onSolutionChange,
   activeSolutionId,
+  solutionsSection,
 }: PeaceAgreementContentProps) {
-  const [campaign, setCampaign] = useState<CampaignWithSolutions | null>(null);
+  // const [campaign, setCampaign] = useState<CampaignWithSolutions | null>(null);
   const [partySolutions, setPartySolutions] = useState<PartySolutions[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Fetch campaign details and solutions when component mounts
-  useEffect(() => {
-    async function fetchCampaignData() {
-      try {
-        setIsLoading(true);
-
-        // Fetch complete campaign data
-        const campaignData = await getCampaignBySlug(campaignSlug);
-        setCampaign(campaignData);
-
-        // Set solutions from the campaign data
-        if (campaignData?.partySolutions) {
-          setPartySolutions(campaignData.partySolutions);
-        }
-      } catch (error) {
-        console.error("Error fetching campaign data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchCampaignData();
-  }, [campaignSlug]);
 
   const toggleExpand = (partyId: string, solutionId: string) => {
     setPartySolutions(
@@ -68,42 +50,17 @@ export default function PeaceAgreementContent({
     }
   };
 
-  // Show loading state
-  if (isLoading) {
-    return <div className="p-6 text-center">Loading solutions...</div>;
-  }
-
-  // Show empty state if no campaign data
-  if (!campaign) {
-    return (
-      <div className="p-6 text-center">
-        <p className="text-gray-500">Campaign not found.</p>
-      </div>
-    );
-  }
-
-  // Show empty state if no solutions
-  if (partySolutions.length === 0) {
-    return (
-      <div className="p-6 text-center">
-        <p className="text-gray-500">
-          No solutions available for this campaign.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-8">
       {/* Dynamic content section */}
       <div className="prose max-w-none">
-        {campaign.contentText?.title && (
+        {solutionsSection.heading && (
           <h2 className="text-2xl font-bold text-gray-900">
-            {campaign.contentText.title}
+            {solutionsSection.heading}
           </h2>
         )}
 
-        {campaign.contentText?.paragraphs.map((paragraph, index) => (
+        {solutionsSection.paragraphs.map((paragraph, index) => (
           <p key={index} className="text-gray-700 mt-4">
             {paragraph}
           </p>
@@ -112,10 +69,10 @@ export default function PeaceAgreementContent({
 
       <div>
         <h2 className="text-2xl font-bold mb-6">
-          Vote Below on Solutions to {campaign.title}
+          Vote Below on Solutions to {solutionsSection.subheading}
         </h2>
 
-        <div className="space-y-8">
+        {/* <div className="space-y-8">
           {partySolutions.map((party) => (
             <div key={party.id} className="space-y-6">
               <div className="flex justify-between items-start">
@@ -233,7 +190,7 @@ export default function PeaceAgreementContent({
               </div>
             </div>
           ))}
-        </div>
+        </div> */}
       </div>
     </div>
   );
