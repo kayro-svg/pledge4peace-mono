@@ -1,246 +1,97 @@
 "use client";
 
-import { ReactNode, createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState } from "react";
 
-// Tipo para almacenar interacciones del usuario
-interface UserInteractions {
-  likes: Record<string, boolean>;
-  dislikes: Record<string, boolean>;
-  shares: Record<string, boolean>;
-  comments: Record<string, boolean>;
-}
+type InteractionType = "like" | "comment" | "share";
 
-// Tipo para los datos de conteo de interacciones de cada solución
-interface InteractionCounts {
-  likes: Record<string, number>;
-  dislikes: Record<string, number>;
-  shares: Record<string, number>;
-  comments: Record<string, number>;
+interface InteractionState {
+  [key: string]: {
+    likes: number;
+    comments: number;
+    shares: number;
+    userLiked: boolean;
+    userCommented: boolean;
+  };
 }
 
 interface InteractionContextType {
-  // Datos de interacción del usuario actual
-  userInteractions: UserInteractions;
-  // Contadores globales de interacciones
-  interactionCounts: InteractionCounts;
-  // Métodos para interactuar
   handleInteraction: (
-    type: string,
+    type: InteractionType,
     solutionId: string,
     count: number
   ) => Promise<void>;
-  // Verificar si el usuario ha interactuado
-  hasInteracted: (type: string, solutionId: string) => boolean;
-  // Obtener conteo actual
-  getInteractionCount: (type: string, solutionId: string) => number;
+  getInteractionCount: (type: InteractionType, solutionId: string) => number;
+  getUserInteraction: (type: InteractionType, solutionId: string) => boolean;
 }
 
-// Valores iniciales de ejemplo (mock data)
-const mockCounts: InteractionCounts = {
-  likes: {
-    "strengthen-democracy": 542,
-    "land-reforms": 378,
-    "economy-charter": 425,
-    "national-security-charter": 289,
-  },
-  dislikes: {
-    "strengthen-democracy": 78,
-    "land-reforms": 126,
-    "economy-charter": 85,
-    "national-security-charter": 143,
-  },
-  shares: {
-    "strengthen-democracy": 215,
-    "land-reforms": 187,
-    "economy-charter": 193,
-    "national-security-charter": 112,
-  },
-  comments: {
-    "strengthen-democracy": 10,
-    "land-reforms": 5,
-    "economy-charter": 8,
-    "national-security-charter": 3,
-  },
-};
-
-// Crear el contexto
 const InteractionContext = createContext<InteractionContextType | undefined>(
   undefined
 );
 
-// Proveedor del contexto
-export function InteractionProvider({ children }: { children: ReactNode }) {
-  // Estado para las interacciones del usuario
-  const [userInteractions, setUserInteractions] = useState<UserInteractions>({
-    likes: {},
-    dislikes: {},
-    shares: {},
-    comments: {},
-  });
+export function InteractionProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const [interactions, setInteractions] = useState<InteractionState>({});
 
-  // Estado para los contadores globales (inicializado con datos simulados)
-  const [interactionCounts, setInteractionCounts] = useState<InteractionCounts>(
-    {
-      likes: { ...mockCounts.likes },
-      dislikes: { ...mockCounts.dislikes },
-      shares: { ...mockCounts.shares },
-      comments: { ...mockCounts.comments },
-    }
-  );
-
-  // Función para manejar las interacciones
   const handleInteraction = async (
-    type: string,
+    type: InteractionType,
     solutionId: string,
     count: number
   ) => {
-    try {
-      // Actualizar el estado de interacción del usuario primero
-      setUserInteractions((prev) => {
-        const newInteractions = { ...prev };
-        if (
-          type === "like" ||
-          type === "dislike" ||
-          type === "share" ||
-          type === "comment"
-        ) {
-          const typeKey = type as keyof UserInteractions;
-          const hasInteracted =
-            newInteractions[typeKey] && newInteractions[typeKey][solutionId];
-
-          // Si ya existe, lo eliminamos (toggle)
-          if (hasInteracted) {
-            const updatedType = { ...newInteractions[typeKey] };
-            delete updatedType[solutionId];
-            newInteractions[typeKey] = updatedType;
-          } else {
-            // Añadimos la nueva interacción
-            newInteractions[typeKey] = {
-              ...newInteractions[typeKey],
-              [solutionId]: true,
-            };
-
-            // Si es like, eliminamos el dislike si existe (o viceversa)
-            if (type === "like" || type === "dislike") {
-              const oppositeType = type === "like" ? "dislikes" : "likes";
-              if (
-                newInteractions[oppositeType] &&
-                newInteractions[oppositeType][solutionId]
-              ) {
-                const updatedOpposite = { ...newInteractions[oppositeType] };
-                delete updatedOpposite[solutionId];
-                newInteractions[oppositeType] = updatedOpposite;
-              }
-            }
-          }
-        }
-        return newInteractions;
-      });
-
-      // Después actualizamos los contadores con base en el estado actualizado
-      setInteractionCounts((prev) => {
-        // Creamos una copia para modificar
-        const newCounts = { ...prev };
-
-        if (type === "like" || type === "dislike" || type === "share") {
-          const typeKey = type as keyof InteractionCounts;
-
-          // Actualizamos el contador para el tipo actual (like, dislike o share)
-          newCounts[typeKey] = {
-            ...(newCounts[typeKey] || {}),
-            [solutionId]: count,
-          };
-
-          // Si es like o dislike, también actualizamos el contador del tipo opuesto
-          if (type === "like" || type === "dislike") {
-            const oppositeType = type === "like" ? "dislikes" : "likes";
-
-            // Verificar si existe el contador actual y el valor previo
-            const prevTypeCount = prev[typeKey] && prev[typeKey][solutionId];
-            const prevCount =
-              typeof prevTypeCount === "number" ? prevTypeCount : 0;
-
-            // Verificar si existe el contador opuesto
-            const oppositeTypeKey = oppositeType as keyof InteractionCounts;
-            const prevOppositeCount =
-              prev[oppositeTypeKey] && prev[oppositeTypeKey][solutionId];
-
-            const oppositeCount =
-              typeof prevOppositeCount === "number" ? prevOppositeCount : 0;
-
-            // Si estamos incrementando uno, decrementamos el otro si es necesario
-            if (count > prevCount && oppositeCount > 0) {
-              newCounts[oppositeTypeKey] = {
-                ...(newCounts[oppositeTypeKey] || {}),
-                [solutionId]: Math.max(0, oppositeCount - 1),
-              };
-            }
-          }
-        }
-
-        return newCounts;
-      });
-    } catch (error) {
-      console.error("Error al procesar la interacción:", error);
-    }
+    setInteractions((prev) => ({
+      ...prev,
+      [solutionId]: {
+        ...prev[solutionId],
+        [type === "like"
+          ? "likes"
+          : type === "comment"
+            ? "comments"
+            : "shares"]: count,
+        [type === "like"
+          ? "userLiked"
+          : type === "comment"
+            ? "userCommented"
+            : "userShared"]: count > 0,
+      },
+    }));
   };
 
-  // Verificar si el usuario ha interactuado
-  const hasInteracted = (type: string, solutionId: string): boolean => {
-    if (!solutionId) return false;
-
-    if (
-      type === "like" ||
-      type === "dislike" ||
-      type === "share" ||
-      type === "comment"
-    ) {
-      const typeKey = type as keyof UserInteractions;
-      const interactionsForType = userInteractions[typeKey] || {};
-      return Boolean(interactionsForType[solutionId]);
-    }
-    return false;
+  const getInteractionCount = (type: InteractionType, solutionId: string) => {
+    const solution = interactions[solutionId];
+    if (!solution) return 0;
+    return type === "like"
+      ? solution.likes
+      : type === "comment"
+        ? solution.comments
+        : solution.shares;
   };
 
-  // Obtener conteo actual
-  const getInteractionCount = (type: string, solutionId: string): number => {
-    if (!solutionId) return 0;
-
-    if (
-      type === "like" ||
-      type === "dislike" ||
-      type === "share" ||
-      type === "comment"
-    ) {
-      const typeKey = type as keyof InteractionCounts;
-      const countsForType = interactionCounts[typeKey] || {};
-      return countsForType[solutionId] || 0;
-    }
-    return 0;
-  };
-
-  // Valor del contexto
-  const value: InteractionContextType = {
-    userInteractions,
-    interactionCounts,
-    handleInteraction,
-    hasInteracted,
-    getInteractionCount,
+  const getUserInteraction = (type: InteractionType, solutionId: string) => {
+    const solution = interactions[solutionId];
+    if (!solution) return false;
+    return type === "like"
+      ? solution.userLiked
+      : type === "comment"
+        ? solution.userCommented
+        : false;
   };
 
   return (
-    <InteractionContext.Provider value={value}>
+    <InteractionContext.Provider
+      value={{ handleInteraction, getInteractionCount, getUserInteraction }}
+    >
       {children}
     </InteractionContext.Provider>
   );
 }
 
-// Hook personalizado para usar el contexto
 export function useInteractions() {
   const context = useContext(InteractionContext);
   if (context === undefined) {
     throw new Error(
-      "useInteractions debe ser usado dentro de un InteractionProvider"
+      "useInteractions must be used within an InteractionProvider"
     );
   }
   return context;

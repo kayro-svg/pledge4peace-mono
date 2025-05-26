@@ -8,6 +8,7 @@ interface ContentTabsProps {
   sidebarWidth: string;
   solutionsSection: SanitySolutionsSection;
   waysToSupportTabs: SanityWaysToSupportTab[];
+  campaignId: string;
 }
 
 export default function ContentTabs({
@@ -15,6 +16,7 @@ export default function ContentTabs({
   sidebarWidth,
   solutionsSection,
   waysToSupportTabs,
+  campaignId,
 }: ContentTabsProps) {
   const [activeSolutionId, setActiveSolutionId] = useState("");
 
@@ -29,6 +31,7 @@ export default function ContentTabs({
           solutionsSection={solutionsSection}
           waysToSupportTabs={waysToSupportTabs}
           onSolutionChange={handleSolutionChange}
+          campaignId={campaignId}
         />
       </div>
       <div className="flex flex-col" style={{ width: sidebarWidth }}>

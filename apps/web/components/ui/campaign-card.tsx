@@ -158,17 +158,7 @@ export default function CampaignCard({
           </div>
           <CardHeader className="pb-8">
             <CardTitle className="text-2xl font-bold">{title}</CardTitle>
-            {/* <CardDescription className="text-md">{description}</CardDescription> */}
-            <CardDescription className="text-md">
-              Lorem ipsum dolor sit amet consectetur adipisicing elit. Quisquam,
-              quos. Lorem ipsum dolor sit amet consectetur adipisicing elit.
-              Quisquam, quos. Lorem ipsum dolor sit amet consectetur adipisicing
-              elit. Quisquam, quos. Lorem ipsum dolor sit amet consectetur
-              adipisicing elit. Quisquam, quos. Lorem ipsum dolor sit amet
-              consectetur adipisicing elit. Quisquam, quos. Lorem ipsum dolor
-              sit amet consectetur adipisicing elit. Quisquam, quos. Lorem ipsum
-              dolor sit amet consectetur adipisicing elit. Quisquam, quos.
-            </CardDescription>
+            <CardDescription className="text-md">{description}</CardDescription>
           </CardHeader>
           <CardContent className="pb-8">
             <Progress value={progress} className="h-2" />

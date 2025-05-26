@@ -1,0 +1,31 @@
+export const API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://pledge4peace-api.kayrov.workers.dev/api";
+
+export const API_ENDPOINTS = {
+  auth: {
+    register: `${API_URL}/auth/register`,
+    login: `${API_URL}/auth/login`,
+    verifyEmail: `${API_URL}/auth/verify-email`,
+    forgotPassword: `${API_URL}/auth/forgot-password`,
+    resetPassword: `${API_URL}/auth/reset-password`,
+    profile: `${API_URL}/auth/profile`,
+  },
+  solutions: {
+    create: `${API_URL}/solutions`,
+    getById: (id: string) => `${API_URL}/solutions/${id}`,
+    getByCampaign: (campaignId: string) =>
+      `${API_URL}/solutions/campaign/${campaignId}`,
+    updateStatus: (id: string) => `${API_URL}/solutions/${id}/status`,
+    like: (id: string) => `${API_URL}/solutions/${id}/like`,
+    share: (id: string) => `${API_URL}/solutions/${id}/share`,
+  },
+  comments: {
+    create: (solutionId: string) =>
+      `${API_URL}/solutions/${solutionId}/comments`,
+    getBySolution: (solutionId: string) =>
+      `${API_URL}/solutions/${solutionId}/comments`,
+    update: (id: string) => `${API_URL}/solutions/comments/${id}`,
+    delete: (id: string) => `${API_URL}/solutions/comments/${id}`,
+  },
+};

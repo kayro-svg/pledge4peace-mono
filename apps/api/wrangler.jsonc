@@ -1,0 +1,33 @@
+/**
+ * For more details on how to configure Wrangler, refer to:
+ * https://developers.cloudflare.com/workers/wrangler/configuration/
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "pledge4peace-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2024-01-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pledge4peace-db",
+      "database_id": "98d32d18-205e-49ef-8e8e-342df08868da",
+      "migrations_dir": "./migrations",
+    },
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "c6bf24de3ea846f9b69772819581163a",
+      "preview_id": "725495fb08f642848f85463d9cf65240",
+    },
+  ],
+  "vars": {
+    "RESEND_API_KEY": "re_Sf1WKyHq_7tg82RsvsBUY2CrB6CoGrff7",
+    "FROM_EMAIL": "onboarding@resend.dev",
+  },
+}

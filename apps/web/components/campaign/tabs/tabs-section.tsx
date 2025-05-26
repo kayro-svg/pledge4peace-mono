@@ -11,12 +11,14 @@ interface TabsSectionProps {
   solutionsSection: SanitySolutionsSection;
   waysToSupportTabs: SanityWaysToSupportTab[];
   onSolutionChange?: (solutionId: string) => void;
+  campaignId: string;
 }
 
 export default function TabsSection({
   solutionsSection,
   waysToSupportTabs,
   onSolutionChange,
+  campaignId,
 }: TabsSectionProps) {
   const [activeTab, setActiveTab] = useState("solution-proposals");
   const [activeSolutionId, setActiveSolutionId] = useState("");
@@ -43,6 +45,7 @@ export default function TabsSection({
             solutionsSection={solutionsSection}
             onSolutionChange={handleSolutionChange}
             activeSolutionId={activeSolutionId}
+            campaignId={campaignId}
           />
         )}
         {activeTab === "ways-to-support" && (

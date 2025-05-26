@@ -7,6 +7,9 @@ import { FormField } from "./form-field";
 import { PasswordInput } from "./password-input";
 import { OrDivider } from "./or-divider";
 import { SocialButton } from "./social-button";
+import { useState } from "react";
+import { signIn } from "next-auth/react";
+import { toast } from "sonner";
 
 interface RegisterFormData {
   name: string;
@@ -22,10 +25,62 @@ interface RegisterFormProps {
 
 export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   const form = useForm<RegisterFormData>();
+  const [isLoading, setIsLoading] = useState(false);
 
-  const onSubmit = (data: RegisterFormData) => {
-    console.log("Registration submitted:", data);
-    // Handle registration
+  const onSubmit = async (data: RegisterFormData) => {
+    try {
+      if (data.password !== data.confirmPassword) {
+        toast.error("Passwords do not match");
+        return;
+      }
+
+      setIsLoading(true);
+
+      // Register the user
+      const registerResponse = await fetch(
+        "https://pledge4peace-api.kayrov.workers.dev/api/auth/register",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: data.name,
+            email: data.email,
+            password: data.password,
+          }),
+        }
+      );
+
+      const registerData = await registerResponse.json();
+
+      if (!registerResponse.ok) {
+        throw new Error(registerData.message || "Registration failed");
+      }
+
+      toast.success(
+        "Registration successful! Please check your email to verify your account."
+      );
+
+      // Automatically sign in after registration
+      const result = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        toast.error("Failed to sign in after registration");
+        return;
+      }
+
+      // Switch to login view to show the verification message
+      onSwitchToLogin();
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Registration failed"
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -106,8 +161,9 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           <Button
             type="submit"
             className="w-full bg-[#548281] hover:bg-[#2F4858] text-white font-medium py-2.5"
+            disabled={isLoading}
           >
-            Sign Up
+            {isLoading ? "Creating account..." : "Sign Up"}
           </Button>
         </div>
       </form>

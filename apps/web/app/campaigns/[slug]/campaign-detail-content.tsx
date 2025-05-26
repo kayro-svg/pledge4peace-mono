@@ -44,6 +44,7 @@ export function CampaignDetailContent({
                 waysToSupportTabs={
                   campaign?.waysToSupportTabs as SanityWaysToSupportTab[]
                 }
+                campaignId={campaign._id}
               />
             </InteractionProvider>
           </div>

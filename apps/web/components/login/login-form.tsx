@@ -8,6 +8,10 @@ import { PasswordInput } from "./password-input";
 import { OrDivider } from "./or-divider";
 import { SocialButton } from "./social-button";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
+import { useState } from "react";
+import { toast } from "sonner";
+
 interface LoginFormData {
   email: string;
   password: string;
@@ -21,9 +25,30 @@ interface LoginFormProps {
 export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
   const form = useForm<LoginFormData>();
   const router = useRouter();
-  const onSubmit = (data: LoginFormData) => {
-    console.log("Form submitted:", data);
-    // Handle submission
+  const [isLoading, setIsLoading] = useState(false);
+
+  const onSubmit = async (data: LoginFormData) => {
+    try {
+      setIsLoading(true);
+      const result = await signIn("credentials", {
+        email: data.email,
+        password: data.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        toast.error("Invalid email or password");
+        return;
+      }
+
+      toast.success("Login successful");
+      router.push("/dashboard");
+      router.refresh();
+    } catch (error) {
+      toast.error("An error occurred during login");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -87,9 +112,9 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
           <Button
             type="submit"
             className="w-full bg-[#548281] hover:bg-[#2F4858] text-white font-medium py-2.5"
-            onClick={() => router.push("/dashboard")}
+            disabled={isLoading}
           >
-            Sign In
+            {isLoading ? "Signing in..." : "Sign In"}
           </Button>
         </div>
       </form>
@@ -101,7 +126,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
       </div>
 
       <p className="absolute bottom-5 left-0 right-0 text-center text-sm text-gray-600">
-        Don&apos;t have an account?
+        Don&apos;t have an account?{" "}
         <button
           onClick={onSwitchToRegister}
           className="font-medium text-[#698D8B] hover:text-[#548281]"

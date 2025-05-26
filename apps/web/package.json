@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack --port 3000",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "next lint --max-warnings 0",
@@ -56,6 +56,7 @@
     "input-otp": "1.4.1",
     "lucide-react": "^0.511.0",
     "next": "^15.3.0",
+    "next-auth": "^4.24.11",
     "next-sanity": "^9.11.1",
     "next-themes": "^0.4.6",
     "react": "^19.1.0",

@@ -1,9 +1,11 @@
 "use client";
 
-import { Heart, ThumbsDown, Share2, MessageSquare } from "lucide-react";
-import InteractionCounter from "../shared/interaction-counter";
-import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { likeSolution, unlikeSolution } from "@/lib/api/solutions";
 import { useInteractions } from "../shared/interaction-context";
+import { Heart, MessageCircle, Share2 } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
 
 interface SolutionActionsBarProps {
   solutionId: string;
@@ -12,55 +14,81 @@ interface SolutionActionsBarProps {
 export default function SolutionActionsBar({
   solutionId,
 }: SolutionActionsBarProps) {
-  const { handleInteraction, getInteractionCount } = useInteractions();
+  const { data: session } = useSession();
+  const { handleInteraction, getInteractionCount, getUserInteraction } =
+    useInteractions();
 
-  const handleCommentClick = () => {
-    // Find the comments tab section
-    const commentsSection = document.querySelector(
-      '[data-tab-value="comments"]'
-    );
+  const likeCount = getInteractionCount("like", solutionId);
+  const commentCount = getInteractionCount("comment", solutionId);
+  const hasLiked = getUserInteraction("like", solutionId);
 
-    // Scroll to comments section smoothly
-    if (commentsSection) {
-      // window.scrollTo({
-      //   top: commentsSection.getBoundingClientRect().top + window.scrollY - 100,
-      //   behavior: "smooth",
-      // });
-
-      // Focus the comment textarea after scrolling
-      setTimeout(() => {
-        const commentTextarea = document.querySelector(
-          "[data-comment-input]"
-        ) as HTMLTextAreaElement;
-        if (commentTextarea) {
-          commentTextarea.focus();
-        }
-      }, 500); // Small delay to ensure scrolling completes
+  const handleLike = async () => {
+    if (!session) {
+      toast.error("Please sign in to like solutions");
+      return;
     }
 
-    // No actualizamos el contador al hacer click en el botón de comentarios
-    // porque esto solo debe ocurrir cuando realmente se envía un comentario
-    // El contador se actualiza en el CommentsSection cuando se envía un comentario
+    try {
+      if (hasLiked) {
+        await unlikeSolution(solutionId);
+        await handleInteraction("like", solutionId, likeCount - 1);
+      } else {
+        await likeSolution(solutionId);
+        await handleInteraction("like", solutionId, likeCount + 1);
+      }
+    } catch (error) {
+      toast.error(hasLiked ? "Failed to unlike" : "Failed to like");
+      console.error("Error handling like:", error);
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await navigator.share({
+        title: "Check out this solution on Pledge4Peace",
+        url: window.location.href,
+      });
+    } catch (error) {
+      if (error instanceof Error && error.name !== "AbortError") {
+        toast.error("Failed to share");
+        console.error("Error sharing:", error);
+      }
+    }
   };
 
   return (
-    <div className="border-t border-gray-200 grid grid-cols-4">
-      <InteractionCounter icon={Heart} type="like" solutionId={solutionId} />
+    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
+      <div className="flex items-center gap-6">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`flex items-center gap-2 ${
+            hasLiked ? "text-red-500" : "text-gray-500"
+          } hover:text-red-500`}
+          onClick={handleLike}
+        >
+          <Heart className={`h-5 w-5 ${hasLiked ? "fill-current" : ""}`} />
+          <span>{likeCount}</span>
+        </Button>
 
-      <InteractionCounter
-        icon={ThumbsDown}
-        type="dislike"
-        solutionId={solutionId}
-      />
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex items-center gap-2 text-gray-500"
+        >
+          <MessageCircle className="h-5 w-5" />
+          <span>{commentCount}</span>
+        </Button>
+      </div>
 
-      <InteractionCounter
-        icon={MessageSquare}
-        type="comment"
-        solutionId={solutionId}
-        onClick={handleCommentClick}
-      />
-
-      <InteractionCounter icon={Share2} type="share" solutionId={solutionId} />
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-gray-500"
+        onClick={handleShare}
+      >
+        <Share2 className="h-5 w-5" />
+      </Button>
     </div>
   );
 }

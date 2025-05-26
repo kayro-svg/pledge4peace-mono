@@ -153,31 +153,6 @@ export default {
           type: 'string',
           description: 'E.g., “Vote Below on Solutions…”',
         },
-        // {
-        //   name: 'solutions',
-        //   title: 'Solutions',
-        //   type: 'array',
-        //   description: 'List of proposed solutions for this campaign.',
-        //   of: [
-        //     {
-        //       type: 'object',
-        //       fields: [
-        //         {
-        //           name: 'title',
-        //           title: 'Solution Title',
-        //           type: 'string',
-        //           description: 'Title of the proposed solution.',
-        //         },
-        //         {
-        //           name: 'description',
-        //           title: 'Solution Description',
-        //           type: 'text',
-        //           description: 'Detailed description of the solution.',
-        //         },
-        //       ],
-        //     },
-        //   ],
-        // },
       ],
     },
 

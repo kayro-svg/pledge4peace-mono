@@ -23,13 +23,13 @@ export default function VolunteerPage(): JSX.Element {
         "Launch local initiatives that spread our message of peace through neighborhood outreach and engagement.",
       learnMore: "#spread-word",
     },
-    {
-      icon: <Handshake className="h-8 w-8 text-[#548281]" />,
-      title: "Strategic Partnerships",
-      description:
-        "Help us form alliances with organizations that share our mission to achieve greater collective impact.",
-      learnMore: "#partnerships",
-    },
+    // {
+    //   icon: <Handshake className="h-8 w-8 text-[#548281]" />,
+    //   title: "Strategic Partnerships",
+    //   description:
+    //     "Help us form alliances with organizations that share our mission to achieve greater collective impact.",
+    //   learnMore: "#partnerships",
+    // },
   ];
 
   const impactMetrics = [
@@ -51,7 +51,7 @@ export default function VolunteerPage(): JSX.Element {
     <main className="min-h-screen bg-[#FDFDF0]">
       <HeroVolunteerBanner />
       <WaysToVolunteer volunteerWays={volunteerWays} />
-      <VolunteerImpactMetrics impactMetrics={impactMetrics} />
+      {/* <VolunteerImpactMetrics impactMetrics={impactMetrics} /> */}
       <HighProfileOutreach />
       <SpreadWordSection />
       {/* <PartnerWithUs /> */}

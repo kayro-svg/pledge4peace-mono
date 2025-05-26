@@ -1,34 +1,29 @@
-import type { ReactNode } from "react";
-import { JSX } from "react";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
-import { Montserrat } from "next/font/google";
-import { ThemeProvider } from "next-themes";
+import { Providers } from "./providers";
+import { Toaster } from "sonner";
 import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 
-const inter = Montserrat({ subsets: ["latin"] });
+const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
-  title: "Pledge4Peace - Building a Peaceful World Together",
-  description:
-    "Join our global movement to promote peace through pledges, advocacy, and action.",
+export const metadata: Metadata = {
+  title: "Pledge4Peace",
+  description: "Make a difference in the world",
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: ReactNode;
-}>): JSX.Element {
+}: {
+  children: React.ReactNode;
+}) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          forcedTheme="light"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
+        <Providers>
           <LayoutWrapper>{children}</LayoutWrapper>
-        </ThemeProvider>
+          <Toaster />
+        </Providers>
       </body>
     </html>
   );
