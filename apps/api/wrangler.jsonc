@@ -27,7 +27,6 @@
     },
   ],
   "vars": {
-    "RESEND_API_KEY": "re_Sf1WKyHq_7tg82RsvsBUY2CrB6CoGrff7",
     "FROM_EMAIL": "onboarding@resend.dev",
   },
 }
