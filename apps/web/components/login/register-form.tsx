@@ -10,6 +10,8 @@ import { SocialButton } from "./social-button";
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { toast } from "sonner";
+import { register as registerUser } from "@/lib/api/register";
+import { useRouter } from "next/navigation";
 
 interface RegisterFormData {
   name: string;
@@ -26,6 +28,7 @@ interface RegisterFormProps {
 export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   const form = useForm<RegisterFormData>();
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
@@ -36,19 +39,12 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
 
       setIsLoading(true);
 
-      // Register the user
-      const registerResponse = await fetch(
-        "https://pledge4peace-api.kayrov.workers.dev/api/auth/register",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: data.name,
-            email: data.email,
-            password: data.password,
-          }),
-        }
-      );
+      // Register the user usando la función reutilizable
+      const registerResponse = await registerUser({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+      });
 
       const registerData = await registerResponse.json();
 
@@ -72,8 +68,8 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
         return;
       }
 
-      // Switch to login view to show the verification message
-      onSwitchToLogin();
+      // Redirigir a la ruta deseada tras login exitoso
+      router.push("/"); // Cambia "/" por la ruta que desees
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Registration failed"
@@ -92,7 +88,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
         Join us and start making a difference today
       </p>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mb-10">
         <FormField
           id="name"
           label="Full Name"
@@ -168,11 +164,11 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
         </div>
       </form>
 
-      <OrDivider text="Or continue with" />
+      {/* <OrDivider text="Or continue with" />
 
       <div className="mt-6">
         <SocialButton provider="google">Sign up with Google</SocialButton>
-      </div>
+      </div> */}
 
       <p className="absolute bottom-5 left-0 right-0 text-center text-sm text-gray-600">
         Already have an account?{" "}

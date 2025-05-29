@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, inArray } from "drizzle-orm";
 import { solutions } from "../db/schema/solutions";
 import { solutionInteractions } from "../db/schema/interactions";
 import { comments } from "../db/schema/comments";
@@ -14,6 +14,7 @@ export interface CreateSolutionDTO {
 
 export interface SolutionStats {
   likes: number;
+  dislikes: number;
   shares: number;
   comments: number;
 }
@@ -111,6 +112,7 @@ export class SolutionsService {
 
     return {
       likes,
+      dislikes: 0,
       shares,
       comments: commentCount,
     };
@@ -130,5 +132,49 @@ export class SolutionsService {
       .returning();
 
     return updated[0];
+  }
+
+  async getSolutionsStatsByCampaign(
+    campaignId: string
+  ): Promise<{ solutionId: string; stats: SolutionStats }[]> {
+    // Obtener todas las soluciones de la campaña
+    const solutionsData = await this.db.query.solutions.findMany({
+      where: eq(solutions.campaignId, campaignId),
+    });
+    const solutionIds = solutionsData.map((s) => s.id);
+    if (solutionIds.length === 0) return [];
+
+    // Obtener todas las interacciones relevantes en una sola consulta
+    const interactions = await this.db.query.solutionInteractions.findMany({
+      where: inArray(solutionInteractions.solutionId, solutionIds),
+    });
+
+    // Obtener todos los comentarios relevantes en una sola consulta
+    const allComments = await this.db.query.comments.findMany({
+      where: inArray(comments.solutionId, solutionIds),
+    });
+
+    // Agrupar stats por solución
+    const statsBySolution: Record<string, SolutionStats> = {};
+    for (const id of solutionIds) {
+      statsBySolution[id] = { likes: 0, dislikes: 0, shares: 0, comments: 0 };
+    }
+    for (const interaction of interactions) {
+      if (!statsBySolution[interaction.solutionId]) continue;
+      if (interaction.type === "like")
+        statsBySolution[interaction.solutionId].likes++;
+      if (interaction.type === "dislike")
+        statsBySolution[interaction.solutionId].dislikes++;
+      if (interaction.type === "share")
+        statsBySolution[interaction.solutionId].shares++;
+    }
+    for (const comment of allComments) {
+      if (!statsBySolution[comment.solutionId]) continue;
+      statsBySolution[comment.solutionId].comments++;
+    }
+    return solutionIds.map((id) => ({
+      solutionId: id,
+      stats: statsBySolution[id],
+    }));
   }
 }

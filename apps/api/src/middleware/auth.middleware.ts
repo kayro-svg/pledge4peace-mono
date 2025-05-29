@@ -6,6 +6,7 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
+  image?: string;
 }
 
 declare module "hono" {
@@ -25,7 +26,10 @@ export async function authMiddleware(c: Context, next: Next) {
     const token = authHeader.split(" ")[1];
 
     // Verificar el token JWT
-    const payload = (await verify(token, c.env.JWT_SECRET)) as AuthUser;
+    const payload = (await verify(
+      token,
+      c.env.JWT_SECRET
+    )) as unknown as AuthUser;
 
     if (!payload || !payload.id) {
       throw new HTTPException(401, { message: "Invalid token" });
@@ -48,7 +52,10 @@ export async function optionalAuthMiddleware(c: Context, next: Next) {
 
     if (authHeader && authHeader.startsWith("Bearer ")) {
       const token = authHeader.split(" ")[1];
-      const payload = (await verify(token, c.env.JWT_SECRET)) as AuthUser;
+      const payload = (await verify(
+        token,
+        c.env.JWT_SECRET
+      )) as unknown as AuthUser;
 
       if (payload && payload.id) {
         c.set("user", payload);

@@ -33,6 +33,11 @@ solutionsRoutes.get(
   optionalAuthMiddleware,
   interactionsController.getInteractionStats
 );
+solutionsRoutes.get(
+  "/campaign/:campaignId/stats",
+  optionalAuthMiddleware,
+  solutionsController.getSolutionsStatsByCampaign
+);
 
 // Rutas que requieren autenticación
 solutionsRoutes.use("*", authMiddleware); // Aplicar autenticación a todas las rutas siguientes
@@ -47,6 +52,10 @@ solutionsRoutes.delete("/comments/:id", commentsController.deleteComment);
 
 // Rutas de interacciones que requieren autenticación
 solutionsRoutes.post("/:solutionId/like", interactionsController.toggleLike);
+solutionsRoutes.post(
+  "/:solutionId/dislike",
+  interactionsController.toggleDislike
+);
 solutionsRoutes.post(
   "/:solutionId/share",
   interactionsController.shareSolution

@@ -4,7 +4,11 @@ import { useState } from "react";
 import LoginForm from "./login-form";
 import RegisterForm from "./register-form";
 
-export default function AuthContainer() {
+interface AuthContainerProps {
+  onLoginSuccess?: () => void;
+}
+
+export default function AuthContainer({ onLoginSuccess }: AuthContainerProps) {
   const [isLoginView, setIsLoginView] = useState(true);
 
   const handleSwitchToRegister = () => {
@@ -18,7 +22,10 @@ export default function AuthContainer() {
   return (
     <div className="w-full max-w-md">
       {isLoginView ? (
-        <LoginForm onSwitchToRegister={handleSwitchToRegister} />
+        <LoginForm
+          onSwitchToRegister={handleSwitchToRegister}
+          onLoginSuccess={onLoginSuccess}
+        />
       ) : (
         <RegisterForm onSwitchToLogin={handleSwitchToLogin} />
       )}

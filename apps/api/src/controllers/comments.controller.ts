@@ -50,6 +50,8 @@ export class CommentsController {
       const comment = await service.createComment({
         ...validation.data,
         userId: user.id,
+        userName: user.name,
+        userAvatar: user.image,
       });
 
       return c.json(comment, 201);

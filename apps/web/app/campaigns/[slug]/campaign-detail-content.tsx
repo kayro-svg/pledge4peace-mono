@@ -34,7 +34,7 @@ export function CampaignDetailContent({
 
           <div className="flex flex-col gap-8">
             <MainContentSection campaign={campaign} />
-            <InteractionProvider>
+            <InteractionProvider initialStats={undefined}>
               <ContentTabs
                 mainContentWidth="70%"
                 sidebarWidth="30%"

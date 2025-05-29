@@ -7,6 +7,8 @@ export interface CreateCommentDTO {
   userId: string;
   content: string;
   parentId?: string;
+  userName?: string;
+  userAvatar?: string;
 }
 
 export interface UpdateCommentDTO {
@@ -31,13 +33,23 @@ export class CommentsService {
         userId: data.userId,
         content: data.content,
         parentId: data.parentId || null,
+        userName: data.userName,
+        userAvatar: data.userAvatar,
         status: "active",
         createdAt: new Date(),
         updatedAt: new Date(),
       })
       .returning();
 
-    return newComment[0];
+    const comment = newComment[0];
+    return {
+      ...comment,
+      author: {
+        id: comment.userId,
+        name: comment.userName || "Anonymous",
+        avatar: comment.userAvatar,
+      },
+    };
   }
 
   async getCommentsBySolution(

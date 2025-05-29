@@ -22,6 +22,7 @@ interface AuthUser {
   email: string;
   name: string;
   emailVerified: boolean;
+  image?: string;
 }
 
 interface JWTPayload {
@@ -29,6 +30,7 @@ interface JWTPayload {
   email: string;
   name: string;
   emailVerified: boolean;
+  image?: string;
   exp: number;
 }
 

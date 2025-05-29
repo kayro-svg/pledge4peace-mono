@@ -1,19 +1,12 @@
 import { Solution, Comment, CreateCommentDto } from "@/lib/types/index";
 import { getSession } from "next-auth/react";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
-if (!API_URL) {
-  throw new Error("NEXT_PUBLIC_API_URL environment variable is not defined");
-}
+import { API_ENDPOINTS } from "@/lib/config";
+import { API_URL } from "@/lib/config";
 
 export async function getSolutions(campaignId: string): Promise<Solution[]> {
-  const session = await getSession();
-  const response = await fetch(`${API_URL}/campaigns/${campaignId}/solutions`, {
-    headers: session?.accessToken
-      ? { Authorization: `Bearer ${session.accessToken}` }
-      : {},
-  });
+  const response = await fetch(
+    API_ENDPOINTS.solutions.getByCampaign(campaignId)
+  );
 
   if (!response.ok) {
     throw new Error("Failed to fetch solutions");
@@ -22,7 +15,7 @@ export async function getSolutions(campaignId: string): Promise<Solution[]> {
   return response.json();
 }
 
-export async function likeSolution(solutionId: string): Promise<void> {
+export async function likeSolution(solutionId: string) {
   const session = await getSession();
   if (!session?.accessToken) {
     throw new Error("Authentication required");
@@ -38,15 +31,17 @@ export async function likeSolution(solutionId: string): Promise<void> {
   if (!response.ok) {
     throw new Error("Failed to like solution");
   }
+
+  return response.json();
 }
 
-export async function unlikeSolution(solutionId: string): Promise<void> {
+export async function dislikeSolution(solutionId: string) {
   const session = await getSession();
   if (!session?.accessToken) {
     throw new Error("Authentication required");
   }
 
-  const response = await fetch(`${API_URL}/solutions/${solutionId}/unlike`, {
+  const response = await fetch(`${API_URL}/solutions/${solutionId}/dislike`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${session.accessToken}`,
@@ -54,17 +49,97 @@ export async function unlikeSolution(solutionId: string): Promise<void> {
   });
 
   if (!response.ok) {
-    throw new Error("Failed to unlike solution");
+    throw new Error("Failed to dislike solution");
   }
+
+  return response.json();
 }
 
-export async function getComments(solutionId: string): Promise<Comment[]> {
+export async function shareSolution(solutionId: string) {
   const session = await getSession();
-  const response = await fetch(`${API_URL}/solutions/${solutionId}/comments`, {
+  if (!session?.accessToken) {
+    throw new Error("Authentication required");
+  }
+
+  const response = await fetch(`${API_URL}/solutions/${solutionId}/share`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${session.accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to share solution");
+  }
+
+  return response.json();
+}
+
+export async function getSolutionStats(solutionId: string) {
+  const session = await getSession();
+  const response = await fetch(`${API_URL}/solutions/${solutionId}/stats`, {
     headers: session?.accessToken
       ? { Authorization: `Bearer ${session.accessToken}` }
       : {},
   });
+
+  if (!response.ok) {
+    throw new Error("Failed to get solution stats");
+  }
+
+  return response.json();
+}
+
+export async function getUserInteractions(solutionId: string) {
+  const session = await getSession();
+  if (!session?.accessToken) {
+    throw new Error("Authentication required");
+  }
+
+  const response = await fetch(
+    `${API_URL}/solutions/${solutionId}/user-interactions`,
+    {
+      headers: {
+        Authorization: `Bearer ${session.accessToken}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to get user interactions");
+  }
+
+  return response.json();
+}
+
+// export async function unlikeSolution(solutionId: string): Promise<void> {
+//   const session = await getSession();
+//   if (!session?.accessToken) {
+//     throw new Error("Authentication required");
+//   }
+
+//   const response = await fetch(API_ENDPOINTS.solutions.like(solutionId), {
+//     method: "DELETE",
+//     headers: {
+//       Authorization: `Bearer ${session.accessToken}`,
+//     },
+//   });
+
+//   if (!response.ok) {
+//     throw new Error("Failed to unlike solution");
+//   }
+// }
+
+export async function getComments(solutionId: string): Promise<Comment[]> {
+  const session = await getSession();
+  const response = await fetch(
+    API_ENDPOINTS.comments.getBySolution(solutionId),
+    {
+      headers: session?.accessToken
+        ? { Authorization: `Bearer ${session.accessToken}` }
+        : {},
+    }
+  );
 
   if (!response.ok) {
     throw new Error("Failed to fetch comments");
@@ -79,17 +154,14 @@ export async function createComment(data: CreateCommentDto): Promise<Comment> {
     throw new Error("Authentication required");
   }
 
-  const response = await fetch(
-    `${API_URL}/solutions/${data.solutionId}/comments`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${session.accessToken}`,
-      },
-      body: JSON.stringify(data),
-    }
-  );
+  const response = await fetch(API_ENDPOINTS.comments.create(data.solutionId), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.accessToken}`,
+    },
+    body: JSON.stringify(data),
+  });
 
   if (!response.ok) {
     throw new Error("Failed to create comment");

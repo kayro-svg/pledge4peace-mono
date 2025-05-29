@@ -2,21 +2,25 @@ import CommentsSection from "@/components/campaign/comments/comments-section";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEffect, useState } from "react";
 import { getCampaignSolutionById } from "@/lib/api";
-import { Solution } from "@/lib/types";
+import { Solution } from "@/lib/types/index";
+import { API_ENDPOINTS } from "@/lib/config";
 
 interface SidebarSectionProps {
   solutionId?: string;
 }
 
 export default function SidebarSection({ solutionId }: SidebarSectionProps) {
-  const [solution, setSolution] = useState<Solution | null>(null);
+  const [solutionTitle, setSolutionTitle] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchSolution() {
       try {
         if (solutionId) {
-          const solution = await getCampaignSolutionById(solutionId);
-          setSolution(solution);
+          const solution = await fetch(
+            API_ENDPOINTS.solutions.getById(solutionId)
+          );
+          const data = await solution.json();
+          setSolutionTitle(data.title);
         }
       } catch (error) {
         console.error("Error fetching solution:", error);
@@ -29,7 +33,7 @@ export default function SidebarSection({ solutionId }: SidebarSectionProps) {
     <div className="bg-white rounded-3xl shadow-[0_0_10px_rgba(0,0,0,0.1)] p-6 flex flex-col max-h-[88vh] overflow-y-auto">
       <div className="flex flex-col gap-4 mb-4">
         <p className="text-lg font-bold leading-tight">
-          {solution?.title ||
+          {solutionTitle ||
             "Select a solution to view comments and add your thoughts"}
         </p>
         {solutionId && (

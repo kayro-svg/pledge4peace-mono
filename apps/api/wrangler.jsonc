@@ -28,5 +28,6 @@
   ],
   "vars": {
     "FROM_EMAIL": "onboarding@resend.dev",
+    "NODE_ENV": "production",
   },
 }

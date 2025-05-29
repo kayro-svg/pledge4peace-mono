@@ -20,12 +20,25 @@ interface LoginFormData {
 
 interface LoginFormProps {
   onSwitchToRegister: () => void;
+  onLoginSuccess?: () => void;
 }
 
-export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
+export default function LoginForm({
+  onSwitchToRegister,
+  onLoginSuccess,
+}: LoginFormProps) {
   const form = useForm<LoginFormData>();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+
+  const handleLoginSuccess = () => {
+    if (onLoginSuccess) {
+      onLoginSuccess();
+    } else {
+      router.push("/dashboard");
+      router.refresh();
+    }
+  };
 
   const onSubmit = async (data: LoginFormData) => {
     try {
@@ -38,12 +51,10 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
 
       if (result?.error) {
         toast.error("Invalid email or password");
-        return;
+      } else {
+        toast.success("Login successful!");
+        handleLoginSuccess();
       }
-
-      toast.success("Login successful");
-      router.push("/dashboard");
-      router.refresh();
     } catch (error) {
       toast.error("An error occurred during login");
     } finally {
@@ -60,7 +71,7 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
         Enter your email and password and start making a difference.
       </p>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mb-10">
         <FormField
           id="email"
           label="Email"
@@ -119,11 +130,11 @@ export default function LoginForm({ onSwitchToRegister }: LoginFormProps) {
         </div>
       </form>
 
-      <OrDivider text="Or continue with" />
+      {/* <OrDivider text="Or continue with" />
 
       <div className="mt-6">
         <SocialButton provider="google">Sign in with Google</SocialButton>
-      </div>
+      </div> */}
 
       <p className="absolute bottom-5 left-0 right-0 text-center text-sm text-gray-600">
         Don&apos;t have an account?{" "}

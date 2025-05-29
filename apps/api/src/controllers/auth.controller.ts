@@ -36,11 +36,12 @@ const resetPasswordSchema = z.object({
 export class AuthController {
   async register(c: Context) {
     try {
-      const validation = await c.req
-        .json()
-        .then((data) => registerSchema.safeParse(data));
+      const body = await c.req.json();
+      console.log("Payload recibido en registro:", body);
+      const validation = registerSchema.safeParse(body);
 
       if (!validation.success) {
+        console.error("Errores de validación:", validation.error.format());
         throw new HTTPException(400, { message: "Invalid input data" });
       }
 

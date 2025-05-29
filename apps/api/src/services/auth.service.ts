@@ -181,6 +181,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         emailVerified: user.emailVerified === 1,
+        image: user.image,
         exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 días
       },
       this.jwtSecret,
@@ -202,6 +203,7 @@ export class AuthService {
       email: user.email,
       name: user.name,
       emailVerified: user.emailVerified === 1,
+      image: user.image,
     };
   }
 

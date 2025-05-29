@@ -104,4 +104,19 @@ export class SolutionsController {
       });
     }
   }
+
+  async getSolutionsStatsByCampaign(c: Context) {
+    try {
+      const { campaignId } = c.req.param();
+      const db = createDb(c.env.DB);
+      const service = new SolutionsService(db);
+      const stats = await service.getSolutionsStatsByCampaign(campaignId);
+      return c.json(stats);
+    } catch (error) {
+      console.error("Error getting solutions stats by campaign:", error);
+      throw new HTTPException(500, {
+        message: "Error getting solutions stats by campaign",
+      });
+    }
+  }
 }

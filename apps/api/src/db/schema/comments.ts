@@ -7,6 +7,8 @@ export const comments = sqliteTable("comments", {
     .notNull()
     .references(() => solutions.id),
   userId: text("user_id").notNull(),
+  userName: text("user_name"),
+  userAvatar: text("user_avatar"),
   content: text("content").notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),

@@ -2,7 +2,7 @@ import Image from "next/image";
 
 export function LeftPanel() {
   return (
-    <div className="hidden lg:flex p-8 rounded-3xl lg:w-1/2 flex-col text-white justify-between relative overflow-hidden">
+    <div className="hidden lg:flex p-8 rounded-3xl lg:w-1/2 flex-col text-white justify-between relative overflow-hidden z-20">
       {/* Background image */}
       <div className="absolute inset-0">
         <Image

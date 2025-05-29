@@ -1,5 +1,6 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import { API_URL } from "@/lib/config";
 
 const handler = NextAuth({
   providers: [
@@ -11,17 +12,14 @@ const handler = NextAuth({
       },
       async authorize(credentials) {
         try {
-          const res = await fetch(
-            "https://pledge4peace-api.kayrov.workers.dev/api/auth/login",
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                email: credentials?.email,
-                password: credentials?.password,
-              }),
-            }
-          );
+          const res = await fetch(`${API_URL}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: credentials?.email,
+              password: credentials?.password,
+            }),
+          });
 
           const data = await res.json();
 

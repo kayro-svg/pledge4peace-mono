@@ -2,14 +2,16 @@
 
 import React, { createContext, useContext, useState } from "react";
 
-type InteractionType = "like" | "comment" | "share";
+type InteractionType = "like" | "dislike" | "comment" | "share";
 
 interface InteractionState {
   [key: string]: {
     likes: number;
+    dislikes: number;
     comments: number;
     shares: number;
     userLiked: boolean;
+    userDisliked: boolean;
     userCommented: boolean;
   };
 }
@@ -22,18 +24,39 @@ interface InteractionContextType {
   ) => Promise<void>;
   getInteractionCount: (type: InteractionType, solutionId: string) => number;
   getUserInteraction: (type: InteractionType, solutionId: string) => boolean;
+  setUserInteraction: (
+    type: InteractionType,
+    solutionId: string,
+    value: boolean
+  ) => void;
 }
 
 const InteractionContext = createContext<InteractionContextType | undefined>(
   undefined
 );
 
+interface InteractionProviderProps {
+  children: React.ReactNode;
+  initialStats?: Record<
+    string,
+    {
+      likes: number;
+      dislikes: number;
+      comments: number;
+      shares: number;
+      userLiked?: boolean;
+      userDisliked?: boolean;
+      userCommented?: boolean;
+    }
+  >;
+}
+
 export function InteractionProvider({
   children,
-}: {
-  children: React.ReactNode;
-}) {
-  const [interactions, setInteractions] = useState<InteractionState>({});
+  initialStats = {},
+}: InteractionProviderProps) {
+  const [interactions, setInteractions] =
+    useState<InteractionState>(initialStats);
 
   const handleInteraction = async (
     type: InteractionType,
@@ -46,14 +69,31 @@ export function InteractionProvider({
         ...prev[solutionId],
         [type === "like"
           ? "likes"
-          : type === "comment"
-            ? "comments"
-            : "shares"]: count,
+          : type === "dislike"
+            ? "dislikes"
+            : type === "comment"
+              ? "comments"
+              : "shares"]: count,
+      },
+    }));
+  };
+
+  const setUserInteraction = (
+    type: InteractionType,
+    solutionId: string,
+    value: boolean
+  ) => {
+    setInteractions((prev) => ({
+      ...prev,
+      [solutionId]: {
+        ...prev[solutionId],
         [type === "like"
           ? "userLiked"
-          : type === "comment"
-            ? "userCommented"
-            : "userShared"]: count > 0,
+          : type === "dislike"
+            ? "userDisliked"
+            : type === "comment"
+              ? "userCommented"
+              : "userShared"]: value,
       },
     }));
   };
@@ -63,9 +103,11 @@ export function InteractionProvider({
     if (!solution) return 0;
     return type === "like"
       ? solution.likes
-      : type === "comment"
-        ? solution.comments
-        : solution.shares;
+      : type === "dislike"
+        ? solution.dislikes
+        : type === "comment"
+          ? solution.comments
+          : solution.shares;
   };
 
   const getUserInteraction = (type: InteractionType, solutionId: string) => {
@@ -73,14 +115,21 @@ export function InteractionProvider({
     if (!solution) return false;
     return type === "like"
       ? solution.userLiked
-      : type === "comment"
-        ? solution.userCommented
-        : false;
+      : type === "dislike"
+        ? solution.userDisliked
+        : type === "comment"
+          ? solution.userCommented
+          : false;
   };
 
   return (
     <InteractionContext.Provider
-      value={{ handleInteraction, getInteractionCount, getUserInteraction }}
+      value={{
+        handleInteraction,
+        getInteractionCount,
+        getUserInteraction,
+        setUserInteraction,
+      }}
     >
       {children}
     </InteractionContext.Provider>

@@ -3,10 +3,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
+import { useSession, signOut } from "next-auth/react";
 
 export default function SiteHeader() {
   const router = useRouter();
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   const isActive = (path: string) => {
     return pathname === path ? "text-[#548281]" : "text-[#2F4858]";
@@ -73,12 +75,21 @@ export default function SiteHeader() {
         >
           DONATE
         </Link> */}
-        <Link
-          href="/login"
-          className={`tracking-wider inline-flex items-center w-fit justify-center rounded-full px-5 py-2 text-sm font-bold ${isActive("/login") ? "bg-[#548281] text-white" : "text-[#548281]"} hover:text-white shadow hover:bg-[#2f4858] transition-colors duration-300 ease-in-out focus:outline-none`}
-        >
-          LOGIN
-        </Link>
+        {session ? (
+          <button
+            onClick={() => signOut({ redirect: false })}
+            className="tracking-wider inline-flex items-center w-fit justify-center rounded-full px-5 py-2 text-sm font-bold text-[#548281] hover:text-white shadow hover:bg-[#2f4858] transition-colors duration-300 ease-in-out focus:outline-none"
+          >
+            LOGOUT
+          </button>
+        ) : (
+          <Link
+            href="/login"
+            className={`tracking-wider inline-flex items-center w-fit justify-center rounded-full px-5 py-2 text-sm font-bold ${isActive("/login") ? "bg-[#548281] text-white" : "text-[#548281]"} hover:text-white shadow hover:bg-[#2f4858] transition-colors duration-300 ease-in-out focus:outline-none`}
+          >
+            LOGIN
+          </Link>
+        )}
       </div>
     </header>
   );

@@ -1,18 +1,26 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { getCampaignBySlug } from "@/lib/sanity/queries";
 import {
-  CampaignWithSolutions,
-  PartySolutions,
-  SanitySolutionsSection,
-  Solution,
-} from "@/lib/types";
-import { BadgeCheck, ChevronDown, ChevronUp, Plus } from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
+import { Textarea } from "@/components/ui/textarea";
+import { getSolutions, getUserInteractions } from "@/lib/api/solutions";
+import { API_ENDPOINTS, API_URL } from "@/lib/config";
+import { SanitySolutionsSection, Solution } from "@/lib/types";
+import { Loader2, Plus } from "lucide-react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import SolutionActionsBar from "./solution-actions-bar";
-import { getSolutions } from "@/lib/api/solutions";
 import { toast } from "sonner";
+import SolutionPost from "./solution-post";
+import AuthContainer from "@/components/login/auth-container";
+import { useInteractions } from "../shared/interaction-context";
 
 interface PeaceAgreementContentProps {
   campaignId: string;
@@ -30,6 +38,17 @@ export default function PeaceAgreementContent({
 }: PeaceAgreementContentProps) {
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreateSolutionOpen, setIsCreateSolutionOpen] = useState(false);
+  const { data: session } = useSession();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newSolution, setNewSolution] = useState({
+    title: "",
+    description: "",
+  });
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [solutionStats, setSolutionStats] = useState<Record<string, any>>({});
+  const router = useRouter();
+  const { setUserInteraction } = useInteractions();
 
   useEffect(() => {
     const fetchSolutions = async () => {
@@ -38,8 +57,34 @@ export default function PeaceAgreementContent({
       setIsLoading(true);
       try {
         const fetchedSolutions = await getSolutions(campaignId);
-        console.log(fetchedSolutions, "fetchedSolutions");
         setSolutions(fetchedSolutions);
+        // Fetch stats for all solutions in the campaign
+        const statsRes = await fetch(
+          `${API_URL}/solutions/campaign/${campaignId}/stats`
+        );
+        if (statsRes.ok) {
+          const statsArr = await statsRes.json();
+          const statsMap: Record<string, any> = {};
+          statsArr.forEach((item: any) => {
+            statsMap[item.solutionId] = item.stats;
+          });
+          setSolutionStats(statsMap);
+        }
+        // Si el usuario está autenticado, obtener user-interactions para cada solución
+        if (session) {
+          await Promise.all(
+            fetchedSolutions.map(async (solution) => {
+              try {
+                const userInt = await getUserInteractions(solution.id);
+                setUserInteraction("like", solution.id, userInt.hasLiked);
+                setUserInteraction("dislike", solution.id, userInt.hasDisliked);
+                setUserInteraction("share", solution.id, userInt.hasShared);
+              } catch (e) {
+                // Silenciar errores de usuario no autenticado o endpoint
+              }
+            })
+          );
+        }
       } catch (error) {
         toast.error("Failed to load solutions");
         console.error("Error fetching solutions:", error);
@@ -49,7 +94,8 @@ export default function PeaceAgreementContent({
     };
 
     fetchSolutions();
-  }, [campaignId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [campaignId, session]);
 
   const toggleExpand = (solutionId: string) => {
     setSolutions((prevSolutions) =>
@@ -65,116 +111,223 @@ export default function PeaceAgreementContent({
     }
   };
 
+  const handleCreateSolution = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(API_ENDPOINTS.solutions.create, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+        body: JSON.stringify({
+          campaignId,
+          title: newSolution.title,
+          description: newSolution.description,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create solution");
+      }
+
+      const createdSolution = await response.json();
+      setSolutions((prev) => [...prev, createdSolution]);
+      setIsCreateSolutionOpen(false);
+      setNewSolution({ title: "", description: "" });
+      toast.success("Solution created successfully");
+    } catch (error) {
+      console.error("Error creating solution:", error);
+      toast.error("Failed to create solution");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
   return (
-    <div className="space-y-8">
-      {/* Dynamic content section */}
-      <div className="prose max-w-none">
-        {solutionsSection.heading && (
-          <h2 className="text-2xl font-bold text-gray-900">
-            {solutionsSection.heading}
-          </h2>
-        )}
+    <>
+      <div className="space-y-8">
+        {/* Dynamic content section */}
+        <div className="prose max-w-none">
+          {solutionsSection.heading && (
+            <h2 className="text-2xl font-bold text-gray-900">
+              {solutionsSection.heading}
+            </h2>
+          )}
 
-        {solutionsSection.paragraphs.map((paragraph, index) => (
-          <p key={index} className="text-gray-700 mt-4">
-            {paragraph}
-          </p>
-        ))}
-      </div>
+          {solutionsSection.paragraphs.map((paragraph, index) => (
+            <p key={index} className="text-gray-700 mt-4">
+              {paragraph}
+            </p>
+          ))}
+        </div>
 
-      <div>
-        <h2 className="text-2xl font-bold mb-6">
-          Vote Below on Solutions to {solutionsSection.subheading}
-        </h2>
-
-        {isLoading ? (
-          <div className="text-center py-8">Loading solutions...</div>
-        ) : (
-          <div className="space-y-6">
-            {solutions.map((solution) => (
-              <div
-                key={solution.id}
-                className={`border ${
-                  solution.id === activeSolutionId
-                    ? "border-[#2F4858] ring-2 ring-[#2F4858]/20"
-                    : "border-gray-200"
-                } hover:border-[#2F4858] hover:ring-2 hover:ring-[#2F4858]/20 rounded-2xl overflow-hidden bg-white transition-all`}
+        <div>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-bold">
+              Vote Below on Solutions to {solutionsSection.subheading}
+            </h2>
+            {solutions.length > 0 && (
+              <Button
                 onClick={() => {
-                  if (onSolutionChange && solution.id !== activeSolutionId) {
-                    onSolutionChange(solution.id);
+                  if (!session) {
+                    setShowLoginModal(true);
+                    return;
                   }
+                  setIsCreateSolutionOpen(true);
                 }}
+                className="flex items-center gap-2"
               >
-                <div className="border-t p-6 border-gray-100 gap-3 flex flex-col">
-                  <div className="flex flex-col gap-0">
-                    <div className="flex items-start gap-2">
-                      <div className="bg-gray-100 p-1 rounded">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          className="text-gray-600"
-                        >
-                          <path d="M12 20V10" />
-                          <path d="M18 20V4" />
-                          <path d="M6 20v-6" />
-                        </svg>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        {solution.rank}
-                      </div>
-                    </div>
-
-                    <h4 className="text-lg font-semibold">{solution.title}</h4>
-                  </div>
-
-                  <button
-                    onClick={() => toggleExpand(solution.id)}
-                    className="flex items-center text-sm text-gray-500 hover:text-gray-700"
-                  >
-                    {solution.expanded ? (
-                      <>
-                        Read less <ChevronUp className="ml-1 h-4 w-4" />
-                      </>
-                    ) : (
-                      <>
-                        Read more <ChevronDown className="ml-1 h-4 w-4" />
-                      </>
-                    )}
-                  </button>
-
-                  {solution.expanded && solution.details && (
-                    <div className="mt-4 space-y-4">
-                      <p className="text-gray-700">{solution.details.intro}</p>
-
-                      <div className="space-y-4">
-                        {solution.details.guidelines.map((guideline, idx) => (
-                          <div key={idx}>
-                            <p className="font-semibold text-gray-800">
-                              {guideline.title}
-                            </p>
-                            <p className="text-gray-700">
-                              {guideline.description}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <SolutionActionsBar solutionId={solution.id} />
-              </div>
-            ))}
+                <Plus className="h-4 w-4" />
+                Add Solution
+              </Button>
+            )}
           </div>
-        )}
+
+          {isLoading ? (
+            <div className="text-center py-8">Loading solutions...</div>
+          ) : solutions.length === 0 ? (
+            <div className="text-center justify-center items-center flex flex-col py-12 bg-gray-50 rounded-lg border border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                No solutions yet
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Be the first to propose a solution for this campaign
+              </p>
+              <Button
+                onClick={() => {
+                  if (!session) {
+                    setShowLoginModal(true);
+                    return;
+                  }
+                  setIsCreateSolutionOpen(true);
+                }}
+                className="flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add Solution
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {solutions.map((solution, index) => (
+                <SolutionPost
+                  key={solution.id}
+                  solution={{
+                    ...(solution as any),
+                    partyId: (solution as any).partyId ?? "",
+                    likes:
+                      (solution as any).likes ??
+                      solutionStats[solution.id]?.likes ??
+                      0,
+                    comments:
+                      (solution as any).comments ??
+                      solutionStats[solution.id]?.comments ??
+                      0,
+                    stats: solutionStats[solution.id] || {
+                      likes: 0,
+                      dislikes: 0,
+                      shares: 0,
+                      comments: 0,
+                    },
+                  }}
+                  activeSolutionId={activeSolutionId || ""}
+                  onSolutionChange={onSolutionChange || (() => {})}
+                  index={index}
+                  toggleExpand={toggleExpand}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+
+        <Dialog
+          open={isCreateSolutionOpen}
+          onOpenChange={setIsCreateSolutionOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create New Solution</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleCreateSolution} className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="title" className="text-sm font-medium">
+                  Title
+                </label>
+                <Input
+                  id="title"
+                  value={newSolution.title}
+                  onChange={(e) =>
+                    setNewSolution((prev) => ({
+                      ...prev,
+                      title: e.target.value,
+                    }))
+                  }
+                  placeholder="Enter a title for your solution"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="description" className="text-sm font-medium">
+                  Description
+                </label>
+                <Textarea
+                  id="description"
+                  value={newSolution.description}
+                  onChange={(e) =>
+                    setNewSolution((prev) => ({
+                      ...prev,
+                      description: e.target.value,
+                    }))
+                  }
+                  placeholder="Describe your solution in detail"
+                  required
+                  className="min-h-[150px]"
+                />
+              </div>
+              <div className="flex justify-end gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsCreateSolutionOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    "Create Solution"
+                  )}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
-    </div>
+
+      <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
+        <DialogContent className="max-w-lg w-full max-h-[100vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              <p className="text-lg font-semibold mb-4 text-center">
+                To add a solution you must login
+              </p>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center">
+            <AuthContainer
+              onLoginSuccess={() => {
+                setShowLoginModal(false);
+                setIsCreateSolutionOpen(true);
+              }}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

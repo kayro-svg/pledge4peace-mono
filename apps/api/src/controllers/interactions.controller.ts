@@ -10,15 +10,44 @@ export class InteractionsController {
       const { solutionId } = c.req.param();
       const user = getAuthUser(c);
 
+      if (!solutionId) {
+        throw new HTTPException(400, { message: "Solution ID is required" });
+      }
+
       const db = createDb(c.env.DB);
       const service = new InteractionsService(db);
 
       const isLiked = await service.toggleLike(solutionId, user.id);
       return c.json({ liked: isLiked });
     } catch (error) {
-      if (error instanceof HTTPException) throw error;
       console.error("Error toggling like:", error);
-      throw new HTTPException(500, { message: "Error toggling like" });
+
+      if (error instanceof HTTPException) {
+        throw error;
+      }
+
+      if (error instanceof Error) {
+        throw new HTTPException(500, { message: error.message });
+      }
+
+      throw new HTTPException(500, { message: "Internal server error" });
+    }
+  }
+
+  async toggleDislike(c: Context) {
+    try {
+      const { solutionId } = c.req.param();
+      const user = getAuthUser(c);
+
+      const db = createDb(c.env.DB);
+      const service = new InteractionsService(db);
+
+      const isDisliked = await service.toggleDislike(solutionId, user.id);
+      return c.json({ disliked: isDisliked });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      console.error("Error toggling dislike:", error);
+      throw new HTTPException(500, { message: "Error toggling dislike" });
     }
   }
 

@@ -1,13 +1,19 @@
+"use client";
+
 import { ChevronDown } from "lucide-react";
 import { ChevronUp } from "lucide-react";
 import SolutionActionsBar from "./solution-actions-bar";
-import { SanitySolution } from "@/lib/types";
+import { Solution } from "@/lib/types/index";
+import { useEffect } from "react";
+import { useInteractions } from "../shared/interaction-context";
+import { useInteractionManager } from "../shared/use-interaction-manager";
 
 interface SolutionPostProps {
-  solution: SanitySolution;
+  solution: Solution;
   activeSolutionId: string;
   onSolutionChange: (solutionId: string) => void;
   index: number;
+  toggleExpand: (solutionId: string) => void;
 }
 
 export default function SolutionPost({
@@ -15,11 +21,31 @@ export default function SolutionPost({
   activeSolutionId,
   onSolutionChange,
   index,
+  toggleExpand,
 }: SolutionPostProps) {
+  const { count: commentCount, setCount: setCommentCount } =
+    useInteractionManager({
+      solutionId: solution.id,
+      initialCount: 0,
+    });
+
+  useEffect(() => {
+    if (solution.expanded) {
+      setCommentCount(solution.comments || 0);
+    }
+  }, [solution.expanded, solution.comments, solution.id, setCommentCount]);
+
+  // Callback para actualizar el contador de comentarios en la UI
+  const handleCommentAdded = () => {
+    setCommentCount(commentCount + 1);
+  };
+
+  console.log("solution post", solution);
+
   return (
     <div
       className={`border ${
-        index === activeSolutionId
+        solution.id === activeSolutionId
           ? "border-[#2F4858] ring-2 ring-[#2F4858]/20"
           : "border-gray-200"
       } hover:border-[#2F4858] hover:ring-2 hover:ring-[#2F4858]/20 rounded-2xl overflow-hidden bg-white transition-all`}
@@ -57,7 +83,10 @@ export default function SolutionPost({
         </div>
 
         <button
-          onClick={() => toggleExpand(party.id, solution.id)}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleExpand(solution.id);
+          }}
           className="flex items-center text-sm text-gray-500 hover:text-gray-700"
         >
           {solution.expanded ? (
@@ -71,25 +100,21 @@ export default function SolutionPost({
           )}
         </button>
 
-        {solution.expanded && solution.details && (
+        {solution.expanded && solution.description && (
           <div className="mt-4 space-y-4">
-            <p className="text-gray-700">{solution.details.intro}</p>
-
-            <div className="space-y-4">
-              {solution.details.guidelines.map((guideline, idx) => (
-                <div key={idx}>
-                  <p className="font-semibold text-gray-800">
-                    {guideline.title}
-                  </p>
-                  <p className="text-gray-700">{guideline.description}</p>
-                </div>
-              ))}
-            </div>
+            <p className="text-gray-700">{solution.description}</p>
           </div>
         )}
       </div>
 
-      <SolutionActionsBar solutionId={solution.id} />
+      <SolutionActionsBar
+        solutionId={solution.id}
+        commentCount={solution.stats?.comments ?? 0}
+        likeCount={solution.stats?.likes ?? 0}
+        dislikeCount={solution.stats?.dislikes ?? 0}
+        shareCount={solution.stats?.shares ?? 0}
+        onCommentAdded={handleCommentAdded}
+      />
     </div>
   );
 }

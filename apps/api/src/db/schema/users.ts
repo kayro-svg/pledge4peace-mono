@@ -4,6 +4,7 @@ export const users = sqliteTable("users", {
   id: text("id").primaryKey(),
   email: text("email").notNull().unique(),
   name: text("name").notNull(),
+  image: text("image"),
   password: text("password").notNull(), // Almacenaremos el hash de la contraseña
   status: text("status", { enum: ["active", "inactive", "banned"] })
     .notNull()

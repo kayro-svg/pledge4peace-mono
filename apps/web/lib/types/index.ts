@@ -4,6 +4,7 @@ export interface Solution {
   description: string;
   rank: string;
   partyId: string;
+  expanded?: boolean;
   details?: {
     intro: string;
     guidelines: {
@@ -17,21 +18,31 @@ export interface Solution {
     liked: boolean;
     commented: boolean;
   };
+  stats?: {
+    likes: number;
+    dislikes: number;
+    shares: number;
+    comments: number;
+  };
 }
 
 export interface Comment {
   id: string;
-  author: {
-    id: string;
-    name: string;
-    avatar?: string;
-  };
   content: string;
   createdAt: string;
   solutionId: string;
+  parentId: string | null;
+  replies: Comment[];
+  status: string;
+  updatedAt: string;
+  userAvatar: string | null;
+  userId: string;
+  userName: string;
 }
 
 export interface CreateCommentDto {
   content: string;
   solutionId: string;
+  userName?: string;
+  userAvatar?: string;
 }
