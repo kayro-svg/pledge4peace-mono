@@ -26,6 +26,9 @@ export interface Solution {
   };
 }
 
+// Export SanityCampaign from sanity.ts
+export * from './sanity';
+
 export interface Comment {
   id: string;
   content: string;

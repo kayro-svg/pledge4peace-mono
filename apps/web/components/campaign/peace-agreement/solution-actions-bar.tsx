@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import {
   likeSolution,
   dislikeSolution,
+  shareSolution,
   getSolutionStats,
 } from "@/lib/api/solutions";
 import { useInteractions } from "../shared/interaction-context";
-import { Heart, MessageCircle, Share2, ThumbsDown } from "lucide-react";
+import { Heart, MessageCircle, Share2, ThumbsDownIcon } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -24,6 +25,7 @@ interface SolutionActionsBarProps {
   dislikeCount?: number;
   shareCount?: number;
   onCommentAdded?: () => void;
+  onCommentClick?: () => void;
 }
 
 export default function SolutionActionsBar({
@@ -33,33 +35,55 @@ export default function SolutionActionsBar({
   dislikeCount = 0,
   shareCount = 0,
   onCommentAdded,
+  onCommentClick,
 }: SolutionActionsBarProps) {
   const { data: session } = useSession();
   const router = useRouter();
-  const { getUserInteraction, setUserInteraction } = useInteractions();
+  const { getUserInteraction, setUserInteraction, handleInteraction } =
+    useInteractions();
   const [likes, setLikes] = useState(likeCount);
   const [dislikes, setDislikes] = useState(dislikeCount);
   const [shares, setShares] = useState(shareCount);
   const [comments, setComments] = useState(commentCount);
+  const [isSharing, setIsSharing] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+
+  // Get interaction states from context
   const hasLiked = getUserInteraction("like", solutionId);
   const hasDisliked = getUserInteraction("dislike", solutionId);
-  const [showLoginModal, setShowLoginModal] = useState(false);
+  const hasCommented = getUserInteraction("comment", solutionId);
+  const hasShared = getUserInteraction("share", solutionId);
+
+  // Sync comment count with parent component and check if user has commented
+  useEffect(() => {
+    // Only update if the comment count has actually changed
+    if (comments !== commentCount) {
+      setComments(commentCount);
+    }
+
+    // If there are comments and a user is logged in, check if they've commented
+    // This would typically be an API call in a real app
+    // For now, we'll just maintain the local state
+  }, [commentCount, comments, session?.user?.id, solutionId]);
 
   // Refrescar stats cada 5 minutos
   useEffect(() => {
-    const interval = setInterval(
-      async () => {
-        try {
-          const stats = await getSolutionStats(solutionId);
-          setLikes(stats.likes);
-          setDislikes(stats.dislikes);
-          setShares(stats.shares);
-        } catch (e) {
-          // Silenciar errores
-        }
-      },
-      5 * 60 * 1000
-    ); // 5 minutos
+    const updateStats = async () => {
+      try {
+        const stats = await getSolutionStats(solutionId);
+        setLikes(stats.likes);
+        setDislikes(stats.dislikes);
+        setShares(stats.shares || 0); // Ensure shares is a number
+      } catch (e) {
+        // Silenciar errores
+      }
+    };
+
+    // Initial load
+    updateStats();
+
+    // Set up interval for refreshes
+    const interval = setInterval(updateStats, 5 * 60 * 1000); // 5 minutos
     return () => clearInterval(interval);
   }, [solutionId]);
 
@@ -124,71 +148,148 @@ export default function SolutionActionsBar({
   };
 
   const handleShare = async () => {
+    if (!session) {
+      toast.error("Please sign in to share solutions");
+      setShowLoginModal(true);
+      return;
+    }
+
+    if (isSharing) return;
+
+    setIsSharing(true);
+
     try {
-      await navigator.share({
-        title: "Check out this solution on Pledge4Peace",
-        url: window.location.href,
-      });
+      // First, update the share count on the server
+      await shareSolution(solutionId);
+
+      // Update the local state and mark as shared
+      if (!hasShared) {
+        setShares((prev) => prev + 1);
+        setUserInteraction("share", solutionId, true);
+      }
+
+      // Use the Web Share API if available
+      if (navigator.share) {
+        await navigator.share({
+          title: "Check out this solution on Pledge4Peace",
+          text: `"${solutionId}" - See more solutions on Pledge4Peace`,
+          url: window.location.href,
+        });
+      } else {
+        // Fallback for browsers that don't support Web Share API
+        await navigator.clipboard.writeText(window.location.href);
+        toast.success(
+          hasShared
+            ? "Link copied to clipboard again!"
+            : "Link copied to clipboard!"
+        );
+      }
     } catch (error) {
       if (error instanceof Error && error.name !== "AbortError") {
-        toast.error("Failed to share");
+        console.error("Error sharing:", error);
+        // Only show error if we didn't already update the share count
+        if (!navigator.share && !hasShared) {
+          toast.error("Failed to share. Please try again.");
+        }
       }
-      console.error("Error sharing:", error);
+    } finally {
+      setIsSharing(false);
     }
   };
 
-  // Callback para incrementar el contador de comentarios
-  const handleCommentAdded = () => {
-    setComments((prev) => prev + 1);
+  // Handle comment button click
+  const handleCommentClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    // Call the parent's onCommentClick first to expand the solution
+    if (onCommentClick) {
+      onCommentClick();
+    }
+
+    // If user is not logged in, show login modal
+    if (!session) {
+      toast.error("Please sign in to comment");
+      setShowLoginModal(true);
+      return;
+    }
+
+    // Scroll to and focus the comment input after a small delay
+    // to allow for the solution to expand first
+    setTimeout(() => {
+      const commentSection = document.getElementById("comments-section");
+      if (commentSection) {
+        const commentInput = commentSection.querySelector("textarea");
+        if (commentInput) {
+          (commentInput as HTMLTextAreaElement).focus();
+        }
+      }
+    }, 300);
   };
 
   return (
     <>
-      <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
-        <div className="flex items-center gap-6">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`flex items-center gap-2 ${
-              hasLiked ? "text-green-500" : "text-gray-500"
-            } hover:text-red-500`}
-            onClick={handleLike}
-          >
-            <Heart className={`h-5 w-5 ${hasLiked ? "fill-current" : ""}`} />
-            <span>{likes}</span>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`flex items-center gap-2 ${
-              hasDisliked ? "text-red-500" : "text-gray-500"
-            } hover:text-red-500`}
-            onClick={handleDislike}
-          >
-            <ThumbsDown
-              className={`h-5 w-5 ${hasDisliked ? "fill-current" : ""}`}
-            />
-            <span>{dislikes}</span>
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="flex items-center gap-2 text-gray-500"
-          >
-            <MessageCircle className="h-5 w-5" />
-            <span>{comments}</span>
-          </Button>
-        </div>
+      <div className="grid grid-cols-4 items-center justify-evenly bg-gray-50 border-t border-gray-100">
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`flex items-center gap-2 p-5 rounded-none transition-all duration-200 ${
+            hasLiked ? "text-green-500 bg-green-50" : "text-gray-500"
+          } hover:text-green-500 hover:bg-green-50`}
+          onClick={handleLike}
+        >
+          <Heart className={`h-5 w-5 ${hasLiked ? "fill-current" : ""}`} />
+          <span>{likes}</span>
+        </Button>
 
         <Button
           variant="ghost"
           size="sm"
-          className="text-gray-500"
-          onClick={handleShare}
+          className={`flex items-center gap-2 p-5 rounded-none transition-all duration-200 ${
+            hasDisliked ? "text-red-500 bg-red-50" : "text-gray-500"
+          } hover:text-red-500 hover:bg-red-50`}
+          onClick={handleDislike}
         >
-          <Share2 className="h-5 w-5" />
+          <ThumbsDownIcon
+            className={`h-5 w-5 ${hasDisliked ? "fill-current" : ""}`}
+          />
+          <span>{dislikes}</span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`group flex items-center justify-center gap-2 p-5 w-full rounded-none transition-all duration-200 ${
+            hasCommented
+              ? "text-blue-500 bg-blue-50 hover:bg-blue-50 hover:text-blue-500"
+              : "text-gray-500 hover:bg-blue-50 hover:text-blue-500"
+          }`}
+          onClick={handleCommentClick}
+        >
+          <div className="relative">
+            <MessageCircle
+              className={`h-5 w-5 group-hover:scale-110 transition-transform duration-200 ${hasCommented ? "fill-current scale-110" : "group-hover:scale-110"}`}
+            />
+          </div>
+          <span
+            className={`transition-all duration-200 ${hasCommented ? "font-semibold" : "font-medium"}`}
+          >
+            {comments}
+          </span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`flex items-center gap-2 p-5 rounded-none transition-all duration-200 ${
+            hasShared
+              ? "text-orange-500 bg-orange-50 hover:bg-orange-100"
+              : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
+          } ${isSharing ? "opacity-70" : ""}`}
+          onClick={handleShare}
+          disabled={isSharing}
+        >
+          <Share2 className={`h-5 w-5 ${hasShared ? "fill-current" : ""}`} />
+          <span>{shares}</span>
         </Button>
       </div>
       <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>

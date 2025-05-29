@@ -30,4 +30,8 @@ export const API_ENDPOINTS = {
     update: (id: string) => `${API_URL}/solutions/comments/${id}`,
     delete: (id: string) => `${API_URL}/solutions/comments/${id}`,
   },
+  pledges: {
+    create: `${API_URL}/pledges`,
+    getCount: (campaignId: string) => `${API_URL}/campaigns/${campaignId}/pledges/count`,
+  },
 };

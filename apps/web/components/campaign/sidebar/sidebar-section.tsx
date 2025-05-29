@@ -1,9 +1,6 @@
 import CommentsSection from "@/components/campaign/comments/comments-section";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useEffect, useState } from "react";
-import { getCampaignSolutionById } from "@/lib/api";
-import { Solution } from "@/lib/types/index";
 import { API_ENDPOINTS } from "@/lib/config";
+import { useEffect, useState } from "react";
 
 interface SidebarSectionProps {
   solutionId?: string;

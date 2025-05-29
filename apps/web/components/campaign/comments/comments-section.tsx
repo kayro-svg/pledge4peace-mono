@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import CommentItem from "./comment-item";
 import CommentForm from "./comment-form";
-import { useInteractions } from "../shared/interaction-context";
 import { useInteractionManager } from "../shared/use-interaction-manager";
 import Image from "next/image";
 import { getComments, createComment } from "@/lib/api/solutions";
@@ -78,7 +77,12 @@ export default function CommentsSection({
 
       setComments((prev) => [newComment, ...prev]);
       incrementCount();
-      if (onCommentAdded) onCommentAdded();
+      
+      // Asegurar que el callback onCommentAdded se llame
+      if (onCommentAdded) {
+        onCommentAdded();
+      }
+      
       toast.success("Comment posted successfully");
     } catch (error) {
       toast.error("Failed to post comment");
@@ -102,7 +106,7 @@ export default function CommentsSection({
   }
 
   return (
-    <div className="space-y-4">
+    <div id="comments-section" className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold">Comments</h3>
         <span className="text-sm text-gray-500">{count} comments</span>

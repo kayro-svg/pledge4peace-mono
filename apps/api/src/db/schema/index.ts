@@ -3,3 +3,4 @@ export * from "./users";
 export * from "./solutions";
 export * from "./comments";
 export * from "./interactions";
+export * from "./pledges";

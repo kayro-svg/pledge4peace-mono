@@ -23,7 +23,7 @@ export default function SolutionPost({
   index,
   toggleExpand,
 }: SolutionPostProps) {
-  const { count: commentCount, setCount: setCommentCount } =
+  const { count, setCount } =
     useInteractionManager({
       solutionId: solution.id,
       initialCount: 0,
@@ -31,14 +31,28 @@ export default function SolutionPost({
 
   useEffect(() => {
     if (solution.expanded) {
-      setCommentCount(solution.comments || 0);
+      setCount(solution.comments || 0);
     }
-  }, [solution.expanded, solution.comments, solution.id, setCommentCount]);
+  }, [solution.expanded, solution.comments, solution.id, setCount]);
 
-  // Callback para actualizar el contador de comentarios en la UI
+  // Callback to update comment count in the UI when a comment is added
   const handleCommentAdded = () => {
-    setCommentCount(commentCount + 1);
+    // Increment the local comment count
+    const newCount = count + 1;
+    setCount(newCount);
+    
+    // Also update the counter in the solution object to keep it in sync
+    if (solution.stats) {
+      solution.stats.comments = newCount;
+    }
   };
+  
+  // This effect ensures the comment count stays in sync with the solution data
+  useEffect(() => {
+    if (solution.stats?.comments !== undefined && solution.stats.comments !== count) {
+      setCount(solution.stats.comments);
+    }
+  }, [solution.stats?.comments, count, setCount]);
 
   console.log("solution post", solution);
 
@@ -114,6 +128,12 @@ export default function SolutionPost({
         dislikeCount={solution.stats?.dislikes ?? 0}
         shareCount={solution.stats?.shares ?? 0}
         onCommentAdded={handleCommentAdded}
+        onCommentClick={() => {
+          // If this solution is not expanded, trigger the toggle to expand it
+          if (!solution.expanded && onSolutionChange) {
+            onSolutionChange(solution.id);
+          }
+        }}
       />
     </div>
   );
