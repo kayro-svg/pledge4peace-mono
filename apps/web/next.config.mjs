@@ -9,6 +9,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    // Optimize package imports
+    optimizePackageImports: ['lucide-react', '@radix-ui/*'],
+  },
 }
 
 export default nextConfig
