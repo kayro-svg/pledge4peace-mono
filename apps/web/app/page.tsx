@@ -12,7 +12,7 @@ export default async function Home(): Promise<JSX.Element> {
   // Extraer cada sección para pasarla al componente correspondiente
 
   return (
-    <main className="min-h-screen bg-[#FDFDF0]">
+    <main className="min-h-screen bg-[#FDFDF0] w-full">
       <HeroSection data={homeData.heroSection} />
       <HowItWorksSection data={homeData.howItWorksSection} />
       <ProjectsSection data={homeData.campaignsSection} />

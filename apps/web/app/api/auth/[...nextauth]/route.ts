@@ -47,16 +47,28 @@ const handler = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.accessToken = user.accessToken;
-        token.emailVerified = user.emailVerified;
+        // Guardar todos los datos relevantes del usuario en el token
+        token.accessToken = user.accessToken as string;
+        token.emailVerified = user.emailVerified as boolean | null;
+        token.userId = user.id as string;
+        token.userEmail = user.email as string;
+        token.userName = user.name as string;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.emailVerified = token.emailVerified;
-        session.accessToken = token.accessToken;
+        // Asegurar que todos los datos del usuario estén disponibles en la sesión
+        session.user.id = token.userId as string;
+        session.user.email = (token.userEmail as string) || session.user.email;
+        session.user.name = (token.userName as string) || session.user.name;
+        session.user.emailVerified = token.emailVerified as boolean | null;
+        session.user.accessToken = token.accessToken as string;
       }
+      
+      // También agregar el token a la raíz de la sesión para compatibilidad
+      session.accessToken = token.accessToken as string;
+      
       return session;
     },
   },

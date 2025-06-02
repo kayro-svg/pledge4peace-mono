@@ -39,6 +39,13 @@ solutionsRoutes.get(
   solutionsController.getSolutionsStatsByCampaign
 );
 
+// Get user's solution count for a campaign
+solutionsRoutes.get(
+  "/user-count/:campaignId",
+  authMiddleware,
+  solutionsController.getUserSolutionCount
+);
+
 // Rutas que requieren autenticación
 solutionsRoutes.use("*", authMiddleware); // Aplicar autenticación a todas las rutas siguientes
 

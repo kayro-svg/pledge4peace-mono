@@ -29,6 +29,22 @@ export class SolutionsService {
   constructor(private db: DbClient) {}
 
   async createSolution(data: CreateSolutionDTO) {
+    // Check if the campaign has reached the solution limit (5 solutions max total)
+    const campaignSolutionCount = await this.db
+      .select()
+      .from(solutions)
+      .where(
+        and(
+          eq(solutions.campaignId, data.campaignId),
+          eq(solutions.status, "published") // Only count published solutions
+        )
+      )
+      .then(rows => rows.length);
+
+    if (campaignSolutionCount >= 5) {
+      throw new Error("This campaign has reached the maximum limit of 5 solutions");
+    }
+
     const newSolution = await this.db
       .insert(solutions)
       .values({

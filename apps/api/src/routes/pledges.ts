@@ -72,6 +72,33 @@ pledgesRoutes.get("/campaign/:campaignId/count", async (c) => {
   }
 });
 
+// Check if user has already pledged to a campaign
+pledgesRoutes.get("/check/:campaignId", requireAuth, async (c) => {
+  const { campaignId } = c.req.param();
+  const db = drizzle(c.env.DB);
+  const userId = c.get('userId');
+
+  try {
+    const existingPledge = await db
+      .select()
+      .from(pledges)
+      .where(
+        and(
+          eq(pledges.campaignId, campaignId),
+          eq(pledges.userId, userId),
+          eq(pledges.status, "active")
+        )
+      )
+      .limit(1)
+      .then(rows => rows[0]);
+
+    return c.json({ hasPledged: !!existingPledge });
+  } catch (error) {
+    console.error("Error checking pledge status:", error);
+    return c.json({ error: "Failed to check pledge status" }, 500);
+  }
+});
+
 // Create a new pledge - requires authentication
 pledgesRoutes.post("/", requireAuth, async (c) => {
   const body = await c.req.json() as Partial<CreatePledgeBody>;
@@ -90,11 +117,41 @@ pledgesRoutes.post("/", requireAuth, async (c) => {
   const userId = c.get('userId');
 
   try {
+    // Check if user has already pledged to this campaign
+    const existingPledge = await db
+      .select()
+      .from(pledges)
+      .where(
+        and(
+          eq(pledges.campaignId, body.campaignId),
+          eq(pledges.userId, userId),
+          eq(pledges.status, "active")
+        )
+      )
+      .limit(1)
+      .then(rows => rows[0]);
+
+    if (existingPledge) {
+      // Return the existing pledge without creating a new one
+      const countResult = await db
+        .select({ count: campaignPledgeCounts.count })
+        .from(campaignPledgeCounts)
+        .where(eq(campaignPledgeCounts.campaignId, body.campaignId))
+        .then(rows => rows[0]);
+
+      return c.json({
+        success: true,
+        pledge: existingPledge,
+        pledgeCount: countResult?.count || 1,
+        alreadyPledged: true
+      });
+    }
+
     // Create the pledge
     const newPledge = await db.insert(pledges).values({
       id: crypto.randomUUID(),
       campaignId: body.campaignId,
-      userId: userId, // Now required - user must be authenticated
+      userId: userId,
       agreeToTerms: true,
       subscribeToUpdates: Boolean(body.subscribeToUpdates),
       createdAt: new Date(),

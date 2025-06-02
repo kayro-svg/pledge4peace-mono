@@ -5,6 +5,8 @@ import { HTTPException } from "hono/http-exception";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { getAuthUser } from "../middleware/auth.middleware";
+import { solutions } from "../db/schema/solutions";
+import { and, eq } from "drizzle-orm";
 
 // Validación de entrada para crear una solución
 const createSolutionSchema = z.object({
@@ -53,7 +55,7 @@ export class SolutionsController {
       const db = createDb(c.env.DB);
       const service = new SolutionsService(db);
 
-      // Obtener y validar los datos de entrada
+      // Get and validate input data
       const validation = await c.req
         .json()
         .then((data) => createSolutionSchema.safeParse(data));
@@ -62,7 +64,7 @@ export class SolutionsController {
         throw new HTTPException(400, { message: "Invalid input data" });
       }
 
-      // Obtener el usuario autenticado
+      // Get authenticated user
       const user = getAuthUser(c);
 
       const solution = await service.createSolution({
@@ -74,6 +76,12 @@ export class SolutionsController {
     } catch (error) {
       if (error instanceof HTTPException) throw error;
       console.error("Error creating solution:", error);
+      
+      // Handle solution limit error
+      if (error instanceof Error && error.message.includes("maximum limit")) {
+        throw new HTTPException(400, { message: error.message });
+      }
+      
       throw new HTTPException(500, { message: "Error creating solution" });
     }
   }
@@ -116,6 +124,36 @@ export class SolutionsController {
       console.error("Error getting solutions stats by campaign:", error);
       throw new HTTPException(500, {
         message: "Error getting solutions stats by campaign",
+      });
+    }
+  }
+
+  /**
+   * Get the number of solutions the current user has created for a campaign
+   */
+  async getUserSolutionCount(c: Context) {
+    try {
+      const { campaignId } = c.req.param();
+      const user = getAuthUser(c);
+      const db = createDb(c.env.DB);
+      
+      const count = await db
+        .select()
+        .from(solutions)
+        .where(
+          and(
+            eq(solutions.campaignId, campaignId),
+            eq(solutions.userId, user.id),
+            eq(solutions.status, "published")
+          )
+        )
+        .then(rows => rows.length);
+
+      return c.json({ count });
+    } catch (error) {
+      console.error("Error getting user solution count:", error);
+      throw new HTTPException(500, {
+        message: "Error getting user solution count",
       });
     }
   }

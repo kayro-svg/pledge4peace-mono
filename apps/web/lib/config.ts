@@ -21,6 +21,8 @@ export const API_ENDPOINTS = {
     updateStatus: (id: string) => `${API_URL}/solutions/${id}/status`,
     like: (id: string) => `${API_URL}/solutions/${id}/like`,
     share: (id: string) => `${API_URL}/solutions/${id}/share`,
+    campaignStats: (campaignId: string) =>
+      `${API_URL}/solutions/campaign/${campaignId}/stats`,
   },
   comments: {
     create: (solutionId: string) =>
@@ -32,6 +34,10 @@ export const API_ENDPOINTS = {
   },
   pledges: {
     create: `${API_URL}/pledges`,
-    getCount: (campaignId: string) => `${API_URL}/campaigns/${campaignId}/pledges/count`,
+    getCount: (campaignId: string) =>
+      `${API_URL}/campaigns/${campaignId}/pledges/count`,
+  },
+  homeStats: {
+    getStats: `${API_URL}/stats`,
   },
 };

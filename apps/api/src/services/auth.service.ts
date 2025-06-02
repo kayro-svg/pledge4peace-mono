@@ -177,7 +177,8 @@ export class AuthService {
   private async generateToken(user: typeof users.$inferSelect) {
     return await sign(
       {
-        id: user.id,
+        sub: user.id, // Usar 'sub' como identificador estándar JWT para el ID del usuario
+        id: user.id,  // Mantener 'id' para compatibilidad
         email: user.email,
         name: user.name,
         emailVerified: user.emailVerified === 1,

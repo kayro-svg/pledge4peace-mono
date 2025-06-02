@@ -1,6 +1,7 @@
 import CampaignCard from "@/components/ui/campaign-card";
 import { getCampaigns } from "@/lib/api";
 import { SanityCampaignsSection } from "@/lib/types";
+import { usePledges } from "@/hooks/usePledges";
 
 export default async function RecentProjects({
   data,
@@ -46,19 +47,18 @@ export default async function RecentProjects({
 
         {/* <div className="grid md:grid-cols-2 gap-8"> */}
         <div className="flex flex-row items-center justify-center gap-8">
-          {sectionData.campaigns?.map((campaign, index) => {
+          {sectionData.campaigns?.map((campaign) => {
             const onlyOneCampaign = sectionData.campaigns.length === 1;
             return (
               <CampaignCard
-                key={index}
+                key={campaign._id}
+                campaignId={campaign._id}
                 featuredImage={campaign.featuredImage?.asset?.url as string}
                 title={campaign.title}
                 description={campaign.description}
                 link={campaign.slug.current}
                 category={campaign.category || ""}
                 action="Pledge Now"
-                // raised={campaign.goalPledges}
-                raised={100}
                 goal={campaign.goalPledges}
                 variant={onlyOneCampaign ? "horizontal-large" : "default"}
               />

@@ -19,10 +19,15 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const showHeaderFooter = !noHeaderFooterRoutes.includes(pathname);
 
   return (
-    <>
+    <div className="flex flex-col min-h-screen w-full">
       {showHeaderFooter && <SiteHeader />}
-      {children}
+      <main className="flex-1 w-full">
+        {/* Container with responsive padding and max-width */}
+        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8">
+          {children}
+        </div>
+      </main>
       {showHeaderFooter && <SiteFooter />}
-    </>
+    </div>
   );
 }

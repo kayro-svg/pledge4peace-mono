@@ -46,6 +46,24 @@ export function InteractionProvider({
 }: InteractionProviderProps) {
   const [interactions, setInteractions] = useState<InteractionState>(initialStats || {});
 
+  // Helper function to get user interaction status - defined first so it can be used by setUserInteraction
+  const getUserInteraction = (type: InteractionType, solutionId: string): boolean => {
+    const solution = interactions[solutionId];
+    if (!solution) return false;
+    switch (type) {
+      case 'like':
+        return !!solution.userLiked;
+      case 'dislike':
+        return !!solution.userDisliked;
+      case 'comment':
+        return !!solution.userCommented;
+      case 'share':
+        return false; // No userShared property in our model
+      default:
+        return false;
+    }
+  };
+
   const handleInteraction = async (
     type: InteractionType,
     solutionId: string,
@@ -62,17 +80,23 @@ export function InteractionProvider({
         userCommented: false,
       };
 
+      // Determine which field to update based on the interaction type
+      const countField = 
+        type === "like" ? "likes" :
+        type === "dislike" ? "dislikes" :
+        type === "comment" ? "comments" :
+        "shares";
+      
+      // Only update if the count is different
+      if (current[countField] === count) {
+        return prev; // No change needed
+      }
+
       return {
         ...prev,
         [solutionId]: {
           ...current,
-          [type === "like"
-            ? "likes"
-            : type === "dislike"
-              ? "dislikes"
-              : type === "comment"
-                ? "comments"
-                : "shares"]: count,
+          [countField]: count,
         },
       };
     });
@@ -83,29 +107,37 @@ export function InteractionProvider({
     solutionId: string,
     value: boolean
   ) => {
-    setInteractions((prev) => {
-      const current = prev[solutionId] || {
-        likes: 0,
-        dislikes: 0,
-        comments: 0,
-        shares: 0,
-        userLiked: false,
-        userDisliked: false,
-        userCommented: false,
-      };
+    // First check if this is actually a change to avoid unnecessary rerenders
+    const currentValue = getUserInteraction(type, solutionId);
+    
+    // Only update if the value is actually different
+    if (currentValue !== value) {
+      setInteractions((prev) => {
+        const current = prev[solutionId] || {
+          likes: 0,
+          dislikes: 0,
+          comments: 0,
+          shares: 0,
+          userLiked: false,
+          userDisliked: false,
+          userCommented: false,
+        };
 
-      return {
-        ...prev,
-        [solutionId]: {
-          ...current,
-          [type === "like"
-            ? "userLiked"
-            : type === "dislike"
-              ? "userDisliked"
-              : "userCommented"]: value,
-        },
-      };
-    });
+        // Return a new object only if there's an actual change
+        const userPropKey = 
+          type === "like" ? "userLiked" :
+          type === "dislike" ? "userDisliked" :
+          "userCommented";
+        
+        return {
+          ...prev,
+          [solutionId]: {
+            ...current,
+            [userPropKey]: value,
+          },
+        };
+      });
+    }
   };
 
   const getInteractionCount = (type: InteractionType, solutionId: string): number => {
@@ -122,21 +154,6 @@ export function InteractionProvider({
         return solution.shares;
       default:
         return 0;
-    }
-  };
-
-  const getUserInteraction = (type: InteractionType, solutionId: string): boolean => {
-    const solution = interactions[solutionId];
-    if (!solution) return false;
-    switch (type) {
-      case 'like':
-        return !!solution.userLiked;
-      case 'dislike':
-        return !!solution.userDisliked;
-      case 'comment':
-        return !!solution.userCommented;
-      default:
-        return false;
     }
   };
 

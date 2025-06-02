@@ -1,5 +1,6 @@
 "use client";
 
+import AuthContainer from "@/components/login/auth-container";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -8,7 +9,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Modal } from "@/components/ui/modal";
 import { Textarea } from "@/components/ui/textarea";
 import { getSolutions, getUserInteractions } from "@/lib/api/solutions";
 import { API_ENDPOINTS, API_URL } from "@/lib/config";
@@ -18,9 +18,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import SolutionPost from "./solution-post";
-import AuthContainer from "@/components/login/auth-container";
 import { useInteractions } from "../shared/interaction-context";
+import SolutionPost from "./solution-post";
 
 interface PeaceAgreementContentProps {
   campaignId: string;
@@ -144,6 +143,48 @@ export default function PeaceAgreementContent({
       setIsSubmitting(false);
     }
   };
+
+  const addSolutionButton = () => {
+    if (solutions.length >= 5) {
+      return null;
+    } else {
+      return (
+        <Button
+          onClick={() => {
+            if (!session) {
+              setShowLoginModal(true);
+              return;
+            }
+            setIsCreateSolutionOpen(true);
+          }}
+          className="flex items-center gap-2"
+        >
+          <Plus className="h-4 w-4" />
+          Add Solution
+        </Button>
+      );
+    }
+  };
+
+  // Sort solutions by likes in descending order
+  const sortedSolutions = [...solutions].sort((a, b) => {
+    const aLikes = solutionStats[a.id]?.likes || 0;
+    const bLikes = solutionStats[b.id]?.likes || 0;
+    return bLikes - aLikes;
+  });
+
+  // Update solutions when stats change
+  useEffect(() => {
+    if (solutions.length > 0 && Object.keys(solutionStats).length > 0) {
+      const updatedSolutions = [...solutions].sort((a, b) => {
+        const aLikes = solutionStats[a.id]?.likes || 0;
+        const bLikes = solutionStats[b.id]?.likes || 0;
+        return bLikes - aLikes;
+      });
+      setSolutions(updatedSolutions);
+    }
+  }, [solutionStats, solutions.length]);
+
   return (
     <>
       <div className="space-y-8">
@@ -167,21 +208,7 @@ export default function PeaceAgreementContent({
             <h2 className="text-2xl font-bold">
               Vote Below on Solutions to {solutionsSection.subheading}
             </h2>
-            {solutions.length > 0 && (
-              <Button
-                onClick={() => {
-                  if (!session) {
-                    setShowLoginModal(true);
-                    return;
-                  }
-                  setIsCreateSolutionOpen(true);
-                }}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Add Solution
-              </Button>
-            )}
+            {solutions.length > 0 && addSolutionButton()}
           </div>
 
           {isLoading ? (
@@ -210,9 +237,10 @@ export default function PeaceAgreementContent({
             </div>
           ) : (
             <div className="space-y-6">
-              {solutions.map((solution, index) => (
+              {sortedSolutions.map((solution, index) => (
                 <SolutionPost
                   key={solution.id}
+                  rank={index + 1}
                   solution={{
                     ...(solution as any),
                     partyId: (solution as any).partyId ?? "",

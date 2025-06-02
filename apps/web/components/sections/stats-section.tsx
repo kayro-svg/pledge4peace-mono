@@ -1,5 +1,5 @@
 import { HeartHandshake, ChartNoAxesCombined, Landmark } from "lucide-react";
-import StatCard from "@/components/ui/stat-card";
+import { StatCard } from "@/components/ui/stat-card";
 
 export default function StatsSection() {
   const stats = [
@@ -27,7 +27,7 @@ export default function StatsSection() {
           <StatCard
             key={index}
             icon={stat.icon}
-            value={stat.value}
+            count={stat.value}
             label={stat.label}
           />
         ))}

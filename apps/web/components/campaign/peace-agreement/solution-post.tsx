@@ -14,6 +14,7 @@ interface SolutionPostProps {
   onSolutionChange: (solutionId: string) => void;
   index: number;
   toggleExpand: (solutionId: string) => void;
+  rank: number;
 }
 
 export default function SolutionPost({
@@ -22,12 +23,12 @@ export default function SolutionPost({
   onSolutionChange,
   index,
   toggleExpand,
+  rank,
 }: SolutionPostProps) {
-  const { count, setCount } =
-    useInteractionManager({
-      solutionId: solution.id,
-      initialCount: 0,
-    });
+  const { count, setCount } = useInteractionManager({
+    solutionId: solution.id,
+    initialCount: 0,
+  });
 
   useEffect(() => {
     if (solution.expanded) {
@@ -40,21 +41,22 @@ export default function SolutionPost({
     // Increment the local comment count
     const newCount = count + 1;
     setCount(newCount);
-    
+
     // Also update the counter in the solution object to keep it in sync
     if (solution.stats) {
       solution.stats.comments = newCount;
     }
   };
-  
+
   // This effect ensures the comment count stays in sync with the solution data
   useEffect(() => {
-    if (solution.stats?.comments !== undefined && solution.stats.comments !== count) {
+    if (
+      solution.stats?.comments !== undefined &&
+      solution.stats.comments !== count
+    ) {
       setCount(solution.stats.comments);
     }
   }, [solution.stats?.comments, count, setCount]);
-
-  console.log("solution post", solution);
 
   return (
     <div
@@ -90,7 +92,7 @@ export default function SolutionPost({
                 <path d="M6 20v-6" />
               </svg>
             </div>
-            <div className="text-sm text-gray-600">{solution.rank}</div>
+            <div className="text-sm text-gray-600">Ranked #{rank}</div>
           </div>
 
           <h4 className="text-lg font-semibold">{solution.title}</h4>

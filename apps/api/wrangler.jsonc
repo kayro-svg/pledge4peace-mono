@@ -16,7 +16,7 @@
       "binding": "DB",
       "database_name": "pledge4peace-db",
       "database_id": "98d32d18-205e-49ef-8e8e-342df08868da",
-      "migrations_dir": "./migrations",
+      "migrations_dir": "./src/migrations",
     },
   ],
   "kv_namespaces": [

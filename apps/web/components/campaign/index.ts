@@ -13,6 +13,3 @@ export { default as PeaceAgreementContent } from "./peace-agreement/peace-agreem
 
 // Shared components
 export { default as PledgeForm } from "./shared/pledge-form";
-
-// Types
-export * from "./shared/types";
