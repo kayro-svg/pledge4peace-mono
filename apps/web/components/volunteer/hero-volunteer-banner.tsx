@@ -28,8 +28,8 @@ export default function HeroVolunteerBanner() {
 
   return (
     // <section className="bg-gradient-to-r from-[#86AC9D] to-[#9fc075] py-16 px-4 text-white">
-    <section className="py-16 px-4">
-      <div className="container mx-auto max-w-6xl">
+    <section className="py-8 lg:py-16">
+      <div className="px-4 mx-auto max-w-6xl">
         <div className="flex flex-col md:flex-row gap-12 items-center">
           <div className="md:w-1/2">
             <h1 className="text-4xl md:text-5xl font-bold mb-6 text-[#2F4858]">

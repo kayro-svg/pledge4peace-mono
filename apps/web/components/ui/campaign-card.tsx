@@ -56,14 +56,19 @@ export default function CampaignCard({
         </div>
         <div className="flex flex-col p-3 sm:p-4 w-full md:w-[60%] h-full justify-between">
           <div className="mb-2 flex items-center justify-between">
-            <Badge variant="outline" className="bg-emerald-50 text-emerald-700 text-xs sm:text-sm">
+            <Badge
+              variant="outline"
+              className="bg-emerald-50 text-emerald-700 text-xs sm:text-sm"
+            >
               {category}
             </Badge>
             <span className="text-xs sm:text-sm font-medium text-emerald-700">
               {progress}%
             </span>
           </div>
-          <h3 className="mb-1 line-clamp-1 text-sm sm:text-base font-semibold">{title}</h3>
+          <h3 className="mb-1 line-clamp-1 text-sm sm:text-base font-semibold">
+            {title}
+          </h3>
           <p className="mb-2 sm:mb-3 line-clamp-2 text-xs text-slate-500">
             {description}
           </p>
@@ -113,7 +118,9 @@ export default function CampaignCard({
               {progress}%
             </span>
           </div>
-          <CardTitle className="line-clamp-1 text-xs sm:text-sm mt-1">{title}</CardTitle>
+          <CardTitle className="line-clamp-1 text-xs sm:text-sm mt-1">
+            {title}
+          </CardTitle>
         </CardHeader>
         <CardContent className="p-2 sm:p-3 pt-0">
           <Progress value={progress} className="h-1 sm:h-1.5 mb-1 sm:mb-2" />
@@ -151,32 +158,37 @@ export default function CampaignCard({
           <div className="flex items-center justify-between px-2 sm:px-4">
             <Badge
               variant="outline"
-              className="bg-emerald-50 text-emerald-700 text-xs sm:text-sm"
+              className="bg-emerald-50 text-emerald-700 text-base"
             >
               {category}
             </Badge>
-            <span className="text-xs sm:text-sm font-medium text-emerald-700">
+            <span className="text-base font-medium text-emerald-700">
               {progress}%
             </span>
           </div>
           <CardHeader className="p-2 sm:p-4 pb-4 sm:pb-6 md:pb-8">
-            <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold">{title}</CardTitle>
-            <CardDescription className="text-xs sm:text-sm md:text-md">{description}</CardDescription>
+            <CardTitle className="text-xl sm:text-xl md:text-2xl font-bold">
+              {title}
+            </CardTitle>
+            <CardDescription className="text-base">
+              {description}
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-2 sm:p-4 pb-4 sm:pb-6 md:pb-8">
             <Progress value={progress} className="h-1.5 sm:h-2" />
             <div className="mt-2 flex items-center justify-between text-xs sm:text-sm">
               <span className="font-medium">
-                +{pledgeCount.toLocaleString()} Peace Pledges
+                +{pledgeCount.toLocaleString()} Peace Pledge
+                {pledgeCount !== 1 ? "s" : ""}
               </span>
               <span className="text-slate-500 text-xs sm:text-sm">
-                +{goal.toLocaleString()} Peace Pledges
+                +{goal.toLocaleString()} Peace Pledge{goal !== 1 ? "s" : ""}
               </span>
             </div>
           </CardContent>
           <div className="flex px-2 sm:px-4">
             <Button
-              className="bg-[#548281] text-white py-1.5 sm:py-2 px-4 sm:px-6 mt-2 sm:mt-4 rounded-full text-xs sm:text-sm font-medium hover:bg-[#2f4858] transition-colors w-full"
+              className="bg-[#548281] text-white py-1.5 sm:py-2 px-4 sm:px-6 mt-2 sm:mt-4 rounded-full text-base font-medium hover:bg-[#2f4858] transition-colors w-full"
               onClick={() => router.push(`/campaigns/${link}`)}
             >
               {action}
@@ -201,14 +213,19 @@ export default function CampaignCard({
       </div>
       <CardHeader className="p-3 sm:p-4 md:p-6 pb-4 sm:pb-6 md:pb-8">
         <div className="flex items-center justify-between">
-          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 text-xs sm:text-sm">
+          <Badge
+            variant="outline"
+            className="bg-emerald-50 text-emerald-700 text-xs sm:text-sm"
+          >
             {category}
           </Badge>
           <span className="text-xs sm:text-sm font-medium text-emerald-700">
             {progress}%
           </span>
         </div>
-        <CardTitle className="line-clamp-2 text-lg sm:text-xl md:text-2xl mt-2">{title}</CardTitle>
+        <CardTitle className="line-clamp-2 text-lg sm:text-xl md:text-2xl mt-2">
+          {title}
+        </CardTitle>
         <CardDescription className="line-clamp-2 text-xs sm:text-sm md:text-md mt-1">
           {description}
         </CardDescription>

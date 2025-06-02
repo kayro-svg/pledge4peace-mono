@@ -32,24 +32,24 @@ export default function SiteFooter() {
             {/* Links section */}
             <div className="grid grid-cols-2 sm:flex gap-4 sm:gap-6 md:gap-8 justify-evenly w-full">
               <FooterLinks
-                title="Company"
+                title="Site Links"
                 links={[
-                  { href: "#", label: "Our Mission" },
-                  { href: "#", label: "Leadership" },
-                  { href: "#", label: "Careers" },
-                  { href: "#", label: "Press" },
+                  { href: "#", label: "About Us" },
+                  { href: "#", label: "Campaigns" },
+                  { href: "#", label: "Partners" },
+                  { href: "#", label: "Contact Us" },
                   { href: "#", label: "Blog" },
                 ]}
               />
 
               <FooterLinks
-                title="Resources"
+                title="Quick Links"
                 links={[
-                  { href: "#", label: "Database" },
-                  { href: "#", label: "Research" },
-                  { href: "#", label: "Initiatives" },
-                  { href: "#", label: "Partners" },
-                  { href: "#", label: "FAQ" },
+                  { href: "#", label: "Pledge" },
+                  { href: "#", label: "Donate" },
+                  { href: "#", label: "Volunteer" },
+                  { href: "#", label: "Events" },
+                  { href: "#", label: "Contact Us" },
                 ]}
               />
             </div>

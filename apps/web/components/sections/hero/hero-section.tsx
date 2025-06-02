@@ -13,13 +13,13 @@ export default function HeroSection({ data }: { data: SanityHeroSection }) {
 
   const [displayStats, setDisplayStats] = useState([
     {
-      icon: <ChartNoAxesCombined className="text-[#2F4858]" />,
+      icon: <ChartNoAxesCombined className="text-[#2F4858] h-8 w-8" />,
       value: "0",
       label: "Pledges Made",
       type: "pledgesMade",
     },
     {
-      icon: <HeartHandshake className="text-[#2F4858]" />,
+      icon: <HeartHandshake className="text-[#2F4858] h-8 w-8" />,
       value: "0",
       label: "Peace Activists",
       type: "peaceActivists",
@@ -66,14 +66,16 @@ export default function HeroSection({ data }: { data: SanityHeroSection }) {
     const isHeadingDividedByComma = heroData.heroHeading.includes(",");
     if (isHeadingDividedByComma) {
       return (
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold mb-2 sm:mb-4 text-[#2F4858] leading-tight">
+        <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold mb-2 sm:mb-4 text-[#2F4858] leading-tight">
           {firstPartOfHeroHeading},
-          <span className="text-[#86AC9D]">{secondPartOfHeroHeading}</span>
+          <span className="text-[#86AC9D] text-4xl lg:text-5xl xl:text-6xl">
+            {secondPartOfHeroHeading}
+          </span>
         </h1>
       );
     } else {
       return (
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold mb-2 sm:mb-4 text-[#2F4858] leading-tight">
+        <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold mb-2 sm:mb-4 text-[#2F4858] leading-tight">
           {heroData.heroHeading}
         </h1>
       );
@@ -87,29 +89,31 @@ export default function HeroSection({ data }: { data: SanityHeroSection }) {
       heroData.heroSubheading.includes("Pledge4Peace");
     if (pledge4peaceTextExist) {
       return (
-        <p className="text-sm sm:text-base md:text-lg lg:text-xl mt-2 sm:mt-4 mb-4 sm:mb-6 md:mb-8 text-[#2F4858] max-w-xl leading-relaxed">
+        <p className="text-lg lg:text-xl mt-2 sm:mt-4 mb-4 sm:mb-6 md:mb-8 text-[#2F4858] max-w-xl leading-relaxed">
           {firstPart}
-          <span className="text-[#86AC9D]">Pledge4Peace</span>
+          <span className="text-[#86AC9D] text-lg lg:text-xl">
+            Pledge4Peace
+          </span>
           {secondPart}
         </p>
       );
     }
     return (
-      <p className="text-sm sm:text-base md:text-lg lg:text-xl mt-2 sm:mt-4 mb-4 sm:mb-6 md:mb-8 text-[#2F4858] max-w-xl leading-relaxed">
+      <p className="text-lg lg:text-xl mt-2 sm:mt-4 mb-4 sm:mb-6 md:mb-8 text-[#2F4858] max-w-xl leading-relaxed">
         {heroData.heroSubheading}
       </p>
     );
   };
 
   return (
-    <section className="w-full h-fit overflow-hidden py-0 md:py-16">
+    <section className="w-full h-fit overflow-hidden py-0 md:py-16 p-0 lg:pl-8">
       {/* Responsive layout - stack on mobile, side-by-side on larger screens */}
       <div className="flex flex-col-reverse md:flex-row w-full items-center md:items-start gap-8 md:gap-4">
         {/* Content column - takes full width on mobile, 45% on desktop */}
-        <div className="flex flex-col gap-6 md:gap-8 w-full md:w-[45%] px-2 sm:px-2 md:px-2">
+        <div className="flex flex-col gap-6 md:gap-8 w-full md:w-[45%] px-4 md:px-0">
           <div className="h-full flex flex-col">
             {/* Badge */}
-            <div className="inline-block w-fit px-4 py-1 mb-4 md:mb-6 bg-[#86AC9D] backdrop-blur-sm text-[#2F4858] bg-opacity-25 rounded-full text-xs sm:text-sm font-medium">
+            <div className="inline-block w-fit px-4 py-1 mb-4 md:mb-6 bg-[#86AC9D] backdrop-blur-sm text-[#2F4858] bg-opacity-25 rounded-full text-xs lg:text-sm font-medium">
               Building Peace Together
             </div>
 
@@ -126,7 +130,7 @@ export default function HeroSection({ data }: { data: SanityHeroSection }) {
         </div>
 
         {/* Video column - takes full width on mobile, 55% on desktop */}
-        <div className="relative w-full md:w-[55%] md:right-0 md:mr-[-50px] mt-6 md:mt-0 px-2 sm:px-2 md:px-2">
+        <div className="relative w-full md:w-[55%] md:right-0 md:mr-[-50px] mt-0">
           <HeroVideo videoUrl={heroData.heroVideo?.asset.url} />
         </div>
       </div>

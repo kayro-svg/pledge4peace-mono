@@ -42,7 +42,7 @@ export default function MissionPhilosophy({
             ) : (
               <div className="p-8 flex items-center justify-center min-h-[300px]">
                 <Image
-                  src={`/images/section-${index + 1}.jpg`}
+                  src="/placeholder.svg?height=500&width=500"
                   alt={section.heading}
                   width={450}
                   height={300}

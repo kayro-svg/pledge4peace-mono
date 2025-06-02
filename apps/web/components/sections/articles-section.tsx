@@ -126,47 +126,45 @@ export default function ArticlesSection({
       : defaultArticles.slice(0, -1);
 
   return (
-    <section className="py-20">
-      <div className="container mx-auto px-6">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-16">
-          <div>
-            <h3 className="section-title mb-4 text-[#2F4858]">
-              {sectionData.articlesHeading}
-            </h3>
-            <p className="text-[#2F4858] max-w-2xl">
-              {sectionData.articlesDescription}
-            </p>
-          </div>
-          <Link
-            href="/articles"
-            className="mt-6 md:mt-0 text-brand-500 font-medium flex items-center border border-[#548281] text-[#548281] hover:bg-[#2F4858] hover:text-white transition-colors py-2 px-4 rounded-full group/btn w-fit"
-          >
-            View all updates{" "}
-            <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover/btn:translate-x-1" />
-          </Link>
+    <section className="py-20 px-4 sm:px-6 md:px-8 lg:px-12">
+      <div className="flex flex-col md:flex-row justify-between items-start mb-8 md:mb-16">
+        <div className="w-full md:w-2/3">
+          <h1 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
+            {sectionData.articlesHeading}
+          </h1>
+          <p className="text-[#2F4858] text-lg md:text-xl lg:text-xl">
+            {sectionData.articlesDescription}
+          </p>
         </div>
+        <Link
+          href="/articles"
+          className="mt-6 md:mt-0 text-brand-500 text-lg md:text-xl lg:text-xl font-medium flex items-center justify-center border border-[#548281] text-[#548281] hover:bg-[#2F4858] hover:text-white transition-colors py-2 px-4 rounded-full group/btn w-full md:w-fit"
+        >
+          View all updates{" "}
+          <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover/btn:translate-x-1" />
+        </Link>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <FeaturedArticle
-            image={featuredArticle.image}
-            date={featuredArticle.date}
-            title={featuredArticle.title}
-            description={featuredArticle.description}
-            slug={`/articles/${featuredArticle.slug}`}
-          />
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+        <FeaturedArticle
+          image={featuredArticle.image}
+          date={featuredArticle.date}
+          title={featuredArticle.title}
+          description={featuredArticle.description}
+          slug={`/articles/${featuredArticle.slug}`}
+        />
 
-          <div className="grid grid-cols-1 gap-6">
-            {smallArticles.map((article, index) => (
-              <SmallArticle
-                key={index}
-                image={article.image}
-                title={article.title}
-                description={article.description}
-                date={article.date}
-                slug={`/articles/${article.slug}`}
-              />
-            ))}
-          </div>
+        <div className="grid grid-cols-1 gap-6">
+          {smallArticles.map((article, index) => (
+            <SmallArticle
+              key={index}
+              image={article.image}
+              title={article.title}
+              description={article.description}
+              date={article.date}
+              slug={`/articles/${article.slug}`}
+            />
+          ))}
         </div>
       </div>
     </section>

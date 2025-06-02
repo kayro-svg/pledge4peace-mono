@@ -4,7 +4,7 @@ import Image from "next/image";
 export default function HighProfileOutreach() {
   return (
     <section className="py-16 px-4 bg-white" id="high-profile">
-      <div className="container mx-auto max-w-6xl">
+      <div className="mx-auto max-w-6xl">
         <div className="flex flex-col md:flex-row gap-12 items-center">
           <div className="md:w-1/2">
             <h2 className="text-3xl font-bold text-[#2F4858] mb-6">

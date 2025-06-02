@@ -106,21 +106,21 @@ export default function WaysToSupportSection({
   };
 
   return (
-    <div className="bg-[#fdfdf0] w-full py-8 sm:py-12 md:py-16 lg:py-20">
-      <div className="max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="bg-[#fdfdf0] w-full py-8 sm:py-12 md:py-16 lg:py-20 px-4 sm:px-6 md:px-8 lg:px-12">
+      <div className="flex flex-col items-center justify-center max-w-[1400px]">
         <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-[#2F4858] uppercase text-xs sm:text-sm font-medium tracking-wider mb-3 sm:mb-4 border-b-2 w-fit mx-auto border-[#2F4858]">
             WAYS TO SUPPORT
           </h2>
-          <h1 className="text-[#2F4858] text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4">
+          <h1 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
             {sectionData.waysToSupportHeading}
           </h1>
-          <p className="text-[#2F4858] text-sm sm:text-base md:text-lg max-w-3xl mx-auto px-4">
+          <p className="section-subtitle text-[#2F4858] text-lg md:text-xl lg:text-xl">
             {sectionData.waysToSupportDescription}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-6 lg:gap-8">
           {sectionData.waysToSupportItems.map((option, index) => (
             <SupportCard
               key={index}
@@ -139,7 +139,7 @@ export default function WaysToSupportSection({
           ))}
         </div>
 
-        <div className="mt-8 sm:mt-12 p-4 sm:p-8 md:p-12 bg-[#D6E0B6] rounded-lg shadow-sm group">
+        {/* <div className="mt-8 sm:mt-12 p-4 sm:p-8 md:p-12 bg-[#D6E0B6] rounded-lg shadow-sm group">
           <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center justify-between">
             <div className="w-full md:w-1/2">
               <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#2f4858] mb-3 sm:mb-4">
@@ -161,8 +161,8 @@ export default function WaysToSupportSection({
               <ImpactSection />
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
-    </div>
+    </section>
   );
 }

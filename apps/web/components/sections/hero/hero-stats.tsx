@@ -25,7 +25,8 @@ export default function HeroStats({ stats }: HeroStatsProps) {
   const formattedCounts = animatedValues.map((count) => count.toLocaleString());
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 w-full max-w-xl">
+    // <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4 w-full max-w-xl">
+    <div className="grid grid-cols-2 gap-4 w-full max-w-[400px] md:max-w-[500px] lg:max-w-[400px]">
       {stats.map((stat, index) => (
         <StatCard
           key={`${stat.label}-${index}`}

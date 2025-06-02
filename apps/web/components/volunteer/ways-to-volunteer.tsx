@@ -18,7 +18,7 @@ export default function WaysToVolunteer({
 }) {
   return (
     <section className="py-16 px-4" id="ways-to-volunteer">
-      <div className="container mx-auto max-w-6xl">
+      <div className="mx-auto max-w-6xl">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-[#2F4858]">
             Ways to <span className="text-[#548281]">Volunteer</span>

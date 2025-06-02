@@ -39,60 +39,56 @@ export default function ConferencesSection({
   const isSingleConference = sectionData.conferences.length === 1;
 
   return (
-    <section className="py-20">
-      <div className="container mx-auto px-6">
-        <div className="flex flex-col md:flex-row justify-between items-start mb-16">
-          <div>
-            <h3 className="section-title mb-4 text-[#2F4858]">
-              {sectionData.conferencesHeading}
-            </h3>
-            <p className="text-[#2F4858] max-w-2xl">
-              {sectionData.conferencesDescription}
-            </p>
-          </div>
-          <Link
-            href="/events"
-            className="mt-6 md:mt-0 text-brand-500 font-medium flex items-center border border-[#548281] text-[#548281] hover:bg-[#2F4858] hover:text-white transition-colors py-2 px-4 rounded-full group/btn w-fit"
-          >
-            See all events{" "}
-            <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
-          </Link>
+    <section className="py-20 px-4 sm:px-6 md:px-8 lg:px-12">
+      <div className="flex flex-col md:flex-row justify-between items-start mb-16">
+        <div className="w-full md:w-2/3">
+          <h1 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-  4">
+            {sectionData.conferencesHeading}
+          </h1>
+          <p className="text-[#2F4858] text-lg md:text-xl lg:text-xl">
+            {sectionData.conferencesDescription}
+          </p>
         </div>
-
-        {isSingleConference ? (
-          // Diseño expandido para una sola conferencia
-          <div className="space-y-8">
-            {sectionData.conferences.map((conference) => (
-              <ExtendedEventCard
-                key={conference._id}
-                id={conference._id}
-                title={conference.title}
-                date={conference.date}
-                description={conference.description}
-                location={conference.location}
-                imageUrl={conference.image?.asset?.url || "/placeholder.svg"}
-                slug={conference.slug.current}
-              />
-            ))}
-          </div>
-        ) : (
-          // Diseño de cards compactas para múltiples conferencias
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {sectionData.conferences.map((conference, index) => (
-              <ConferenceCard
-                key={index}
-                image={conference.image?.asset?.url ?? "/placeholder.svg"}
-                date={conference.date ?? "No date available"}
-                title={conference.title ?? "No title available"}
-                description={
-                  conference.description ?? "No description available"
-                }
-                slug={`/events/${conference.slug.current}`}
-              />
-            ))}
-          </div>
-        )}
+        <Link
+          href="/events"
+          className="mt-6 md:mt-0 text-brand-500 font-medium flex items-center justify-center border border-[#548281] text-[#548281] hover:bg-[#2F4858] hover:text-white transition-colors py-2 px-4 rounded-full group/btn w-full md:w-fit"
+        >
+          See all events{" "}
+          <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
+        </Link>
       </div>
+
+      {isSingleConference ? (
+        // Diseño expandido para una sola conferencia
+        <div className="space-y-8">
+          {sectionData.conferences.map((conference) => (
+            <ExtendedEventCard
+              key={conference._id}
+              id={conference._id}
+              title={conference.title}
+              date={conference.date}
+              description={conference.description}
+              location={conference.location}
+              imageUrl={conference.image?.asset?.url || "/placeholder.svg"}
+              slug={conference.slug.current}
+            />
+          ))}
+        </div>
+      ) : (
+        // Diseño de cards compactas para múltiples conferencias
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {sectionData.conferences.map((conference, index) => (
+            <ConferenceCard
+              key={index}
+              image={conference.image?.asset?.url ?? "/placeholder.svg"}
+              date={conference.date ?? "No date available"}
+              title={conference.title ?? "No title available"}
+              description={conference.description ?? "No description available"}
+              slug={`/events/${conference.slug.current}`}
+            />
+          ))}
+        </div>
+      )}
     </section>
   );
 }

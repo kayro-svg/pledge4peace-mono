@@ -23,9 +23,7 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
       {showHeaderFooter && <SiteHeader />}
       <main className="flex-1 w-full">
         {/* Container with responsive padding and max-width */}
-        <div className="w-full max-w-[1400px] mx-auto px-4 sm:px-6 md:px-8">
-          {children}
-        </div>
+        <div className="w-full px-0 md:px-4 md:pr-0 lg:px-0">{children}</div>
       </main>
       {showHeaderFooter && <SiteFooter />}
     </div>

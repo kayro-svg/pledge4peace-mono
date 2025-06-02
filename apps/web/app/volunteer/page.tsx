@@ -48,7 +48,7 @@ export default function VolunteerPage(): JSX.Element {
   ];
 
   return (
-    <main className="min-h-screen bg-[#FDFDF0]">
+    <div className="min-h-screen">
       <HeroVolunteerBanner />
       <WaysToVolunteer volunteerWays={volunteerWays} />
       {/* <VolunteerImpactMetrics impactMetrics={impactMetrics} /> */}
@@ -57,6 +57,6 @@ export default function VolunteerPage(): JSX.Element {
       {/* <PartnerWithUs /> */}
       <VolunteerCtaBanner />
       <JoinOurTeamForm />
-    </main>
+    </div>
   );
 }

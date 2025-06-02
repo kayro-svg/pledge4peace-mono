@@ -25,8 +25,8 @@ export default function SmallArticle({
   });
 
   return (
-    <div className="flex rounded-2xl overflow-hidden bg-white shadow-card hover:shadow-soft transition-all duration-300 hover:-translate-y-1 group">
-      <div className="relative w-1/3 overflow-hidden">
+    <div className="flex flex-col md:flex-row rounded-2xl overflow-hidden bg-white shadow-card hover:shadow-soft transition-all duration-300 hover:-translate-y-1 group">
+      <div className="relative w-[100%] h-[200px] md:w-1/3 md:h-[100%] overflow-hidden">
         <Image
           src={image || "/placeholder.svg"}
           alt={title}
@@ -34,7 +34,8 @@ export default function SmallArticle({
           className="object-cover transition-transform duration-500 group-hover:scale-105"
         />
       </div>
-      <div className="w-2/3 p-5 flex flex-col justify-between">
+
+      <div className="w-full md:w-2/3 gap-4 p-5 flex flex-col justify-between">
         <div className="flex flex-col justify-between gap-2">
           <div className="flex flex-col justify-start gap-0 items-start">
             <h4 className="text-lg font-bold group-hover:text-brand-500 transition-colors text-[#2F4858]">

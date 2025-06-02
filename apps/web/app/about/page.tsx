@@ -44,7 +44,7 @@ export default async function AboutPage() {
         introParagraphs={introParagraphs}
       />
 
-      <div className="container mx-auto px-4 max-w-6xl py-16">
+      <div className="container mx-auto px-4 max-w-6xl py-0">
         {/* <ImpactStats /> */}
 
         {hasSections && sections.length > 0 && (

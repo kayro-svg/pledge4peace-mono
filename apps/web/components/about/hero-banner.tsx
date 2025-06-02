@@ -18,7 +18,7 @@ export default function HeroBanner({
   return (
     <div className="relative w-full overflow-hidden">
       {/* Modern gradient background with curved bottom edge */}
-      <div className="bg-gradient-to-br from-[#2F4858] via-[#548281] to-[#8BB05C] py-24 px-8 text-white relative">
+      <div className="bg-gradient-to-br from-[#2F4858] via-[#548281] to-[#8BB05C] py-16 md:py-24 px-2 md:px-4 lg:px-8 text-white relative">
         {/* <div className="absolute inset-0 bg-black/30 z-0"></div> */}
 
         {/* Optional: Add a background image */}
@@ -35,11 +35,11 @@ export default function HeroBanner({
         <div
           className={`container mx-auto ${fullWidth ? "max-w-full" : "max-w-6xl"} relative z-10`}
         >
-          <h1 className="text-5xl md:text-7xl font-bold mb-6 text-white">
+          <h1 className="text-4xl md:text-5xl lg:text-7xl font-bold mb-6 text-white">
             {title}
           </h1>
 
-          <p className="text-xl md:text-2xl max-w-3xl text-white/90 mb-8">
+          <p className="text-lg md:text-xl lg:text-2xl max-w-3xl text-white/90 mb-8">
             {content}
           </p>
 

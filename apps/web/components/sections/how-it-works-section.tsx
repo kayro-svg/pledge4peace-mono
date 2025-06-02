@@ -1,7 +1,6 @@
-import { Users, HandshakeIcon, Award, UserPlus } from "lucide-react";
-import ProcessStep from "@/components/ui/process-step";
 import StepsDisplay from "@/components/ui/steps-display";
 import { SanityHowItWorksSection } from "@/lib/types";
+import { Award, HandshakeIcon, UserPlus } from "lucide-react";
 
 export default function HowItWorksSection({
   data,
@@ -61,7 +60,9 @@ export default function HowItWorksSection({
       return (
         <div className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
           {firstPart}
-          <span className="text-[#86AC9D]">Pledge4Peace</span>
+          <span className="text-[#86AC9D] text-4xl md:text-5xl">
+            Pledge4Peace
+          </span>
           {secondPart}
         </div>
       );
@@ -74,18 +75,14 @@ export default function HowItWorksSection({
   };
 
   return (
-    <section className="py-20 ">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h1 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
-            {headingText()}
-          </h1>
-          <p className="section-subtitle text-[#2F4858]">
-            {sectionData.howItWorksDescription}
-          </p>
-        </div>
-        <StepsDisplay steps={steps} />
+    <section className="py-20 px-4 sm:px-6 md:px-8 lg:px-12">
+      <div className="text-center mb-12">
+        {headingText()}
+        <p className="section-subtitle text-[#2F4858] text-lg md:text-xl lg:text-xl">
+          {sectionData.howItWorksDescription}
+        </p>
       </div>
+      <StepsDisplay steps={steps} />
     </section>
   );
 }

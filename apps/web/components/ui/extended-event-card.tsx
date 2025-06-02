@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, CalendarDays, MapPin } from "lucide-react";
+import { ArrowRight, CalendarDays, Clock, MapPin } from "lucide-react";
 
 interface ExtendedEventCardProps {
   id: string;
@@ -29,7 +29,7 @@ export default function ExtendedEventCard({
       className="flex flex-col md:flex-row gap-6 border-b border-gray-200 pb-8"
     >
       {/* Date Column */}
-      <div className="w-full md:w-32 flex-shrink-0">
+      <div className="w-full md:w-fit lg:w-32 flex-shrink-0 hidden md:block">
         <div className="text-center md:text-left">
           <div className="text-4xl font-bold text-gray-900">
             {eventDate.getUTCDate()}
@@ -41,7 +41,7 @@ export default function ExtendedEventCard({
       </div>
 
       {/* Image Column */}
-      <div className="relative w-full md:w-96 h-48 flex-shrink-0">
+      <div className="relative w-full md:w-72 lg:w-96 h-48 flex-shrink-0">
         <Image
           src={imageUrl || "/placeholder.svg"}
           alt={title}
@@ -62,8 +62,16 @@ export default function ExtendedEventCard({
         </h3>
 
         <div className="flex items-center gap-6 text-gray-600 text-sm mb-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 md:hidden">
             <CalendarDays className="w-4 h-4" />
+            <span>
+              {eventDate.toLocaleString("en-US", { month: "short" })}
+              {", "}
+              {eventDate.getUTCDate()}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Clock className="w-4 h-4" />
             <span>
               {eventDate.toLocaleString("en-US", {
                 hour: "numeric",

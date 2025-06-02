@@ -11,7 +11,7 @@ export default function HeroButtons({ data }: { data: SanityHeroSection }) {
   return (
     <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto mt-2 sm:mt-0">
       <Button
-        className="bg-[#548281] text-white group w-full sm:w-auto text-sm sm:text-base px-4 py-2 h-auto"
+        className="bg-[#548281] text-white group w-full sm:w-auto text-lg sm:text-base px-4 py-2 h-auto"
         onClick={() => router.push("/login")}
       >
         {data.heroPrimaryButtonText}
@@ -20,7 +20,7 @@ export default function HeroButtons({ data }: { data: SanityHeroSection }) {
 
       <Button
         variant="outline"
-        className="border-[#548281] hover:bg-[#2F4858] hover:text-white text-[#548281] w-full sm:w-auto text-sm sm:text-base px-4 py-2 h-auto"
+        className="border-[#548281] hover:bg-[#2F4858] hover:text-white text-[#548281] w-full sm:w-auto text-lg sm:text-base px-4 py-2 h-auto"
         onClick={() => router.push("/about")}
       >
         {data.heroSecondaryButtonText}

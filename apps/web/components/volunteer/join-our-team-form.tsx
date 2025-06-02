@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 export default function JoinOurTeamForm() {
   return (
     <section className="py-16 px-4 bg-[#FDFDF0]" id="volunteer-form">
-      <div className="container mx-auto max-w-3xl">
+      <div className="  mx-auto max-w-3xl">
         <div className="bg-white p-8 md:p-12 rounded-xl shadow-lg">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-[#2F4858] mb-4">

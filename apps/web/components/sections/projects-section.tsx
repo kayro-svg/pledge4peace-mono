@@ -28,7 +28,7 @@ export default async function RecentProjects({
   };
 
   return (
-    <div className="bg-[#fdfdf0] py-16 px-4">
+    <section className="bg-[#fdfdf0] py-16 p-0 md:p-8 px-4 sm:px-6 md:px-8 lg:px-12">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-[#2F4858] uppercase text-sm font-medium tracking-wider mb-4 border-b-2 w-fit mx-auto border-[#2F4858]">
@@ -38,7 +38,7 @@ export default async function RecentProjects({
             {/* <span className="text-[#548281]">Take action</span> today */}
             {sectionData.campaignsHeading}
           </h1>
-          <p className="text-[#2F4858] text-lg max-w-3xl mx-auto">
+          <p className="section-subtitle text-[#2F4858] text-lg md:text-xl lg:text-xl">
             {/* Here's how you can take action today, by voting and pledging in our
             recent campaigns. */}
             {sectionData.campaignsDescription}
@@ -66,6 +66,6 @@ export default async function RecentProjects({
           })}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
