@@ -26,7 +26,7 @@ export default async function EventPage({ params }: EventPageProps) {
   const eventDate = new Date(event.date + "T00:00:00");
 
   return (
-    <main className="min-h-screen bg-gray-50">
+    <section className="min-h-screen bg-gray-50">
       {/* Header with Image */}
       <div className="relative w-full h-[300px] bg-gray-900">
         {event.image?.asset?.url && (
@@ -42,7 +42,7 @@ export default async function EventPage({ params }: EventPageProps) {
       </div>
 
       {/* Event Content */}
-      <div className="container mx-auto px-4 md:px-6 -mt-32 relative z-10">
+      <div className="lg:container mx-auto px-4 md:px-6 -mt-32 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="md:col-span-2 space-y-6">
@@ -217,6 +217,6 @@ export default async function EventPage({ params }: EventPageProps) {
           </div>
         </div>
       </div>
-    </main>
+    </section>
   );
 }

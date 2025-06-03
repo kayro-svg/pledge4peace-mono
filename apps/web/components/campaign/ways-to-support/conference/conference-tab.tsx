@@ -52,8 +52,8 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
       <div className="space-y-6">
         {/* Header Info */}
         <div>
-          <div className="flex flex-row gap-4 justify-between items-center">
-            <div className="w-2/3">
+          <div className="flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div className="w-full md:w-2/3">
               <div className="flex items-center gap-4 text-sm text-gray-600 mb-2">
                 <span className="px-3 py-1 bg-gray-100 rounded-full">
                   {conference.category || "Virtual"}
@@ -99,7 +99,7 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
               </div>
             </div>
 
-            <div className="flex flex-col items-center justify-center text-center py-4 space-y-4 w-1/3 h-fit border border-gray-200 rounded-xl shadow-md p-4">
+            <div className="flex flex-col items-center justify-center text-center py-4 space-y-4 w-full md:w-1/3 h-fit border border-gray-200 rounded-xl shadow-md p-4">
               <div className="text-xl font-bold text-gray-900">
                 {conference.price === 0 || !conference.price
                   ? "Free Event"
@@ -121,7 +121,7 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
           </div>
 
           {/* Description */}
-          <div className="prose max-w-none text-gray-600">
+          <div className="prose max-w-none text-gray-600 mt-6">
             <div
               dangerouslySetInnerHTML={{
                 __html: conference.about || conference.description || "",
@@ -132,11 +132,11 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
 
         {/* Gallery - Compact Version */}
         {conference.gallery && conference.gallery.length > 0 && (
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 mt-6">
             {conference.gallery.slice(0, 3).map((image, index) => (
               <div
                 key={index}
-                className="relative aspect-video rounded-lg overflow-hidden"
+                className="relative aspect-video rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all"
               >
                 <Image
                   src={image.url}

@@ -25,7 +25,11 @@ interface SolutionActionsBarProps {
   dislikeCount?: number;
   shareCount?: number;
   onCommentAdded?: () => void;
-  onCommentClick?: () => void;
+  onCommentClick?: (e: React.MouseEvent) => void;
+  onInteraction?: (
+    solutionId: string,
+    interactionType: "like" | "dislike" | "comment" | "share"
+  ) => void;
 }
 
 export default function SolutionActionsBar({
@@ -36,6 +40,7 @@ export default function SolutionActionsBar({
   shareCount = 0,
   onCommentAdded,
   onCommentClick,
+  onInteraction,
 }: SolutionActionsBarProps) {
   const { data: session } = useSession();
   const router = useRouter();
@@ -141,13 +146,16 @@ export default function SolutionActionsBar({
           setUserInteraction("like", solutionId, false);
         }
       }
+      onInteraction?.(solutionId, "dislike");
     } catch (error) {
       toast.error("Failed to update dislike");
       console.error("Error handling dislike:", error);
     }
   };
 
-  const handleShare = async () => {
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+
     if (!session) {
       toast.error("Please sign in to share solutions");
       setShowLoginModal(true);
@@ -167,6 +175,10 @@ export default function SolutionActionsBar({
         setShares((prev) => prev + 1);
         setUserInteraction("share", solutionId, true);
       }
+
+      // Always notify parent component about the share interaction
+      // This ensures the solution is selected even if it was already shared
+      onInteraction?.(solutionId, "share");
 
       // Use the Web Share API if available
       if (navigator.share) {
@@ -201,15 +213,21 @@ export default function SolutionActionsBar({
   const handleCommentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    // Call the parent's onCommentClick first to expand the solution
+    // Notify parent component about the interaction first
+    // This ensures the solution is selected before any other actions
+    onInteraction?.(solutionId, "comment");
+
+    // Call the parent's onCommentClick if provided
     if (onCommentClick) {
-      onCommentClick();
+      onCommentClick(e);
     }
 
     // If user is not logged in, show login modal
     if (!session) {
       toast.error("Please sign in to comment");
-      setShowLoginModal(true);
+      if (window.innerWidth > 1024) {
+        setShowLoginModal(true);
+      }
       return;
     }
 

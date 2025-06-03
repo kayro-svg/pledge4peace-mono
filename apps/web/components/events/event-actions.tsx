@@ -48,7 +48,7 @@ export default function EventActions({ event }: EventActionsProps) {
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 flex-row md:flex-col lg:flex-row">
       <Button
         variant="outline"
         className="flex-1"

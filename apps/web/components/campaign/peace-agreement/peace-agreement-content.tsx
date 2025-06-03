@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { getSolutions, getUserInteractions } from "@/lib/api/solutions";
 import { API_ENDPOINTS, API_URL } from "@/lib/config";
 import { SanitySolutionsSection, Solution } from "@/lib/types";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, LogIn } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -26,12 +26,14 @@ interface PeaceAgreementContentProps {
   solutionsSection: SanitySolutionsSection;
   campaignSlug?: string;
   onSolutionChange?: (solutionId: string) => void;
+  onCommentClick?: (solutionId: string | React.MouseEvent) => void;
   activeSolutionId?: string;
 }
 
 export default function PeaceAgreementContent({
   campaignId,
   onSolutionChange,
+  onCommentClick,
   activeSolutionId,
   solutionsSection,
 }: PeaceAgreementContentProps) {
@@ -157,10 +159,14 @@ export default function PeaceAgreementContent({
             }
             setIsCreateSolutionOpen(true);
           }}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 w-full md:w-auto"
         >
-          <Plus className="h-4 w-4" />
-          Add Solution
+          {session ? (
+            <Plus className="h-4 w-4" />
+          ) : (
+            <LogIn className="h-4 w-4" />
+          )}
+          {session ? "Add Solution" : "Sign in to add a solution"}
         </Button>
       );
     }
@@ -204,11 +210,14 @@ export default function PeaceAgreementContent({
         </div>
 
         <div>
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-8 md:gap-0">
             <h2 className="text-2xl font-bold">
-              Vote Below on Solutions to {solutionsSection.subheading}
+              {/* Vote Below on Solutions to {solutionsSection.subheading} */}
+              {solutionsSection.subheading}
             </h2>
-            {solutions.length > 0 && addSolutionButton()}
+            <div className="flex w-full md:w-auto items-end">
+              {solutions.length > 0 && addSolutionButton()}
+            </div>
           </div>
 
           {isLoading ? (
@@ -259,6 +268,7 @@ export default function PeaceAgreementContent({
                       comments: 0,
                     },
                   }}
+                  onCommentClick={onCommentClick}
                   activeSolutionId={activeSolutionId || ""}
                   onSolutionChange={onSolutionChange || (() => {})}
                   index={index}

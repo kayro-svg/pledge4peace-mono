@@ -27,7 +27,7 @@ export default function SidebarSection({ solutionId }: SidebarSectionProps) {
   }, [solutionId]);
 
   return (
-    <div className="bg-white rounded-3xl shadow-[0_0_10px_rgba(0,0,0,0.1)] p-6 flex flex-col max-h-[88vh] overflow-y-auto">
+    <div className="bg-white rounded-3xl shadow-[0_0_10px_rgba(0,0,0,0.1)] p-6 flex flex-col h-full lg:max-h-[88vh] overflow-y-auto">
       <div className="flex flex-col gap-4 mb-4">
         <p className="text-lg font-bold leading-tight">
           {solutionTitle ||

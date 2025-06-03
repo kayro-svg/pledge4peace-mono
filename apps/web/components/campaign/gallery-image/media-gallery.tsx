@@ -49,7 +49,7 @@ export default function MediaGallery({
           <button
             key={index}
             onClick={() => selectMedia(index)}
-            className={`relative flex-shrink-0 rounded-lg overflow-hidden w-32 h-24 transition-all ${
+            className={`relative flex-shrink-0 rounded-lg overflow-hidden w-28 h-20 md:w-48 md:h-32 transition-all ${
               index === currentIndex ? "ring-2 ring-[#548281]" : "opacity-80"
             }`}
           >

@@ -12,6 +12,7 @@ interface SolutionPostProps {
   solution: Solution;
   activeSolutionId: string;
   onSolutionChange: (solutionId: string) => void;
+  onCommentClick?: (solutionId: string | React.MouseEvent) => void;
   index: number;
   toggleExpand: (solutionId: string) => void;
   rank: number;
@@ -21,6 +22,7 @@ export default function SolutionPost({
   solution,
   activeSolutionId,
   onSolutionChange,
+  onCommentClick,
   index,
   toggleExpand,
   rank,
@@ -57,6 +59,22 @@ export default function SolutionPost({
       setCount(solution.stats.comments);
     }
   }, [solution.stats?.comments, count, setCount]);
+
+  // Handle interaction from action bar (like, dislike, share, comment)
+  const handleInteraction = (
+    solutionId: string,
+    interactionType: 'like' | 'dislike' | 'comment' | 'share'
+  ) => {
+    // If this solution is not the active one, make it active
+    if (onSolutionChange && solutionId === solution.id && solutionId !== activeSolutionId) {
+      onSolutionChange(solutionId);
+    }
+    
+    // Ensure the solution is expanded for comment interactions
+    if (interactionType === 'comment' && !solution.expanded) {
+      toggleExpand(solutionId);
+    }
+  };
 
   return (
     <div
@@ -130,10 +148,21 @@ export default function SolutionPost({
         dislikeCount={solution.stats?.dislikes ?? 0}
         shareCount={solution.stats?.shares ?? 0}
         onCommentAdded={handleCommentAdded}
-        onCommentClick={() => {
-          // If this solution is not expanded, trigger the toggle to expand it
-          if (!solution.expanded && onSolutionChange) {
-            onSolutionChange(solution.id);
+        onInteraction={handleInteraction}
+        onCommentClick={(e: React.MouseEvent) => {
+          e?.stopPropagation();
+          // If onCommentClick is provided (mobile view), just call it with the solution ID
+          // The interaction will be handled by the onInteraction callback
+          if (onCommentClick) {
+            onCommentClick(solution.id);
+          } else if (onSolutionChange) {
+            // For desktop view, ensure the solution is selected and expanded
+            if (solution.id !== activeSolutionId) {
+              onSolutionChange(solution.id);
+            }
+            if (!solution.expanded) {
+              toggleExpand(solution.id);
+            }
           }
         }}
       />

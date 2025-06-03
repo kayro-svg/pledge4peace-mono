@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import ConferenceTab from "../conference/conference-tab";
-import PeaceAgreementContent from "../peace-agreement/peace-agreement-content";
-import TabHeader from "./tab-header";
-import WaysToSupport from "../ways-to-support/ways-to-support";
 import { SanitySolutionsSection, SanityWaysToSupportTab } from "@/lib/types";
+import { useEffect, useState } from "react";
+import PeaceAgreementContent from "../peace-agreement/peace-agreement-content";
+import WaysToSupport from "../ways-to-support/ways-to-support";
+import TabHeader from "./tab-header";
 
 interface TabsSectionProps {
   solutionsSection: SanitySolutionsSection;
   waysToSupportTabs: SanityWaysToSupportTab[];
   onSolutionChange?: (solutionId: string) => void;
+  onCommentClick?: (solutionId: string | React.MouseEvent) => void;
   campaignId: string;
 }
 
@@ -18,6 +18,7 @@ export default function TabsSection({
   solutionsSection,
   waysToSupportTabs,
   onSolutionChange,
+  onCommentClick,
   campaignId,
 }: TabsSectionProps) {
   const [activeTab, setActiveTab] = useState("solution-proposals");
@@ -39,11 +40,12 @@ export default function TabsSection({
       <TabHeader activeTab={activeTab} onTabChange={setActiveTab} />
 
       {/* Tab content */}
-      <div className="p-6 overflow-y-auto flex-1 h-full">
+      <div className="p-4 md:p-6 overflow-y-auto flex-1 h-full">
         {activeTab === "solution-proposals" && (
           <PeaceAgreementContent
             solutionsSection={solutionsSection}
             onSolutionChange={handleSolutionChange}
+            onCommentClick={onCommentClick}
             activeSolutionId={activeSolutionId}
             campaignId={campaignId}
           />
