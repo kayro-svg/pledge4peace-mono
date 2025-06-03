@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { usePledges } from "@/hooks/usePledges";
+import { prefetchCampaign } from "@/lib/prefetch";
+import { useCallback } from "react";
 
 interface CampaignCardProps {
   title: string;
@@ -42,6 +44,26 @@ export default function CampaignCard({
   const { pledgeCount } = usePledges(campaignId);
   const progress = Math.round((pledgeCount / goal) * 100);
   const router = useRouter();
+  
+  // Handle mouse enter to prefetch campaign data - only do this if we have a valid link
+  const handleMouseEnter = useCallback(() => {
+    if (link) {
+      console.log(`[CampaignCard] Prefetching data for campaign: ${link}`);
+      prefetchCampaign(link);
+    }
+  }, [link]);
+  
+  // Navigate to campaign page with proper error handling
+  const navigateToCampaign = useCallback(() => {
+    if (!link) {
+      console.error('[CampaignCard] Cannot navigate - missing campaign slug');
+      return;
+    }
+    
+    console.log(`[CampaignCard] Navigating to campaign: ${link}`);
+    // Ensure we're using the correct URL format
+    router.push(`/campaigns/${link}`);
+  }, [router, link]);
 
   if (variant === "horizontal") {
     return (
@@ -85,7 +107,7 @@ export default function CampaignCard({
           </div>
           <Button
             className="bg-[#548281] text-white py-1.5 sm:py-2 px-4 sm:px-6 mt-3 sm:mt-4 rounded-full text-xs sm:text-sm font-medium hover:bg-[#2f4858] transition-colors w-full"
-            onClick={() => router.push(link)}
+            onClick={navigateToCampaign}
           >
             {action}
           </Button>
@@ -96,7 +118,10 @@ export default function CampaignCard({
 
   if (variant === "compact") {
     return (
-      <Card className="overflow-hidden rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md h-full">
+      <Card 
+        className="overflow-hidden rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md h-full"
+        onMouseEnter={handleMouseEnter}
+      >
         <div className="aspect-[4/3] w-full overflow-hidden">
           <Image
             src={featuredImage || "/placeholder.svg"}
@@ -189,7 +214,7 @@ export default function CampaignCard({
           <div className="flex px-2 sm:px-4">
             <Button
               className="bg-[#548281] text-white py-1.5 sm:py-2 px-4 sm:px-6 mt-2 sm:mt-4 rounded-full text-base font-medium hover:bg-[#2f4858] transition-colors w-full"
-              onClick={() => router.push(`/campaigns/${link}`)}
+              onClick={navigateToCampaign}
             >
               {action}
             </Button>
@@ -201,7 +226,10 @@ export default function CampaignCard({
 
   // Default variant
   return (
-    <Card className="overflow-hidden max-w-xl rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md">
+    <Card 
+      className="overflow-hidden max-w-xl rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md"
+      onMouseEnter={handleMouseEnter}
+    >
       <div className="aspect-video w-full overflow-hidden">
         <Image
           src={featuredImage || "/placeholder.svg"}
@@ -244,7 +272,7 @@ export default function CampaignCard({
       <CardFooter className="p-3 sm:p-4 md:p-6">
         <Button
           className="w-full bg-[#548281] hover:bg-[#2f4858] text-white text-xs sm:text-sm md:text-md font-medium sm:font-semibold rounded-full py-1.5 sm:py-2 md:py-3"
-          onClick={() => router.push(`/campaigns/${link}`)}
+          onClick={navigateToCampaign}
         >
           {action}
         </Button>

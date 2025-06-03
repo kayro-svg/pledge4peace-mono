@@ -1,7 +1,6 @@
 import CampaignCard from "@/components/ui/campaign-card";
 import { getCampaigns } from "@/lib/api";
 import { SanityCampaignsSection } from "@/lib/types";
-import { usePledges } from "@/hooks/usePledges";
 
 export default async function RecentProjects({
   data,

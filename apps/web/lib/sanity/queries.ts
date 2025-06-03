@@ -211,68 +211,127 @@ export async function getCampaigns(): Promise<SanityCampaign[]> {
   );
 }
 
+// Memory cache for campaign data to reduce Sanity API calls
+const campaignCache = new Map<string, { data: SanityCampaign; timestamp: number }>();
+const CAMPAIGN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
+
 export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
-  return client.fetch(
-    `*[_type == "campaign" && slug.current == $slug][0] {
-      _id,
-      title,
-      slug,
-      category,
-      description,
-      goalPledges,
-      commitmentText,
-      contentText,
-      featuredImage { asset-> { url } },
-      gallery[] {
-        type,
-        alt,
-        image { asset-> { url } },
-        video { asset-> { url } }
-      },
-      solutionsSection {
-        heading,
-        paragraphs,
-        subheading,
-      },
-      waysToSupportTabs[] {
-        type,
+  try {
+    // Check in-memory cache first
+    const cacheKey = `campaign-${slug}`;
+    const cachedItem = campaignCache.get(cacheKey);
+    const now = Date.now();
+    
+    // Return cached data if valid
+    if (cachedItem && now - cachedItem.timestamp < CAMPAIGN_CACHE_TTL) {
+      console.log(`[Cache Hit] Using cached campaign data for: ${slug}`);
+      return cachedItem.data;
+    }
+    
+    // If not in cache or expired, fetch from Sanity
+    console.log(`[Cache Miss] Fetching campaign data from Sanity for: ${slug}`);
+    
+    // Restore the original query structure to match your existing data
+    const campaignData = await client.fetch(
+      `*[_type == "campaign" && slug.current == $slug][0] {
+        _id,
         title,
-        content,
-        conferenceRef->{
-          _id, 
-          title, 
-          slug, 
-          date, 
-          location, 
-          image { asset-> { url } }, 
-          description,
-          about,
-          category,
-          price,
-          registrationLink,
-          organizer,
-          "gallery": gallery[].asset->{ url }
+        slug,
+        category,
+        description,
+        goalPledges,
+        commitmentText,
+        contentText,
+        featuredImage { asset-> { url } },
+        gallery[] {
+          type,
+          alt,
+          image { asset-> { url } },
+          video { asset-> { url } }
         },
-        conferenceDetails {
-          date,
-          registrationForm,
-          description
+        solutionsSection {
+          heading,
+          paragraphs,
+          subheading,
+        },
+        waysToSupportTabs[] {
+          type,
+          title,
+          content,
+          conferenceRef->{
+            _id, 
+            title, 
+            slug, 
+            date, 
+            location, 
+            image { asset-> { url } }, 
+            description,
+            about,
+            category,
+            price,
+            registrationLink,
+            organizer,
+            "gallery": gallery[].asset->{ url }
+          },
+          conferenceDetails {
+            date,
+            registrationForm,
+            description
+          }
         }
-      }
-    }`,
-    { slug },
-    { next: { revalidate: 60 } }
-  );
+      }`,
+      { slug },
+      { next: { revalidate: 60 } }
+    );
+    
+    // Update cache with new data
+    if (campaignData) {
+      console.log(`[Sanity] Successfully fetched campaign: ${campaignData.title}`);
+      campaignCache.set(cacheKey, { data: campaignData, timestamp: now });
+    } else {
+      console.log(`[Sanity] No campaign found for slug: ${slug}`);
+    }
+    
+    return campaignData;
+  } catch (error) {
+    console.error(`[Sanity Error] Failed to fetch campaign for slug ${slug}:`, error);
+    throw error;
+  }
 }
 
+// Cache for campaign slugs
+const slugsCache: { data: SanitySlug[] | null; timestamp: number } = { 
+  data: null, 
+  timestamp: 0 
+};
+const SLUGS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 export async function getCampaignSlugs(): Promise<SanitySlug[]> {
-  return client.fetch(
+  const now = Date.now();
+  
+  // Return cached data if valid
+  if (slugsCache.data && now - slugsCache.timestamp < SLUGS_CACHE_TTL) {
+    console.log('[Cache Hit] Using cached campaign slugs');
+    return slugsCache.data;
+  }
+  
+  console.log('[Cache Miss] Fetching campaign slugs from Sanity');
+  const slugs = await client.fetch(
     `*[_type == "campaign" && defined(slug.current)] {
       slug
     }`,
     {},
-    { next: { revalidate: 60 } }
+    { 
+      next: { revalidate: 60 },
+      cache: 'force-cache'
+    }
   );
+  
+  // Update cache
+  slugsCache.data = slugs;
+  slugsCache.timestamp = now;
+  
+  return slugs;
 }
 
 export async function getArticles(): Promise<SanityArticle[]> {

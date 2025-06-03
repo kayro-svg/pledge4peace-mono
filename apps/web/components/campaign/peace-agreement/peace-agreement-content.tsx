@@ -196,13 +196,13 @@ export default function PeaceAgreementContent({
       <div className="space-y-8">
         {/* Dynamic content section */}
         <div className="prose max-w-none">
-          {solutionsSection.heading && (
+          {solutionsSection?.heading && (
             <h2 className="text-2xl font-bold text-gray-900">
-              {solutionsSection.heading}
+              {solutionsSection?.heading}
             </h2>
           )}
 
-          {solutionsSection.paragraphs.map((paragraph, index) => (
+          {solutionsSection?.paragraphs?.map((paragraph, index) => (
             <p key={index} className="text-gray-700 mt-4">
               {paragraph}
             </p>
@@ -213,7 +213,7 @@ export default function PeaceAgreementContent({
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-8 md:gap-0">
             <h2 className="text-2xl font-bold">
               {/* Vote Below on Solutions to {solutionsSection.subheading} */}
-              {solutionsSection.subheading}
+              {solutionsSection?.subheading}
             </h2>
             <div className="flex w-full md:w-auto items-end">
               {solutions.length > 0 && addSolutionButton()}
