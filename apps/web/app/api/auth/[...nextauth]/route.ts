@@ -65,16 +65,17 @@ const handler = NextAuth({
         session.user.emailVerified = token.emailVerified as boolean | null;
         session.user.accessToken = token.accessToken as string;
       }
-      
+
       // También agregar el token a la raíz de la sesión para compatibilidad
       session.accessToken = token.accessToken as string;
-      
+
       return session;
     },
   },
   pages: {
     signIn: "/login",
   },
+  secret: process.env.NEXTAUTH_SECRET,
 });
 
 export { handler as GET, handler as POST };

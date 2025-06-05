@@ -1,7 +1,5 @@
 // Use the environment variable if available, otherwise use the default URL for development
-export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "https://pledge4peace-api.kayrov.workers.dev/api";
+export const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 // Log the API URL being used
 console.log(`[Config] Using API URL: ${API_URL}`);

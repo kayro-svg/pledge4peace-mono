@@ -24,7 +24,7 @@ export function SiteHeader() {
           </h1>
         </div>
         <div className="flex items-center gap-2">
-          <NavUser user={data.user} />
+          {/* <NavUser user={data.user} /> */}
         </div>
       </div>
     </header>

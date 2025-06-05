@@ -1,4 +1,3 @@
-// Este archivo actúa como Server Component
 import { CampaignDetailContent } from "./campaign-detail-content";
 import { getCampaignBySlug, getCampaignSlugs } from "@/lib/sanity/queries";
 import { notFound } from "next/navigation";
@@ -26,7 +25,7 @@ export default async function Page({
   const { slug } = resolvedParams;
 
   console.log(`[Campaign Page] Fetching campaign data for slug: ${slug}`);
-  
+
   // Fetch campaign data with caching enabled via revalidate
   const campaign = await getCampaignBySlug(slug);
 
@@ -36,8 +35,10 @@ export default async function Page({
     notFound();
   }
 
-  console.log(`[Campaign Page] Successfully loaded campaign: ${campaign?.title}`);
-  
+  console.log(
+    `[Campaign Page] Successfully loaded campaign: ${campaign?.title}`
+  );
+
   // Pass campaign data to the client component
   return <CampaignDetailContent campaign={campaign} />;
 }
