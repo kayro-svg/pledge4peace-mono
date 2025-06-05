@@ -11,7 +11,6 @@ interface Env {
   DB: D1Database;
   JWT_SECRET: string;
   KV: KVNamespace;
-  RESEND_API_KEY: string;
   FROM_EMAIL: string;
 }
 

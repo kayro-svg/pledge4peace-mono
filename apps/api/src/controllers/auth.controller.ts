@@ -1,33 +1,36 @@
 import { Context } from "hono";
-import { AuthService } from "../services/auth.service";
-import { createDb } from "../db";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 
-// Validación para registro
+// Validation for registration
 const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   name: z.string().min(2),
 });
 
-// Validación para login
+// Validation for login
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
 });
 
-// Validación para verificación de email
+// Validation for email verification
 const verifyEmailSchema = z.object({
   token: z.string(),
 });
 
-// Validación para solicitud de reset de contraseña
+// Validation for resending verification email
+const resendVerificationSchema = z.object({
+  email: z.string().email(),
+});
+
+// Validation for password reset request
 const requestPasswordResetSchema = z.object({
   email: z.string().email(),
 });
 
-// Validación para reset de contraseña
+// Validation for password reset
 const resetPasswordSchema = z.object({
   token: z.string(),
   newPassword: z.string().min(8),
@@ -42,164 +45,186 @@ export class AuthController {
 
       if (!validation.success) {
         console.error("Errores de validación:", validation.error.format());
-        throw new HTTPException(400, { message: "Invalid input data" });
+        // Devolvemos JSON 400
+        return c.json({ message: "Invalid input data" }, 400);
+      }
+      const frontendBase = c.env.FRONTEND_URL; // ej. "http://localhost:3000"
+      if (!frontendBase) {
+        console.warn(
+          "⚠️ FRONTEND_URL no definida; usando http://localhost:3000 por defecto"
+        );
       }
 
-      const db = createDb(c.env.DB);
-      const service = new AuthService(
-        db,
-        c.env.JWT_SECRET,
-        c.env.RESEND_API_KEY,
-        c.env.FROM_EMAIL
-      );
+      const baseUrl = frontendBase || "http://localhost:3000";
 
-      const baseUrl = new URL(c.req.url).origin;
-      const result = await service.register(validation.data, baseUrl);
+      const authService = c.get("authService");
+      const result = await authService.register(validation.data, baseUrl);
       return c.json(result, 201);
     } catch (error) {
-      if (error instanceof HTTPException) throw error;
+      if (error instanceof HTTPException) {
+        // Si authService arrojó HTTPException, devolvemos su body y status
+        const body = (error as any).body || { message: (error as any).message };
+        return c.json(body, error.status);
+      }
       console.error("Error registering user:", error);
-      throw new HTTPException(500, { message: "Error registering user" });
+      return c.json({ message: "Error registering user" }, 500);
     }
   }
 
   async login(c: Context) {
     try {
-      const validation = await c.req
-        .json()
-        .then((data) => loginSchema.safeParse(data));
+      const raw = await c.req.json();
+      const validation = loginSchema.safeParse(raw);
 
       if (!validation.success) {
-        throw new HTTPException(400, { message: "Invalid input data" });
+        return c.json({ message: "Invalid input data" }, 400);
       }
 
-      const db = createDb(c.env.DB);
-      const service = new AuthService(
-        db,
-        c.env.JWT_SECRET,
-        c.env.RESEND_API_KEY,
-        c.env.FROM_EMAIL
-      );
-
-      const result = await service.login(validation.data);
-      return c.json(result);
+      const authService = c.get("authService");
+      const result = await authService.login(validation.data);
+      return c.json(result, 200);
     } catch (error) {
-      if (error instanceof HTTPException) throw error;
+      if (error instanceof HTTPException) {
+        return c.json((error as any).body, error.status);
+      }
       console.error("Error logging in:", error);
-      throw new HTTPException(500, { message: "Error logging in" });
+      return c.json({ message: "Error logging in" }, 500);
     }
   }
 
   async verifyEmail(c: Context) {
     try {
       const token = c.req.query("token");
-
       if (!token) {
-        throw new HTTPException(400, {
-          message: "Verification token is required",
-        });
+        return c.json({ message: "Verification token is required" }, 400);
       }
 
       const validation = verifyEmailSchema.safeParse({ token });
-
       if (!validation.success) {
-        throw new HTTPException(400, { message: "Invalid verification token" });
+        return c.json({ message: "Invalid verification token" }, 400);
       }
 
-      const db = createDb(c.env.DB);
-      const service = new AuthService(
-        db,
-        c.env.JWT_SECRET,
-        c.env.RESEND_API_KEY,
-        c.env.FROM_EMAIL
+      const authService = c.get("authService");
+      const result = await authService.verifyEmail(token);
+      return c.json(result, 200);
+    } catch (error) {
+      if (error instanceof HTTPException) {
+        return c.json((error as any).body, error.status);
+      }
+      console.error("Error verifying email:", error);
+      return c.json({ message: "Error verifying email" }, 500);
+    }
+  }
+
+  /**
+   * POST /auth/resend-verification
+   * Receives { email } and resends a verification link
+   */
+  async resendVerification(c: Context) {
+    try {
+      // 1) Read the JSON of the request
+      const raw = await c.req.json();
+      const validation = resendVerificationSchema.safeParse(raw);
+
+      if (!validation.success) {
+        return c.json({ message: "Invalid email" }, 400);
+      }
+
+      // 2) Call the service
+      const authService = c.get("authService");
+      // Reuse FRONTEND_URL to generate the link
+      const frontendBase = c.env.FRONTEND_URL || "http://localhost:3000";
+      const result = await authService.resendVerificationEmail(
+        validation.data.email,
+        frontendBase
       );
 
-      const result = await service.verifyEmail(token);
-      return c.json(result);
+      // 3) If the user does not exist, result.message = “If your email is…”
+      return c.json(result, 200);
     } catch (error) {
-      if (error instanceof HTTPException) throw error;
-      console.error("Error verifying email:", error);
-      throw new HTTPException(500, { message: "Error verifying email" });
+      // 4) If an HTTPException was thrown, return the body and status
+      if (error instanceof HTTPException) {
+        const body = (error as any).body || { message: (error as any).message };
+        return c.json(body, error.status);
+      }
+
+      console.error("Error in resendVerification:", error);
+      return c.json({ message: "Internal error in resendVerification" }, 500);
     }
   }
 
   async getProfile(c: Context) {
     try {
       const userId = c.get("user").id;
-      const db = createDb(c.env.DB);
-      const service = new AuthService(
-        db,
-        c.env.JWT_SECRET,
-        c.env.RESEND_API_KEY,
-        c.env.FROM_EMAIL
-      );
-
-      const user = await service.getUserById(userId);
-      return c.json(user);
+      const authService = c.get("authService");
+      const user = await authService.getUserById(userId);
+      return c.json(user, 200);
     } catch (error) {
-      if (error instanceof HTTPException) throw error;
+      if (error instanceof HTTPException) {
+        return c.json((error as any).body, error.status);
+      }
       console.error("Error getting profile:", error);
-      throw new HTTPException(500, { message: "Error getting profile" });
+      return c.json({ message: "Error getting profile" }, 500);
     }
   }
 
   async requestPasswordReset(c: Context) {
+    console.log("🚀 [AuthController] requestPasswordReset invoked");
     try {
-      const validation = await c.req
-        .json()
-        .then((data) => requestPasswordResetSchema.safeParse(data));
-
+      // 1) Read and validate incoming JSON
+      const raw = await c.req.json();
+      const validation = requestPasswordResetSchema.safeParse(raw);
       if (!validation.success) {
-        throw new HTTPException(400, { message: "Invalid input data" });
+        return c.json({ message: "Invalid input data" }, 400);
       }
 
-      const db = createDb(c.env.DB);
-      const service = new AuthService(
-        db,
-        c.env.JWT_SECRET,
-        c.env.RESEND_API_KEY,
-        c.env.FROM_EMAIL
-      );
-
+      // 2) Call the service
+      const authService = c.get("authService");
       const baseUrl = new URL(c.req.url).origin;
-      const result = await service.requestPasswordReset(
+      const result = await authService.requestPasswordReset(
         validation.data,
         baseUrl
       );
-      return c.json(result);
+
+      // 3) Responder 200 + JSON
+      return c.json(result, 200);
     } catch (error) {
-      if (error instanceof HTTPException) throw error;
-      console.error("Error requesting password reset:", error);
-      throw new HTTPException(500, {
-        message: "Error requesting password reset",
-      });
+      console.error("🔴 Caught error in requestPasswordReset:", error);
+
+      // 4) If it is an HTTPException, return a JSON with the message extracted from error.message
+      if (error instanceof HTTPException) {
+        const errMsg =
+          (error as any).message ||
+          ((error as any).body?.message as string) ||
+          "Internal server error";
+
+        console.error("🔴 It was an HTTPException:", errMsg);
+        return c.json({ message: errMsg }, error.status);
+      }
+
+      // 5) Any other exception → 500 + generic JSON
+      console.error("🔴 Unhandled exception in requestPasswordReset:", error);
+      return c.json({ message: "Error requesting password reset" }, 500);
     }
   }
 
   async resetPassword(c: Context) {
     try {
-      const validation = await c.req
-        .json()
-        .then((data) => resetPasswordSchema.safeParse(data));
-
+      const raw = await c.req.json();
+      const validation = resetPasswordSchema.safeParse(raw);
       if (!validation.success) {
-        throw new HTTPException(400, { message: "Invalid input data" });
+        return c.json({ message: "Invalid input data" }, 400);
       }
 
-      const db = createDb(c.env.DB);
-      const service = new AuthService(
-        db,
-        c.env.JWT_SECRET,
-        c.env.RESEND_API_KEY,
-        c.env.FROM_EMAIL
-      );
-
-      const result = await service.resetPassword(validation.data);
-      return c.json(result);
+      const authService = c.get("authService");
+      const result = await authService.resetPassword(validation.data);
+      return c.json(result, 200);
     } catch (error) {
-      if (error instanceof HTTPException) throw error;
+      if (error instanceof HTTPException) {
+        return c.json((error as any).body, error.status);
+      }
       console.error("Error resetting password:", error);
-      throw new HTTPException(500, { message: "Error resetting password" });
+      return c.json({ message: "Error resetting password" }, 500);
     }
   }
 }

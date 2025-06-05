@@ -27,7 +27,7 @@
     },
   ],
   "vars": {
-    "FROM_EMAIL": "onboarding@resend.dev",
+    "FROM_EMAIL": "info@weversity.org",
     "NODE_ENV": "production",
   },
 }

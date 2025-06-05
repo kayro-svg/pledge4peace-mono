@@ -6,7 +6,7 @@ export const users = sqliteTable("users", {
   name: text("name").notNull(),
   image: text("image"),
   password: text("password").notNull(), // Almacenaremos el hash de la contraseña
-  status: text("status", { enum: ["active", "inactive", "banned"] })
+  status: text("status", { enum: ["active", "inactive", "banned", "deleted"] })
     .notNull()
     .default("active"),
   emailVerified: integer("email_verified").notNull().default(0),

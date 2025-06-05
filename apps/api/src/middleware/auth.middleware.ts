@@ -1,6 +1,7 @@
 import { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { verify } from "hono/jwt";
+import { AuthService } from "../services/auth.service";
 
 export interface AuthUser {
   id: string;
@@ -12,6 +13,7 @@ export interface AuthUser {
 declare module "hono" {
   interface ContextVariableMap {
     user: AuthUser;
+    authService: AuthService;
   }
 }
 
@@ -37,6 +39,11 @@ export async function authMiddleware(c: Context, next: Next) {
 
     // Guardar la información del usuario en el contexto
     c.set("user", payload);
+
+    // Asegurarse de que el servicio de autenticación esté disponible
+    if (!c.get("authService")) {
+      throw new HTTPException(500, { message: "Auth service not available" });
+    }
 
     await next();
   } catch (error) {
