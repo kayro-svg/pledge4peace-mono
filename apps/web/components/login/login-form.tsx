@@ -35,12 +35,15 @@ export default function LoginForm({
     if (onLoginSuccess) {
       onLoginSuccess();
     } else {
-      router.push("/dashboard");
+      // router.push("/dashboard");
+      router.push("/");
       router.refresh();
     }
   };
 
   const onSubmit = async (data: LoginFormData) => {
+    console.log("data", data);
+
     try {
       setIsLoading(true);
       const result = await signIn("credentials", {
@@ -77,8 +80,7 @@ export default function LoginForm({
           label="Email"
           type="email"
           placeholder="Enter your email"
-          register={form.register}
-          fieldName="email"
+          {...form.register("email", { required: true })}
           required
           autoComplete="email"
         />

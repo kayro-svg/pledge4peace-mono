@@ -14,18 +14,27 @@ import {
 } from "lucide-react";
 import { SanityWaysToSupportSection } from "@/lib/types";
 
+export interface ShareData {
+  title: string;
+  text: string;
+  url: string;
+  hashtags?: string;
+}
+
 interface SupportOption {
   icon: ReactNode;
   title: string;
   description: string;
   linkText: string;
-  linkHref: string;
+  linkHref?: string;
+  shareData?: ShareData;
+  type?: "share" | "volunteer" | "make-a-pledge";
 }
 
 export default function WaysToSupportSection({
   data,
 }: {
-  data: SanityWaysToSupportSection;
+  data: SanityWaysToSupportSection | SupportOption;
 }) {
   const supportOptions: SupportOption[] = [
     {
@@ -34,7 +43,8 @@ export default function WaysToSupportSection({
       description:
         "Join a campaign and pledge your support. Your voice matters in creating meaningful change.",
       linkText: "Browse Campaigns",
-      linkHref: "/campaigns",
+      linkHref: "/#projects-section",
+      type: "make-a-pledge",
     },
     // {
     //   icon: <HandCoins className="w-7 h-7 text-[#86AC9D]" />,
@@ -58,7 +68,13 @@ export default function WaysToSupportSection({
       description:
         "Share our campaigns on social media and help us reach a wider audience. Your voice amplifies our message.",
       linkText: "Share Our Mission",
-      linkHref: "/share",
+      shareData: {
+        title: "Pledge for Peace",
+        text: "Join me in supporting peace initiatives around the world. Together we can make a difference!",
+        url: "https://pledge4peace.org",
+        hashtags: "PeaceForAll,Pledge4Peace",
+      },
+      type: "share",
     },
     // {
     //   icon: <BriefcaseBusiness className="w-7 h-7 text-[#86AC9D]" />,
@@ -88,20 +104,25 @@ export default function WaysToSupportSection({
       buttonText: option.linkText,
       buttonLink: option.linkHref,
       icon: { asset: { url: "" } },
+      type: option.type,
+      shareData: option.shareData,
     })),
   };
 
   const sectionData = {
     waysToSupportHeading:
-      data?.waysToSupportHeading ?? DEFAULT_SECTION_DATA.waysToSupportHeading,
+      (data as SanityWaysToSupportSection)?.waysToSupportHeading ??
+      DEFAULT_SECTION_DATA.waysToSupportHeading,
     waysToSupportDescription:
-      data?.waysToSupportDescription ??
+      (data as SanityWaysToSupportSection)?.waysToSupportDescription ??
       DEFAULT_SECTION_DATA.waysToSupportDescription,
     waysToSupportItems:
-      data?.waysToSupportItems?.map((item) => ({
+      (data as SanityWaysToSupportSection)?.waysToSupportItems?.map((item) => ({
         ...item,
         buttonLink: item.buttonLink || "#",
         buttonText: item.buttonText || "Learn More",
+        type: (item as unknown as SupportOption)?.type,
+        shareData: (item as unknown as SupportOption)?.shareData,
       })) ?? DEFAULT_SECTION_DATA.waysToSupportItems,
   };
 
@@ -135,6 +156,8 @@ export default function WaysToSupportSection({
               description={option.description}
               linkText={option.buttonText}
               linkHref={option.buttonLink}
+              type={option?.type}
+              shareData={option?.shareData}
             />
           ))}
         </div>

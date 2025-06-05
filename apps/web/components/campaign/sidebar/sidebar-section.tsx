@@ -1,6 +1,6 @@
 import CommentsSection from "@/components/campaign/comments/comments-section";
 import { API_ENDPOINTS } from "@/lib/config";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 
 interface SidebarSectionProps {
   solutionId?: string;
@@ -9,22 +9,58 @@ interface SidebarSectionProps {
 export default function SidebarSection({ solutionId }: SidebarSectionProps) {
   const [solutionTitle, setSolutionTitle] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchSolution() {
-      try {
-        if (solutionId) {
-          const solution = await fetch(
-            API_ENDPOINTS.solutions.getById(solutionId)
-          );
-          const data = await solution.json();
-          setSolutionTitle(data.title);
-        }
-      } catch (error) {
-        console.error("Error fetching solution:", error);
-      }
+  // Cache de títulos de soluciones para evitar llamadas repetidas a la API
+  const solutionTitleCache = useRef<Record<string, string>>({});
+  
+  // Función para obtener solución con caché
+  const fetchSolution = useCallback(async (sid: string) => {
+    // Si ya tenemos el título en caché, usarlo
+    if (solutionTitleCache.current[sid]) {
+      console.log(`[Sidebar] Using cached solution title for: ${sid}`);
+      setSolutionTitle(solutionTitleCache.current[sid]);
+      return;
     }
-    fetchSolution();
-  }, [solutionId]);
+    
+    try {
+      console.log(`[Sidebar] Fetching solution details for: ${sid}`);
+      
+      // Usar AbortController para evitar peticiones colgadas
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const solution = await fetch(
+        API_ENDPOINTS.solutions.getById(sid),
+        { signal: controller.signal }
+      );
+      
+      clearTimeout(timeoutId);
+      
+      if (!solution.ok) {
+        throw new Error(`Failed to fetch solution: ${solution.status}`);
+      }
+      
+      const data = await solution.json();
+      
+      // Guardar en caché y actualizar estado
+      if (data.title) {
+        solutionTitleCache.current[sid] = data.title;
+        setSolutionTitle(data.title);
+      }
+    } catch (error) {
+      console.error("[Sidebar] Error fetching solution:", error);
+      // Usar un título genérico en caso de error
+      setSolutionTitle("Solution details");
+    }
+  }, []);
+
+  // Efecto para cargar la solución cuando cambia el ID
+  useEffect(() => {
+    if (solutionId) {
+      fetchSolution(solutionId);
+    } else {
+      setSolutionTitle(null);
+    }
+  }, [solutionId, fetchSolution]);
 
   return (
     <div className="bg-white rounded-3xl shadow-[0_0_10px_rgba(0,0,0,0.1)] p-6 flex flex-col h-full lg:max-h-[88vh] overflow-y-auto">

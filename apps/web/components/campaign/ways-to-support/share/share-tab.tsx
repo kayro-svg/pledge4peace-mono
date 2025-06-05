@@ -1,68 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import {
-  Share2,
-  MessageCircle,
-  Users,
-  Heart,
-  Copy,
-  Check,
-  Facebook,
-  Twitter,
-  Linkedin,
-  Link as LinkIcon,
-  Share as ShareIcon,
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Share2, MessageCircle, Users, Heart, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { ShareSocialButton, ShareData } from "./share-social-button";
 
-const shareData = {
+const shareData: ShareData = {
   title: "Pledge for Peace",
   text: "Join me in supporting peace initiatives around the world. Together we can make a difference!",
   url: "https://pledge4peace.org",
-  hashtags: "PeaceForAll, Pledge4Peace",
+  hashtags: "PeaceForAll,Pledge4Peace",
 };
-
-const socialPlatforms = [
-  {
-    name: "Facebook",
-    icon: Facebook,
-    color: "text-[#1877F2]",
-    getShareUrl: () =>
-      `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareData.url)}&quote=${encodeURIComponent(shareData.text)}`,
-  },
-  {
-    name: "X (Twitter)",
-    icon: Twitter,
-    color: "text-black",
-    getShareUrl: () =>
-      `https://twitter.com/intent/tweet?url=${encodeURIComponent(shareData.url)}&text=${encodeURIComponent(shareData.text)}&hashtags=${shareData.hashtags}`,
-  },
-  {
-    name: "LinkedIn",
-    icon: Linkedin,
-    color: "text-[#0A66C2]",
-    getShareUrl: () =>
-      `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareData.url)}`,
-  },
-  {
-    name: "Copy Link",
-    icon: LinkIcon,
-    color: "text-foreground",
-    onClick: (setIsLinkCopied: (value: boolean) => void) => {
-      navigator.clipboard.writeText(shareData.url);
-      setIsLinkCopied(true);
-      setTimeout(() => setIsLinkCopied(false), 2000);
-    },
-  },
-];
 
 export default function ShareTab() {
   const [isLinkCopied, setIsLinkCopied] = useState(false);
@@ -96,25 +45,6 @@ export default function ShareTab() {
     }
   };
 
-  const handleNativeShare = async () => {
-    // Check if Web Share API is supported
-    if (typeof window !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({
-          title: shareData.title,
-          text: shareData.text,
-          url: shareData.url,
-        });
-      } catch (err) {
-        // User cancelled the share or there was an error
-        console.log("Share was cancelled or failed:", err);
-      }
-    } else {
-      // Fallback to copy to clipboard
-      await copyToClipboard(shareData.url);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
@@ -136,53 +66,7 @@ export default function ShareTab() {
               Share our campaign on Facebook, X (Twitter), Instagram, and
               LinkedIn to reach your friends and followers.
             </p>
-            <div className="flex gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline" className="flex-1">
-                    <ShareIcon className="h-3 w-3 mr-1" />
-                    Share
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  {socialPlatforms.map((platform) => (
-                    <DropdownMenuItem
-                      key={platform.name}
-                      onClick={() => {
-                        if (platform.onClick) {
-                          platform.onClick(setIsLinkCopied);
-                        } else {
-                          window.open(
-                            platform.getShareUrl(),
-                            "_blank",
-                            "noopener,noreferrer"
-                          );
-                        }
-                      }}
-                      className="cursor-pointer"
-                    >
-                      <platform.icon
-                        className={`h-4 w-4 mr-2 ${platform.color}`}
-                      />
-                      <span>{platform.name}</span>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Native share button for mobile */}
-              <div className="md:hidden">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleNativeShare}
-                  className="w-full"
-                >
-                  <Share2 className="h-3 w-3 mr-1" />
-                  {isLinkCopied ? "Link Copied!" : "Share"}
-                </Button>
-              </div>
-            </div>
+            <ShareSocialButton shareData={shareData} showNativeShareButton />
           </CardContent>
         </Card>
 

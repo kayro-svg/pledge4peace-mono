@@ -59,6 +59,7 @@ export default function PeaceAgreementContent({
       try {
         const fetchedSolutions = await getSolutions(campaignId);
         setSolutions(fetchedSolutions);
+
         // Fetch stats for all solutions in the campaign
         const statsRes = await fetch(
           `${API_URL}/solutions/campaign/${campaignId}/stats`
@@ -71,24 +72,42 @@ export default function PeaceAgreementContent({
           });
           setSolutionStats(statsMap);
         }
-        // Si el usuario está autenticado, obtener user-interactions para cada solución
-        if (session) {
-          await Promise.all(
-            fetchedSolutions.map(async (solution) => {
-              try {
-                const userInt = await getUserInteractions(solution.id);
-                setUserInteraction("like", solution.id, userInt.hasLiked);
-                setUserInteraction("dislike", solution.id, userInt.hasDisliked);
-                setUserInteraction("share", solution.id, userInt.hasShared);
-              } catch (e) {
-                // Silenciar errores de usuario no autenticado o endpoint
-              }
-            })
-          );
+
+        // Only fetch user interactions if user is authenticated
+        if (session?.accessToken) {
+          const interactionPromises = fetchedSolutions.map(async (solution) => {
+            try {
+              const userInt = await getUserInteractions(solution.id);
+              return {
+                solutionId: solution.id,
+                interactions: userInt,
+              };
+            } catch (e) {
+              console.warn(
+                `Failed to fetch interactions for solution ${solution.id}:`,
+                e
+              );
+              return {
+                solutionId: solution.id,
+                interactions: {
+                  hasLiked: false,
+                  hasDisliked: false,
+                  hasShared: false,
+                },
+              };
+            }
+          });
+
+          const interactions = await Promise.all(interactionPromises);
+          interactions.forEach(({ solutionId, interactions }) => {
+            setUserInteraction("like", solutionId, interactions.hasLiked);
+            setUserInteraction("dislike", solutionId, interactions.hasDisliked);
+            setUserInteraction("share", solutionId, interactions.hasShared);
+          });
         }
       } catch (error) {
-        toast.error("Failed to load solutions");
         console.error("Error fetching solutions:", error);
+        toast.error("Failed to load solutions");
       } finally {
         setIsLoading(false);
       }
@@ -96,7 +115,7 @@ export default function PeaceAgreementContent({
 
     fetchSolutions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [campaignId, session]);
+  }, [campaignId, session?.accessToken]);
 
   const toggleExpand = (solutionId: string) => {
     setSolutions((prevSolutions) =>
@@ -230,7 +249,8 @@ export default function PeaceAgreementContent({
               <p className="text-gray-600 mb-4">
                 Be the first to propose a solution for this campaign
               </p>
-              <Button
+              {addSolutionButton()}
+              {/* <Button
                 onClick={() => {
                   if (!session) {
                     setShowLoginModal(true);
@@ -242,7 +262,7 @@ export default function PeaceAgreementContent({
               >
                 <Plus className="h-4 w-4" />
                 Add Solution
-              </Button>
+              </Button> */}
             </div>
           ) : (
             <div className="space-y-6">

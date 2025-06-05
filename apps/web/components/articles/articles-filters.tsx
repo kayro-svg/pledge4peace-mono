@@ -29,7 +29,7 @@ export default function ArticlesFilters({
           </div>
 
           {/* Filters */}
-          <div className="flex gap-4 w-full md:w-auto">
+          <div className="flex flex-wrap md:flex-row gap-4 w-full md:w-auto">
             <select
               className="px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#548281]"
               onChange={(e) => onCategoryChange(e.target.value)}

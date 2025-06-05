@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import CommentItem from "./comment-item";
 import CommentForm from "./comment-form";
 import { useInteractionManager } from "../shared/use-interaction-manager";
@@ -36,30 +36,39 @@ export default function CommentsSection({
   });
   const [showLoginModal, setShowLoginModal] = useState(false);
 
-  useEffect(() => {
-    const fetchComments = async () => {
-      if (!solutionId) {
-        setComments([]);
-        return;
+  // Memoizamos la función para cargar comentarios para evitar recreaciones
+  const fetchComments = useCallback(async (sid: string) => {
+    if (!sid) return;
+    
+    setLoading(true);
+    try {
+      console.log(`[Comments] Fetching comments for solution: ${sid}`);
+      const fetchedComments = await getComments(sid);
+      setComments(fetchedComments);
+      
+      // Solo actualizar el contador si es necesario, sin crear un bucle
+      if (fetchedComments.length !== count) {
+        setCount(fetchedComments.length);
       }
-
-      setLoading(true);
-      try {
-        const fetchedComments = await getComments(solutionId);
-        setComments(fetchedComments);
-        if (fetchedComments.length !== count) {
-          setCount(fetchedComments.length);
-        }
-      } catch (error) {
+    } catch (error) {
+      console.error("[Comments] Error fetching comments:", error);
+      // No mostrar toast en cada error para evitar spam de notificaciones
+      if (!comments.length) {
         toast.error("Failed to load comments");
-        console.error("Error fetching comments:", error);
-      } finally {
-        setLoading(false);
       }
-    };
+    } finally {
+      setLoading(false);
+    }
+  }, [count, setCount, comments.length, setComments, setLoading]);
 
-    fetchComments();
-  }, [solutionId, setCount, count]);
+  // Cargar comentarios solo cuando cambia el solutionId
+  useEffect(() => {
+    if (solutionId) {
+      fetchComments(solutionId);
+    } else {
+      setComments([]);
+    }
+  }, [solutionId, fetchComments]);
 
   const handleCommentSubmit = async (content: string, solutionId: string) => {
     if (!solutionId || !session) {

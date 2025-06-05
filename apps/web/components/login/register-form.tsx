@@ -93,8 +93,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           id="name"
           label="Full Name"
           placeholder="Enter your full name"
-          register={form.register}
-          fieldName="name"
+          {...form.register("name", { required: true })}
           required
         />
 
@@ -103,8 +102,8 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
           label="Email"
           type="email"
           placeholder="Enter your email"
-          register={form.register}
-          fieldName="email"
+          {...form.register("email", { required: true })}
+          // fieldName="email"
           required
           autoComplete="email"
         />

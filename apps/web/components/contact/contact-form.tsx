@@ -34,7 +34,7 @@ export function ContactForm() {
       </h2>
       <p className="text-gray-600 mb-8">
         Have questions about our initiatives or want to get involved? Send us a
-        message and we'll get back to you as soon as possible.
+        message and we&apos;ll get back to you as soon as possible.
       </p>
 
       <form
@@ -45,9 +45,7 @@ export function ContactForm() {
           id="name"
           label="Name"
           placeholder="Your full name"
-          register={form.register}
-          fieldName="name"
-          required
+          {...form.register("name", { required: true })}
         />
 
         <FormField
@@ -55,18 +53,14 @@ export function ContactForm() {
           label="Email"
           type="email"
           placeholder="Your email address"
-          register={form.register}
-          fieldName="email"
-          required
+          {...form.register("email", { required: true })}
         />
 
         <FormField
           id="subject"
           label="Subject"
           placeholder="Message subject"
-          register={form.register}
-          fieldName="subject"
-          required
+          {...form.register("subject", { required: true })}
         />
 
         <TextAreaField

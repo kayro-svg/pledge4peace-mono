@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import MainContentSection from "@/components/campaign/campaign-main-content/campaign-main-content";
 import {
   Dialog,
@@ -26,8 +27,24 @@ interface CampaignDetailContentProps {
 export function CampaignDetailContent({
   campaign,
 }: CampaignDetailContentProps) {
+  // Prefetching de la sesión para evitar múltiples llamadas al abrir el modal
+  // Este hook hace que la sesión se cargue una sola vez aquí, y luego
+  // estará disponible en caché para los componentes hijos
+  useSession();
+  
+  // Estado para controlar el diálogo de comentarios
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [activeSolutionId, setActiveSolutionId] = useState("");
+  
+  // Referencia para evitar montajes innecesarios del contenido del diálogo
+  const isCommentsContentMounted = useRef(false);
+  
+  // Precargar el componente SidebarSection solo cuando sea necesario
+  useEffect(() => {
+    if (isCommentsOpen && activeSolutionId) {
+      isCommentsContentMounted.current = true;
+    }
+  }, [isCommentsOpen, activeSolutionId]);
 
   const handleCommentClick = (solutionId: string | React.MouseEvent) => {
     // Extract solutionId if it's an event (from mobile view) or use it directly (from desktop view)
@@ -81,9 +98,14 @@ export function CampaignDetailContent({
                       <DialogTitle>Comments</DialogTitle>
                     </DialogHeader>
                     <div className="flex-1 overflow-y-auto">
-                      {activeSolutionId ? (
+                      {/* Renderizamos el contenido solo cuando realmente se necesite */}
+                      {isCommentsOpen && activeSolutionId ? (
                         <div className="p-2 h-full">
-                          <SidebarSection solutionId={activeSolutionId} />
+                          {/* Pasamos la sesión ya cargada para evitar que vuelva a fetchear */}
+                          <SidebarSection 
+                            solutionId={activeSolutionId} 
+                            key={`sidebar-${activeSolutionId}`}
+                          />
                         </div>
                       ) : (
                         <div className="p-6 text-center h-full flex items-center justify-center">

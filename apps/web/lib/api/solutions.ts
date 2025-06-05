@@ -3,47 +3,6 @@ import { getSession } from "next-auth/react";
 import { API_ENDPOINTS } from "@/lib/config";
 import { API_URL } from "@/lib/config";
 
-/**
- * Gets the number of solutions the current user has created for a campaign
- * @param campaignId The ID of the campaign
- * @returns The number of solutions the user has created for the campaign
- */
-export async function getUserSolutionCount(
-  campaignId: string
-): Promise<number> {
-  try {
-    const session = await getSession();
-
-    // If no session, return 0 immediately without making API call
-    if (!session?.accessToken) {
-      return 0;
-    }
-
-    const response = await fetch(
-      `${API_URL}/solutions/user-count/${campaignId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${session.accessToken}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        console.warn("User not authenticated for solution count");
-        return 0;
-      }
-      throw new Error("Failed to get user solution count");
-    }
-
-    const data = await response.json();
-    return data.count || 0;
-  } catch (error) {
-    console.error("Error getting user solution count:", error);
-    return 0; // Default to 0 if there's an error
-  }
-}
-
 // Cache solutions by campaign ID to prevent excessive API calls
 const solutionsCache: Record<string, { data: Solution[]; timestamp: number }> =
   {};
@@ -149,10 +108,16 @@ export async function shareSolution(solutionId: string) {
 
 // Cache for solution stats to prevent excessive API calls
 const statsCache: Record<string, { data: any; timestamp: number }> = {};
-const CACHE_TTL = 30000; // 30 seconds cache lifetime
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache lifetime
 
 export async function getSolutionStats(solutionId: string) {
   try {
+    // Check cache first
+    const cachedStats = statsCache[solutionId];
+    if (cachedStats && Date.now() - cachedStats.timestamp < CACHE_TTL) {
+      return cachedStats.data;
+    }
+
     const session = await getSession();
     const response = await fetch(`${API_URL}/solutions/${solutionId}/stats`, {
       headers: session?.accessToken
@@ -167,21 +132,21 @@ export async function getSolutionStats(solutionId: string) {
     const data = await response.json();
 
     // Cache the response
-    // statsCache[solutionId] = {
-    //   data,
-    //   timestamp: Date.now(),
-    // };
+    statsCache[solutionId] = {
+      data,
+      timestamp: Date.now(),
+    };
 
     return data;
   } catch (error) {
     console.error("Error fetching solution stats:", error);
     // Return cached data if available, even if expired
-    // if (statsCache[solutionId]) {
-    //   console.log("Using cached stats for solution:", solutionId);
-    //   return statsCache[solutionId].data;
-    // }
-    // // Otherwise return default stats
-    // return { likes: 0, dislikes: 0, shares: 0, comments: 0 };
+    if (statsCache[solutionId]) {
+      console.log("Using cached stats for solution:", solutionId);
+      return statsCache[solutionId].data;
+    }
+    // Otherwise return default stats
+    return { likes: 0, dislikes: 0, shares: 0, comments: 0 };
   }
 }
 
@@ -193,60 +158,64 @@ const userInteractionsCache: Record<
     timestamp: number;
   }
 > = {};
-const USER_INTERACTIONS_CACHE_TTL = 30000; // 30 seconds cache lifetime
+const USER_INTERACTIONS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache lifetime
 
 export async function getUserInteractions(solutionId: string) {
   // Get session only once and cache it
   const session = await getSession();
 
-  // If no session, return default values immediately without API call
-  if (!session?.accessToken) {
-    return {
-      hasLiked: false,
-      hasDisliked: false,
-      hasShared: false,
-    };
-  }
-
-  // Check if we have cached data for this solution and user session
-  const cacheKey = `${solutionId}-${session.user?.email || "anonymous"}`;
-  if (
-    userInteractionsCache[cacheKey] &&
-    Date.now() - userInteractionsCache[cacheKey].timestamp <
-      USER_INTERACTIONS_CACHE_TTL
-  ) {
-    return userInteractionsCache[cacheKey].data;
-  }
-
   try {
+    // If no session or no access token, return default values immediately without API call
+    if (!session?.accessToken) {
+      return {
+        hasLiked: false,
+        hasDisliked: false,
+        hasShared: false,
+      };
+    }
+
+    // Check if we have cached data for this solution and user session
+    const cacheKey = `${solutionId}-${session.user?.email || "anonymous"}`;
+    const cachedData = userInteractionsCache[cacheKey];
+
+    if (
+      cachedData &&
+      Date.now() - cachedData.timestamp < USER_INTERACTIONS_CACHE_TTL
+    ) {
+      return cachedData.data;
+    }
+
     const response = await fetch(
-      `${API_URL}/solutions/${solutionId}/user-interactions`,
+      API_ENDPOINTS.solutions.userInteractions(solutionId),
       {
         headers: {
           Authorization: `Bearer ${session.accessToken}`,
-          "Content-Type": "application/json",
         },
       }
     );
 
+    // Handle different response statuses
+    if (response.status === 401 || response.status === 403) {
+      // Authentication error - return default values
+      return {
+        hasLiked: false,
+        hasDisliked: false,
+        hasShared: false,
+      };
+    }
+
     if (!response.ok) {
-      if (response.status === 401) {
-        // Return default values for unauthorized users
-        const defaultData = {
-          hasLiked: false,
-          hasDisliked: false,
-          hasShared: false,
-        };
-
-        // Cache the default response
-        userInteractionsCache[cacheKey] = {
-          data: defaultData,
-          timestamp: Date.now(),
-        };
-
-        return defaultData;
+      console.error(`Failed to get user interactions: ${response.status}`);
+      // Return cached data if available
+      if (cachedData) {
+        return cachedData.data;
       }
-      throw new Error("Failed to get user interactions");
+      // Otherwise return default values
+      return {
+        hasLiked: false,
+        hasDisliked: false,
+        hasShared: false,
+      };
     }
 
     const data = await response.json();
@@ -259,12 +228,14 @@ export async function getUserInteractions(solutionId: string) {
 
     return data;
   } catch (error) {
-    console.error("Error getting user interactions:", error);
-    // Return cached data if available, even if expired
-    if (userInteractionsCache[cacheKey]) {
-      return userInteractionsCache[cacheKey].data;
+    console.error("Error fetching user interactions:", error);
+    // Check if we have cached data
+    const cacheKey = `${solutionId}-${session?.user?.email || "anonymous"}`;
+    const cachedData = userInteractionsCache[cacheKey];
+    if (cachedData) {
+      return cachedData.data;
     }
-    // Default values if no cache available
+    // Return default values if no cache available
     return {
       hasLiked: false,
       hasDisliked: false,
@@ -274,14 +245,8 @@ export async function getUserInteractions(solutionId: string) {
 }
 
 export async function getComments(solutionId: string): Promise<Comment[]> {
-  const session = await getSession();
   const response = await fetch(
-    API_ENDPOINTS.comments.getBySolution(solutionId),
-    {
-      headers: session?.accessToken
-        ? { Authorization: `Bearer ${session.accessToken}` }
-        : {},
-    }
+    API_ENDPOINTS.comments.getBySolution(solutionId)
   );
 
   if (!response.ok) {

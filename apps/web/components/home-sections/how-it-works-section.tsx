@@ -1,3 +1,5 @@
+"use client";
+
 import StepsDisplay from "@/components/ui/steps-display";
 import { SanityHowItWorksSection } from "@/lib/types";
 import { Award, HandshakeIcon, UserPlus } from "lucide-react";

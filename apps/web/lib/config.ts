@@ -25,6 +25,8 @@ export const API_ENDPOINTS = {
     share: (id: string) => `${API_URL}/solutions/${id}/share`,
     campaignStats: (campaignId: string) =>
       `${API_URL}/solutions/campaign/${campaignId}/stats`,
+    userInteractions: (id: string) =>
+      `${API_URL}/solutions/${id}/user-interactions`,
   },
   comments: {
     create: (solutionId: string) =>

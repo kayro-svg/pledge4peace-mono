@@ -1,14 +1,15 @@
 import CampaignCard from "@/components/ui/campaign-card";
-import { getCampaigns } from "@/lib/api";
-import { SanityCampaignsSection } from "@/lib/types";
+import { Campaign, SanityCampaignsSection } from "@/lib/types";
 
-export default async function RecentProjects({
+export default function RecentProjects({
   data,
+  campaigns,
 }: {
   data: SanityCampaignsSection;
+  campaigns: Campaign[];
 }) {
   // Get campaigns from the API
-  const campaigns = await getCampaigns();
+  // const campaigns = await getCampaigns();
 
   const DEFAULT_SECTION_DATA = {
     campaignsHeading: "Recent Campaigns",
@@ -27,7 +28,10 @@ export default async function RecentProjects({
   };
 
   return (
-    <section className="bg-[#fdfdf0] py-16 p-0 md:p-8 px-4 sm:px-6 md:px-8 lg:px-12">
+    <section
+      className="bg-[#fdfdf0] py-16 p-0 md:p-8 px-4 sm:px-6 md:px-8 lg:px-12"
+      id="projects-section"
+    >
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
           <h2 className="text-[#2F4858] uppercase text-sm font-medium tracking-wider mb-4 border-b-2 w-fit mx-auto border-[#2F4858]">

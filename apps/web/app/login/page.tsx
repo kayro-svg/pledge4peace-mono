@@ -19,7 +19,7 @@ export default function LoginPage() {
           </Button>
         </Link>
       </div>
-      <div className="flex flex-row min-h-[calc(100vh-100px)] w-full">
+      <div className="flex flex-col lg:flex-row min-h-full lg:min-h-[calc(100vh-100px)] w-full ">
         <LeftPanel />
         <RightPanel>
           <AuthContainer />
