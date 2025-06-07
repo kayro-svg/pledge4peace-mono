@@ -12,7 +12,7 @@ export default function SiteFooter() {
       <div className="container mx-auto px-4 sm:px-6">
         <div className="flex flex-col lg:flex-row gap-8 md:gap-12">
           {/* Logo and mission statement */}
-          <div className="flex flex-col items-start justify-start h-min bg-background rounded-lg p-4 sm:p-6 shadow-md gap-4 w-full sm:w-auto sm:min-w-[300px] md:min-w-[350px] flex-0">
+          <div className="flex flex-col items-start justify-start h-min bg-background rounded-lg p-4 sm:p-6 shadow-md gap-4 w-full sm:w-auto sm:min-w-[300px] lg:max-w-[350px] flex-0">
             <Image
               src="/p2p_footer_logo.png"
               alt="Pledge4Peace.org"
@@ -34,22 +34,21 @@ export default function SiteFooter() {
               <FooterLinks
                 title="Site Links"
                 links={[
-                  { href: "#", label: "About Us" },
-                  { href: "#", label: "Campaigns" },
-                  { href: "#", label: "Partners" },
-                  { href: "#", label: "Contact Us" },
-                  { href: "#", label: "Blog" },
+                  { href: "/about", label: "About Us" },
+                  { href: "/volunteer", label: "Volunteer" },
+                  { href: "/events", label: "Events" },
+                  // { href: "#", label: "Privacy Policy" },
+                  // { href: "#", label: "Terms of Service" },
                 ]}
               />
 
               <FooterLinks
                 title="Quick Links"
                 links={[
-                  { href: "#", label: "Pledge" },
-                  { href: "#", label: "Donate" },
-                  { href: "#", label: "Volunteer" },
-                  { href: "#", label: "Events" },
-                  { href: "#", label: "Contact Us" },
+                  { href: "/#projects-section", label: "Pledge" },
+                  { href: "/volunteer#volunteer-form", label: "Volunteer" },
+                  { href: "/articles", label: "Articles & News" },
+                  { href: "/contact", label: "Contact Us" },
                 ]}
               />
             </div>
