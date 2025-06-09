@@ -10,6 +10,7 @@ import { solutions } from "../db/schema/solutions";
 import { comments } from "../db/schema/comments";
 import { solutionInteractions } from "../db/schema/interactions";
 import { pledges } from "../db/schema/pledges";
+import { logger } from '../utils/logger';
 
 export interface RegisterUserDTO {
   email: string;
@@ -90,7 +91,7 @@ export class AuthService {
         baseUrl
       );
     } catch (error) {
-      console.error("Error sending verification email:", error);
+      logger.error("Error sending verification email:", error);
       // No interrumpimos el registro por culpa del email
     }
 
@@ -233,7 +234,7 @@ export class AuthService {
         baseUrl
       );
     } catch (error) {
-      console.error("Error sending the re-verification email:", error as any);
+      logger.error("Error sending the re-verification email:", error as any);
       throw new HTTPException(500, {
         message:
           "The verification email could not be sent. Please try again later.",
@@ -317,7 +318,7 @@ export class AuthService {
         baseUrl
       );
     } catch (error) {
-      console.error("Error sending password reset email:", error);
+      logger.error("Error sending password reset email:", error);
       throw new HTTPException(500, {
         message: "Failed to send password reset email",
       });

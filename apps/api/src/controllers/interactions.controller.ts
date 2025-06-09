@@ -3,6 +3,7 @@ import { InteractionsService } from "../services/interactions.service";
 import { createDb } from "../db";
 import { HTTPException } from "hono/http-exception";
 import { getAuthUser } from "../middleware/auth.middleware";
+import { logger } from '../utils/logger';
 
 export class InteractionsController {
   async toggleLike(c: Context) {
@@ -20,7 +21,7 @@ export class InteractionsController {
       const isLiked = await service.toggleLike(solutionId, user.id);
       return c.json({ liked: isLiked });
     } catch (error) {
-      console.error("Error toggling like:", error);
+      logger.error("Error toggling like:", error);
 
       if (error instanceof HTTPException) {
         throw error;
@@ -46,7 +47,7 @@ export class InteractionsController {
       return c.json({ disliked: isDisliked });
     } catch (error) {
       if (error instanceof HTTPException) throw error;
-      console.error("Error toggling dislike:", error);
+      logger.error("Error toggling dislike:", error);
       throw new HTTPException(500, { message: "Error toggling dislike" });
     }
   }
@@ -63,7 +64,7 @@ export class InteractionsController {
       return c.json(share, 201);
     } catch (error) {
       if (error instanceof HTTPException) throw error;
-      console.error("Error sharing solution:", error);
+      logger.error("Error sharing solution:", error);
       throw new HTTPException(500, { message: "Error sharing solution" });
     }
   }
@@ -78,7 +79,7 @@ export class InteractionsController {
       return c.json(stats);
     } catch (error) {
       if (error instanceof HTTPException) throw error;
-      console.error("Error getting interaction stats:", error);
+      logger.error("Error getting interaction stats:", error);
       throw new HTTPException(500, {
         message: "Error getting interaction stats",
       });
@@ -100,7 +101,7 @@ export class InteractionsController {
       return c.json(interactions);
     } catch (error) {
       if (error instanceof HTTPException) throw error;
-      console.error("Error getting user interactions:", error);
+      logger.error("Error getting user interactions:", error);
       throw new HTTPException(500, {
         message: "Error getting user interactions",
       });

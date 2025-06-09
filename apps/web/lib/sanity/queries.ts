@@ -1,11 +1,14 @@
 // lib/sanity/queries.ts
 import { client } from "./client";
+import { logger } from "@/lib/utils/logger";
 import {
   SanityHomePage,
   SanityCampaign,
   SanityArticle,
   SanityConference,
   SanitySlug,
+  SanityAboutPage,
+  SanityVolunteerPage,
 } from "../types";
 
 // CONSULTA PRINCIPAL OPTIMIZADA
@@ -73,7 +76,9 @@ export async function getHomePageData(): Promise<SanityHomePage> {
         _id,
         title,
         slug,
-        date,
+        startDateTime,
+        endDateTime,
+        timezone,
         location,
         image { asset-> { url } },
         description
@@ -212,7 +217,10 @@ export async function getCampaigns(): Promise<SanityCampaign[]> {
 }
 
 // Memory cache for campaign data to reduce Sanity API calls
-const campaignCache = new Map<string, { data: SanityCampaign; timestamp: number }>();
+const campaignCache = new Map<
+  string,
+  { data: SanityCampaign; timestamp: number }
+>();
 const CAMPAIGN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
 
 export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
@@ -221,16 +229,16 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
     const cacheKey = `campaign-${slug}`;
     const cachedItem = campaignCache.get(cacheKey);
     const now = Date.now();
-    
+
     // Return cached data if valid
     if (cachedItem && now - cachedItem.timestamp < CAMPAIGN_CACHE_TTL) {
-      console.log(`[Cache Hit] Using cached campaign data for: ${slug}`);
+      logger.log(`[Cache Hit] Using cached campaign data for: ${slug}`);
       return cachedItem.data;
     }
-    
+
     // If not in cache or expired, fetch from Sanity
-    console.log(`[Cache Miss] Fetching campaign data from Sanity for: ${slug}`);
-    
+    logger.log(`[Cache Miss] Fetching campaign data from Sanity for: ${slug}`);
+
     // Restore the original query structure to match your existing data
     const campaignData = await client.fetch(
       `*[_type == "campaign" && slug.current == $slug][0] {
@@ -262,15 +270,61 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
             _id, 
             title, 
             slug, 
-            date, 
+            startDateTime,
+            endDateTime,
+            timezone,
             location, 
             image { asset-> { url } }, 
             description,
-            about,
+            about[] {
+              ...,
+              _type == "inlineImage" => {
+                ...,
+                asset-> {
+                  url,
+                  metadata {
+                    dimensions {
+                      width,
+                      height
+                    }
+                  }
+                }
+              },
+              _type == "videoEmbed" => {
+                ...,
+                url,
+                title,
+                caption
+              },
+              _type == "callout" => {
+                ...,
+                type,
+                title,
+                content
+              },
+              _type == "divider" => {
+                ...,
+                style
+              },
+              _type == "columns" => {
+                ...,
+                leftColumn,
+                rightColumn
+              }
+            },
             category,
             price,
-            registrationLink,
             organizer,
+            speakers[] {
+              _id,
+              name,
+              role,
+              "image": {
+                "asset": {
+                  "url": image.asset->url
+                }
+              }
+            },
             "gallery": gallery[].asset->{ url }
           },
           conferenceDetails {
@@ -283,54 +337,59 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
       { slug },
       { next: { revalidate: 60 } }
     );
-    
+
     // Update cache with new data
     if (campaignData) {
-      console.log(`[Sanity] Successfully fetched campaign: ${campaignData.title}`);
+      logger.log(
+        `[Sanity] Successfully fetched campaign: ${campaignData.title}`
+      );
       campaignCache.set(cacheKey, { data: campaignData, timestamp: now });
     } else {
-      console.log(`[Sanity] No campaign found for slug: ${slug}`);
+      logger.log(`[Sanity] No campaign found for slug: ${slug}`);
     }
-    
+
     return campaignData;
   } catch (error) {
-    console.error(`[Sanity Error] Failed to fetch campaign for slug ${slug}:`, error);
+    logger.error(
+      `[Sanity Error] Failed to fetch campaign for slug ${slug}:`,
+      error
+    );
     throw error;
   }
 }
 
 // Cache for campaign slugs
-const slugsCache: { data: SanitySlug[] | null; timestamp: number } = { 
-  data: null, 
-  timestamp: 0 
+const slugsCache: { data: SanitySlug[] | null; timestamp: number } = {
+  data: null,
+  timestamp: 0,
 };
 const SLUGS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
 export async function getCampaignSlugs(): Promise<SanitySlug[]> {
   const now = Date.now();
-  
+
   // Return cached data if valid
   if (slugsCache.data && now - slugsCache.timestamp < SLUGS_CACHE_TTL) {
-    console.log('[Cache Hit] Using cached campaign slugs');
+    logger.log("[Cache Hit] Using cached campaign slugs");
     return slugsCache.data;
   }
-  
-  console.log('[Cache Miss] Fetching campaign slugs from Sanity');
+
+  logger.log("[Cache Miss] Fetching campaign slugs from Sanity");
   const slugs = await client.fetch(
     `*[_type == "campaign" && defined(slug.current)] {
       slug
     }`,
     {},
-    { 
+    {
       next: { revalidate: 60 },
-      cache: 'force-cache'
+      cache: "force-cache",
     }
   );
-  
+
   // Update cache
   slugsCache.data = slugs;
   slugsCache.timestamp = now;
-  
+
   return slugs;
 }
 
@@ -379,11 +438,13 @@ export async function getArticles(): Promise<SanityArticle[]> {
 
 export async function getConferences(): Promise<SanityConference[]> {
   return client.fetch(
-    `*[_type == "conference"] | order(date asc) {
+    `*[_type == "conference"] | order(startDateTime asc) {
       _id,
       title,
       slug,
-      date,
+      startDateTime,
+      endDateTime,
+      timezone,
       location,
       image { asset-> { url } },
       description
@@ -416,7 +477,42 @@ export async function getArticleBySlug(slug: string): Promise<{
           }
         },
         excerpt,
-        content,
+        content[] {
+          ...,
+          _type == "inlineImage" => {
+            ...,
+            asset-> {
+              url,
+              metadata {
+                dimensions {
+                  width,
+                  height
+                }
+              }
+            }
+          },
+          _type == "videoEmbed" => {
+            ...,
+            url,
+            title,
+            caption
+          },
+          _type == "callout" => {
+            ...,
+            type,
+            title,
+            content
+          },
+          _type == "divider" => {
+            ...,
+            style
+          },
+          _type == "columns" => {
+            ...,
+            leftColumn,
+            rightColumn
+          }
+        },
         author-> {
           name,
           image { 
@@ -471,7 +567,9 @@ export async function getConferenceBySlug(slug: string) {
     _id,
     title,
     description,
-    date,
+    startDateTime,
+    endDateTime,
+    timezone,
     location,
     category,
     price,
@@ -485,8 +583,42 @@ export async function getConferenceBySlug(slug: string) {
         "url": image.asset->url
       }
     },
-    about,
-    registrationLink,
+    about[] {
+      ...,
+      _type == "inlineImage" => {
+        ...,
+        asset-> {
+          url,
+          metadata {
+            dimensions {
+              width,
+              height
+            }
+          }
+        }
+      },
+      _type == "videoEmbed" => {
+        ...,
+        url,
+        title,
+        caption
+      },
+      _type == "callout" => {
+        ...,
+        type,
+        title,
+        content
+      },
+      _type == "divider" => {
+        ...,
+        style
+      },
+      _type == "columns" => {
+        ...,
+        leftColumn,
+        rightColumn
+      }
+    },
     speakers[] {
       _id,
       name,
@@ -515,4 +647,224 @@ export async function getConferenceByRef(ref: string) {
   const query = `*[_type == "conference" && _id == $ref][0]`;
   const params = { ref };
   return await client.fetch(query, params);
+}
+
+// ===== ABOUT PAGE QUERIES =====
+// Cache for about page data to reduce API calls
+const aboutPageCache: { data: SanityAboutPage | null; timestamp: number } = {
+  data: null,
+  timestamp: 0,
+};
+const ABOUT_PAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
+
+/**
+ * Fetches the complete About Page data from Sanity CMS
+ * Includes hero section, who we are, mission, philosophy, charter, and contact information
+ * @returns Promise<SanityAboutPage> - Complete about page data
+ */
+export async function getAboutPageData(): Promise<SanityAboutPage> {
+  try {
+    const now = Date.now();
+
+    // Check cache first to reduce API calls
+    if (
+      aboutPageCache.data &&
+      now - aboutPageCache.timestamp < ABOUT_PAGE_CACHE_TTL
+    ) {
+      logger.log("[Cache Hit] Using cached About Page data");
+      return aboutPageCache.data;
+    }
+
+    logger.log("[Cache Miss] Fetching About Page data from Sanity");
+
+    // Fetch all about page data in a single optimized query
+    const data = await client.fetch(
+      `*[_type == "aboutPage"][0] {
+        _id,
+        title,
+        
+        // Hero Section
+        heroSection {
+          heroHeading,
+          heroSubheading,
+          heroBgImage { asset-> { url } }
+        },
+        
+        // Who We Are Section
+        whoWeAreSection {
+          whoWeAreHeading,
+          whoWeAreFirstParagraph,
+          whoWeAreImage { asset-> { url } },
+          whoWeAreSecondParagraph,
+          whoWeAreThirdParagraph
+        },
+        
+        // Our Mission Section
+        ourMissionSection {
+          ourMissionHeading,
+          ourMissionParagraph,
+          ourMissionImage { asset-> { url } }
+        },
+        
+        // Our Philosophy Section
+        ourPhilosophySection {
+          ourPhilosophyHeading,
+          ourPhilosophyParagraph,
+          ourPhilosophyImage { asset-> { url } }
+        },
+        
+        // Our Charter Section
+        ourCharterSection {
+          ourCharterHeading,
+          ourCharterParagraph,
+          charterPrinciples[] {
+            title
+          }
+        },
+        
+        // Mission Highlight Card
+        missionHighlightCard {
+          title,
+          description
+        },
+        
+        // Get In Touch Card with referenced contact information
+        getInTouchCard {
+          getInTouchHeading,
+          contactInformation-> {
+            _id,
+            title,
+            email,
+            phone,
+            address,
+            socialMedia[] {
+              platform,
+              url
+            }
+          }
+        },
+        
+        // Our Commitment Card
+        ourCommitmentCard {
+          title,
+          description
+        }
+      }`,
+      {},
+      { next: { revalidate: 60 } }
+    );
+
+    if (!data) {
+      throw new Error("No About Page data found in Sanity");
+    }
+
+    // Update cache with fresh data
+    aboutPageCache.data = data;
+    aboutPageCache.timestamp = now;
+
+    logger.log("[Sanity] Successfully fetched About Page data");
+    return data;
+  } catch (error) {
+    logger.error("[Sanity Error] Failed to fetch About Page data:", error);
+    throw error;
+  }
+}
+
+// ===== VOLUNTEER PAGE QUERIES =====
+// Cache for volunteer page data to reduce API calls
+const volunteerPageCache: {
+  data: SanityVolunteerPage | null;
+  timestamp: number;
+} = {
+  data: null,
+  timestamp: 0,
+};
+const VOLUNTEER_PAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
+
+/**
+ * Fetches the complete Volunteer Page data from Sanity CMS
+ * Includes hero section, ways to volunteer, convince high-profile figures, spread the word, and impact sections
+ * @returns Promise<SanityVolunteerPage> - Complete volunteer page data
+ */
+export async function getVolunteerPageData(): Promise<SanityVolunteerPage> {
+  try {
+    const now = Date.now();
+
+    // Check cache first to reduce API calls
+    if (
+      volunteerPageCache.data &&
+      now - volunteerPageCache.timestamp < VOLUNTEER_PAGE_CACHE_TTL
+    ) {
+      logger.log("[Cache Hit] Using cached Volunteer Page data");
+      return volunteerPageCache.data;
+    }
+
+    logger.log("[Cache Miss] Fetching Volunteer Page data from Sanity");
+
+    // Fetch all volunteer page data in a single optimized query
+    const data = await client.fetch(
+      `*[_type == "volunteerPage"][0] {
+        _id,
+        title,
+        
+        // Hero Section
+        heroSection {
+          heroHeading,
+          heroSubheading,
+          heroButtonText,
+          heroBgImage { asset-> { url } }
+        },
+        
+        // Ways to Volunteer Section
+        waysToVolunteerSection {
+          waysToVolunteerHeading,
+          waysToVolunteerParagraph
+        },
+        
+        // Convince High-Profile Figures Section
+        convinceHighProfileSection {
+          convinceHighProfileHeading,
+          convinceHighProfileParagraph,
+          convinceHighProfileChecklist[] {
+            title
+          },
+          convinceHighProfileImage { asset-> { url } }
+        },
+        
+        // Spread the Word Section
+        spreadTheWordSection {
+          spreadTheWordHeading,
+          spreadTheWordParagraph,
+          spreadTheWordCards[] {
+            title,
+            description
+          },
+          spreadTheWordImage { asset-> { url } }
+        },
+        
+        // Impact Section
+        impactSection {
+          impactHeading,
+          impactParagraph,
+          impactButtonText
+        }
+      }`,
+      {},
+      { next: { revalidate: 60 } }
+    );
+
+    if (!data) {
+      throw new Error("No Volunteer Page data found in Sanity");
+    }
+
+    // Update cache with fresh data
+    volunteerPageCache.data = data;
+    volunteerPageCache.timestamp = now;
+
+    logger.log("[Sanity] Successfully fetched Volunteer Page data");
+    return data;
+  } catch (error) {
+    logger.error("[Sanity Error] Failed to fetch Volunteer Page data:", error);
+    throw error;
+  }
 }

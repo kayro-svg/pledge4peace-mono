@@ -1,5 +1,7 @@
 import { Database } from "./db";
 import { HTTPExceptionOptions } from "hono/http-exception";
+import { AuthService } from "./services/auth.service";
+import { BrevoListsService } from "./services/brevo-lists.service";
 
 declare module "hono/http-exception" {
   interface HTTPExceptionOptions {
@@ -34,3 +36,10 @@ interface JWTPayload {
 }
 
 type DbClient = Database;
+
+declare module "hono" {
+  interface ContextVariableMap {
+    authService: AuthService;
+    brevoListsService: BrevoListsService;
+  }
+}

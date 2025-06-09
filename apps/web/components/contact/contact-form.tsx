@@ -6,6 +6,7 @@ import { FormField } from "../login/form-field";
 import { TextAreaField } from "./text-area-field";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { logger } from "@/lib/utils/logger";
 
 interface ContactFormData {
   name: string;
@@ -19,7 +20,7 @@ export function ContactForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   const onSubmit = (data: ContactFormData) => {
-    console.log("Contact form submitted:", data);
+    logger.log("Contact form submitted:", data);
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);

@@ -43,8 +43,12 @@ export default async function EventsPage() {
         </div> */}
 
       <HeroBanner
-        title="Events and Conferences"
-        content="Below you will find a list of upcoming events that you can attend, volunteer, and share with others."
+        heroSection={{
+          heroHeading: "Events and Conferences",
+          heroSubheading:
+            "Below you will find a list of upcoming events that you can attend, volunteer, and share with others.",
+          heroBgImage: undefined,
+        }}
         noButton
         fullWidth
       />
@@ -76,7 +80,9 @@ export default async function EventsPage() {
                 key={event._id}
                 id={event._id}
                 title={event.title}
-                date={event.date}
+                startDateTime={event.startDateTime}
+                endDateTime={event.endDateTime}
+                timezone={event.timezone}
                 description={event.description}
                 location={event.location}
                 imageUrl={event.image?.asset?.url || "/placeholder.svg"}

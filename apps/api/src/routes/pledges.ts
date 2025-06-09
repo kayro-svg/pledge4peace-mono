@@ -4,6 +4,7 @@ import { pledges, campaignPledgeCounts } from "../db/schema/pledges";
 import { and, eq, sql } from "drizzle-orm";
 import { getJWTPayload, requireAuth } from "../middleware/auth";
 import { MiddlewareHandler } from "hono";
+import { logger } from '../utils/logger';
 
 // Define environment type for Hono context
 type Bindings = {
@@ -67,7 +68,7 @@ pledgesRoutes.get("/campaign/:campaignId/count", async (c) => {
 
     return c.json({ count });
   } catch (error) {
-    console.error("Error getting pledge count:", error);
+    logger.error("Error getting pledge count:", error);
     return c.json({ error: "Failed to get pledge count" }, 500);
   }
 });
@@ -94,7 +95,7 @@ pledgesRoutes.get("/check/:campaignId", requireAuth, async (c) => {
 
     return c.json({ hasPledged: !!existingPledge });
   } catch (error) {
-    console.error("Error checking pledge status:", error);
+    logger.error("Error checking pledge status:", error);
     return c.json({ error: "Failed to check pledge status" }, 500);
   }
 });
@@ -187,7 +188,7 @@ pledgesRoutes.post("/", requireAuth, async (c) => {
       pledgeCount: countResult?.count || 1
     }, 201);
   } catch (error) {
-    console.error("Error creating pledge:", error);
+    logger.error("Error creating pledge:", error);
     return c.json({ 
       error: "Failed to create pledge",
       details: error instanceof Error ? error.message : 'Unknown error'

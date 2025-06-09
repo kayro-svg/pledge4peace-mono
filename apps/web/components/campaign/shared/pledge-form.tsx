@@ -14,6 +14,7 @@ import {
 import AuthContainer from "@/components/login/auth-container";
 import { Loader2 } from "lucide-react";
 import { CheckCircle } from "lucide-react";
+import { logger } from "@/lib/utils/logger";
 
 interface PledgeFormProps {
   commitmentText: string | undefined;
@@ -43,7 +44,7 @@ export default function PledgeForm({
           const pledged = await checkExistingPledge(campaignId);
           setHasPledged(pledged);
         } catch (error) {
-          console.error("Error checking pledge status:", error);
+          logger.error("Error checking pledge status:", error);
           // Don't show error to user, just log it
         } finally {
           setIsLoading(false);
@@ -55,7 +56,7 @@ export default function PledgeForm({
 
     checkPledgeStatus();
   }, [isAuthenticated, campaignId]);
-  
+
   // If we're not loading and user is not authenticated, show the pledge form
   // The login modal will be shown when they try to submit
 
@@ -108,7 +109,7 @@ export default function PledgeForm({
         onPledgeCreated(response.pledgeCount);
       }
     } catch (error) {
-      console.error("Error creating pledge:", error);
+      logger.error("Error creating pledge:", error);
       toast.error(
         error instanceof Error
           ? error.message
@@ -136,7 +137,8 @@ export default function PledgeForm({
           </div>
           <h3 className="text-lg font-medium">Thank you for your pledge!</h3>
           <p className="text-sm text-muted-foreground">
-            Your support means a lot to us. You&apos;ve successfully pledged to this campaign.
+            Your support means a lot to us. You&apos;ve successfully pledged to
+            this campaign.
           </p>
         </div>
       </div>

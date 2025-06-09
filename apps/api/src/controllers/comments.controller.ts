@@ -4,6 +4,7 @@ import { createDb } from "../db";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { getAuthUser } from "../middleware/auth.middleware";
+import { logger } from "../utils/logger";
 
 // Validación de entrada para crear un comentario
 const createCommentSchema = z.object({
@@ -27,7 +28,7 @@ export class CommentsController {
       const comments = await service.getCommentsBySolution(solutionId);
       return c.json(comments);
     } catch (error) {
-      console.error("Error getting comments:", error);
+      logger.error("Error getting comments:", error);
       if (error instanceof HTTPException) throw error;
       throw new HTTPException(500, { message: "Error getting comments" });
     }
@@ -57,7 +58,7 @@ export class CommentsController {
       return c.json(comment, 201);
     } catch (error) {
       if (error instanceof HTTPException) throw error;
-      console.error("Error creating comment:", error);
+      logger.error("Error creating comment:", error);
       throw new HTTPException(500, { message: "Error creating comment" });
     }
   }
@@ -94,7 +95,7 @@ export class CommentsController {
       return c.json(comment);
     } catch (error) {
       if (error instanceof HTTPException) throw error;
-      console.error("Error updating comment:", error);
+      logger.error("Error updating comment:", error);
       throw new HTTPException(500, { message: "Error updating comment" });
     }
   }
@@ -123,7 +124,7 @@ export class CommentsController {
       return c.json({ success: true });
     } catch (error) {
       if (error instanceof HTTPException) throw error;
-      console.error("Error deleting comment:", error);
+      logger.error("Error deleting comment:", error);
       throw new HTTPException(500, { message: "Error deleting comment" });
     }
   }

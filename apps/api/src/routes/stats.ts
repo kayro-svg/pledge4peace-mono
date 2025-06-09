@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { getPlatformStats } from '../controllers/stats.controller';
 import { createDb } from '../db';
+import { logger } from '../utils/logger';
 
 type Bindings = {
   DB: D1Database;
@@ -26,7 +27,7 @@ stats.get('/', async (c) => {
       data: stats.data,
     });
   } catch (error) {
-    console.error('Error in stats route:', error);
+    logger.error('Error in stats route:', error);
     return c.json({
       success: false,
       error: 'Internal server error',

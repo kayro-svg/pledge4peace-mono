@@ -21,8 +21,12 @@ export default async function ArticlesPage() {
         </div>
       </section> */}
       <HeroBanner
-        title="Articles & Updates"
-        content="Stay informed with our latest articles, insights, and updates on global peace initiatives and community actions."
+        heroSection={{
+          heroHeading: "Articles & Updates",
+          heroSubheading:
+            "Stay informed with our latest articles, insights, and updates on global peace initiatives and community actions.",
+          heroBgImage: undefined,
+        }}
         noButton
         fullWidth
       />

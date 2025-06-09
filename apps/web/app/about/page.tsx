@@ -4,64 +4,38 @@ import WhoWeAre from "@/components/about/who-we-are";
 import ImpactStats from "@/components/about/impact-stats";
 import MissionPhilosophy from "@/components/about/mission-philosophy";
 import NonprofitMission from "@/components/about/nonprofit-mission";
-import ContactInformation from "@/components/about/contact-information";
-import { getAbout } from "@/lib/api";
-import { MainAboutPage } from "@/lib/types";
+import ContactInformationAndCommitment from "@/components/about/contact-information";
+import { getAboutPageData } from "@/lib/sanity/queries";
 
 export default async function AboutPage() {
-  const aboutData = await getAbout("main");
-
-  // Get data from the API
-  const hasSections = "sections" in aboutData;
-  const sections = hasSections ? (aboutData as MainAboutPage).sections : [];
-
-  const hasIntroParagraphs = "intro_paragraphs" in aboutData;
-  const introParagraphs = hasIntroParagraphs
-    ? (aboutData as MainAboutPage & { intro_paragraphs: string[] })
-        .intro_paragraphs
-    : [];
-
-  const hasCharterPoints = "charter_points" in aboutData;
-  const charterPoints = hasCharterPoints
-    ? (aboutData as MainAboutPage & { charter_points: string[] }).charter_points
-    : [];
-
-  const hasPartnershipsText = "partnerships_text" in aboutData;
-  const partnershipsText = hasPartnershipsText
-    ? (aboutData as MainAboutPage & { partnerships_text: string })
-        .partnerships_text
-    : "";
+  // Fetch data from Sanity CMS
+  const aboutData = await getAboutPageData();
 
   return (
     <main className="min-h-screen bg-[#FDFDF0]">
-      <HeroBanner
-        title={aboutData.title}
-        content={aboutData.content}
-        noButton
-      />
-      <WhoWeAre
-        hasIntroParagraphs={hasIntroParagraphs}
-        introParagraphs={introParagraphs}
-      />
+      <HeroBanner heroSection={aboutData.heroSection} noButton />
+      <WhoWeAre whoWeAreSection={aboutData.whoWeAreSection} />
 
       <div className="container mx-auto px-4 max-w-6xl py-0">
         {/* <ImpactStats /> */}
 
-        {hasSections && sections.length > 0 && (
-          <MissionPhilosophy
-            sections={sections}
-            hasCharterPoints={hasCharterPoints}
-            charterPoints={charterPoints}
-          />
-        )}
+        <MissionPhilosophy
+          ourMissionSection={aboutData.ourMissionSection}
+          ourPhilosophySection={aboutData.ourPhilosophySection}
+          ourCharterSection={aboutData.ourCharterSection}
+        />
 
         {/* Partnerships Section */}
-        {/* {hasPartnershipsText && partnershipsText && (
-          <PartnershipsSection partnershipText={partnershipsText} />
-        )} */}
+        {/* <PartnershipsSection /> */}
 
-        <NonprofitMission />
-        <ContactInformation />
+        <NonprofitMission
+          missionHighlightCard={aboutData.missionHighlightCard}
+          // ourCommitmentCard={aboutData.ourCommitmentCard}
+        />
+        <ContactInformationAndCommitment
+          getInTouchCard={aboutData.getInTouchCard}
+          ourCommitmentCard={aboutData.ourCommitmentCard}
+        />
       </div>
     </main>
   );

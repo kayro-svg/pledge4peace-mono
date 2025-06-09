@@ -2,6 +2,7 @@ import { eq, count, sql } from "drizzle-orm";
 import { users } from "../db/schema/users";
 import { pledges } from "../db/schema/pledges";
 import { Database } from "../db";
+import { logger } from '../utils/logger';
 
 export async function getPlatformStats(db: Database) {
   try {
@@ -25,7 +26,7 @@ export async function getPlatformStats(db: Database) {
       },
     };
   } catch (error) {
-    console.error('Error fetching platform stats:', error);
+    logger.error('Error fetching platform stats:', error);
     return {
       success: false,
       error: 'Failed to fetch platform statistics',

@@ -1,5 +1,6 @@
 // Prefetch utility for preloading data on user interactions
-import { getCampaignBySlug } from './sanity/queries';
+import { getCampaignBySlug } from "./sanity/queries";
+import { logger } from "@/lib/utils/logger";
 
 // Track which resources have been prefetched to avoid duplicate calls
 const prefetchCache = new Set<string>();
@@ -10,34 +11,36 @@ const prefetchCache = new Set<string>();
  */
 export function prefetchCampaign(slug: string): void {
   // Guard against empty or invalid slugs
-  if (!slug || typeof slug !== 'string') {
-    console.warn('[Prefetch] Invalid campaign slug provided');
+  if (!slug || typeof slug !== "string") {
+    logger.warn("[Prefetch] Invalid campaign slug provided");
     return;
   }
-  
+
   const cacheKey = `campaign-${slug}`;
-  
+
   // Only prefetch if not already in prefetch cache
   if (!prefetchCache.has(cacheKey)) {
     // Mark as prefetched before the async operation to prevent duplicate calls
     prefetchCache.add(cacheKey);
-    console.log(`[Prefetch] Starting preload for campaign: ${slug}`);
-    
+    logger.log(`[Prefetch] Starting preload for campaign: ${slug}`);
+
     // Use setTimeout to ensure this runs in the next event loop cycle
     // and doesn't block the UI thread during interaction
     setTimeout(() => {
       getCampaignBySlug(slug)
-        .then(campaign => {
+        .then((campaign) => {
           if (campaign) {
-            console.log(`[Prefetch] Successfully preloaded campaign: ${campaign.title}`);
+            logger.log(
+              `[Prefetch] Successfully preloaded campaign: ${campaign.title}`
+            );
           } else {
-            console.warn(`[Prefetch] No campaign data found for slug: ${slug}`);
+            logger.warn(`[Prefetch] No campaign data found for slug: ${slug}`);
             // Remove from prefetch cache so it can be tried again later
             prefetchCache.delete(cacheKey);
           }
         })
-        .catch(error => {
-          console.error(`[Prefetch] Error preloading campaign ${slug}:`, error);
+        .catch((error) => {
+          logger.error(`[Prefetch] Error preloading campaign ${slug}:`, error);
           // Remove from prefetch cache on error so it can be tried again
           prefetchCache.delete(cacheKey);
         });
@@ -51,5 +54,5 @@ export function prefetchCampaign(slug: string): void {
  */
 export function clearOldPrefetchEntries(): void {
   prefetchCache.clear();
-  console.log('[Prefetch] Cache cleared');
+  logger.log("[Prefetch] Cache cleared");
 }

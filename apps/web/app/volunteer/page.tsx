@@ -6,56 +6,49 @@ import VolunteerCtaBanner from "@/components/volunteer/volunteer-cta-banner";
 import VolunteerImpactMetrics from "@/components/volunteer/volunteer-impact-metrics";
 import WaysToVolunteer from "@/components/volunteer/ways-to-volunteer";
 import { Handshake, Megaphone, Users } from "lucide-react";
+import { getVolunteerPageData } from "@/lib/sanity/queries";
 
-export default function VolunteerPage(): JSX.Element {
-  const volunteerWays = [
-    {
-      icon: <Users className="h-8 w-8 text-[#548281]" />,
-      title: "High-Profile Outreach",
-      description:
-        "Connect with celebrities, politicians, and influential figures to expand our reach and impact.",
-      learnMore: "#high-profile",
-    },
-    {
-      icon: <Megaphone className="h-8 w-8 text-[#548281]" />,
-      title: "Community Campaigns",
-      description:
-        "Launch local initiatives that spread our message of peace through neighborhood outreach and engagement.",
-      learnMore: "#spread-word",
-    },
-    // {
-    //   icon: <Handshake className="h-8 w-8 text-[#548281]" />,
-    //   title: "Strategic Partnerships",
-    //   description:
-    //     "Help us form alliances with organizations that share our mission to achieve greater collective impact.",
-    //   learnMore: "#partnerships",
-    // },
+export default async function VolunteerPage(): Promise<JSX.Element> {
+  // Fetch data from Sanity CMS
+  const volunteerData = await getVolunteerPageData();
+  // Define icons for volunteer ways (assigned by index)
+  const volunteerIcons = [
+    <Users key="users" className="h-8 w-8 text-[#548281]" />,
+    <Megaphone key="megaphone" className="h-8 w-8 text-[#548281]" />,
+    <Handshake key="handshake" className="h-8 w-8 text-[#548281]" />,
   ];
 
-  const impactMetrics = [
-    {
-      value: "4.5x",
-      description: "More peaceful communities through volunteer initiatives",
-    },
-    {
-      value: "1000+",
-      description: "Active volunteers worldwide making a difference",
-    },
-    {
-      value: "24/7",
-      description: "Support network for our volunteer community",
-    },
-  ];
+  // const impactMetrics = [
+  //   {
+  //     value: "4.5x",
+  //     description: "More peaceful communities through volunteer initiatives",
+  //   },
+  //   {
+  //     value: "1000+",
+  //     description: "Active volunteers worldwide making a difference",
+  //   },
+  //   {
+  //     value: "24/7",
+  //     description: "Support network for our volunteer community",
+  //   },
+  // ];
 
   return (
     <div className="min-h-screen">
-      <HeroVolunteerBanner />
-      <WaysToVolunteer volunteerWays={volunteerWays} />
+      <HeroVolunteerBanner heroSection={volunteerData.heroSection} />
+      <WaysToVolunteer
+        waysToVolunteerSection={volunteerData.waysToVolunteerSection}
+        icons={volunteerIcons}
+      />
       {/* <VolunteerImpactMetrics impactMetrics={impactMetrics} /> */}
-      <HighProfileOutreach />
-      <SpreadWordSection />
+      <HighProfileOutreach
+        convinceHighProfileSection={volunteerData.convinceHighProfileSection}
+      />
+      <SpreadWordSection
+        spreadTheWordSection={volunteerData.spreadTheWordSection}
+      />
       {/* <PartnerWithUs /> */}
-      <VolunteerCtaBanner />
+      <VolunteerCtaBanner impactSection={volunteerData.impactSection} />
       <JoinOurTeamForm />
     </div>
   );

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { API_ENDPOINTS } from "@/lib/config";
 import { useRouter } from "next/navigation";
 import { PasswordInput } from "./password-input";
+import { logger } from "@/lib/utils/logger";
 
 interface ResetPasswordFormData {
   newPassword: string;
@@ -57,7 +58,7 @@ export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
       toast.success("Password has been reset successfully");
       router.push("/login");
     } catch (error) {
-      console.error("Error resetting password:", error);
+      logger.error("Error resetting password:", error);
       toast.error(error instanceof Error ? error.message : "An error occurred");
     } finally {
       setIsSubmitting(false);

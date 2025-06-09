@@ -8,6 +8,7 @@ import article from './article'
 import contactInformation from './contactInformation'
 import aboutPage from './aboutPage'
 import volunteerPage from './volunteerPage'
+import post from './post'
 
 export const schemaTypes = [
   author,
@@ -20,4 +21,5 @@ export const schemaTypes = [
   contactInformation,
   aboutPage,
   volunteerPage,
+  post,
 ]

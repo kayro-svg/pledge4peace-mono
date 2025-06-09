@@ -1,6 +1,7 @@
 "use client";
 
 import type React from "react";
+import { logger } from "@/lib/utils/logger";
 
 import { useState } from "react";
 import { Mail, ArrowLeft, Loader2, CheckCircle, XCircle } from "lucide-react";
@@ -61,7 +62,7 @@ export default function RequestVerificationPage() {
       setMessage(data.message);
       setStatus("success");
     } catch (err) {
-      console.error("Error requesting verification:", err);
+      logger.error("Error requesting verification:", err);
       setMessage("Connection error. Please try again later.");
       setStatus("error");
     }

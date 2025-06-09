@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { CalendarDays, Share2 } from "lucide-react";
 import { SanityConference } from "@/lib/types";
 import { ShareSocialButton } from "../campaign/ways-to-support/share/share-social-button";
+import { logger } from "@/lib/utils/logger";
 
 interface EventActionsProps {
   event: SanityConference;
@@ -11,8 +12,23 @@ interface EventActionsProps {
 
 export default function EventActions({ event }: EventActionsProps) {
   const handleAddToCalendar = () => {
-    const eventDate = new Date(event.date + "T00:00:00");
-    const endDate = new Date(eventDate.getTime() + 60 * 60 * 1000); // 1 hora después
+    if (!event.startDateTime) {
+      alert("Event date is not available");
+      return;
+    }
+
+    // Parse the start date time (already in UTC)
+    const startDate = new Date(event.startDateTime);
+
+    // Use end date time if available, otherwise default to 1 hour later
+    const endDate = event.endDateTime
+      ? new Date(event.endDateTime)
+      : new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour later
+
+    // Format dates for Google Calendar (YYYYMMDDTHHMMSSZ format)
+    const formatDateForCalendar = (date: Date) => {
+      return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+    };
 
     const googleCalendarUrl = new URL(
       "https://calendar.google.com/calendar/render"
@@ -21,16 +37,25 @@ export default function EventActions({ event }: EventActionsProps) {
     googleCalendarUrl.searchParams.append("text", event.title);
     googleCalendarUrl.searchParams.append(
       "dates",
-      `${eventDate.toISOString().replace(/[-:]/g, "").split(".")[0]}Z/${endDate.toISOString().replace(/[-:]/g, "").split(".")[0]}Z`
+      `${formatDateForCalendar(startDate)}/${formatDateForCalendar(endDate)}`
     );
+
     if (event.location) {
       googleCalendarUrl.searchParams.append("location", event.location);
     }
 
-    window.open(googleCalendarUrl.toString(), "_blank");
+    if (event.description) {
+      googleCalendarUrl.searchParams.append("details", event.description);
+    }
+
+    if (typeof window !== "undefined") {
+      window.open(googleCalendarUrl.toString(), "_blank");
+    }
   };
 
   const handleShare = async () => {
+    if (typeof window === "undefined") return;
+
     if (navigator.share) {
       try {
         await navigator.share({
@@ -39,7 +64,7 @@ export default function EventActions({ event }: EventActionsProps) {
           url: window.location.href,
         });
       } catch (error) {
-        console.error("Error sharing:", error);
+        logger.error("Error sharing:", error);
       }
     } else {
       // Fallback: Copiar al portapapeles
@@ -60,7 +85,7 @@ export default function EventActions({ event }: EventActionsProps) {
       </Button>
       <ShareSocialButton
         shareData={{
-          url: window.location.href,
+          url: typeof window !== "undefined" ? window.location.href : "",
           text: `Check out this event: ${event.title}`,
           title: event.title,
         }}

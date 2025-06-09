@@ -170,16 +170,16 @@ export interface SanityConference {
   _id: string;
   title: string;
   slug: SanitySlug;
-  date: string;
-  time?: string;
+  startDateTime: string;
+  endDateTime?: string;
+  timezone: string;
   location: string;
   image?: SanityImage;
   description: string;
-  about?: string;
+  about?: any[]; // Rich content array (Portable Text)
   category?: string;
   organizer?: SanityOrganizer;
   price?: number;
-  registrationLink?: string;
   speakers?: SanitySpeaker[];
   gallery?: { url: string }[];
   relatedCampaign?: {
@@ -193,6 +193,144 @@ export interface SanityConferencesSection {
   conferencesHeading: string;
   conferencesDescription: string;
   conferences: SanityConference[];
+}
+
+// Sanity Contact Information Types
+export interface SanitySocialMedia {
+  platform:
+    | "facebook"
+    | "twitter"
+    | "instagram"
+    | "linkedin"
+    | "youtube"
+    | "tiktok";
+  url: string;
+}
+
+export interface SanityContactInformation {
+  _id: string;
+  title: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  socialMedia?: SanitySocialMedia[];
+}
+
+// Sanity About Page Types
+export interface SanityAboutHeroSection {
+  heroHeading: string;
+  heroSubheading: string;
+  heroBgImage?: SanityImage;
+}
+
+export interface SanityAboutWhoWeAreSection {
+  whoWeAreHeading: string;
+  whoWeAreFirstParagraph: string;
+  whoWeAreImage?: SanityImage;
+  whoWeAreSecondParagraph: string;
+  whoWeAreThirdParagraph: string;
+}
+
+export interface SanityAboutMissionSection {
+  ourMissionHeading: string;
+  ourMissionParagraph: string;
+  ourMissionImage?: SanityImage;
+}
+
+export interface SanityAboutPhilosophySection {
+  ourPhilosophyHeading: string;
+  ourPhilosophyParagraph: string;
+  ourPhilosophyImage?: SanityImage;
+}
+
+export interface SanityCharterPrinciple {
+  title: string;
+}
+
+export interface SanityAboutCharterSection {
+  ourCharterHeading: string;
+  ourCharterParagraph: string;
+  charterPrinciples: SanityCharterPrinciple[];
+}
+
+export interface SanityAboutMissionHighlightCard {
+  title: string;
+  description: string;
+}
+
+export interface SanityAboutGetInTouchCard {
+  getInTouchHeading: string;
+  contactInformation: SanityContactInformation;
+}
+
+export interface SanityAboutCommitmentCard {
+  title: string;
+  description: string;
+}
+
+export interface SanityAboutPage {
+  _id: string;
+  title: string;
+  heroSection: SanityAboutHeroSection;
+  whoWeAreSection: SanityAboutWhoWeAreSection;
+  ourMissionSection: SanityAboutMissionSection;
+  ourPhilosophySection: SanityAboutPhilosophySection;
+  ourCharterSection: SanityAboutCharterSection;
+  missionHighlightCard: SanityAboutMissionHighlightCard;
+  getInTouchCard: SanityAboutGetInTouchCard;
+  ourCommitmentCard: SanityAboutCommitmentCard;
+}
+
+// Sanity Volunteer Page Types
+export interface SanityVolunteerHeroSection {
+  heroHeading: string;
+  heroSubheading: string;
+  heroButtonText: string;
+  heroBgImage?: SanityImage;
+}
+
+export interface SanityVolunteerWaysToVolunteerSection {
+  waysToVolunteerHeading: string;
+  waysToVolunteerParagraph: string;
+}
+
+export interface SanityVolunteerConvinceHighProfileChecklistItem {
+  title: string;
+}
+
+export interface SanityVolunteerConvinceHighProfileSection {
+  convinceHighProfileHeading: string;
+  convinceHighProfileParagraph: string;
+  convinceHighProfileChecklist: SanityVolunteerConvinceHighProfileChecklistItem[];
+  convinceHighProfileImage?: SanityImage;
+}
+
+export interface SanityVolunteerSpreadTheWordCard {
+  title: string;
+  description: string;
+}
+
+export interface SanityVolunteerSpreadTheWordSection {
+  spreadTheWordHeading: string;
+  spreadTheWordParagraph: string;
+  spreadTheWordCards: SanityVolunteerSpreadTheWordCard[];
+  spreadTheWordImage?: SanityImage;
+}
+
+export interface SanityVolunteerImpactSection {
+  impactHeading: string;
+  impactParagraph: string;
+  impactButtonText: string;
+}
+
+export interface SanityVolunteerPage {
+  _id: string;
+  title: string;
+  heroSection: SanityVolunteerHeroSection;
+  waysToVolunteerSection: SanityVolunteerWaysToVolunteerSection;
+  convinceHighProfileSection: SanityVolunteerConvinceHighProfileSection;
+  spreadTheWordSection: SanityVolunteerSpreadTheWordSection;
+  impactSection: SanityVolunteerImpactSection;
 }
 
 // SECTION 2: APP INTERNAL TYPES

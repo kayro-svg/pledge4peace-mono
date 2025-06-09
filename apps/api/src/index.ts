@@ -5,7 +5,10 @@ import { commentsRoutes } from "./routes/comments";
 import { authRoutes } from "./routes/auth";
 import { pledgesRoutes } from "./routes/pledges";
 import { statsRoutes } from "./routes/stats";
+import { eventsRoutes } from "./routes/events";
+import { usersRoutes } from "./routes/users";
 import { AuthService } from "./services/auth.service";
+import { BrevoListsService } from "./services/brevo-lists.service";
 import { createDb } from "./db";
 
 interface Env {
@@ -54,9 +57,16 @@ app.use("*", async (c, next) => {
   };
 
   // Instanciar AuthService
-  // Instanciamos AuthService
   const authService = new AuthService(db, jwtSecret, brevoConfig);
   c.set("authService", authService);
+
+  // Instanciar BrevoListsService
+  const brevoListsService = new BrevoListsService({
+    apiKey: brevoApiKey,
+    subscribersListId: 25, // P4P - Subscribers #25
+    conferenceAttendeesListId: 23, // P4P - Conference Attendees #23
+  });
+  c.set("brevoListsService", brevoListsService);
 
   await next();
 });
@@ -67,5 +77,7 @@ app.route("/api/solutions", solutionsRoutes);
 app.route("/api/comments", commentsRoutes);
 app.route("/api/pledges", pledgesRoutes);
 app.route("/api/stats", statsRoutes);
+app.route("/api/events", eventsRoutes);
+app.route("/api/users", usersRoutes);
 
 export default app;

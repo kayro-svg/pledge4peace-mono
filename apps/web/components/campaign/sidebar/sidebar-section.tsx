@@ -1,6 +1,7 @@
 import CommentsSection from "@/components/campaign/comments/comments-section";
 import { API_ENDPOINTS } from "@/lib/config";
 import { useEffect, useState, useCallback, useRef } from "react";
+import { logger } from "@/lib/utils/logger";
 
 interface SidebarSectionProps {
   solutionId?: string;
@@ -11,43 +12,42 @@ export default function SidebarSection({ solutionId }: SidebarSectionProps) {
 
   // Cache de títulos de soluciones para evitar llamadas repetidas a la API
   const solutionTitleCache = useRef<Record<string, string>>({});
-  
+
   // Función para obtener solución con caché
   const fetchSolution = useCallback(async (sid: string) => {
     // Si ya tenemos el título en caché, usarlo
     if (solutionTitleCache.current[sid]) {
-      console.log(`[Sidebar] Using cached solution title for: ${sid}`);
+      logger.log(`[Sidebar] Using cached solution title for: ${sid}`);
       setSolutionTitle(solutionTitleCache.current[sid]);
       return;
     }
-    
+
     try {
-      console.log(`[Sidebar] Fetching solution details for: ${sid}`);
-      
+      logger.log(`[Sidebar] Fetching solution details for: ${sid}`);
+
       // Usar AbortController para evitar peticiones colgadas
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
-      const solution = await fetch(
-        API_ENDPOINTS.solutions.getById(sid),
-        { signal: controller.signal }
-      );
-      
+
+      const solution = await fetch(API_ENDPOINTS.solutions.getById(sid), {
+        signal: controller.signal,
+      });
+
       clearTimeout(timeoutId);
-      
+
       if (!solution.ok) {
         throw new Error(`Failed to fetch solution: ${solution.status}`);
       }
-      
+
       const data = await solution.json();
-      
+
       // Guardar en caché y actualizar estado
       if (data.title) {
         solutionTitleCache.current[sid] = data.title;
         setSolutionTitle(data.title);
       }
     } catch (error) {
-      console.error("[Sidebar] Error fetching solution:", error);
+      logger.error("[Sidebar] Error fetching solution:", error);
       // Usar un título genérico en caso de error
       setSolutionTitle("Solution details");
     }

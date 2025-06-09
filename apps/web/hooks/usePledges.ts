@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getCampaignPledgeCount } from '@/lib/api/pledges';
+import { useState, useEffect, useCallback } from "react";
+import { getCampaignPledgeCount } from "@/lib/api/pledges";
+import { logger } from "@/lib/utils/logger";
 
 /**
  * Custom hook to manage pledge counts for a campaign
@@ -7,7 +8,10 @@ import { getCampaignPledgeCount } from '@/lib/api/pledges';
  * @param initialCount Optional initial count to use before API data is loaded
  * @returns Object containing pledge count state and functions to manage it
  */
-export function usePledges(campaignId: string | undefined, initialCount: number = 0) {
+export function usePledges(
+  campaignId: string | undefined,
+  initialCount: number = 0
+) {
   // Use the initial count as a starting point
   const [pledgeCount, setPledgeCount] = useState<number>(initialCount);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -25,26 +29,28 @@ export function usePledges(campaignId: string | undefined, initialCount: number 
     // Debounce API calls - don't refetch if last fetch was less than 5 seconds ago
     // unless this is the first fetch (lastFetchTime === 0)
     if (lastFetchTime > 0 && now - lastFetchTime < 5000) {
-      console.log(`[Pledges] Skipping fetch for ${campaignId} - throttled`);
+      logger.log(`[Pledges] Skipping fetch for ${campaignId} - throttled`);
       return;
     }
 
     try {
-      console.log(`[Pledges] Fetching pledge count for campaign: ${campaignId}`);
+      logger.log(`[Pledges] Fetching pledge count for campaign: ${campaignId}`);
       setIsLoading(true);
       setLastFetchTime(now);
-      
+
       const count = await getCampaignPledgeCount(campaignId);
-      console.log(`[Pledges] Retrieved count for ${campaignId}: ${count}`);
-      
+      logger.log(`[Pledges] Retrieved count for ${campaignId}: ${count}`);
+
       // Only update if we got a valid number
-      if (typeof count === 'number' && !isNaN(count)) {
+      if (typeof count === "number" && !isNaN(count)) {
         setPledgeCount(count);
         setError(null);
       }
     } catch (err) {
-      console.error('[Pledges] Error fetching pledge count:', err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch pledge count'));
+      logger.error("[Pledges] Error fetching pledge count:", err);
+      setError(
+        err instanceof Error ? err : new Error("Failed to fetch pledge count")
+      );
       // We don't reset the pledge count on error to avoid UI flickering
       // The mock data implementation should prevent this error from happening
     } finally {
@@ -53,16 +59,23 @@ export function usePledges(campaignId: string | undefined, initialCount: number 
   }, [campaignId, lastFetchTime]);
 
   // Update the pledge count locally (e.g., after a user makes a pledge)
-  const updatePledgeCount = useCallback((newCount: number) => {
-    console.log(`[Pledges] Manually updating count for ${campaignId} to ${newCount}`);
-    setPledgeCount(newCount);
-  }, [campaignId]);
+  const updatePledgeCount = useCallback(
+    (newCount: number) => {
+      logger.log(
+        `[Pledges] Manually updating count for ${campaignId} to ${newCount}`
+      );
+      setPledgeCount(newCount);
+    },
+    [campaignId]
+  );
 
   // Increment the pledge count by 1 (useful after the user makes a pledge)
   const incrementPledgeCount = useCallback(() => {
-    setPledgeCount(current => {
+    setPledgeCount((current) => {
       const newValue = current + 1;
-      console.log(`[Pledges] Incrementing count for ${campaignId} from ${current} to ${newValue}`);
+      logger.log(
+        `[Pledges] Incrementing count for ${campaignId} from ${current} to ${newValue}`
+      );
       return newValue;
     });
   }, [campaignId]);
@@ -70,7 +83,7 @@ export function usePledges(campaignId: string | undefined, initialCount: number 
   // Fetch pledge count on mount and when campaignId changes
   useEffect(() => {
     if (campaignId) {
-      console.log(`[Pledges] Initial fetch for campaign: ${campaignId}`);
+      logger.log(`[Pledges] Initial fetch for campaign: ${campaignId}`);
       fetchPledgeCount();
     }
   }, [campaignId, fetchPledgeCount]);
@@ -81,6 +94,6 @@ export function usePledges(campaignId: string | undefined, initialCount: number 
     error,
     updatePledgeCount,
     incrementPledgeCount,
-    refreshPledgeCount: fetchPledgeCount
+    refreshPledgeCount: fetchPledgeCount,
   };
 }

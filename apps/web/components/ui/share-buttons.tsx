@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { logger } from "@/lib/utils/logger";
 import {
   Share2,
   Facebook,
@@ -43,7 +44,7 @@ export default function ShareButtons({ url, title }: ShareButtonsProps) {
     try {
       document.execCommand("copy");
     } catch (err) {
-      console.error("Fallback: Ocurrió un error al copiar el texto", err);
+      logger.error("Fallback: Ocurrió un error al copiar el texto", err);
     }
 
     document.body.removeChild(textArea);
@@ -60,7 +61,7 @@ export default function ShareButtons({ url, title }: ShareButtonsProps) {
         setTimeout(() => setCopied(false), 2000);
         return;
       } catch (err) {
-        console.warn("navigator.clipboard falló, usando fallback:", err);
+        logger.warn("navigator.clipboard falló, usando fallback:", err);
       }
     }
     // Si llego aquí, uso el fallback
@@ -163,7 +164,7 @@ export default function ShareButtons({ url, title }: ShareButtonsProps) {
 //       await navigator.clipboard.writeText(url);
 //       // You could add a toast notification here
 //     } catch (err) {
-//       console.error("Failed to copy:", err);
+//       logger.error("Failed to copy:", err);
 //     }
 //   };
 

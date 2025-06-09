@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { logger } from "@/lib/utils/logger";
 
 export interface ShareData {
   title: string;
@@ -60,9 +61,11 @@ const getSocialPlatforms = (
     icon: LinkIcon,
     color: "text-foreground",
     onClick: (setIsLinkCopied: (value: boolean) => void) => {
-      navigator.clipboard.writeText(shareData?.url || "");
-      setIsLinkCopied(true);
-      setTimeout(() => setIsLinkCopied(false), 2000);
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        navigator.clipboard.writeText(shareData?.url || "");
+        setIsLinkCopied(true);
+        setTimeout(() => setIsLinkCopied(false), 2000);
+      }
     },
   },
 ];
@@ -76,13 +79,16 @@ export function ShareSocialButton({
   const socialPlatforms = getSocialPlatforms(shareData, setIsLinkCopied);
 
   const copyToClipboard = async (text: string) => {
+    // Solo ejecutar en el cliente
+    if (typeof window === "undefined") return false;
+
     try {
       await navigator.clipboard.writeText(text);
       setIsLinkCopied(true);
       setTimeout(() => setIsLinkCopied(false), 2000);
       return true;
     } catch (err) {
-      console.error("Failed to copy text:", err);
+      logger.error("Failed to copy text:", err);
       // Fallback for older browsers
       try {
         const textArea = document.createElement("textarea");
@@ -97,7 +103,7 @@ export function ShareSocialButton({
         setTimeout(() => setIsLinkCopied(false), 2000);
         return true;
       } catch (fallbackErr) {
-        console.error("Fallback copy failed:", fallbackErr);
+        logger.error("Fallback copy failed:", fallbackErr);
         return false;
       }
     }
@@ -108,7 +114,7 @@ export function ShareSocialButton({
       try {
         await navigator.share(shareData);
       } catch (err) {
-        console.log("Share was cancelled or failed:", err);
+        logger.log("Share was cancelled or failed:", err);
       }
     } else {
       await copyToClipboard(shareData?.url || "");
@@ -135,11 +141,13 @@ export function ShareSocialButton({
                 if (platform.onClick) {
                   platform.onClick(setIsLinkCopied);
                 } else {
-                  window.open(
-                    platform.getShareUrl(),
-                    "_blank",
-                    "noopener,noreferrer"
-                  );
+                  if (typeof window !== "undefined") {
+                    window.open(
+                      platform.getShareUrl(),
+                      "_blank",
+                      "noopener,noreferrer"
+                    );
+                  }
                 }
               }}
               className="cursor-pointer"

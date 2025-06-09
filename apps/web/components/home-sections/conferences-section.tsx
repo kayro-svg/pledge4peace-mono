@@ -66,7 +66,9 @@ export default function ConferencesSection({
               key={conference._id}
               id={conference._id}
               title={conference.title}
-              date={conference.date}
+              startDateTime={conference.startDateTime}
+              endDateTime={conference.endDateTime}
+              timezone={conference.timezone}
               description={conference.description}
               location={conference.location}
               imageUrl={conference.image?.asset?.url || "/placeholder.svg"}
@@ -81,7 +83,7 @@ export default function ConferencesSection({
             <ConferenceCard
               key={index}
               image={conference.image?.asset?.url ?? "/placeholder.svg"}
-              date={conference.date ?? "No date available"}
+              date={conference.startDateTime ?? "No date available"}
               title={conference.title ?? "No title available"}
               description={conference.description ?? "No description available"}
               slug={`/events/${conference.slug.current}`}

@@ -17,6 +17,7 @@ import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DialogContent } from "@/components/ui/dialog";
 import { Dialog } from "@/components/ui/dialog";
 import AuthContainer from "@/components/login/auth-container";
+import { logger } from "@/lib/utils/logger";
 
 interface SolutionActionsBarProps {
   solutionId: string;
@@ -122,7 +123,7 @@ export default function SolutionActionsBar({
       }
     } catch (error) {
       toast.error("Failed to update like");
-      console.error("Error handling like:", error);
+      logger.error("Error handling like:", error);
     }
   };
 
@@ -149,7 +150,7 @@ export default function SolutionActionsBar({
       onInteraction?.(solutionId, "dislike");
     } catch (error) {
       toast.error("Failed to update dislike");
-      console.error("Error handling dislike:", error);
+      logger.error("Error handling dislike:", error);
     }
   };
 
@@ -198,7 +199,7 @@ export default function SolutionActionsBar({
       }
     } catch (error) {
       if (error instanceof Error && error.name !== "AbortError") {
-        console.error("Error sharing:", error);
+        logger.error("Error sharing:", error);
         // Only show error if we didn't already update the share count
         if (!navigator.share && !hasShared) {
           toast.error("Failed to share. Please try again.");

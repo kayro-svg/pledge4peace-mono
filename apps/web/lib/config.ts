@@ -1,8 +1,10 @@
+import { logger } from "./utils/logger";
+
 // Use the environment variable if available, otherwise use the default URL for development
 export const API_URL = process.env.NEXT_PUBLIC_API_URL!;
 
 // Log the API URL being used
-console.log(`[Config] Using API URL: ${API_URL}`);
+logger.log(`[Config] Using API URL: ${API_URL}`);
 
 export const API_ENDPOINTS = {
   auth: {
@@ -41,5 +43,14 @@ export const API_ENDPOINTS = {
   },
   homeStats: {
     getStats: `${API_URL}/stats`,
+  },
+  events: {
+    register: `${API_URL}/events/register`,
+    getRegistrationStatus: (eventId: string) =>
+      `${API_URL}/events/registration-status/${eventId}`,
+  },
+  users: {
+    subscribe: `${API_URL}/users/subscribe`,
+    subscriptionStatus: `${API_URL}/users/subscription-status`,
   },
 };

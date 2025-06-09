@@ -1,5 +1,6 @@
 import { Context, Next } from "hono";
 import { HTTPException } from "hono/http-exception";
+import { logger } from '../utils/logger';
 
 const WINDOW_SIZE = 60; // 1 minute window
 const MAX_REQUESTS = 60; // 60 requests per minute
@@ -65,7 +66,7 @@ export const rateLimitMiddleware = async (c: Context, next: Next) => {
     if (error instanceof HTTPException) {
       throw error;
     }
-    console.error("Rate limit error:", error);
+    logger.error("Rate limit error:", error);
     throw new HTTPException(500, { message: "Internal Server Error" });
   }
 };

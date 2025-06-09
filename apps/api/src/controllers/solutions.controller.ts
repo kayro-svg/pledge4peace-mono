@@ -7,6 +7,7 @@ import { z } from "zod";
 import { getAuthUser } from "../middleware/auth.middleware";
 import { solutions } from "../db/schema/solutions";
 import { and, eq } from "drizzle-orm";
+import { logger } from '../utils/logger';
 
 // Validación de entrada para crear una solución
 const createSolutionSchema = z.object({
@@ -26,7 +27,7 @@ export class SolutionsController {
       const solutions = await service.getSolutionsByCampaign(campaignId);
       return c.json(solutions);
     } catch (error) {
-      console.error("Error getting solutions:", error);
+      logger.error("Error getting solutions:", error);
       throw new HTTPException(500, { message: "Error getting solutions" });
     }
   }
@@ -45,7 +46,7 @@ export class SolutionsController {
       return c.json(solution);
     } catch (error) {
       if (error instanceof HTTPException) throw error;
-      console.error("Error getting solution:", error);
+      logger.error("Error getting solution:", error);
       throw new HTTPException(500, { message: "Error getting solution" });
     }
   }
@@ -75,7 +76,7 @@ export class SolutionsController {
       return c.json(solution, 201);
     } catch (error) {
       if (error instanceof HTTPException) throw error;
-      console.error("Error creating solution:", error);
+      logger.error("Error creating solution:", error);
       
       // Handle solution limit error
       if (error instanceof Error && error.message.includes("maximum limit")) {
@@ -106,7 +107,7 @@ export class SolutionsController {
       return c.json(solution);
     } catch (error) {
       if (error instanceof HTTPException) throw error;
-      console.error("Error updating solution status:", error);
+      logger.error("Error updating solution status:", error);
       throw new HTTPException(500, {
         message: "Error updating solution status",
       });
@@ -121,7 +122,7 @@ export class SolutionsController {
       const stats = await service.getSolutionsStatsByCampaign(campaignId);
       return c.json(stats);
     } catch (error) {
-      console.error("Error getting solutions stats by campaign:", error);
+      logger.error("Error getting solutions stats by campaign:", error);
       throw new HTTPException(500, {
         message: "Error getting solutions stats by campaign",
       });
@@ -151,7 +152,7 @@ export class SolutionsController {
 
       return c.json({ count });
     } catch (error) {
-      console.error("Error getting user solution count:", error);
+      logger.error("Error getting user solution count:", error);
       throw new HTTPException(500, {
         message: "Error getting user solution count",
       });

@@ -20,6 +20,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useInteractions } from "../shared/interaction-context";
 import SolutionPost from "./solution-post";
+import { logger } from "@/lib/utils/logger";
 
 interface PeaceAgreementContentProps {
   campaignId: string;
@@ -83,7 +84,7 @@ export default function PeaceAgreementContent({
                 interactions: userInt,
               };
             } catch (e) {
-              console.warn(
+              logger.warn(
                 `Failed to fetch interactions for solution ${solution.id}:`,
                 e
               );
@@ -106,7 +107,7 @@ export default function PeaceAgreementContent({
           });
         }
       } catch (error) {
-        console.error("Error fetching solutions:", error);
+        logger.error("Error fetching solutions:", error);
         toast.error("Failed to load solutions");
       } finally {
         setIsLoading(false);
@@ -158,7 +159,7 @@ export default function PeaceAgreementContent({
       setNewSolution({ title: "", description: "" });
       toast.success("Solution created successfully");
     } catch (error) {
-      console.error("Error creating solution:", error);
+      logger.error("Error creating solution:", error);
       toast.error("Failed to create solution");
     } finally {
       setIsSubmitting(false);

@@ -5,6 +5,7 @@ import { PortableText } from "@portabletext/react";
 import { getArticleBySlug } from "@/lib/sanity/queries";
 import { formatDate } from "@/lib/utils";
 import ShareButtons from "@/components/ui/share-buttons";
+import { portableTextComponents } from "@/components/ui/portable-text-components";
 
 interface ArticlePageProps {
   params: {
@@ -90,7 +91,10 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
           {/* Article Content */}
           <div className="prose prose-lg max-w-none mb-16">
-            <PortableText value={article.content} />
+            <PortableText
+              value={article.content}
+              components={portableTextComponents}
+            />
           </div>
 
           {/* Related Articles */}

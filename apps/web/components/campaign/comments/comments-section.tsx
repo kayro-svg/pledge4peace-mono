@@ -17,6 +17,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/utils/logger";
 
 interface CommentsSectionProps {
   solutionId?: string;
@@ -37,29 +38,32 @@ export default function CommentsSection({
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   // Memoizamos la función para cargar comentarios para evitar recreaciones
-  const fetchComments = useCallback(async (sid: string) => {
-    if (!sid) return;
-    
-    setLoading(true);
-    try {
-      console.log(`[Comments] Fetching comments for solution: ${sid}`);
-      const fetchedComments = await getComments(sid);
-      setComments(fetchedComments);
-      
-      // Solo actualizar el contador si es necesario, sin crear un bucle
-      if (fetchedComments.length !== count) {
-        setCount(fetchedComments.length);
+  const fetchComments = useCallback(
+    async (sid: string) => {
+      if (!sid) return;
+
+      setLoading(true);
+      try {
+        logger.log(`[Comments] Fetching comments for solution: ${sid}`);
+        const fetchedComments = await getComments(sid);
+        setComments(fetchedComments);
+
+        // Solo actualizar el contador si es necesario, sin crear un bucle
+        if (fetchedComments.length !== count) {
+          setCount(fetchedComments.length);
+        }
+      } catch (error) {
+        logger.error("[Comments] Error fetching comments:", error);
+        // No mostrar toast en cada error para evitar spam de notificaciones
+        if (!comments.length) {
+          toast.error("Failed to load comments");
+        }
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("[Comments] Error fetching comments:", error);
-      // No mostrar toast en cada error para evitar spam de notificaciones
-      if (!comments.length) {
-        toast.error("Failed to load comments");
-      }
-    } finally {
-      setLoading(false);
-    }
-  }, [count, setCount, comments.length, setComments, setLoading]);
+    },
+    [count, setCount, comments.length, setComments, setLoading]
+  );
 
   // Cargar comentarios solo cuando cambia el solutionId
   useEffect(() => {
@@ -86,16 +90,16 @@ export default function CommentsSection({
 
       setComments((prev) => [newComment, ...prev]);
       incrementCount();
-      
+
       // Asegurar que el callback onCommentAdded se llame
       if (onCommentAdded) {
         onCommentAdded();
       }
-      
+
       toast.success("Comment posted successfully");
     } catch (error) {
       toast.error("Failed to post comment");
-      console.error("Error posting comment:", error);
+      logger.error("Error posting comment:", error);
     }
   };
 

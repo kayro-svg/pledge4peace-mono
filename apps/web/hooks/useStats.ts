@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { API_ENDPOINTS } from "@/lib/config";
+import { logger } from "@/lib/utils/logger";
 
 interface StatsData {
   peaceActivists: number;
@@ -19,7 +20,7 @@ export function useStats() {
 
   const fetchStats = useCallback(async () => {
     try {
-      console.log("[Stats] Fetching home page statistics");
+      logger.log("[Stats] Fetching home page statistics");
       setIsLoading(true);
 
       // Use AbortSignal to prevent hanging requests
@@ -33,7 +34,7 @@ export function useStats() {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        console.warn(
+        logger.warn(
           `[Stats] API responded with error: ${response.status} ${response.statusText}`
         );
         throw new Error("Failed to fetch stats");
@@ -41,15 +42,15 @@ export function useStats() {
 
       const data = await response.json();
       if (data.success) {
-        console.log("[Stats] Successfully fetched statistics:", data.data);
+        logger.log("[Stats] Successfully fetched statistics:", data.data);
         setStats(data.data);
         setError(null);
       } else {
-        console.warn("[Stats] API returned success: false", data.error);
+        logger.warn("[Stats] API returned success: false", data.error);
         throw new Error(data.error || "Failed to load statistics");
       }
     } catch (err) {
-      console.error("[Stats] Error fetching stats:", err);
+      logger.error("[Stats] Error fetching stats:", err);
       // Don't update error state if we're using fallback data
       if (!stats || stats === DEFAULT_MOCK_STATS) {
         setError(

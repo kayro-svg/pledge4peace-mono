@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { logger } from "@/lib/utils/logger";
 
 type VerifyResponse = {
   message: string;
@@ -97,7 +98,7 @@ export default function VerifyEmailPage() {
         }
         setStatus("success");
       } catch (err) {
-        console.error("Error verifying email:", err);
+        logger.error("Error verifying email:", err);
         setMessage("Connection error. Try again later.");
         setStatus("error");
       }

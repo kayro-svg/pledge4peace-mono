@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import { usePledges } from "@/hooks/usePledges";
 import { prefetchCampaign } from "@/lib/prefetch";
 import { useCallback } from "react";
+import { logger } from "@/lib/utils/logger";
 
 interface CampaignCardProps {
   title: string;
@@ -44,23 +45,23 @@ export default function CampaignCard({
   const { pledgeCount } = usePledges(campaignId);
   const progress = Math.round((pledgeCount / goal) * 100);
   const router = useRouter();
-  
+
   // Handle mouse enter to prefetch campaign data - only do this if we have a valid link
   const handleMouseEnter = useCallback(() => {
     if (link) {
-      console.log(`[CampaignCard] Prefetching data for campaign: ${link}`);
+      logger.log(`[CampaignCard] Prefetching data for campaign: ${link}`);
       prefetchCampaign(link);
     }
   }, [link]);
-  
+
   // Navigate to campaign page with proper error handling
   const navigateToCampaign = useCallback(() => {
     if (!link) {
-      console.error('[CampaignCard] Cannot navigate - missing campaign slug');
+      logger.error("[CampaignCard] Cannot navigate - missing campaign slug");
       return;
     }
-    
-    console.log(`[CampaignCard] Navigating to campaign: ${link}`);
+
+    logger.log(`[CampaignCard] Navigating to campaign: ${link}`);
     // Ensure we're using the correct URL format
     router.push(`/campaigns/${link}`);
   }, [router, link]);
@@ -118,7 +119,7 @@ export default function CampaignCard({
 
   if (variant === "compact") {
     return (
-      <Card 
+      <Card
         className="overflow-hidden rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md h-full"
         onMouseEnter={handleMouseEnter}
       >
@@ -226,7 +227,7 @@ export default function CampaignCard({
 
   // Default variant
   return (
-    <Card 
+    <Card
       className="overflow-hidden max-w-xl rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md"
       onMouseEnter={handleMouseEnter}
     >

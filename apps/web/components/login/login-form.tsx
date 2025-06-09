@@ -11,6 +11,7 @@ import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { toast } from "sonner";
+import { logger } from "@/lib/utils/logger";
 
 interface LoginFormData {
   email: string;
@@ -42,7 +43,7 @@ export default function LoginForm({
   };
 
   const onSubmit = async (data: LoginFormData) => {
-    console.log("data", data);
+    logger.log("data", data);
 
     try {
       setIsLoading(true);

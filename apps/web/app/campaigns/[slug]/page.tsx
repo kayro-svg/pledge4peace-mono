@@ -1,6 +1,7 @@
 import { CampaignDetailContent } from "./campaign-detail-content";
 import { getCampaignBySlug, getCampaignSlugs } from "@/lib/sanity/queries";
 import { notFound } from "next/navigation";
+import { logger } from "@/lib/utils/logger";
 
 // Enable Incremental Static Regeneration with a revalidation period of 60 seconds
 export const revalidate = 60;
@@ -24,18 +25,18 @@ export default async function Page({
   const resolvedParams = params instanceof Promise ? await params : params;
   const { slug } = resolvedParams;
 
-  console.log(`[Campaign Page] Fetching campaign data for slug: ${slug}`);
+  logger.log(`[Campaign Page] Fetching campaign data for slug: ${slug}`);
 
   // Fetch campaign data with caching enabled via revalidate
   const campaign = await getCampaignBySlug(slug);
 
   // If campaign doesn't exist, show 404
   if (!campaign) {
-    console.log(`[Campaign Page] Campaign not found for slug: ${slug}`);
+    logger.log(`[Campaign Page] Campaign not found for slug: ${slug}`);
     notFound();
   }
 
-  console.log(
+  logger.log(
     `[Campaign Page] Successfully loaded campaign: ${campaign?.title}`
   );
 

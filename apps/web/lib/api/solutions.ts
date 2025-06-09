@@ -2,6 +2,7 @@ import { Solution, Comment, CreateCommentDto } from "@/lib/types/index";
 import { getSession } from "next-auth/react";
 import { API_ENDPOINTS } from "@/lib/config";
 import { API_URL } from "@/lib/config";
+import { logger } from "@/lib/utils/logger";
 
 // Cache solutions by campaign ID to prevent excessive API calls
 const solutionsCache: Record<string, { data: Solution[]; timestamp: number }> =
@@ -36,7 +37,7 @@ export async function getSolutions(campaignId: string): Promise<Solution[]> {
 
     return data;
   } catch (error) {
-    console.error("Error fetching solutions:", error);
+    logger.error("Error fetching solutions:", error);
     // Return cached data if available, even if expired
     if (solutionsCache[campaignId]) {
       return solutionsCache[campaignId].data;
@@ -139,10 +140,10 @@ export async function getSolutionStats(solutionId: string) {
 
     return data;
   } catch (error) {
-    console.error("Error fetching solution stats:", error);
+    logger.error("Error fetching solution stats:", error);
     // Return cached data if available, even if expired
     if (statsCache[solutionId]) {
-      console.log("Using cached stats for solution:", solutionId);
+      logger.log("Using cached stats for solution:", solutionId);
       return statsCache[solutionId].data;
     }
     // Otherwise return default stats
@@ -205,7 +206,7 @@ export async function getUserInteractions(solutionId: string) {
     }
 
     if (!response.ok) {
-      console.error(`Failed to get user interactions: ${response.status}`);
+      logger.error(`Failed to get user interactions: ${response.status}`);
       // Return cached data if available
       if (cachedData) {
         return cachedData.data;
@@ -228,7 +229,7 @@ export async function getUserInteractions(solutionId: string) {
 
     return data;
   } catch (error) {
-    console.error("Error fetching user interactions:", error);
+    logger.error("Error fetching user interactions:", error);
     // Check if we have cached data
     const cacheKey = `${solutionId}-${session?.user?.email || "anonymous"}`;
     const cachedData = userInteractionsCache[cacheKey];

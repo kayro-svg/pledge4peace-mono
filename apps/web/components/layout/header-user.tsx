@@ -14,8 +14,10 @@ import {
 import { signOut } from "next-auth/react";
 import { User } from "next-auth";
 import { LogOut, User as UserIcon } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export function HeaderUser({ user }: { user: User | null }) {
+  const router = useRouter();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -40,7 +42,12 @@ export function HeaderUser({ user }: { user: User | null }) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => signOut({ redirect: false })}>
+        <DropdownMenuItem
+          onClick={() => {
+            signOut({ redirect: false });
+            router.refresh();
+          }}
+        >
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

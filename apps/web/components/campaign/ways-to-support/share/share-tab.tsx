@@ -5,6 +5,7 @@ import { Share2, MessageCircle, Users, Heart, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShareSocialButton, ShareData } from "./share-social-button";
+import { logger } from "@/lib/utils/logger";
 
 const shareData: ShareData = {
   title: "Pledge for Peace",
@@ -24,7 +25,7 @@ export default function ShareTab() {
       setTimeout(() => setIsLinkCopied(false), 2000);
       return true;
     } catch (err) {
-      console.error("Failed to copy text:", err);
+      logger.error("Failed to copy text:", err);
       // Fallback for older browsers
       try {
         const textArea = document.createElement("textarea");
@@ -39,7 +40,7 @@ export default function ShareTab() {
         setTimeout(() => setIsLinkCopied(false), 2000);
         return true;
       } catch (fallbackErr) {
-        console.error("Fallback copy failed:", fallbackErr);
+        logger.error("Fallback copy failed:", fallbackErr);
         return false;
       }
     }

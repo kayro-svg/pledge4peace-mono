@@ -1,31 +1,44 @@
 "use client";
 
+import { SanityVolunteerWaysToVolunteerSection } from "@/lib/types";
 import { ArrowRight } from "lucide-react";
-import { useState } from "react";
 import { Button } from "../ui/button";
 
-type VolunteerWay = {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  learnMore: string;
-};
+interface WaysToVolunteerProps {
+  waysToVolunteerSection: SanityVolunteerWaysToVolunteerSection;
+  icons: React.ReactNode[];
+}
 
 export default function WaysToVolunteer({
-  volunteerWays,
-}: {
-  volunteerWays: VolunteerWay[];
-}) {
+  waysToVolunteerSection,
+  icons,
+}: WaysToVolunteerProps) {
+  // Create volunteer ways by combining data with icons
+  const volunteerWays = [
+    {
+      icon: icons[0],
+      title: "High-Profile Outreach",
+      description:
+        "Connect with celebrities, politicians, and influential figures to expand our reach and impact.",
+      learnMore: "#high-profile",
+    },
+    {
+      icon: icons[1],
+      title: "Community Campaigns",
+      description:
+        "Launch local initiatives that spread our message of peace through neighborhood outreach and engagement.",
+      learnMore: "#spread-word",
+    },
+  ];
   return (
     <section className="py-16 px-4" id="ways-to-volunteer">
       <div className="mx-auto max-w-6xl">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-[#2F4858]">
-            Ways to <span className="text-[#548281]">Volunteer</span>
+            {waysToVolunteerSection.waysToVolunteerHeading}
           </h2>
           <p className="text-lg text-gray-600 mt-4 max-w-3xl mx-auto">
-            There are several impactful ways our volunteers can support our
-            mission of building lasting peace around the world.
+            {waysToVolunteerSection.waysToVolunteerParagraph}
           </p>
         </div>
 

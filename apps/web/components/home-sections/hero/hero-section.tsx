@@ -7,6 +7,7 @@ import HeroStats from "./hero-stats";
 import HeroButtons from "./hero-buttons";
 import { SanityHeroSection } from "@/lib/types";
 import { useStats } from "@/hooks/useStats";
+import { logger } from "@/lib/utils/logger";
 
 export default function HeroSection({ data }: { data: SanityHeroSection }) {
   const { stats, isLoading, error } = useStats();
@@ -37,7 +38,7 @@ export default function HeroSection({ data }: { data: SanityHeroSection }) {
     if (isLoading) return; // Don't update while loading
 
     if (error) {
-      console.error("Error loading stats:", error);
+      logger.error("Error loading stats:", error);
       // Keep the default/placeholder values
       return;
     }

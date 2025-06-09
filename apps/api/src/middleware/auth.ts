@@ -1,5 +1,6 @@
 import { Context, MiddlewareHandler } from "hono";
 import { verify } from "hono/jwt";
+import { logger } from '../utils/logger';
 
 // Define the type for the environment bindings
 type Bindings = {
@@ -29,7 +30,7 @@ export function getJWTPayload(c: Context<{ Bindings: Bindings }>) {
     const token = authHeader.split(" ")[1];
     return verify(token, c.env.JWT_SECRET);
   } catch (error) {
-    console.error("Error extracting JWT payload:", error);
+    logger.error("Error extracting JWT payload:", error);
     return null;
   }
 }
@@ -58,7 +59,7 @@ export const requireAuth: MiddlewareHandler<{ Bindings: Bindings }> = async (c, 
     
     await next();
   } catch (error) {
-    console.error("Authentication error:", error);
+    logger.error("Authentication error:", error);
     return c.json({ error: "Authentication failed" }, 401);
   }
 }

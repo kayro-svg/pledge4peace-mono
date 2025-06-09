@@ -1,3 +1,4 @@
+import { logger } from '../utils/logger';
 // apps/api/src/services/email.service.ts
 
 export interface BrevoConfig {
@@ -25,7 +26,7 @@ export class EmailService {
     // después:
     const verificationLink = `${baseUrl}/verify-email?token=${token}`;
 
-    console.log("🔗 [DEV] Verification link:", verificationLink);
+    logger.log("🔗 [DEV] Verification link:", verificationLink);
 
     // Payload según la spec v3 de Brevo (Transactional Emails)
     const body = {
@@ -71,7 +72,7 @@ export class EmailService {
 
     if (!response.ok) {
       const text = await response.text();
-      console.error(
+      logger.error(
         "Brevo sendVerificationEmail error:",
         response.status,
         text
@@ -131,7 +132,7 @@ export class EmailService {
 
     if (!response.ok) {
       const text = await response.text();
-      console.error(
+      logger.error(
         "Brevo sendPasswordResetEmail error:",
         response.status,
         text
@@ -186,13 +187,13 @@ export class EmailService {
 //         <p>If you didn't create an account with us, please ignore this email.</p>
 //       `;
 
-//       console.log("Sending verification email to:", to);
+//       logger.log("Sending verification email to:", to);
 //       const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
-//       console.log("Email sent successfully:", result);
+//       logger.log("Email sent successfully:", result);
 
 //       return result;
 //     } catch (error) {
-//       console.error("Error sending verification email:", error);
+//       logger.error("Error sending verification email:", error);
 //       throw new Error("Failed to send verification email");
 //     }
 //   }
@@ -223,13 +224,13 @@ export class EmailService {
 //         <p>If you didn't request a password reset, please ignore this email.</p>
 //       `;
 
-//       console.log("Sending password reset email to:", to);
+//       logger.log("Sending password reset email to:", to);
 //       const result = await this.apiInstance.sendTransacEmail(sendSmtpEmail);
-//       console.log("Email sent successfully:", result);
+//       logger.log("Email sent successfully:", result);
 
 //       return result;
 //     } catch (error) {
-//       console.error("Error sending password reset email:", error);
+//       logger.error("Error sending password reset email:", error);
 //       throw new Error("Failed to send password reset email");
 //     }
 //   }
@@ -265,7 +266,7 @@ export class EmailService {
 //         `,
 //       });
 //     } catch (error) {
-//       console.error("Error sending verification email:", error);
+//       logger.error("Error sending verification email:", error);
 //       throw new Error("Failed to send verification email");
 //     }
 //   }
@@ -287,7 +288,7 @@ export class EmailService {
 //         `,
 //       });
 //     } catch (error) {
-//       console.error("Error sending password reset email:", error);
+//       logger.error("Error sending password reset email:", error);
 //       throw new Error("Failed to send password reset email");
 //     }
 //   }
@@ -331,7 +332,7 @@ export class EmailService {
 
 //       await this.apiInstance.sendTransacEmail(sendSmtpEmail);
 //     } catch (error) {
-//       console.error("Error sending verification email:", error);
+//       logger.error("Error sending verification email:", error);
 //       throw new Error("Failed to send verification email");
 //     }
 //   }
@@ -354,7 +355,7 @@ export class EmailService {
 
 //       await this.apiInstance.sendTransacEmail(sendSmtpEmail);
 //     } catch (error) {
-//       console.error("Error sending password reset email:", error);
+//       logger.error("Error sending password reset email:", error);
 //       throw new Error("Failed to send password reset email");
 //     }
 //   }

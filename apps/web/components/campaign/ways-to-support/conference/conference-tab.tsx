@@ -3,8 +3,24 @@
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { CalendarDays, MapPin } from "lucide-react";
+import {
+  CalendarDays,
+  MapPin,
+  CheckCircle,
+  LogIn,
+  Loader2,
+} from "lucide-react";
 import { SanityConference } from "@/lib/types";
+import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { toast } from "sonner";
+import { PortableText } from "@portabletext/react";
+import { portableTextComponents } from "@/components/ui/portable-text-components";
+import {
+  registerToEvent,
+  handleRegistrationError,
+  getEventRegistrationStatus,
+} from "@/lib/api/brevo";
 
 interface ConferenceTabProps {
   conferenceRef:
@@ -13,13 +29,90 @@ interface ConferenceTabProps {
     | undefined;
 }
 
+// Helper function to format conference time with timezone
+const formatConferenceDateTime = (event: SanityConference) => {
+  if (!event.startDateTime) {
+    return {
+      date: null,
+      formattedDate: "Date TBD",
+      formattedTime: null,
+      timezone: null,
+    };
+  }
+
+  // Parse the UTC datetime string
+  const startDateTime = new Date(event.startDateTime);
+  const endDateTime = event.endDateTime ? new Date(event.endDateTime) : null;
+
+  // Format date using the specified timezone
+  const formattedDate = startDateTime.toLocaleDateString("en-US", {
+    timeZone: event.timezone,
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+
+  // Format time - convert UTC to the specified timezone
+  const formatOptions: Intl.DateTimeFormatOptions = {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+    timeZone: event.timezone,
+  };
+
+  const startTimeFormatted = startDateTime.toLocaleTimeString(
+    "en-US",
+    formatOptions
+  );
+  const endTimeFormatted = endDateTime
+    ? endDateTime.toLocaleTimeString("en-US", formatOptions)
+    : null;
+
+  // Get timezone abbreviation
+  const timezoneDisplayName = new Intl.DateTimeFormat("en-US", {
+    timeZoneName: "short",
+    timeZone: event.timezone,
+  })
+    .formatToParts(startDateTime)
+    .find((part) => part.type === "timeZoneName")?.value;
+
+  return {
+    date: startDateTime,
+    formattedDate,
+    formattedTime: endTimeFormatted
+      ? `${startTimeFormatted} - ${endTimeFormatted}`
+      : startTimeFormatted,
+    timezone: timezoneDisplayName,
+    startTime: startDateTime,
+    endTime: endDateTime,
+  };
+};
+
 export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
+  const conference = conferenceRef as SanityConference;
+  const timeInfo = formatConferenceDateTime(conference);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isRegistered, setIsRegistered] = useState(false);
+  const { data: session } = useSession();
+
+  useEffect(() => {
+    if (!session) return;
+    const checkRegistrationStatus = async () => {
+      const data = await getEventRegistrationStatus(
+        conference._id,
+        session?.accessToken
+      );
+      setIsRegistered(data.isRegistered);
+    };
+    checkRegistrationStatus();
+  }, [conference._id, session]);
+
   if (!conferenceRef) {
     return (
       <div className="p-6 text-center">No conference information available</div>
     );
   }
-
   // If it's a reference type, we know it's not the full conference data
   if ("_type" in conferenceRef && conferenceRef._type === "reference") {
     return (
@@ -27,10 +120,31 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
     );
   }
 
-  const conference = conferenceRef as SanityConference;
-  const eventDate = conference.date
-    ? new Date(conference.date + "T00:00:00")
-    : null;
+  const handleRegisterNow = async () => {
+    setIsLoading(true);
+    try {
+      const data = await registerToEvent(
+        {
+          eventId: conference._id,
+          eventTitle: conference.title,
+        },
+        session?.accessToken
+      );
+
+      setIsRegistered(data.brevoRegistered);
+      if (data.brevoRegistered) {
+        toast.success(`Successfully registered to "${conference.title}"!`);
+      } else {
+        toast.error(
+          "There was an error registering to the event, please try again later."
+        );
+      }
+    } catch (error) {
+      handleRegistrationError(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex flex-col gap-6 w-full">
@@ -69,27 +183,24 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
 
               {/* Date and Location */}
               <div className="flex items-center gap-6 text-gray-600 text-sm mb-4">
-                {eventDate && (
-                  <div className="flex items-center gap-2">
-                    <CalendarDays className="w-5 h-5" />
-                    <div>
-                      <div className="font-semibold">
-                        {eventDate.toLocaleDateString("en-US", {
-                          weekday: "long",
-                          month: "long",
-                          day: "numeric",
-                        })}
-                      </div>
-                      <div>
-                        {eventDate.toLocaleString("en-US", {
-                          hour: "numeric",
-                          minute: "numeric",
-                          hour12: true,
-                        })}
-                      </div>
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="w-5 h-5" />
+                  <div>
+                    <div className="font-semibold">
+                      {timeInfo.formattedDate}
                     </div>
+                    {timeInfo.formattedTime && (
+                      <div className="flex items-center gap-2">
+                        <span>{timeInfo.formattedTime}</span>
+                        {timeInfo.timezone && (
+                          <span className="text-xs bg-gray-200 px-2 py-1 rounded">
+                            {timeInfo.timezone}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
-                )}
+                </div>
                 {conference.location && (
                   <div className="flex items-center gap-2">
                     <MapPin className="w-5 h-5" />
@@ -106,29 +217,81 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
                   : `$${conference.price}`}
               </div>
 
-              {conference.registrationLink ? (
-                <Link href={conference.registrationLink} className="w-full">
-                  <Button className="w-full bg-[#d03c37] hover:bg-[#b83531] text-white">
-                    Register Now
+              {isRegistered ? (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3 flex items-center gap-2 mb-2">
+                  <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0" />
+                  <div>
+                    <p className="text-sm font-medium text-green-800">
+                      You&apos;re registered!
+                    </p>
+                  </div>
+                </div>
+              ) : session ? (
+                <Button
+                  onClick={handleRegisterNow}
+                  className="w-full bg-[#d03c37] hover:bg-[#b83531] text-white"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    "Register Now"
+                  )}
+                </Button>
+              ) : (
+                <Link href="/auth/signin" className="w-full">
+                  <Button
+                    variant="outline"
+                    className="w-full border-[#d03c37] text-[#d03c37] hover:bg-[#d03c37] hover:text-white"
+                  >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Sign in to Register
                   </Button>
                 </Link>
-              ) : (
-                <Button className="w-full bg-[#d03c37] hover:bg-[#b83531] text-white">
-                  Register Now
-                </Button>
               )}
             </div>
           </div>
 
           {/* Description */}
           <div className="prose max-w-none text-gray-600 mt-6">
-            <div
-              dangerouslySetInnerHTML={{
-                __html: conference.about || conference.description || "",
-              }}
-            />
+            {conference.about && Array.isArray(conference.about) ? (
+              <PortableText
+                value={conference.about}
+                components={portableTextComponents}
+              />
+            ) : (
+              <p>{conference.description}</p>
+            )}
           </div>
         </div>
+
+        {/* Speakers */}
+        {conference.speakers && conference.speakers.length > 0 && (
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold mb-4">Speakers</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {conference.speakers.map((speaker) => (
+                <div key={speaker._id} className="flex items-center gap-3">
+                  {speaker.image?.asset?.url && (
+                    <div className="w-12 h-12 relative rounded-full overflow-hidden">
+                      <Image
+                        src={speaker.image.asset.url}
+                        alt={speaker.name}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <h4 className="font-medium">{speaker.name}</h4>
+                    {speaker.role && (
+                      <p className="text-sm text-gray-600">{speaker.role}</p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Gallery - Compact Version */}
         {conference.gallery && conference.gallery.length > 0 && (

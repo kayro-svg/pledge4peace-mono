@@ -6,6 +6,7 @@ import { Button } from "../ui/button";
 import { FormField } from "./form-field";
 import { toast } from "sonner";
 import { API_ENDPOINTS } from "@/lib/config";
+import { logger } from "@/lib/utils/logger";
 
 interface ForgotPasswordFormData {
   email: string;
@@ -41,7 +42,7 @@ export function ForgotPasswordForm() {
           }
         } catch {
           // Si no hay JSON válido, simplemente usamos el mensaje por defecto
-          console.error(
+          logger.error(
             "Invalid JSON response:",
             response.status,
             response.statusText,
@@ -54,7 +55,7 @@ export function ForgotPasswordForm() {
       setEmailSent(true);
       toast.success("Password reset instructions have been sent to your email");
     } catch (error) {
-      console.error("Error requesting password reset:", error);
+      logger.error("Error requesting password reset:", error);
       toast.error(error instanceof Error ? error.message : "An error occurred");
     } finally {
       setIsSubmitting(false);

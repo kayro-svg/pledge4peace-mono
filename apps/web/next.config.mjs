@@ -13,6 +13,12 @@ const nextConfig = {
     // Optimize package imports
     optimizePackageImports: ['lucide-react', '@radix-ui/*'],
   },
+  // Remove console statements in production
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error'] // Keep console.error for important errors
+    } : false,
+  },
 }
 
 export default nextConfig
