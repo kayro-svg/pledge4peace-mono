@@ -3,7 +3,11 @@ import { CommentsService } from "../services/comments.service";
 import { createDb } from "../db";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { getAuthUser } from "../middleware/auth.middleware";
+import {
+  getAuthUser,
+  canDeleteResource,
+  isSuperAdmin,
+} from "../middleware/auth.middleware";
 import { logger } from "../utils/logger";
 
 // Validación de entrada para crear un comentario
@@ -113,15 +117,32 @@ export class CommentsController {
         throw new HTTPException(404, { message: "Comment not found" });
       }
 
-      // Verificar que el usuario es el propietario del comentario
-      if (existingComment.userId !== user.id) {
+      // Verificar permisos: propietario O superAdmin
+      if (!canDeleteResource(c, existingComment.userId)) {
         throw new HTTPException(403, {
           message: "You don't have permission to delete this comment",
         });
       }
 
-      await service.deleteComment(id, user.id);
-      return c.json({ success: true });
+      // Log de auditoría para acciones de moderación
+      if (isSuperAdmin(c) && existingComment.userId !== user.id) {
+        logger.log(
+          `🔨 MODERATION: SuperAdmin ${user.email} deleted comment ${id} owned by user ${existingComment.userId}`
+        );
+      }
+
+      // Para superAdmin, pasar el userId original para tracking,
+      // para usuarios normales pasar su propio userId
+      const userIdForDeletion = isSuperAdmin(c)
+        ? existingComment.userId
+        : user.id;
+      await service.deleteComment(id, userIdForDeletion);
+
+      return c.json({
+        success: true,
+        message: "Comment deleted successfully",
+        commentId: id,
+      });
     } catch (error) {
       if (error instanceof HTTPException) throw error;
       logger.error("Error deleting comment:", error);

@@ -132,6 +132,14 @@ const config: Config = {
             opacity: "0.8",
           },
         },
+        shimmer: {
+          "0%": {
+            transform: "translateX(-100%)",
+          },
+          "100%": {
+            transform: "translateX(100%)",
+          },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -139,6 +147,7 @@ const config: Config = {
         fadeIn: "fadeIn 0.5s ease-out",
         slideUp: "slideUp 0.5s ease-out",
         pulse: "pulse 3s ease-in-out infinite",
+        shimmer: "shimmer 2s infinite",
       },
       boxShadow: {
         soft: "0 4px 20px -2px rgba(0, 0, 0, 0.1)",

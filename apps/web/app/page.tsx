@@ -2,6 +2,7 @@ import HomeSectionsPage from "@/components/home-sections/home-sections-page";
 import { getHomePageData } from "@/lib/sanity/queries";
 import { getCampaigns } from "@/lib/api";
 import { Suspense } from "react";
+import { HomePageSkeleton } from "@/components/ui/home-skeleton";
 
 export default async function Home(): Promise<JSX.Element> {
   // Una única petición a Sanity que obtiene todos los datos
@@ -11,7 +12,7 @@ export default async function Home(): Promise<JSX.Element> {
 
   return (
     <main className="min-h-screen bg-[#FDFDF0] w-full">
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<HomePageSkeleton />}>
         <HomeSectionsPage data={homeData} campaigns={campaigns} />
       </Suspense>
     </main>

@@ -107,7 +107,7 @@ export interface SanityCampaign {
   category?: "Peace" | "Democracy" | "Environment" | "Education" | "Health";
   description: string;
   goalPledges: number;
-  commitmentText?: string;
+  pledgeCommitmentItems?: string[];
   contentText?: SanityCampaignContentText;
   featuredImage?: SanityImage;
   gallery?: SanityCampaignGalleryItem[];

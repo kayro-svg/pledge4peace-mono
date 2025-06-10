@@ -7,6 +7,8 @@ import { pledgesRoutes } from "./routes/pledges";
 import { statsRoutes } from "./routes/stats";
 import { eventsRoutes } from "./routes/events";
 import { usersRoutes } from "./routes/users";
+import { volunteerRoutes } from "./routes/volunteer";
+import { contactRoutes } from "./routes/contact";
 import { AuthService } from "./services/auth.service";
 import { BrevoListsService } from "./services/brevo-lists.service";
 import { createDb } from "./db";
@@ -65,6 +67,7 @@ app.use("*", async (c, next) => {
     apiKey: brevoApiKey,
     subscribersListId: 25, // P4P - Subscribers #25
     conferenceAttendeesListId: 23, // P4P - Conference Attendees #23
+    volunteersListId: 21, // P4P - Volunteers #21
   });
   c.set("brevoListsService", brevoListsService);
 
@@ -79,5 +82,7 @@ app.route("/api/pledges", pledgesRoutes);
 app.route("/api/stats", statsRoutes);
 app.route("/api/events", eventsRoutes);
 app.route("/api/users", usersRoutes);
+app.route("/api/volunteer", volunteerRoutes);
+app.route("/api/contact", contactRoutes);
 
 export default app;

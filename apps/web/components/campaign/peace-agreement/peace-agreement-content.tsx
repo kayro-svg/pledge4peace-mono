@@ -211,6 +211,35 @@ export default function PeaceAgreementContent({
     }
   }, [solutionStats, solutions.length]);
 
+  // Función para refrescar solutions después de cambios
+  const refreshSolutions = async () => {
+    if (!campaignId) return;
+
+    setIsLoading(true);
+    try {
+      const fetchedSolutions = await getSolutions(campaignId);
+      setSolutions(fetchedSolutions);
+
+      // Refetch stats
+      const statsRes = await fetch(
+        `${API_URL}/solutions/campaign/${campaignId}/stats`
+      );
+      if (statsRes.ok) {
+        const statsArr = await statsRes.json();
+        const statsMap: Record<string, any> = {};
+        statsArr.forEach((item: any) => {
+          statsMap[item.solutionId] = item.stats;
+        });
+        setSolutionStats(statsMap);
+      }
+    } catch (error) {
+      logger.error("Error refreshing solutions:", error);
+      toast.error("Failed to refresh solutions");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       <div className="space-y-8">
@@ -294,6 +323,7 @@ export default function PeaceAgreementContent({
                   onSolutionChange={onSolutionChange || (() => {})}
                   index={index}
                   toggleExpand={toggleExpand}
+                  onRefresh={refreshSolutions}
                 />
               ))}
             </div>

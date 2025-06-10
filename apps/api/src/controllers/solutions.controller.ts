@@ -4,10 +4,14 @@ import { createDb } from "../db";
 import { HTTPException } from "hono/http-exception";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
-import { getAuthUser } from "../middleware/auth.middleware";
+import {
+  getAuthUser,
+  canDeleteResource,
+  isSuperAdmin,
+} from "../middleware/auth.middleware";
 import { solutions } from "../db/schema/solutions";
 import { and, eq } from "drizzle-orm";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 // Validación de entrada para crear una solución
 const createSolutionSchema = z.object({
@@ -77,12 +81,12 @@ export class SolutionsController {
     } catch (error) {
       if (error instanceof HTTPException) throw error;
       logger.error("Error creating solution:", error);
-      
+
       // Handle solution limit error
       if (error instanceof Error && error.message.includes("maximum limit")) {
         throw new HTTPException(400, { message: error.message });
       }
-      
+
       throw new HTTPException(500, { message: "Error creating solution" });
     }
   }
@@ -137,7 +141,7 @@ export class SolutionsController {
       const { campaignId } = c.req.param();
       const user = getAuthUser(c);
       const db = createDb(c.env.DB);
-      
+
       const count = await db
         .select()
         .from(solutions)
@@ -148,7 +152,7 @@ export class SolutionsController {
             eq(solutions.status, "published")
           )
         )
-        .then(rows => rows.length);
+        .then((rows) => rows.length);
 
       return c.json({ count });
     } catch (error) {
@@ -156,6 +160,55 @@ export class SolutionsController {
       throw new HTTPException(500, {
         message: "Error getting user solution count",
       });
+    }
+  }
+
+  /**
+   * Delete a solution - Solo permitido por el propietario o superAdmin
+   * SuperAdmin puede eliminar cualquier solution como función de moderación
+   */
+  async deleteSolution(c: Context) {
+    try {
+      const { id } = c.req.param();
+      const user = getAuthUser(c);
+      const db = createDb(c.env.DB);
+      const service = new SolutionsService(db);
+
+      // Obtener la solution para verificar propiedad
+      const existingSolution = await service.getSolutionById(id);
+      if (!existingSolution) {
+        throw new HTTPException(404, { message: "Solution not found" });
+      }
+
+      // Verificar permisos: propietario O superAdmin
+      if (!canDeleteResource(c, existingSolution.userId)) {
+        throw new HTTPException(403, {
+          message: "You don't have permission to delete this solution",
+        });
+      }
+
+      // Log de auditoría para acciones de moderación
+      if (isSuperAdmin(c) && existingSolution.userId !== user.id) {
+        logger.log(
+          `🔨 MODERATION: SuperAdmin ${user.email} deleted solution ${id} owned by user ${existingSolution.userId}`
+        );
+      }
+
+      // Realizar eliminación (soft delete cambiando status a 'archived')
+      const deletedSolution = await service.updateSolutionStatus(
+        id,
+        "archived"
+      );
+
+      return c.json({
+        success: true,
+        message: "Solution deleted successfully",
+        solutionId: id,
+      });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error deleting solution:", error);
+      throw new HTTPException(500, { message: "Error deleting solution" });
     }
   }
 }

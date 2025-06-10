@@ -3,6 +3,7 @@ import { SanityCampaign } from "@/lib/types";
 import { PledgeForm } from "..";
 import MediaGallery from "../gallery-image/media-gallery";
 import { usePledges } from "@/hooks/usePledges";
+import { logger } from "@/lib/utils/logger";
 
 interface CampaignDetailContentProps {
   campaign: SanityCampaign;
@@ -53,7 +54,7 @@ export default function MainContentSection({
               goalValue={campaign.goalPledges}
             />
             <PledgeForm
-              commitmentText={campaign.commitmentText || ""}
+              pledgeCommitmentItems={campaign.pledgeCommitmentItems || []}
               campaignId={campaignId || ""}
               onPledgeCreated={handlePledgeCreated}
             />

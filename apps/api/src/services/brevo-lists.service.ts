@@ -1,4 +1,4 @@
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 export interface BrevoContact {
   email: string;
   attributes?: {
@@ -10,6 +10,7 @@ export interface BrevoContact {
     EXT_ID?: string;
     JOB_TITLE?: string;
     LINKEDIN?: string;
+    SKILLS?: string;
     [key: string]: any;
   };
   listIds?: number[];
@@ -20,18 +21,21 @@ export interface BrevoListsConfig {
   apiKey: string;
   subscribersListId: number;
   conferenceAttendeesListId: number;
+  volunteersListId: number;
 }
 
 export class BrevoListsService {
   private apiKey: string;
   private subscribersListId: number;
   private conferenceAttendeesListId: number;
+  private volunteersListId: number;
   private baseUrl = "https://api.brevo.com/v3";
 
   constructor(config: BrevoListsConfig) {
     this.apiKey = config.apiKey;
     this.subscribersListId = config.subscribersListId;
     this.conferenceAttendeesListId = config.conferenceAttendeesListId;
+    this.volunteersListId = config.volunteersListId;
   }
 
   /**
@@ -54,6 +58,19 @@ export class BrevoListsService {
     const payload = {
       ...contact,
       listIds: [this.conferenceAttendeesListId],
+      updateEnabled: true,
+    };
+
+    return this.createOrUpdateContact(payload);
+  }
+
+  /**
+   * Agrega un contacto a la lista de voluntarios
+   */
+  async addToVolunteersList(contact: BrevoContact): Promise<any> {
+    const payload = {
+      ...contact,
+      listIds: [this.volunteersListId],
       updateEnabled: true,
     };
 
@@ -106,7 +123,20 @@ export class BrevoListsService {
         throw new Error(`Brevo API error: ${response.status} - ${errorText}`);
       }
 
-      const result = await response.json();
+      // Handle empty responses
+      const responseText = await response.text();
+      let result;
+
+      if (responseText) {
+        try {
+          result = JSON.parse(responseText);
+        } catch (error) {
+          logger.error("Failed to parse Brevo response as JSON:", responseText);
+          result = { success: true, message: "Contact processed successfully" };
+        }
+      } else {
+        result = { success: true, message: "Contact processed successfully" };
+      }
       logger.log("✅ Contact added to Brevo successfully:", {
         email: contact.email,
         listIds: contact.listIds,
@@ -153,9 +183,26 @@ export class BrevoListsService {
         );
       }
 
-      // Si la respuesta es 204 (No Content), no hay JSON para parsear
-      const result =
-        response.status === 204 ? { success: true } : await response.json();
+      // Handle different response types
+      let result;
+      if (response.status === 204) {
+        result = { success: true };
+      } else {
+        const responseText = await response.text();
+        if (responseText) {
+          try {
+            result = JSON.parse(responseText);
+          } catch (error) {
+            logger.error(
+              "Failed to parse Brevo update response as JSON:",
+              responseText
+            );
+            result = { success: true, message: "Contact updated successfully" };
+          }
+        } else {
+          result = { success: true, message: "Contact updated successfully" };
+        }
+      }
 
       logger.log("✅ Contact updated in Brevo successfully:", {
         email: contact.email,

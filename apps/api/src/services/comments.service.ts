@@ -56,7 +56,10 @@ export class CommentsService {
     solutionId: string
   ): Promise<CommentWithReplies[]> {
     const allComments = await this.db.query.comments.findMany({
-      where: eq(comments.solutionId, solutionId),
+      where: and(
+        eq(comments.solutionId, solutionId),
+        eq(comments.status, "active")
+      ),
       orderBy: [desc(comments.createdAt)],
     });
 
@@ -98,13 +101,15 @@ export class CommentsService {
   }
 
   async deleteComment(id: string, userId: string) {
+    // Cambiar lógica para permitir eliminación sin verificar userId
+    // (la verificación de permisos ya se hizo en el controller)
     const updated = await this.db
       .update(comments)
       .set({
         status: "deleted",
         updatedAt: new Date(),
       })
-      .where(and(eq(comments.id, id), eq(comments.userId, userId)))
+      .where(eq(comments.id, id)) // Solo verificar ID, no userId
       .returning();
 
     return updated[0];

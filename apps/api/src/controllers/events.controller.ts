@@ -1,7 +1,7 @@
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 // Validation for event registration
 const registerToEventSchema = z.object({
@@ -29,6 +29,7 @@ export class EventsController {
 
       const { eventId, eventTitle } = validation.data;
       const brevoListsService = c.get("brevoListsService");
+      const authService = c.get("authService");
 
       try {
         // Preparar datos del contacto para Brevo
@@ -73,6 +74,25 @@ export class EventsController {
           eventId,
           eventTitle,
         });
+
+        // Send confirmation email
+        try {
+          await authService.emailService.sendEventRegistrationConfirmation(
+            user.email,
+            eventTitle || "Event Registration",
+            user.name
+          );
+          logger.log(
+            "✅ Event registration confirmation email sent to:",
+            user.email
+          );
+        } catch (emailError) {
+          logger.error(
+            "⚠️ Failed to send registration confirmation email:",
+            emailError
+          );
+          // Don't fail the registration if email fails
+        }
 
         return c.json(
           {

@@ -17,13 +17,13 @@ import { CheckCircle } from "lucide-react";
 import { logger } from "@/lib/utils/logger";
 
 interface PledgeFormProps {
-  commitmentText: string | undefined;
+  pledgeCommitmentItems: string[];
   campaignId: string;
   onPledgeCreated?: (newCount: number) => void;
 }
 
 export default function PledgeForm({
-  commitmentText,
+  pledgeCommitmentItems,
   campaignId,
   onPledgeCreated,
 }: PledgeFormProps) {
@@ -149,11 +149,32 @@ export default function PledgeForm({
     <div className="border border-gray-200 rounded-xl p-6 bg-[#f8f9f0]">
       <div className="mb-4">
         <h3 className="text-lg font-medium text-gray-800">I pledge that:</h3>
-        <p className="text-sm text-gray-700 mt-2">{commitmentText}</p>
+        {/* <p className="text-sm text-gray-700 mt-2">
+          {pledgeCommitmentItems.join("\n")}
+        </p> */}
       </div>
 
       <div className="space-y-4">
-        <div className="flex items-start space-x-2">
+        {pledgeCommitmentItems.map((item, index) => (
+          <div className="flex items-start space-x-2" key={index}>
+            <Checkbox
+              id="terms"
+              checked={agreeToTerms}
+              onCheckedChange={(checked) => setAgreeToTerms(checked === true)}
+              className="mt-1 data-[state=checked]:bg-[#548281] data-[state=checked]:text-primary-foreground"
+            />
+            <div className="grid gap-1.5 leading-none">
+              <label
+                htmlFor="terms"
+                className="text-xs leading-snug text-gray-600"
+              >
+                {item}
+              </label>
+            </div>
+          </div>
+        ))}
+
+        {/* <div className="flex items-start space-x-2">
           <Checkbox
             id="terms"
             checked={agreeToTerms}
@@ -169,9 +190,9 @@ export default function PledgeForm({
               that my information will be used as described.
             </label>
           </div>
-        </div>
+        </div> */}
 
-        <div className="flex items-start space-x-2">
+        {/* <div className="flex items-start space-x-2">
           <Checkbox
             id="contact"
             checked={subscribeToUpdates}
@@ -189,7 +210,7 @@ export default function PledgeForm({
               and other related initiatives.
             </label>
           </div>
-        </div>
+        </div> */}
 
         <Button
           className="w-full bg-[#548281] hover:bg-[#3c6665] group"

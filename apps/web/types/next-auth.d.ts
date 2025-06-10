@@ -7,6 +7,7 @@ declare module "next-auth" {
     name: string;
     emailVerified: boolean | Date | null;
     accessToken: string;
+    role: "user" | "superAdmin";
   }
 
   interface Session {
@@ -19,5 +20,9 @@ declare module "next-auth/jwt" {
   interface JWT {
     accessToken: string;
     emailVerified: boolean | Date | null;
+    userId: string;
+    userEmail: string;
+    userName: string;
+    userRole: "user" | "superAdmin";
   }
 }

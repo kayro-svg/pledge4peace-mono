@@ -167,6 +167,7 @@ export default function CommentsSection({
           comments.map((comment) => (
             <CommentItem
               key={comment.id}
+              id={comment.id} // Pasar ID del comentario
               author={{
                 id: comment.userId,
                 name: comment.userName,
@@ -174,6 +175,12 @@ export default function CommentsSection({
               }}
               content={comment.content}
               createdAt={new Date(comment.createdAt)}
+              onDeleted={() => {
+                // Remover el comentario de la lista local
+                setComments((prev) => prev.filter((c) => c.id !== comment.id));
+                // Decrementar el contador manualmente
+                setCount(Math.max(0, count - 1));
+              }}
             />
           ))
         ) : (

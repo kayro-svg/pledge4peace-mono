@@ -33,6 +33,7 @@ const handler = NextAuth({
             email: data.user.email,
             name: data.user.name,
             emailVerified: data.user.emailVerified,
+            role: data.user.role,
             accessToken: data.token,
           };
         } catch (error) {
@@ -53,6 +54,7 @@ const handler = NextAuth({
         token.userId = user.id as string;
         token.userEmail = user.email as string;
         token.userName = user.name as string;
+        token.userRole = (user.role as "user" | "superAdmin") || "user";
       }
       return token;
     },
@@ -63,6 +65,7 @@ const handler = NextAuth({
         session.user.email = (token.userEmail as string) || session.user.email;
         session.user.name = (token.userName as string) || session.user.name;
         session.user.emailVerified = token.emailVerified as boolean | null;
+        session.user.role = (token.userRole as "user" | "superAdmin") || "user";
         session.user.accessToken = token.accessToken as string;
       }
 

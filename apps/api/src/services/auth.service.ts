@@ -10,7 +10,7 @@ import { solutions } from "../db/schema/solutions";
 import { comments } from "../db/schema/comments";
 import { solutionInteractions } from "../db/schema/interactions";
 import { pledges } from "../db/schema/pledges";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 export interface RegisterUserDTO {
   email: string;
@@ -33,7 +33,7 @@ export interface ResetPasswordDTO {
 }
 
 export class AuthService {
-  private emailService: EmailService;
+  public emailService: EmailService;
 
   constructor(
     private db: Database,
@@ -140,6 +140,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         emailVerified: user.emailVerified === 1,
+        role: user.role || "user",
       },
       token,
     };
@@ -257,6 +258,8 @@ export class AuthService {
         name: user.name,
         emailVerified: user.emailVerified === 1,
         image: user.image,
+        // Incluir role en el JWT para verificación de permisos
+        role: user.role || "user",
         exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 days
       },
       this.jwtSecret,
@@ -279,6 +282,8 @@ export class AuthService {
       name: user.name,
       emailVerified: user.emailVerified === 1,
       image: user.image,
+      // Incluir role en la respuesta del perfil
+      role: user.role || "user",
     };
   }
 

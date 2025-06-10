@@ -39,10 +39,12 @@ export class SolutionsService {
           eq(solutions.status, "published") // Only count published solutions
         )
       )
-      .then(rows => rows.length);
+      .then((rows) => rows.length);
 
     if (campaignSolutionCount >= 5) {
-      throw new Error("This campaign has reached the maximum limit of 5 solutions");
+      throw new Error(
+        "This campaign has reached the maximum limit of 5 solutions"
+      );
     }
 
     const newSolution = await this.db
@@ -53,7 +55,7 @@ export class SolutionsService {
         userId: data.userId,
         title: data.title,
         description: data.description,
-        status: "draft",
+        status: "published",
         createdAt: new Date(),
         updatedAt: new Date(),
         metadata: data.metadata ? JSON.stringify(data.metadata) : null,
@@ -66,8 +68,12 @@ export class SolutionsService {
   async getSolutionsByCampaign(
     campaignId: string
   ): Promise<SolutionWithStats[]> {
+    // Filtrar solo solutions published (no incluir draft ni archived)
     const solutionsData = await this.db.query.solutions.findMany({
-      where: eq(solutions.campaignId, campaignId),
+      where: and(
+        eq(solutions.campaignId, campaignId),
+        eq(solutions.status, "published")
+      ),
     });
 
     const solutionsWithStats = await Promise.all(
@@ -85,7 +91,7 @@ export class SolutionsService {
 
   async getSolutionById(id: string): Promise<SolutionWithStats | null> {
     const solution = await this.db.query.solutions.findFirst({
-      where: eq(solutions.id, id),
+      where: and(eq(solutions.id, id), eq(solutions.status, "published")),
     });
 
     if (!solution) return null;
@@ -105,7 +111,8 @@ export class SolutionsService {
         .where(
           and(
             eq(solutionInteractions.solutionId, solutionId),
-            eq(solutionInteractions.type, "like")
+            eq(solutionInteractions.type, "like"),
+            eq(solutionInteractions.status, "active")
           )
         )
         .then((res) => res.length),
@@ -115,14 +122,20 @@ export class SolutionsService {
         .where(
           and(
             eq(solutionInteractions.solutionId, solutionId),
-            eq(solutionInteractions.type, "share")
+            eq(solutionInteractions.type, "share"),
+            eq(solutionInteractions.status, "active")
           )
         )
         .then((res) => res.length),
       this.db
         .select()
         .from(comments)
-        .where(eq(comments.solutionId, solutionId))
+        .where(
+          and(
+            eq(comments.solutionId, solutionId),
+            eq(comments.status, "active")
+          )
+        )
         .then((res) => res.length),
     ]);
 
@@ -153,21 +166,30 @@ export class SolutionsService {
   async getSolutionsStatsByCampaign(
     campaignId: string
   ): Promise<{ solutionId: string; stats: SolutionStats }[]> {
-    // Obtener todas las soluciones de la campaña
+    // Obtener solo las solutions published de la campaña
     const solutionsData = await this.db.query.solutions.findMany({
-      where: eq(solutions.campaignId, campaignId),
+      where: and(
+        eq(solutions.campaignId, campaignId),
+        eq(solutions.status, "published")
+      ),
     });
     const solutionIds = solutionsData.map((s) => s.id);
     if (solutionIds.length === 0) return [];
 
-    // Obtener todas las interacciones relevantes en una sola consulta
+    // Obtener solo las interacciones activas en una sola consulta
     const interactions = await this.db.query.solutionInteractions.findMany({
-      where: inArray(solutionInteractions.solutionId, solutionIds),
+      where: and(
+        inArray(solutionInteractions.solutionId, solutionIds),
+        eq(solutionInteractions.status, "active")
+      ),
     });
 
-    // Obtener todos los comentarios relevantes en una sola consulta
+    // Obtener solo los comentarios activos en una sola consulta
     const allComments = await this.db.query.comments.findMany({
-      where: inArray(comments.solutionId, solutionIds),
+      where: and(
+        inArray(comments.solutionId, solutionIds),
+        eq(comments.status, "active")
+      ),
     });
 
     // Agrupar stats por solución

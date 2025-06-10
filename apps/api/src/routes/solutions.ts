@@ -5,6 +5,7 @@ import { InteractionsController } from "../controllers/interactions.controller";
 import {
   authMiddleware,
   optionalAuthMiddleware,
+  superAdminMiddleware,
 } from "../middleware/auth.middleware";
 
 const solutionsRoutes = new Hono();
@@ -51,6 +52,9 @@ solutionsRoutes.use("*", authMiddleware); // Aplicar autenticación a todas las 
 
 solutionsRoutes.post("/", solutionsController.createSolution);
 solutionsRoutes.patch("/:id/status", solutionsController.updateSolutionStatus);
+
+// Endpoint para eliminar solution - requiere autenticación (propietario o superAdmin)
+solutionsRoutes.delete("/:id", solutionsController.deleteSolution);
 
 // Rutas de comentarios que requieren autenticación
 solutionsRoutes.post("/:solutionId/comments", commentsController.createComment);

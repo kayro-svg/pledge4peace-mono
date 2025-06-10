@@ -19,6 +19,7 @@ import {
 } from "@/lib/types";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { logger } from "@/lib/utils/logger";
 
 interface CampaignDetailContentProps {
   campaign: SanityCampaign;
@@ -31,14 +32,14 @@ export function CampaignDetailContent({
   // Este hook hace que la sesión se cargue una sola vez aquí, y luego
   // estará disponible en caché para los componentes hijos
   useSession();
-  
+
   // Estado para controlar el diálogo de comentarios
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [activeSolutionId, setActiveSolutionId] = useState("");
-  
+
   // Referencia para evitar montajes innecesarios del contenido del diálogo
   const isCommentsContentMounted = useRef(false);
-  
+
   // Precargar el componente SidebarSection solo cuando sea necesario
   useEffect(() => {
     if (isCommentsOpen && activeSolutionId) {
@@ -58,6 +59,8 @@ export function CampaignDetailContent({
       }
     }
   };
+
+  logger.log("campaign pledgeCommitmentItems", campaign.pledgeCommitmentItems);
 
   return (
     <main className="min-h-screen bg-[#fffef5]">
@@ -102,8 +105,8 @@ export function CampaignDetailContent({
                       {isCommentsOpen && activeSolutionId ? (
                         <div className="p-2 h-full">
                           {/* Pasamos la sesión ya cargada para evitar que vuelva a fetchear */}
-                          <SidebarSection 
-                            solutionId={activeSolutionId} 
+                          <SidebarSection
+                            solutionId={activeSolutionId}
                             key={`sidebar-${activeSolutionId}`}
                           />
                         </div>

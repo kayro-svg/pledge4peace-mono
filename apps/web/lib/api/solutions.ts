@@ -9,6 +9,34 @@ const solutionsCache: Record<string, { data: Solution[]; timestamp: number }> =
   {};
 const SOLUTIONS_CACHE_TTL = 60000; // 60 seconds cache lifetime for solutions
 
+/**
+ * Invalida el cache de solutions para una campaña específica
+ * Útil para forzar una recarga después de cambios como eliminaciones
+ */
+export function invalidateSolutionsCache(campaignId: string) {
+  delete solutionsCache[campaignId];
+}
+
+/**
+ * Invalida todos los caches relacionados con solutions
+ */
+export function invalidateAllSolutionsCache() {
+  // Limpiar cache de solutions
+  Object.keys(solutionsCache).forEach((key) => {
+    delete solutionsCache[key];
+  });
+
+  // Limpiar cache de stats
+  Object.keys(statsCache).forEach((key) => {
+    delete statsCache[key];
+  });
+
+  // Limpiar cache de user interactions
+  Object.keys(userInteractionsCache).forEach((key) => {
+    delete userInteractionsCache[key];
+  });
+}
+
 export async function getSolutions(campaignId: string): Promise<Solution[]> {
   // Use cached data if available and not expired
   if (
@@ -277,4 +305,68 @@ export async function createComment(data: CreateCommentDto): Promise<Comment> {
   }
 
   return response.json();
+}
+
+/**
+ * Elimina una solution específica
+ * Solo permitido para el propietario o superAdmin
+ */
+export async function deleteSolution(
+  solutionId: string
+): Promise<{ success: boolean; message: string }> {
+  const session = await getSession();
+  if (!session?.accessToken) {
+    throw new Error("Authentication required");
+  }
+
+  const response = await fetch(`${API_URL}/solutions/${solutionId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${session.accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to delete solution");
+  }
+
+  const data = await response.json();
+
+  // Invalidar todos los caches después de eliminar exitosamente
+  invalidateAllSolutionsCache();
+
+  return data;
+}
+
+/**
+ * Elimina un comment específico
+ * Solo permitido para el propietario o superAdmin
+ */
+export async function deleteComment(
+  commentId: string
+): Promise<{ success: boolean; message: string }> {
+  const session = await getSession();
+  if (!session?.accessToken) {
+    throw new Error("Authentication required");
+  }
+
+  const response = await fetch(`${API_URL}/solutions/comments/${commentId}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${session.accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to delete comment");
+  }
+
+  const data = await response.json();
+
+  // Invalidar todos los caches después de eliminar exitosamente
+  invalidateAllSolutionsCache();
+
+  return data;
 }

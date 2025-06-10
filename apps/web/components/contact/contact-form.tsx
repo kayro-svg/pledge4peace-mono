@@ -7,6 +7,8 @@ import { TextAreaField } from "./text-area-field";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { logger } from "@/lib/utils/logger";
+import { submitContactForm } from "@/lib/api/contact";
+import { toast } from "sonner";
 
 interface ContactFormData {
   name: string;
@@ -19,13 +21,26 @@ export function ContactForm() {
   const form = useForm<ContactFormData>();
   const [isLoading, setIsLoading] = useState(false);
 
-  const onSubmit = (data: ContactFormData) => {
+  const onSubmit = async (data: ContactFormData) => {
     logger.log("Contact form submitted:", data);
     setIsLoading(true);
-    setTimeout(() => {
+
+    try {
+      await submitContactForm(data);
+      toast.success(
+        "Thank you for your message! We've received your inquiry and will get back to you soon."
+      );
+      form.reset();
+    } catch (error) {
+      logger.error("Error submitting contact form:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to submit contact form. Please try again."
+      );
+    } finally {
       setIsLoading(false);
-    }, 3000);
-    // Handle form submission
+    }
   };
 
   return (

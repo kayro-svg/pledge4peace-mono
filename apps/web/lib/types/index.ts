@@ -4,6 +4,8 @@ export interface Solution {
   description: string;
   rank: string;
   partyId: string;
+  // Agregar userId para verificaciones de permisos
+  userId: string;
   expanded?: boolean;
   details?: {
     intro: string;
@@ -27,7 +29,7 @@ export interface Solution {
 }
 
 // Export SanityCampaign from sanity.ts
-export * from './sanity';
+export * from "./sanity";
 
 export interface Comment {
   id: string;

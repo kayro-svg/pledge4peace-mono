@@ -15,6 +15,13 @@
       "when": 1748495727892,
       "tag": "0001_mixed_shotgun",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1749531652425,
+      "tag": "0002_confused_mister_sinister",
+      "breakpoints": true
     }
   ]
 }

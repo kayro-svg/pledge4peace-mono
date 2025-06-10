@@ -3,10 +3,12 @@
 import { ChevronDown } from "lucide-react";
 import { ChevronUp } from "lucide-react";
 import SolutionActionsBar from "./solution-actions-bar";
+import AdminActions from "@/components/admin/admin-actions";
 import { Solution } from "@/lib/types/index";
 import { useEffect } from "react";
 import { useInteractions } from "../shared/interaction-context";
 import { useInteractionManager } from "../shared/use-interaction-manager";
+import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 
 interface SolutionPostProps {
   solution: Solution;
@@ -16,6 +18,7 @@ interface SolutionPostProps {
   index: number;
   toggleExpand: (solutionId: string) => void;
   rank: number;
+  onRefresh?: () => Promise<void>;
 }
 
 export default function SolutionPost({
@@ -26,11 +29,15 @@ export default function SolutionPost({
   index,
   toggleExpand,
   rank,
+  onRefresh,
 }: SolutionPostProps) {
   const { count, setCount } = useInteractionManager({
     solutionId: solution.id,
     initialCount: 0,
   });
+
+  // Hook para verificar permisos de administración
+  const { canDelete } = useAdminPermissions();
 
   useEffect(() => {
     if (solution.expanded) {
@@ -63,22 +70,26 @@ export default function SolutionPost({
   // Handle interaction from action bar (like, dislike, share, comment)
   const handleInteraction = (
     solutionId: string,
-    interactionType: 'like' | 'dislike' | 'comment' | 'share'
+    interactionType: "like" | "dislike" | "comment" | "share"
   ) => {
     // If this solution is not the active one, make it active
-    if (onSolutionChange && solutionId === solution.id && solutionId !== activeSolutionId) {
+    if (
+      onSolutionChange &&
+      solutionId === solution.id &&
+      solutionId !== activeSolutionId
+    ) {
       onSolutionChange(solutionId);
     }
-    
+
     // Ensure the solution is expanded for comment interactions
-    if (interactionType === 'comment' && !solution.expanded) {
+    if (interactionType === "comment" && !solution.expanded) {
       toggleExpand(solutionId);
     }
   };
 
   return (
     <div
-      className={`border ${
+      className={`group border ${
         solution.id === activeSolutionId
           ? "border-[#2F4858] ring-2 ring-[#2F4858]/20"
           : "border-gray-200"
@@ -91,26 +102,47 @@ export default function SolutionPost({
     >
       <div className="border-t p-6 border-gray-100 gap-3 flex flex-col">
         <div className="flex flex-col gap-0">
-          <div className="flex items-start gap-2">
-            <div className="bg-gray-100 p-1 rounded">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="text-gray-600"
-              >
-                <path d="M12 20V10" />
-                <path d="M18 20V4" />
-                <path d="M6 20v-6" />
-              </svg>
+          <div className="flex items-start justify-between">
+            <div className="flex items-start gap-2">
+              <div className="bg-gray-100 p-1 rounded">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="text-gray-600"
+                >
+                  <path d="M12 20V10" />
+                  <path d="M18 20V4" />
+                  <path d="M6 20v-6" />
+                </svg>
+              </div>
+              <div className="text-sm text-gray-600">Ranked #{rank}</div>
             </div>
-            <div className="text-sm text-gray-600">Ranked #{rank}</div>
+
+            {/* Botón de administración - Solo visible si el usuario tiene permisos */}
+            {canDelete(solution.userId) && (
+              <AdminActions
+                type="solution"
+                resourceId={solution.id}
+                resourceOwnerId={solution.userId}
+                onDeleted={async () => {
+                  // Usar la función de refresh si está disponible
+                  if (onRefresh) {
+                    await onRefresh();
+                  } else {
+                    // Como último recurso, refrescar la página
+                    window.location.reload();
+                  }
+                }}
+                className="opacity-0 group-hover:opacity-100 transition-opacity"
+              />
+            )}
           </div>
 
           <h4 className="text-lg font-semibold">{solution.title}</h4>

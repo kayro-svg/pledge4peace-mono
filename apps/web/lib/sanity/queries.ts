@@ -201,7 +201,7 @@ export async function getCampaigns(): Promise<SanityCampaign[]> {
       category,
       description,
       goalPledges,
-      commitmentText,
+      pledgeCommitmentItems[],
       contentText,
       featuredImage { asset-> { url } },
       gallery[] {
@@ -248,7 +248,7 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
         category,
         description,
         goalPledges,
-        commitmentText,
+        pledgeCommitmentItems[],
         contentText,
         featuredImage { asset-> { url } },
         gallery[] {

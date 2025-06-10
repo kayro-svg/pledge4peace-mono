@@ -8,6 +8,7 @@ export interface AuthUser {
   email: string;
   name: string;
   image?: string;
+  role: "user" | "superAdmin";
 }
 
 declare module "hono" {
@@ -76,6 +77,26 @@ export async function optionalAuthMiddleware(c: Context, next: Next) {
   }
 }
 
+/**
+ * Middleware específico para verificar permisos de SuperAdmin
+ * Solo permite acceso a usuarios con role = 'superAdmin'
+ */
+export async function superAdminMiddleware(c: Context, next: Next) {
+  // Primero verificar autenticación estándar
+  await authMiddleware(c, async () => {
+    const user = getAuthUser(c);
+
+    // Verificar que el usuario tiene rol de superAdmin
+    if (user.role !== "superAdmin") {
+      throw new HTTPException(403, {
+        message: "Access denied. SuperAdmin privileges required.",
+      });
+    }
+
+    await next();
+  });
+}
+
 // Helper para obtener el usuario autenticado del contexto
 export function getAuthUser(c: Context): AuthUser {
   const user = c.get("user");
@@ -83,6 +104,27 @@ export function getAuthUser(c: Context): AuthUser {
     throw new HTTPException(401, { message: "User not authenticated" });
   }
   return user;
+}
+
+/**
+ * Helper para verificar si el usuario actual es superAdmin
+ */
+export function isSuperAdmin(c: Context): boolean {
+  try {
+    const user = getAuthUser(c);
+    return user.role === "superAdmin";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Helper para verificar si el usuario puede eliminar un recurso
+ * Permite al propietario Y al superAdmin eliminar
+ */
+export function canDeleteResource(c: Context, resourceUserId: string): boolean {
+  const user = getAuthUser(c);
+  return user.id === resourceUserId || user.role === "superAdmin";
 }
 
 // Middleware para verificar la propiedad de un recurso
