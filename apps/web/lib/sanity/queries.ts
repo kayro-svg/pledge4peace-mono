@@ -227,7 +227,10 @@ export async function getHomePageData(): Promise<SanityHomePage> {
 // Estas consultas son para cuando necesitas estos elementos fuera del contexto de la página principal
 
 export async function getCampaigns(): Promise<SanityCampaign[]> {
-  return client.fetch(
+  // 🚀 Usar cliente inteligente por entorno
+  const sanityClient = getClient({ forceFresh: isDevelopment });
+
+  return sanityClient.fetch(
     `*[_type == "campaign"] {
       _id,
       title,
@@ -248,38 +251,22 @@ export async function getCampaigns(): Promise<SanityCampaign[]> {
     {},
     {
       next: {
-        revalidate: 3600, // 1 hora
+        revalidate: cache.medium, // ⚡ Cache inteligente por entorno
         tags: ["campaign"],
       },
     }
   );
 }
 
-// Memory cache for campaign data to reduce Sanity API calls
-const campaignCache = new Map<
-  string,
-  { data: SanityCampaign; timestamp: number }
->();
-const CAMPAIGN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
-
 export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
   try {
-    // Check in-memory cache first
-    const cacheKey = `campaign-${slug}`;
-    const cachedItem = campaignCache.get(cacheKey);
-    const now = Date.now();
+    logger.log(`[Sanity] Fetching campaign data for: ${slug}`);
 
-    // Return cached data if valid
-    if (cachedItem && now - cachedItem.timestamp < CAMPAIGN_CACHE_TTL) {
-      logger.log(`[Cache Hit] Using cached campaign data for: ${slug}`);
-      return cachedItem.data;
-    }
-
-    // If not in cache or expired, fetch from Sanity
-    logger.log(`[Cache Miss] Fetching campaign data from Sanity for: ${slug}`);
+    // 🚀 Usar cliente inteligente por entorno
+    const sanityClient = getClient({ forceFresh: isDevelopment });
 
     // Restore the original query structure to match your existing data
-    const campaignData = await client.fetch(
+    const campaignData = await sanityClient.fetch(
       `*[_type == "campaign" && slug.current == $slug][0] {
         _id,
         title,
@@ -376,13 +363,13 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
       { slug },
       {
         next: {
-          revalidate: 3600, // 1 hora
+          revalidate: cache.medium, // ⚡ Cache inteligente por entorno
           tags: ["campaign", `campaign-${slug}`],
         },
       }
     );
 
-    // Update cache with new data
+    // Process campaign data
     if (campaignData) {
       logger.log(
         `[Sanity] Successfully fetched campaign: ${campaignData.title}`
@@ -405,8 +392,6 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
           }
         );
       }
-
-      campaignCache.set(cacheKey, { data: campaignData, timestamp: now });
     } else {
       logger.log(`[Sanity] No campaign found for slug: ${slug}`);
     }
@@ -421,43 +406,33 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
   }
 }
 
-// Cache for campaign slugs
-const slugsCache: { data: SanitySlug[] | null; timestamp: number } = {
-  data: null,
-  timestamp: 0,
-};
-const SLUGS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
-
 export async function getCampaignSlugs(): Promise<SanitySlug[]> {
-  const now = Date.now();
+  logger.log("[Sanity] Fetching campaign slugs");
 
-  // Return cached data if valid
-  if (slugsCache.data && now - slugsCache.timestamp < SLUGS_CACHE_TTL) {
-    logger.log("[Cache Hit] Using cached campaign slugs");
-    return slugsCache.data;
-  }
+  // 🚀 Usar cliente inteligente por entorno
+  const sanityClient = getClient({ forceFresh: isDevelopment });
 
-  logger.log("[Cache Miss] Fetching campaign slugs from Sanity");
-  const slugs = await client.fetch(
+  const slugs = await sanityClient.fetch(
     `*[_type == "campaign" && defined(slug.current)] {
       slug
     }`,
     {},
     {
-      next: { revalidate: 60 },
-      cache: "force-cache",
+      next: {
+        revalidate: cache.long, // ⚡ Cache inteligente por entorno
+        tags: ["campaign"],
+      },
     }
   );
-
-  // Update cache
-  slugsCache.data = slugs;
-  slugsCache.timestamp = now;
 
   return slugs;
 }
 
 export async function getArticles(): Promise<SanityArticle[]> {
-  return client.fetch(
+  // 🚀 Usar cliente inteligente por entorno
+  const sanityClient = getClient({ forceFresh: isDevelopment });
+
+  return sanityClient.fetch(
     `*[_type == "article"] | order(publishedAt desc) {
       _id,
       title,
@@ -495,7 +470,12 @@ export async function getArticles(): Promise<SanityArticle[]> {
       }
     }`,
     {},
-    { next: { revalidate: 60 } }
+    {
+      next: {
+        revalidate: cache.medium, // ⚡ Cache inteligente por entorno
+        tags: ["article"],
+      },
+    }
   );
 }
 
@@ -534,7 +514,10 @@ export async function getArticleBySlug(slug: string): Promise<{
   article: SanityArticle;
   relatedArticles: SanityArticle[];
 }> {
-  return client.fetch(
+  // 🚀 Usar cliente inteligente por entorno
+  const sanityClient = getClient({ forceFresh: isDevelopment });
+
+  return sanityClient.fetch(
     `{
       "article": *[_type == "article" && slug.current == $slug][0] {
         _id,
@@ -634,7 +617,12 @@ export async function getArticleBySlug(slug: string): Promise<{
       }
     }`,
     { slug },
-    { next: { revalidate: 60 } }
+    {
+      next: {
+        revalidate: cache.medium, // ⚡ Cache inteligente por entorno
+        tags: ["article", `article-${slug}`],
+      },
+    }
   );
 }
 
@@ -739,19 +727,21 @@ export async function getConferenceBySlug(slug: string) {
 }
 
 export async function getConferenceByRef(ref: string) {
+  // 🚀 Usar cliente inteligente por entorno
+  const sanityClient = getClient({ forceFresh: isDevelopment });
+
   const query = `*[_type == "conference" && _id == $ref][0]`;
   const params = { ref };
-  return await client.fetch(query, params);
+
+  return await sanityClient.fetch(query, params, {
+    next: {
+      revalidate: cache.short, // ⚡ Cache inteligente por entorno
+      tags: ["conference", `conference-ref-${ref}`],
+    },
+  });
 }
 
 // ===== ABOUT PAGE QUERIES =====
-// Cache for about page data to reduce API calls
-const aboutPageCache: { data: SanityAboutPage | null; timestamp: number } = {
-  data: null,
-  timestamp: 0,
-};
-const ABOUT_PAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
-
 /**
  * Fetches the complete About Page data from Sanity CMS
  * Includes hero section, who we are, mission, philosophy, charter, and contact information
@@ -759,21 +749,13 @@ const ABOUT_PAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
  */
 export async function getAboutPageData(): Promise<SanityAboutPage> {
   try {
-    const now = Date.now();
+    logger.log("[Sanity] Fetching About Page data");
 
-    // Check cache first to reduce API calls
-    if (
-      aboutPageCache.data &&
-      now - aboutPageCache.timestamp < ABOUT_PAGE_CACHE_TTL
-    ) {
-      logger.log("[Cache Hit] Using cached About Page data");
-      return aboutPageCache.data;
-    }
-
-    logger.log("[Cache Miss] Fetching About Page data from Sanity");
+    // 🚀 Usar cliente inteligente por entorno
+    const sanityClient = getClient({ forceFresh: isDevelopment });
 
     // Fetch all about page data in a single optimized query
-    const data = await client.fetch(
+    const data = await sanityClient.fetch(
       `*[_type == "aboutPage"][0] {
         _id,
         title,
@@ -848,8 +830,8 @@ export async function getAboutPageData(): Promise<SanityAboutPage> {
       {},
       {
         next: {
-          revalidate: 3600, // 1 hora
-          tags: ["aboutPage"],
+          revalidate: cache.medium, // ⚡ Cache inteligente por entorno
+          tags: ["aboutPage"], // ✅ Tag correcto (coincide con revalidación)
         },
       }
     );
@@ -857,10 +839,6 @@ export async function getAboutPageData(): Promise<SanityAboutPage> {
     if (!data) {
       throw new Error("No About Page data found in Sanity");
     }
-
-    // Update cache with fresh data
-    aboutPageCache.data = data;
-    aboutPageCache.timestamp = now;
 
     logger.log("[Sanity] Successfully fetched About Page data");
     return data;
@@ -871,16 +849,6 @@ export async function getAboutPageData(): Promise<SanityAboutPage> {
 }
 
 // ===== VOLUNTEER PAGE QUERIES =====
-// Cache for volunteer page data to reduce API calls
-const volunteerPageCache: {
-  data: SanityVolunteerPage | null;
-  timestamp: number;
-} = {
-  data: null,
-  timestamp: 0,
-};
-const VOLUNTEER_PAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
-
 /**
  * Fetches the complete Volunteer Page data from Sanity CMS
  * Includes hero section, ways to volunteer, convince high-profile figures, spread the word, and impact sections
@@ -888,21 +856,13 @@ const VOLUNTEER_PAGE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache TTL
  */
 export async function getVolunteerPageData(): Promise<SanityVolunteerPage> {
   try {
-    const now = Date.now();
+    logger.log("[Sanity] Fetching Volunteer Page data");
 
-    // Check cache first to reduce API calls
-    if (
-      volunteerPageCache.data &&
-      now - volunteerPageCache.timestamp < VOLUNTEER_PAGE_CACHE_TTL
-    ) {
-      logger.log("[Cache Hit] Using cached Volunteer Page data");
-      return volunteerPageCache.data;
-    }
-
-    logger.log("[Cache Miss] Fetching Volunteer Page data from Sanity");
+    // 🚀 Usar cliente inteligente por entorno
+    const sanityClient = getClient({ forceFresh: isDevelopment });
 
     // Fetch all volunteer page data in a single optimized query
-    const data = await client.fetch(
+    const data = await sanityClient.fetch(
       `*[_type == "volunteerPage"][0] {
         _id,
         title,
@@ -952,8 +912,8 @@ export async function getVolunteerPageData(): Promise<SanityVolunteerPage> {
       {},
       {
         next: {
-          revalidate: 3600, // 1 hora
-          tags: ["volunteerPage"],
+          revalidate: cache.medium, // ⚡ Cache inteligente por entorno
+          tags: ["volunteerPage"], // ✅ Tag correcto (coincide con revalidación)
         },
       }
     );
@@ -961,10 +921,6 @@ export async function getVolunteerPageData(): Promise<SanityVolunteerPage> {
     if (!data) {
       throw new Error("No Volunteer Page data found in Sanity");
     }
-
-    // Update cache with fresh data
-    volunteerPageCache.data = data;
-    volunteerPageCache.timestamp = now;
 
     logger.log("[Sanity] Successfully fetched Volunteer Page data");
     return data;
