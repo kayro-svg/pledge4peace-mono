@@ -21,6 +21,9 @@ import {
   handleRegistrationError,
   getEventRegistrationStatus,
 } from "@/lib/api/brevo";
+import { useRouter } from "next/navigation";
+import { logger } from "@/lib/utils/logger";
+import { cleanTimezone, debugTimezone } from "@/lib/utils/clean-timezone";
 
 interface ConferenceTabProps {
   conferenceRef:
@@ -40,25 +43,32 @@ const formatConferenceDateTime = (event: SanityConference) => {
     };
   }
 
+  // 🧹 Limpiar timezone corrupto ANTES de usarlo
+  const cleanedTimezone = cleanTimezone(event.timezone);
+
+  // Debug del timezone original si está corrupto
+  if (event.timezone && event.timezone.length > 50) {
+    debugTimezone(event.timezone, "conference-tab.tsx");
+  }
+
   // Parse the UTC datetime string
   const startDateTime = new Date(event.startDateTime);
   const endDateTime = event.endDateTime ? new Date(event.endDateTime) : null;
 
-  // Format date using the specified timezone
+  // Format date using the CLEANED timezone
   const formattedDate = startDateTime.toLocaleDateString("en-US", {
-    timeZone: event.timezone,
+    timeZone: cleanedTimezone,
     weekday: "long",
     month: "long",
     day: "numeric",
-    year: "numeric",
   });
 
-  // Format time - convert UTC to the specified timezone
+  // Format time - convert UTC to the CLEANED timezone
   const formatOptions: Intl.DateTimeFormatOptions = {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
-    timeZone: event.timezone,
+    timeZone: cleanedTimezone,
   };
 
   const startTimeFormatted = startDateTime.toLocaleTimeString(
@@ -69,10 +79,10 @@ const formatConferenceDateTime = (event: SanityConference) => {
     ? endDateTime.toLocaleTimeString("en-US", formatOptions)
     : null;
 
-  // Get timezone abbreviation
+  // Get timezone abbreviation using CLEANED timezone
   const timezoneDisplayName = new Intl.DateTimeFormat("en-US", {
     timeZoneName: "short",
-    timeZone: event.timezone,
+    timeZone: cleanedTimezone,
   })
     .formatToParts(startDateTime)
     .find((part) => part.type === "timeZoneName")?.value;

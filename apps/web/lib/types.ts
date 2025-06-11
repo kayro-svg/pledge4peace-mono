@@ -163,7 +163,7 @@ export interface SanitySpeaker {
 
 export interface SanityOrganizer {
   name: string;
-  logo?: SanityImage;
+  logo?: string;
 }
 
 export interface SanityConference {

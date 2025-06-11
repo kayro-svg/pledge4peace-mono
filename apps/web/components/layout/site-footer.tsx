@@ -34,11 +34,14 @@ export default function SiteFooter() {
               <FooterLinks
                 title="Site Links"
                 links={[
+                  { href: "/", label: "Home" },
                   { href: "/about", label: "About Us" },
                   { href: "/volunteer", label: "Volunteer" },
-                  { href: "/events", label: "Events" },
-                  // { href: "#", label: "Privacy Policy" },
-                  // { href: "#", label: "Terms of Service" },
+                  { href: "/contact", label: "Contact Us" },
+                  {
+                    href: "/terms-and-conditions",
+                    label: "Terms and Conditions",
+                  },
                 ]}
               />
 
@@ -48,7 +51,7 @@ export default function SiteFooter() {
                   { href: "/#projects-section", label: "Pledge" },
                   { href: "/volunteer#volunteer-form", label: "Volunteer" },
                   { href: "/articles", label: "Articles & News" },
-                  { href: "/contact", label: "Contact Us" },
+                  { href: "/events", label: "Events" },
                 ]}
               />
             </div>

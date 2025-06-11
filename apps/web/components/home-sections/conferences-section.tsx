@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import ConferenceCard from "@/components/ui/conference-card";
 import ExtendedEventCard from "@/components/ui/extended-event-card";
 import { SanityConferencesSection } from "@/lib/types";
+import { logger } from "@/lib/utils/logger";
 
 export default function ConferencesSection({
   data,
@@ -58,7 +59,7 @@ export default function ConferencesSection({
         </Link>
       </div>
 
-      {isSingleConference ? (
+      {sectionData.conferences.length < 2 ? (
         // Diseño expandido para una sola conferencia
         <div className="space-y-8">
           {sectionData.conferences.map((conference) => (

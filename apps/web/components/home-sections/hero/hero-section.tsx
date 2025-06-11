@@ -115,7 +115,7 @@ export default function HeroSection({ data }: { data: SanityHeroSection }) {
           <div className="h-full flex flex-col">
             {/* Badge */}
             <div className="inline-block w-fit px-4 py-1 mb-4 md:mb-6 bg-[#86AC9D] backdrop-blur-sm text-[#2F4858] bg-opacity-25 rounded-full text-xs lg:text-sm font-medium">
-              Building Peace Together
+              No Hate, No Divide - Just Peace Worldwide
             </div>
 
             {/* Heading and content */}
