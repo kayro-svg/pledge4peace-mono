@@ -1,6 +1,7 @@
 // lib/sanity/queries.ts
-import { client } from "./client";
+import { client, getClient } from "./client";
 import { logger } from "@/lib/utils/logger";
+import { cleanTimezone } from "@/lib/utils/clean-timezone";
 import {
   SanityHomePage,
   SanityCampaign,
@@ -11,11 +12,35 @@ import {
   SanityVolunteerPage,
 } from "../types";
 
+// ⚡ CONFIGURACIÓN DE CACHE POR ENTORNO
+const isDevelopment = process.env.NODE_ENV === "development";
+
+// En desarrollo: cache muy corto para ver cambios rápido
+// En producción: cache más largo para optimizar rendimiento
+const CACHE_TIMES = {
+  development: {
+    short: 10, // 10 segundos
+    medium: 30, // 30 segundos
+    long: 60, // 1 minuto
+  },
+  production: {
+    short: 300, // 5 minutos
+    medium: 1800, // 30 minutos
+    long: 3600, // 1 hora
+  },
+};
+
+const cache = isDevelopment ? CACHE_TIMES.development : CACHE_TIMES.production;
+
 // CONSULTA PRINCIPAL OPTIMIZADA
 // Esta función obtiene toda la página de inicio en una sola petición
 export async function getHomePageData(): Promise<SanityHomePage> {
-  const data = await client.fetch(
+  // En desarrollo: usar cliente sin CDN para datos frescos
+  const sanityClient = getClient({ forceFresh: isDevelopment });
+
+  const data = await sanityClient.fetch(
     `*[_type == "homePage"][0] {
+      _id,
       title,
       // Hero Section
       heroHeading,
@@ -85,7 +110,12 @@ export async function getHomePageData(): Promise<SanityHomePage> {
       }
     }`,
     {},
-    { next: { revalidate: 60 } }
+    {
+      next: {
+        revalidate: cache.long, // Cache inteligente por entorno
+        tags: ["homepage", "campaign", "article", "conference"],
+      },
+    }
   );
   return {
     heroSection: {
@@ -124,7 +154,11 @@ export async function getHomePageData(): Promise<SanityHomePage> {
     conferencesSection: {
       conferencesHeading: data.conferencesHeading,
       conferencesDescription: data.conferencesDescription,
-      conferences: data.conferences,
+      conferences:
+        data.conferences?.map((conference: any) => ({
+          ...conference,
+          timezone: cleanTimezone(conference.timezone),
+        })) || [],
     },
   };
 }
@@ -212,7 +246,12 @@ export async function getCampaigns(): Promise<SanityCampaign[]> {
       }
     }`,
     {},
-    { next: { revalidate: 60 } }
+    {
+      next: {
+        revalidate: 3600, // 1 hora
+        tags: ["campaign"],
+      },
+    }
   );
 }
 
@@ -335,7 +374,12 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
         }
       }`,
       { slug },
-      { next: { revalidate: 60 } }
+      {
+        next: {
+          revalidate: 3600, // 1 hora
+          tags: ["campaign", `campaign-${slug}`],
+        },
+      }
     );
 
     // Update cache with new data
@@ -343,6 +387,25 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
       logger.log(
         `[Sanity] Successfully fetched campaign: ${campaignData.title}`
       );
+
+      // 🧹 Limpiar timezones corruptos en conferences dentro de campaigns
+      if (campaignData.waysToSupportTabs) {
+        campaignData.waysToSupportTabs = campaignData.waysToSupportTabs.map(
+          (tab: any) => {
+            if (tab.conferenceRef && tab.conferenceRef.timezone) {
+              return {
+                ...tab,
+                conferenceRef: {
+                  ...tab.conferenceRef,
+                  timezone: cleanTimezone(tab.conferenceRef.timezone),
+                },
+              };
+            }
+            return tab;
+          }
+        );
+      }
+
       campaignCache.set(cacheKey, { data: campaignData, timestamp: now });
     } else {
       logger.log(`[Sanity] No campaign found for slug: ${slug}`);
@@ -437,7 +500,9 @@ export async function getArticles(): Promise<SanityArticle[]> {
 }
 
 export async function getConferences(): Promise<SanityConference[]> {
-  return client.fetch(
+  const sanityClient = getClient({ forceFresh: isDevelopment });
+
+  const conferences = await sanityClient.fetch(
     `*[_type == "conference"] | order(startDateTime asc) {
       _id,
       title,
@@ -450,8 +515,19 @@ export async function getConferences(): Promise<SanityConference[]> {
       description
     }`,
     {},
-    { next: { revalidate: 60 } }
+    {
+      next: {
+        revalidate: cache.short, // Conferences cambian frecuentemente
+        tags: ["conference"],
+      },
+    }
   );
+
+  // 🧹 Limpiar timezones corruptos en todas las conferences
+  return conferences.map((conference: SanityConference) => ({
+    ...conference,
+    timezone: cleanTimezone(conference.timezone),
+  }));
 }
 
 export async function getArticleBySlug(slug: string): Promise<{
@@ -639,7 +715,26 @@ export async function getConferenceBySlug(slug: string) {
     }
   }`;
 
-  const event = await client.fetch(query, { slug });
+  const sanityClient = getClient({ forceFresh: isDevelopment });
+  const event = await sanityClient.fetch(
+    query,
+    { slug },
+    {
+      next: {
+        revalidate: cache.short, // Conferences pueden cambiar frecuentemente
+        tags: ["conference", `conference-${slug}`],
+      },
+    }
+  );
+
+  // 🧹 Limpiar timezone corrupto si existe el evento
+  if (event && event.timezone) {
+    return {
+      ...event,
+      timezone: cleanTimezone(event.timezone),
+    };
+  }
+
   return event;
 }
 
@@ -751,7 +846,12 @@ export async function getAboutPageData(): Promise<SanityAboutPage> {
         }
       }`,
       {},
-      { next: { revalidate: 60 } }
+      {
+        next: {
+          revalidate: 3600, // 1 hora
+          tags: ["aboutPage"],
+        },
+      }
     );
 
     if (!data) {
@@ -850,7 +950,12 @@ export async function getVolunteerPageData(): Promise<SanityVolunteerPage> {
         }
       }`,
       {},
-      { next: { revalidate: 60 } }
+      {
+        next: {
+          revalidate: 3600, // 1 hora
+          tags: ["volunteerPage"],
+        },
+      }
     );
 
     if (!data) {

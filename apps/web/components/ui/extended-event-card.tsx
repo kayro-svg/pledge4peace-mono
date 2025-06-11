@@ -3,6 +3,8 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, Clock, MapPin } from "lucide-react";
 import { logger } from "@/lib/utils/logger";
 
+import { cleanTimezone, debugTimezone } from "@/lib/utils/clean-timezone";
+
 interface ExtendedEventCardProps {
   id: string;
   title: string;
@@ -26,6 +28,14 @@ export default function ExtendedEventCard({
   imageUrl,
   slug,
 }: ExtendedEventCardProps) {
+  // 🧹 Limpiar timezone al recibir los props
+  const cleanedTimezone = cleanTimezone(timezone);
+
+  // Debug del timezone original si está corrupto
+  if (timezone && timezone.length > 50) {
+    debugTimezone(timezone, "extended-event-card.tsx");
+  }
+
   // Debug logging
   logger.log("ExtendedEventCard data:", {
     title,
@@ -79,6 +89,16 @@ export default function ExtendedEventCard({
     ? parseEventDateTime(startDateTime)
     : null;
 
+  // Debug logging para timezone
+  if (timezone) {
+    logger.log("🐛 Timezone debugging:", {
+      original: timezone,
+      length: timezone.length,
+      charCodes: Array.from(timezone).map((c) => c.charCodeAt(0)),
+      hasInvisibleChars: /[\u200B-\u200D\uFEFF]/.test(timezone),
+    });
+  }
+
   logger.log("Date parsing result:", {
     isValidDateTime,
     originalString: startDateTime,
@@ -125,11 +145,11 @@ export default function ExtendedEventCard({
 
       // Get timezone abbreviation if available
       let timezoneDisplay = "";
-      if (timezone) {
+      if (cleanedTimezone) {
         try {
           const tzFormat = new Intl.DateTimeFormat("en-US", {
             timeZoneName: "short",
-            timeZone: timezone,
+            timeZone: cleanedTimezone,
           });
           timezoneDisplay =
             tzFormat
@@ -155,7 +175,7 @@ export default function ExtendedEventCard({
       const date = parsedDateTime.date;
 
       try {
-        const options = timezone ? { timeZone: timezone } : {};
+        const options = cleanedTimezone ? { timeZone: cleanedTimezone } : {};
 
         const dayNumber = date.toLocaleDateString("en-US", {
           ...options,

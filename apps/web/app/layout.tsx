@@ -4,30 +4,38 @@ import "./globals.css";
 import { Providers } from "./providers";
 import { Toaster } from "sonner";
 import { LayoutWrapper } from "@/components/layout/layout-wrapper";
+import { CookieBanner } from "@/components/cookies/cookie-banner";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Pledge4Peace",
-  description: "Make a difference in the world",
+  description: "No Hate, No Divide - Just Peace Worldwide",
   icons: {
     icon: [
-      { url: "/favicon/favicon.ico" },
-      { url: "/favicon/favicon-16x16.png", sizes: "16x16", type: "image/png" },
-      { url: "/favicon/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-    ],
-    apple: [
+      { url: "/favicon/favicon.ico?v=2" },
+      { url: "/favicon/favicon.svg?v=2", type: "image/svg+xml" },
       {
-        url: "/favicon/apple-touch-icon.png",
-        sizes: "180x180",
+        url: "/favicon/favicon-16x16.png?v=2",
+        sizes: "16x16",
+        type: "image/png",
+      },
+      {
+        url: "/favicon/favicon-32x32.png?v=2",
+        sizes: "32x32",
+        type: "image/png",
+      },
+      {
+        url: "/favicon/favicon-96x96.png?v=2",
+        sizes: "96x96",
         type: "image/png",
       },
     ],
-    other: [
+    apple: [
       {
-        rel: "mask-icon",
-        url: "/favicon/safari-pinned-tab.svg",
-        color: "#5bbad5",
+        url: "/favicon/apple-touch-icon.png?v=2",
+        sizes: "180x180",
+        type: "image/png",
       },
     ],
   },
@@ -45,6 +53,7 @@ export default function RootLayout({
         <Providers>
           <LayoutWrapper>{children}</LayoutWrapper>
           <Toaster />
+          <CookieBanner position="bottom" />
         </Providers>
       </body>
     </html>

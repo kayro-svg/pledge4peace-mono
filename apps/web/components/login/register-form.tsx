@@ -80,7 +80,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full mt-14">
       <h1 className="text-3xl font-semibold tracking-tight text-gray-900 mb-1 text-center">
         Create Account
       </h1>

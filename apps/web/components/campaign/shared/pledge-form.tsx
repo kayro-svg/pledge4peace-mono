@@ -13,8 +13,9 @@ import {
 } from "@/components/ui/dialog";
 import AuthContainer from "@/components/login/auth-container";
 import { Loader2 } from "lucide-react";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, CircleHelp } from "lucide-react";
 import { logger } from "@/lib/utils/logger";
+import Link from "next/link";
 
 interface PledgeFormProps {
   pledgeCommitmentItems: string[];
@@ -148,7 +149,7 @@ export default function PledgeForm({
   return (
     <div className="border border-gray-200 rounded-xl p-6 bg-[#f8f9f0]">
       <div className="mb-4">
-        <h3 className="text-lg font-medium text-gray-800">I pledge that:</h3>
+        <h3 className="text-lg font-medium text-gray-800">I pledge to:</h3>
         {/* <p className="text-sm text-gray-700 mt-2">
           {pledgeCommitmentItems.join("\n")}
         </p> */}
@@ -220,6 +221,13 @@ export default function PledgeForm({
           {isSubmitting ? "Processing..." : "Make my pledge"}{" "}
           <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
         </Button>
+        <Link
+          href="/pledge-details"
+          className="w-full text-xs text-[#548281] hover:text-[#3c6665] flex items-center justify-center"
+        >
+          Learn more about my pledge
+          <CircleHelp className="ml-2 h-4 w-4" />
+        </Link>
       </div>
 
       {/* Login Modal */}

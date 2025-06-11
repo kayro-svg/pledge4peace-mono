@@ -8,7 +8,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint --max-warnings 0",
-    "check-types": "tsc --noEmit"
+    "check-types": "tsc --noEmit",
+    "setup-webhooks": "node scripts/setup-webhooks.js",
+    "dev:revalidate": "node scripts/dev-revalidate.js",
+    "dev:revalidate:conferences": "node scripts/dev-revalidate.js conference",
+    "dev:revalidate:events": "node scripts/dev-revalidate.js /events"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

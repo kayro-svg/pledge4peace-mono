@@ -39,7 +39,7 @@ export default function WaysToSupportSection({
   const supportOptions: SupportOption[] = [
     {
       icon: <Handshake className="w-7 h-7 text-[#86AC9D]" />,
-      title: "Make a Pledgee",
+      title: "Make a Pledge",
       description:
         "Join a campaign and pledge your support. Your voice matters in creating meaningful change.",
       linkText: "Browse Campaigns",

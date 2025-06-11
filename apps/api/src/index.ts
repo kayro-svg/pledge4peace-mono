@@ -31,6 +31,7 @@ app.use(
       "http://localhost:3000",
       "http://localhost:3001",
       "https://pledge4peace.vercel.app",
+      "https://www.pledge4peace.org",
       // Add other allowed origins in production
     ],
     credentials: true, // Allow credentials (cookies, authorization headers)

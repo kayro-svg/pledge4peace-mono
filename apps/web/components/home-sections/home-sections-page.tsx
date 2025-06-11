@@ -13,6 +13,7 @@ import ConferencesSection from "./conferences-section";
 
 // Define el tipo de datos que esperas, por ejemplo:
 import { Campaign, SanityHomePage } from "@/lib/types";
+import { logger } from "@/lib/utils/logger";
 
 interface HomeSectionsPageProps {
   data: SanityHomePage;

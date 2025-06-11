@@ -149,19 +149,20 @@ export default function VerifyEmailPage() {
                   Email Verified!
                 </h1>
                 <p className="text-teal-50 text-lg">
-                  Welcome to the movement 🎉
+                  Welcome to Pledge4Peace 🎉
                 </p>
               </div>
 
               <div className="px-8 py-8 text-center">
                 <h2 className="text-xl font-semibold text-gray-900 mb-3">
-                  You&apos;re all set to make a difference
+                  Now that you&apos;re in, it&apos;s time to do what matters
+                  most
                 </h2>
                 <p className="text-gray-600 mb-2 leading-relaxed">{message}</p>
                 <p className="text-gray-600 mb-8 leading-relaxed">
-                  You can now start creating pledges and join our community of
-                  peace advocates working to solve the world&apos;s problems,
-                  one pledge at a time.
+                  Vote for real, actionable solutions to the world&apos;s most
+                  pressing conflicts. Start voting now and be the reason peace
+                  becomes possible.
                 </p>
 
                 <div className="flex flex-col gap-4">
@@ -188,12 +189,12 @@ export default function VerifyEmailPage() {
 
                 <div className="mt-8 pt-6 border-t border-gray-100">
                   <p className="text-sm text-gray-500">
-                    Need help getting started?{" "}
+                    Want to know more about Pledge4Peace?{" "}
                     <a
-                      href="/guide"
+                      href="/about"
                       className="text-teal-600 hover:text-teal-700 font-medium"
                     >
-                      Visit our guide
+                      Learn more
                     </a>
                   </p>
                 </div>

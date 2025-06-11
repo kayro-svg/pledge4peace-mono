@@ -19,6 +19,7 @@ import { PortableText } from "@portabletext/react";
 import { portableTextComponents } from "@/components/ui/portable-text-components";
 import { useRouter } from "next/navigation";
 import { logger } from "@/lib/utils/logger";
+import { cleanTimezone, debugTimezone } from "@/lib/utils/clean-timezone";
 
 // Helper function to format conference time with timezone - FIXED VERSION
 const formatConferenceDateTime = (event: SanityConference) => {
@@ -30,25 +31,34 @@ const formatConferenceDateTime = (event: SanityConference) => {
       timezone: null,
     };
   }
+
+  // 🧹 Limpiar timezone corrupto ANTES de usarlo
+  const cleanedTimezone = cleanTimezone(event.timezone);
+
+  // Debug del timezone original si está corrupto
+  if (event.timezone && event.timezone.length > 50) {
+    debugTimezone(event.timezone, "event-page-content.tsx");
+  }
+
   // Parse the UTC datetime string
   const startDateTime = new Date(event.startDateTime);
   const endDateTime = event.endDateTime ? new Date(event.endDateTime) : null;
 
-  // Format date using the specified timezone
+  // Format date using the CLEANED timezone
   const formattedDate = startDateTime.toLocaleDateString("en-US", {
-    timeZone: event.timezone,
+    timeZone: cleanedTimezone,
     weekday: "long",
     month: "long",
     day: "numeric",
     year: "numeric",
   });
 
-  // Format time - convert UTC to the specified timezone
+  // Format time - convert UTC to the CLEANED timezone
   const formatOptions: Intl.DateTimeFormatOptions = {
     hour: "numeric",
     minute: "2-digit",
     hour12: true,
-    timeZone: event.timezone,
+    timeZone: cleanedTimezone,
   };
 
   const startTimeFormatted = startDateTime.toLocaleTimeString(
@@ -61,10 +71,10 @@ const formatConferenceDateTime = (event: SanityConference) => {
 
   logger.log("⏰ Formatted time result:", startTimeFormatted);
 
-  // Get timezone abbreviation
+  // Get timezone abbreviation using CLEANED timezone
   const timezoneDisplayName = new Intl.DateTimeFormat("en-US", {
     timeZoneName: "short",
-    timeZone: event.timezone,
+    timeZone: cleanedTimezone,
   })
     .formatToParts(startDateTime)
     .find((part) => part.type === "timeZoneName")?.value;
@@ -127,8 +137,6 @@ export default function EventPageContent({
     };
     checkRegistrationStatus();
   }, [event._id, session]);
-
-  logger.log("isRegistered", isRegistered);
 
   return (
     <section className="min-h-screen bg-gray-50">
@@ -303,11 +311,11 @@ export default function EventPageContent({
             {event.organizer?.name && (
               <div className="bg-white rounded-lg shadow-lg p-6">
                 <h2 className="font-semibold text-gray-900 mb-4">Organizer</h2>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gray-200 rounded-full overflow-hidden relative">
-                    {event.organizer.logo?.asset?.url ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-12 h-12 bg-transparent rounded-full overflow-hidden relative flex items-center justify-center">
+                    {event.organizer.logo ? (
                       <Image
-                        src={event.organizer.logo.asset.url}
+                        src={event.organizer.logo}
                         alt={event.organizer.name}
                         fill
                         className="object-cover"
