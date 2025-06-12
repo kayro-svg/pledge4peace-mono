@@ -127,7 +127,7 @@ export default function WaysToSupportSection({
   };
 
   return (
-    <section className="bg-[#fdfdf0] w-full py-8 sm:py-12 md:py-16 lg:py-20 px-4 sm:px-6 md:px-8 lg:px-12">
+    <section className="bg-[#fdfdf0] w-full flex justify-center py-8 sm:py-12 md:py-16 lg:py-20 px-4 sm:px-6 md:px-8 lg:px-12">
       <div className="flex flex-col items-center justify-center max-w-[1400px]">
         <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-[#2F4858] uppercase text-xs sm:text-sm font-medium tracking-wider mb-3 sm:mb-4 border-b-2 w-fit mx-auto border-[#2F4858]">

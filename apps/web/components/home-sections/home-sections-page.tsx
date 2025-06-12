@@ -1,19 +1,14 @@
-// apps/web/components/home-sections/home-sections-client.tsx
 "use client";
 
-import { useEffect } from "react";
+import { Campaign, SanityHomePage } from "@/lib/types";
 import { usePathname, useSearchParams } from "next/navigation";
-
+import { useEffect } from "react";
+import ArticlesSection from "./articles-section";
+import ConferencesSection from "./conferences-section";
 import HeroSection from "./hero/hero-section";
 import HowItWorksSection from "./how-it-works-section";
 import ProjectsSection from "./projects-section";
 import WaysToSupportSection from "./ways-to-support";
-import ArticlesSection from "./articles-section";
-import ConferencesSection from "./conferences-section";
-
-// Define el tipo de datos que esperas, por ejemplo:
-import { Campaign, SanityHomePage } from "@/lib/types";
-import { logger } from "@/lib/utils/logger";
 
 interface HomeSectionsPageProps {
   data: SanityHomePage;

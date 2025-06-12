@@ -38,16 +38,13 @@ export default function MainContentSection({
             />
           )}
 
-          <div className="w-full lg:w-4/6 flex flex-col gap-4 justify-between p-4 lg:p-0">
-            <div className="flex flex-col gap-2">
+          <div className="w-full lg:w-4/6 flex flex-col justify-between p-2 lg:p-0">
+            <div className="flex flex-col gap-4">
               <div className="text-sm text-gray-500">pledge4peace.org</div>
               <h1 className="text-3xl md:text-4xl font-bold">
                 {campaign.title}
               </h1>
-            </div>
-
-            <div>
-              <p className="text-gray-700">{campaign.description}</p>
+              <p className="text-gray-700 mt-4">{campaign.description}</p>
             </div>
             <PledgesProgressBar
               currentValue={displayValue}

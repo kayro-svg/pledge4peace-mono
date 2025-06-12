@@ -23,9 +23,13 @@ interface RegisterFormData {
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
+  isModal?: boolean;
 }
 
-export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
+export default function RegisterForm({
+  onSwitchToLogin,
+  isModal,
+}: RegisterFormProps) {
   const form = useForm<RegisterFormData>();
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -80,7 +84,7 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
   };
 
   return (
-    <div className="w-full mt-14">
+    <div className={`w-full ${isModal ? "mt-0" : "mt-14"}`}>
       <h1 className="text-3xl font-semibold tracking-tight text-gray-900 mb-1 text-center">
         Create Account
       </h1>
@@ -88,7 +92,17 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
         Join us and start making a difference today
       </p>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mb-10">
+      <p className="text-center text-sm text-gray-600 mb-6">
+        Already have an account?{" "}
+        <button
+          onClick={onSwitchToLogin}
+          className="font-medium text-[#698D8B] hover:text-[#548281]"
+        >
+          Sign In
+        </button>
+      </p>
+
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           id="name"
           label="Full Name"
@@ -168,16 +182,6 @@ export default function RegisterForm({ onSwitchToLogin }: RegisterFormProps) {
       <div className="mt-6">
         <SocialButton provider="google">Sign up with Google</SocialButton>
       </div> */}
-
-      <p className="absolute bottom-5 left-0 right-0 text-center text-sm text-gray-600">
-        Already have an account?{" "}
-        <button
-          onClick={onSwitchToLogin}
-          className="font-medium text-[#698D8B] hover:text-[#548281]"
-        >
-          Sign In
-        </button>
-      </p>
     </div>
   );
 }

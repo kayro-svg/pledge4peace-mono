@@ -6,9 +6,13 @@ import RegisterForm from "./register-form";
 
 interface AuthContainerProps {
   onLoginSuccess?: () => void;
+  isModal?: boolean;
 }
 
-export default function AuthContainer({ onLoginSuccess }: AuthContainerProps) {
+export default function AuthContainer({
+  onLoginSuccess,
+  isModal,
+}: AuthContainerProps) {
   const [isLoginView, setIsLoginView] = useState(true);
 
   const handleSwitchToRegister = () => {
@@ -27,7 +31,7 @@ export default function AuthContainer({ onLoginSuccess }: AuthContainerProps) {
           onLoginSuccess={onLoginSuccess}
         />
       ) : (
-        <RegisterForm onSwitchToLogin={handleSwitchToLogin} />
+        <RegisterForm onSwitchToLogin={handleSwitchToLogin} isModal={isModal} />
       )}
     </div>
   );

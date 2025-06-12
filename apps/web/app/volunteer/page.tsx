@@ -36,6 +36,7 @@ export default async function VolunteerPage(): Promise<JSX.Element> {
   return (
     <div className="min-h-screen">
       <HeroVolunteerBanner heroSection={volunteerData.heroSection} />
+      <JoinOurTeamForm />
       <WaysToVolunteer
         waysToVolunteerSection={volunteerData.waysToVolunteerSection}
         icons={volunteerIcons}
@@ -49,7 +50,6 @@ export default async function VolunteerPage(): Promise<JSX.Element> {
       />
       {/* <PartnerWithUs /> */}
       <VolunteerCtaBanner impactSection={volunteerData.impactSection} />
-      <JoinOurTeamForm />
     </div>
   );
 }
