@@ -40,6 +40,13 @@ solutionsRoutes.get(
   solutionsController.getSolutionsStatsByCampaign
 );
 
+// Get party solution counts for a campaign
+solutionsRoutes.get(
+  "/campaign/:campaignId/party-counts",
+  optionalAuthMiddleware,
+  solutionsController.getPartySolutionCounts
+);
+
 // Get user's solution count for a campaign
 solutionsRoutes.get(
   "/user-count/:campaignId",

@@ -67,7 +67,7 @@ export default function LoginForm({
   };
 
   return (
-    <div className="w-full">
+    <div className="w-full flex flex-col justify-center">
       <h1 className="text-3xl font-semibold tracking-tight text-gray-900 mb-1 text-center">
         Welcome
       </h1>
@@ -75,7 +75,17 @@ export default function LoginForm({
         Enter your email and password and start making a difference.
       </p>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mb-10">
+      <p className="text-center text-sm text-gray-600 mb-6">
+        Don&apos;t have an account?{" "}
+        <button
+          onClick={onSwitchToRegister}
+          className="font-medium text-[#698D8B] hover:text-[#548281]"
+        >
+          Sign Up
+        </button>
+      </p>
+
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           id="email"
           label="Email"
@@ -138,16 +148,6 @@ export default function LoginForm({
       <div className="mt-6">
         <SocialButton provider="google">Sign in with Google</SocialButton>
       </div> */}
-
-      <p className="absolute bottom-5 left-0 right-0 text-center text-sm text-gray-600">
-        Don&apos;t have an account?{" "}
-        <button
-          onClick={onSwitchToRegister}
-          className="font-medium text-[#698D8B] hover:text-[#548281]"
-        >
-          Sign Up
-        </button>
-      </p>
     </div>
   );
 }

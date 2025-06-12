@@ -241,7 +241,10 @@ export default function PledgeForm({
             </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col items-center">
-            <AuthContainer onLoginSuccess={() => setShowLoginModal(false)} />
+            <AuthContainer
+              onLoginSuccess={() => setShowLoginModal(false)}
+              isModal
+            />
           </div>
         </DialogContent>
       </Dialog>

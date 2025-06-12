@@ -18,6 +18,11 @@ const createSolutionSchema = z.object({
   campaignId: z.string(),
   title: z.string().min(1),
   description: z.string().min(1),
+  partyId: z.enum(["israeli", "palestinian"], {
+    errorMap: () => ({
+      message: "Party must be either 'israeli' or 'palestinian'",
+    }),
+  }),
   metadata: z.record(z.any()).optional(),
 });
 
@@ -159,6 +164,25 @@ export class SolutionsController {
       logger.error("Error getting user solution count:", error);
       throw new HTTPException(500, {
         message: "Error getting user solution count",
+      });
+    }
+  }
+
+  /**
+   * Get the number of solutions per party for a campaign
+   */
+  async getPartySolutionCounts(c: Context) {
+    try {
+      const { campaignId } = c.req.param();
+      const db = createDb(c.env.DB);
+      const service = new SolutionsService(db);
+
+      const counts = await service.getPartySolutionCounts(campaignId);
+      return c.json(counts);
+    } catch (error) {
+      logger.error("Error getting party solution counts:", error);
+      throw new HTTPException(500, {
+        message: "Error getting party solution counts",
       });
     }
   }

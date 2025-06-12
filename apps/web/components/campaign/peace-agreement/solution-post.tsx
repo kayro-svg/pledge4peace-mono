@@ -1,7 +1,6 @@
 "use client";
 
-import { ChevronDown } from "lucide-react";
-import { ChevronUp } from "lucide-react";
+import { ChevronDown, TrendingUp, ChevronUp } from "lucide-react";
 import SolutionActionsBar from "./solution-actions-bar";
 import AdminActions from "@/components/admin/admin-actions";
 import { Solution } from "@/lib/types/index";
@@ -100,28 +99,11 @@ export default function SolutionPost({
         }
       }}
     >
-      <div className="border-t p-6 border-gray-100 gap-3 flex flex-col">
+      <div className="border-t p-3 md:p-6 border-gray-100 gap-3 flex flex-col">
         <div className="flex flex-col gap-0">
-          <div className="flex items-start justify-between">
-            <div className="flex items-start gap-2">
-              <div className="bg-gray-100 p-1 rounded">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-gray-600"
-                >
-                  <path d="M12 20V10" />
-                  <path d="M18 20V4" />
-                  <path d="M6 20v-6" />
-                </svg>
-              </div>
+          <div className="flex items-center justify-between mb-4 md:mb-0">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-gray-600" />
               <div className="text-sm text-gray-600">Ranked #{rank}</div>
             </div>
 
@@ -140,7 +122,7 @@ export default function SolutionPost({
                     window.location.reload();
                   }
                 }}
-                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                className="md:opacity-0 group-hover:opacity-100 transition-opacity"
               />
             )}
           </div>

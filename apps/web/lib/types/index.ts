@@ -3,7 +3,7 @@ export interface Solution {
   title: string;
   description: string;
   rank: string;
-  partyId: string;
+  partyId: "israeli" | "palestinian";
   // Agregar userId para verificaciones de permisos
   userId: string;
   expanded?: boolean;

@@ -2,6 +2,7 @@
 
 import AuthContainer from "@/components/login/auth-container";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -10,10 +11,19 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { getSolutions, getUserInteractions } from "@/lib/api/solutions";
 import { API_ENDPOINTS, API_URL } from "@/lib/config";
 import { SanitySolutionsSection, Solution } from "@/lib/types";
-import { Loader2, Plus, LogIn } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  LogIn,
+  ToggleLeft,
+  ToggleRight,
+  Lightbulb,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -21,6 +31,8 @@ import { toast } from "sonner";
 import { useInteractions } from "../shared/interaction-context";
 import SolutionPost from "./solution-post";
 import { logger } from "@/lib/utils/logger";
+import { IsraelFlag } from "@/components/ui/flags";
+import { PalestineFlag } from "@/components/ui/flags";
 
 interface PeaceAgreementContentProps {
   campaignId: string;
@@ -30,6 +42,9 @@ interface PeaceAgreementContentProps {
   onCommentClick?: (solutionId: string | React.MouseEvent) => void;
   activeSolutionId?: string;
 }
+
+type PartyId = "israeli" | "palestinian";
+type ViewMode = "mixed" | "grouped";
 
 export default function PeaceAgreementContent({
   campaignId,
@@ -46,11 +61,35 @@ export default function PeaceAgreementContent({
   const [newSolution, setNewSolution] = useState({
     title: "",
     description: "",
+    partyId: "israeli" as PartyId,
   });
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [solutionStats, setSolutionStats] = useState<Record<string, any>>({});
+  const [viewMode, setViewMode] = useState<ViewMode>("mixed");
+  const [partyCounts, setPartyCounts] = useState({
+    israeli: 0,
+    palestinian: 0,
+    total: 0,
+  });
   const router = useRouter();
   const { setUserInteraction } = useInteractions();
+
+  const perspectiveConfig = {
+    israeli: {
+      label: "Israel",
+      icon: <IsraelFlag width={20} height={16} />,
+      color: "bg-blue-50 text-blue-700 border-blue-200",
+      description:
+        "Solutions directed to Israeli leadership and decision-makers",
+    },
+    palestinian: {
+      label: "Palestine",
+      icon: <PalestineFlag width={20} height={16} />,
+      color: "bg-green-50 text-green-700 border-green-200",
+      description:
+        "Solutions directed to Palestinian leadership and decision-makers",
+    },
+  };
 
   useEffect(() => {
     const fetchSolutions = async () => {
@@ -72,6 +111,15 @@ export default function PeaceAgreementContent({
             statsMap[item.solutionId] = item.stats;
           });
           setSolutionStats(statsMap);
+        }
+
+        // Fetch party counts
+        const partyCountsRes = await fetch(
+          `${API_URL}/solutions/campaign/${campaignId}/party-counts`
+        );
+        if (partyCountsRes.ok) {
+          const counts = await partyCountsRes.json();
+          setPartyCounts(counts);
         }
 
         // Only fetch user interactions if user is authenticated
@@ -146,6 +194,7 @@ export default function PeaceAgreementContent({
           campaignId,
           title: newSolution.title,
           description: newSolution.description,
+          partyId: newSolution.partyId,
         }),
       });
 
@@ -154,9 +203,22 @@ export default function PeaceAgreementContent({
       }
 
       const createdSolution = await response.json();
+
+      // Update solutions list
       setSolutions((prev) => [...prev, createdSolution]);
+
+      // Update party counts immediately
+      setPartyCounts((prev) => ({
+        ...prev,
+        [newSolution.partyId]: prev[newSolution.partyId] + 1,
+        total: prev.total + 1,
+      }));
+
+      // Refresh all data to ensure consistency (skip loading to avoid UI flicker)
+      await refreshSolutions(true);
+
       setIsCreateSolutionOpen(false);
-      setNewSolution({ title: "", description: "" });
+      setNewSolution({ title: "", description: "", partyId: "israeli" });
       toast.success("Solution created successfully");
     } catch (error) {
       logger.error("Error creating solution:", error);
@@ -167,29 +229,43 @@ export default function PeaceAgreementContent({
   };
 
   const addSolutionButton = () => {
-    if (solutions.length >= 5) {
-      return null;
-    } else {
+    const maxTotal = 10;
+    const maxPerParty = Math.floor(maxTotal / 2); // 5 per party
+
+    if (partyCounts.total >= maxTotal) {
       return (
-        <Button
-          onClick={() => {
-            if (!session) {
-              setShowLoginModal(true);
-              return;
-            }
-            setIsCreateSolutionOpen(true);
-          }}
-          className="flex items-center gap-2 w-full md:w-auto"
-        >
-          {session ? (
-            <Plus className="h-4 w-4" />
-          ) : (
-            <LogIn className="h-4 w-4" />
-          )}
-          {session ? "Add Solution" : "Sign in to add a solution"}
-        </Button>
+        <div className="text-center text-sm text-gray-500">
+          Campaign limit reached ({partyCounts.total}/{maxTotal} solutions)
+        </div>
       );
     }
+
+    const canAddIsraeli = partyCounts.israeli < maxPerParty;
+    const canAddPalestinian = partyCounts.palestinian < maxPerParty;
+
+    if (!canAddIsraeli && !canAddPalestinian) {
+      return (
+        <div className="text-center text-sm text-gray-500">
+          All party limits reached (5/5 each)
+        </div>
+      );
+    }
+
+    return (
+      <Button
+        onClick={() => {
+          if (!session) {
+            setShowLoginModal(true);
+            return;
+          }
+          setIsCreateSolutionOpen(true);
+        }}
+        className="flex items-center gap-2 w-full md:w-auto bg-slate-600 hover:bg-slate-700"
+      >
+        {session ? <Plus className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
+        {session ? "Add Solution" : "Sign in to add a solution"}
+      </Button>
+    );
   };
 
   // Sort solutions by likes in descending order
@@ -198,6 +274,12 @@ export default function PeaceAgreementContent({
     const bLikes = solutionStats[b.id]?.likes || 0;
     return bLikes - aLikes;
   });
+
+  // Group solutions by party
+  const groupedSolutions = {
+    israeli: sortedSolutions.filter((s) => s.partyId === "israeli"),
+    palestinian: sortedSolutions.filter((s) => s.partyId === "palestinian"),
+  };
 
   // Update solutions when stats change
   useEffect(() => {
@@ -212,10 +294,13 @@ export default function PeaceAgreementContent({
   }, [solutionStats, solutions.length]);
 
   // Función para refrescar solutions después de cambios
-  const refreshSolutions = async () => {
+  const refreshSolutions = async (skipLoading = false) => {
     if (!campaignId) return;
 
-    setIsLoading(true);
+    if (!skipLoading) {
+      setIsLoading(true);
+    }
+
     try {
       const fetchedSolutions = await getSolutions(campaignId);
       setSolutions(fetchedSolutions);
@@ -232,11 +317,24 @@ export default function PeaceAgreementContent({
         });
         setSolutionStats(statsMap);
       }
+
+      // Refetch party counts
+      const partyCountsRes = await fetch(
+        `${API_URL}/solutions/campaign/${campaignId}/party-counts`
+      );
+      if (partyCountsRes.ok) {
+        const counts = await partyCountsRes.json();
+        setPartyCounts(counts);
+      }
     } catch (error) {
       logger.error("Error refreshing solutions:", error);
-      toast.error("Failed to refresh solutions");
+      if (!skipLoading) {
+        toast.error("Failed to refresh solutions");
+      }
     } finally {
-      setIsLoading(false);
+      if (!skipLoading) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -261,13 +359,67 @@ export default function PeaceAgreementContent({
         <div>
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-8 md:gap-0">
             <h2 className="text-2xl font-bold">
-              {/* Vote Below on Solutions to {solutionsSection.subheading} */}
               {solutionsSection?.subheading}
             </h2>
             <div className="flex w-full md:w-auto items-end">
               {solutions.length > 0 && addSolutionButton()}
             </div>
           </div>
+
+          {/* View Toggle */}
+          {solutions.length > 0 && (
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 p-4 bg-white rounded-lg border mb-6">
+              <div className="flex flex-col md:flex-row md:items-center gap-4">
+                <span className="font-medium text-gray-700">View Mode:</span>
+                <div className="flex md:items-center gap-2">
+                  <Button
+                    variant={viewMode === "mixed" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewMode("mixed")}
+                    className="flex items-center gap-2"
+                  >
+                    {viewMode === "mixed" ? (
+                      <ToggleRight className="h-4 w-4" />
+                    ) : (
+                      <ToggleLeft className="h-4 w-4" />
+                    )}
+                    Mixed View
+                  </Button>
+                  <Button
+                    variant={viewMode === "grouped" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setViewMode("grouped")}
+                    className="flex items-center gap-2"
+                  >
+                    {viewMode === "grouped" ? (
+                      <ToggleRight className="h-4 w-4" />
+                    ) : (
+                      <ToggleLeft className="h-4 w-4" />
+                    )}
+                    Grouped by Party
+                  </Button>
+                </div>
+              </div>
+
+              <div className="flex gap-4 text-sm">
+                {Object.entries(perspectiveConfig).map(([key, config]) => {
+                  const maxPerParty = Math.floor(10 / 2); // 5 per party
+                  const currentCount = partyCounts[key as PartyId] || 0;
+
+                  return (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="w-4 h-4">{config.icon}</span>
+                      <span
+                        className={`font-medium ${currentCount >= maxPerParty ? "text-red-600" : "text-gray-700"}`}
+                      >
+                        {currentCount}/{maxPerParty}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {isLoading ? (
             <div className="text-center py-8">Loading solutions...</div>
@@ -280,52 +432,112 @@ export default function PeaceAgreementContent({
                 Be the first to propose a solution for this campaign
               </p>
               {addSolutionButton()}
-              {/* <Button
-                onClick={() => {
-                  if (!session) {
-                    setShowLoginModal(true);
-                    return;
-                  }
-                  setIsCreateSolutionOpen(true);
-                }}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Add Solution
-              </Button> */}
             </div>
-          ) : (
+          ) : viewMode === "mixed" ? (
             <div className="space-y-6">
               {sortedSolutions.map((solution, index) => (
-                <SolutionPost
-                  key={solution.id}
-                  rank={index + 1}
-                  solution={{
-                    ...(solution as any),
-                    partyId: (solution as any).partyId ?? "",
-                    likes:
-                      (solution as any).likes ??
-                      solutionStats[solution.id]?.likes ??
-                      0,
-                    comments:
-                      (solution as any).comments ??
-                      solutionStats[solution.id]?.comments ??
-                      0,
-                    stats: solutionStats[solution.id] || {
-                      likes: 0,
-                      dislikes: 0,
-                      shares: 0,
-                      comments: 0,
-                    },
-                  }}
-                  onCommentClick={onCommentClick}
-                  activeSolutionId={activeSolutionId || ""}
-                  onSolutionChange={onSolutionChange || (() => {})}
-                  index={index}
-                  toggleExpand={toggleExpand}
-                  onRefresh={refreshSolutions}
-                />
+                <div key={solution.id} className="relative">
+                  <div className="absolute top-5 md:top-8 left-28 md:left-32 z-10">
+                    <Badge
+                      className={
+                        perspectiveConfig[solution.partyId as PartyId].color
+                      }
+                    >
+                      <span className="mr-1">
+                        {perspectiveConfig[solution.partyId as PartyId].icon}
+                      </span>
+                      {perspectiveConfig[solution.partyId as PartyId].label}
+                    </Badge>
+                  </div>
+                  <SolutionPost
+                    rank={index + 1}
+                    solution={{
+                      ...(solution as any),
+                      partyId: solution.partyId || "israeli",
+                      likes:
+                        (solution as any).likes ??
+                        solutionStats[solution.id]?.likes ??
+                        0,
+                      comments:
+                        (solution as any).comments ??
+                        solutionStats[solution.id]?.comments ??
+                        0,
+                      stats: solutionStats[solution.id] || {
+                        likes: 0,
+                        dislikes: 0,
+                        shares: 0,
+                        comments: 0,
+                      },
+                    }}
+                    onCommentClick={onCommentClick}
+                    activeSolutionId={activeSolutionId || ""}
+                    onSolutionChange={onSolutionChange || (() => {})}
+                    index={index}
+                    toggleExpand={toggleExpand}
+                    onRefresh={refreshSolutions}
+                  />
+                </div>
               ))}
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {Object.entries(groupedSolutions).map(
+                ([partyId, solutionList]) => (
+                  <div key={partyId}>
+                    <div className="flex items-center gap-3 mb-4">
+                      <Badge
+                        className={`${perspectiveConfig[partyId as PartyId].color} text-base px-3 py-1`}
+                      >
+                        <span className="mr-2">
+                          {perspectiveConfig[partyId as PartyId].icon}
+                        </span>
+                        {perspectiveConfig[partyId as PartyId].label}
+                      </Badge>
+                      <span className="text-gray-500">
+                        ({solutionList.length} solutions)
+                      </span>
+                    </div>
+                    <div className="space-y-4">
+                      {solutionList.map((solution, index) => (
+                        <SolutionPost
+                          key={solution.id}
+                          rank={
+                            sortedSolutions.findIndex(
+                              (s) => s.id === solution.id
+                            ) + 1
+                          }
+                          solution={{
+                            ...(solution as any),
+                            partyId: solution.partyId || "israeli",
+                            likes:
+                              (solution as any).likes ??
+                              solutionStats[solution.id]?.likes ??
+                              0,
+                            comments:
+                              (solution as any).comments ??
+                              solutionStats[solution.id]?.comments ??
+                              0,
+                            stats: solutionStats[solution.id] || {
+                              likes: 0,
+                              dislikes: 0,
+                              shares: 0,
+                              comments: 0,
+                            },
+                          }}
+                          onCommentClick={onCommentClick}
+                          activeSolutionId={activeSolutionId || ""}
+                          onSolutionChange={onSolutionChange || (() => {})}
+                          index={sortedSolutions.findIndex(
+                            (s) => s.id === solution.id
+                          )}
+                          toggleExpand={toggleExpand}
+                          onRefresh={refreshSolutions}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )
+              )}
             </div>
           )}
         </div>
@@ -334,15 +546,15 @@ export default function PeaceAgreementContent({
           open={isCreateSolutionOpen}
           onOpenChange={setIsCreateSolutionOpen}
         >
-          <DialogContent>
+          <DialogContent className="sm:max-w-lg">
             <DialogHeader>
               <DialogTitle>Create New Solution</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleCreateSolution} className="space-y-4">
               <div className="space-y-2">
-                <label htmlFor="title" className="text-sm font-medium">
+                <Label htmlFor="title" className="text-sm font-medium">
                   Title
-                </label>
+                </Label>
                 <Input
                   id="title"
                   value={newSolution.title}
@@ -356,10 +568,67 @@ export default function PeaceAgreementContent({
                   required
                 />
               </div>
+
               <div className="space-y-2">
-                <label htmlFor="description" className="text-sm font-medium">
+                <Label className="text-sm font-medium">
+                  I want to direct my solution to
+                </Label>
+                <RadioGroup
+                  value={newSolution.partyId}
+                  onValueChange={(value: PartyId) =>
+                    setNewSolution({ ...newSolution, partyId: value })
+                  }
+                  className="mt-2"
+                >
+                  {Object.entries(perspectiveConfig).map(([key, config]) => {
+                    const maxPerParty = Math.floor(10 / 2); // 5 per party
+                    const currentCount = partyCounts[key as PartyId] || 0;
+                    const isDisabled = currentCount >= maxPerParty;
+
+                    return (
+                      <div key={key} className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem
+                            value={key}
+                            id={key}
+                            disabled={isDisabled}
+                            className={
+                              isDisabled ? "opacity-50 cursor-not-allowed" : ""
+                            }
+                          />
+                          <Label
+                            htmlFor={key}
+                            className={`flex items-center gap-2 font-medium ${
+                              isDisabled ? "opacity-50 cursor-not-allowed" : ""
+                            }`}
+                          >
+                            <span className="w-4 h-4">{config.icon}</span>
+                            {config.label}
+                            <span className="text-xs text-gray-500">
+                              ({currentCount}/{maxPerParty})
+                            </span>
+                          </Label>
+                        </div>
+                        <p
+                          className={`text-sm text-gray-500 ml-6 ${isDisabled ? "opacity-50" : ""}`}
+                        >
+                          {config.description}
+                          {isDisabled && (
+                            <span className="text-red-500 block">
+                              ⚠️ Limit reached for this party
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </RadioGroup>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="description" className="text-sm font-medium">
                   Description
-                </label>
+                </Label>
                 <Textarea
                   id="description"
                   value={newSolution.description}

@@ -380,8 +380,22 @@ export interface Solution {
   title: string;
   description: string;
   rank: string;
+  partyId: "israeli" | "palestinian";
+  userId: string;
   expanded?: boolean;
   details?: SolutionDetails;
+  likes: number;
+  comments: number;
+  userInteraction?: {
+    liked: boolean;
+    commented: boolean;
+  };
+  stats?: {
+    likes: number;
+    dislikes: number;
+    shares: number;
+    comments: number;
+  };
 }
 
 export interface PartySolutions {

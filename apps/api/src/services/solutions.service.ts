@@ -9,6 +9,7 @@ export interface CreateSolutionDTO {
   userId: string;
   title: string;
   description: string;
+  partyId: "israeli" | "palestinian";
   metadata?: Record<string, any>;
 }
 
@@ -29,7 +30,7 @@ export class SolutionsService {
   constructor(private db: DbClient) {}
 
   async createSolution(data: CreateSolutionDTO) {
-    // Check if the campaign has reached the solution limit (5 solutions max total)
+    // Check if the campaign has reached the solution limit (10 solutions max total)
     const campaignSolutionCount = await this.db
       .select()
       .from(solutions)
@@ -41,9 +42,30 @@ export class SolutionsService {
       )
       .then((rows) => rows.length);
 
-    if (campaignSolutionCount >= 5) {
+    if (campaignSolutionCount >= 10) {
       throw new Error(
-        "This campaign has reached the maximum limit of 5 solutions"
+        "This campaign has reached the maximum limit of 10 solutions"
+      );
+    }
+
+    // Check equitable distribution: max 5 solutions per party
+    const partyMaxLimit = Math.floor(10 / 2); // 5 solutions per party
+    const partySolutionCount = await this.db
+      .select()
+      .from(solutions)
+      .where(
+        and(
+          eq(solutions.campaignId, data.campaignId),
+          eq(solutions.partyId, data.partyId),
+          eq(solutions.status, "published")
+        )
+      )
+      .then((rows) => rows.length);
+
+    if (partySolutionCount >= partyMaxLimit) {
+      const partyLabel = data.partyId === "israeli" ? "Israeli" : "Palestinian";
+      throw new Error(
+        `Maximum limit of ${partyMaxLimit} solutions for ${partyLabel} perspective has been reached. Please try the other perspective.`
       );
     }
 
@@ -55,6 +77,7 @@ export class SolutionsService {
         userId: data.userId,
         title: data.title,
         description: data.description,
+        partyId: data.partyId,
         status: "published",
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -214,5 +237,28 @@ export class SolutionsService {
       solutionId: id,
       stats: statsBySolution[id],
     }));
+  }
+
+  async getPartySolutionCounts(
+    campaignId: string
+  ): Promise<{ israeli: number; palestinian: number; total: number }> {
+    const allSolutions = await this.db
+      .select()
+      .from(solutions)
+      .where(
+        and(
+          eq(solutions.campaignId, campaignId),
+          eq(solutions.status, "published")
+        )
+      );
+
+    const counts = {
+      israeli: allSolutions.filter((s) => s.partyId === "israeli").length,
+      palestinian: allSolutions.filter((s) => s.partyId === "palestinian")
+        .length,
+      total: allSolutions.length,
+    };
+
+    return counts;
   }
 }
