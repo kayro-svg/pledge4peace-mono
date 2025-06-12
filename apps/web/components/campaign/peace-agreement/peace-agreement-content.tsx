@@ -26,7 +26,7 @@ import {
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { useInteractions } from "../shared/interaction-context";
 import SolutionPost from "./solution-post";
@@ -42,6 +42,21 @@ interface PeaceAgreementContentProps {
   onCommentClick?: (solutionId: string | React.MouseEvent) => void;
   activeSolutionId?: string;
 }
+
+export type PartyConfig = {
+  israeli: {
+    label: string;
+    icon: JSX.Element;
+    color: string;
+    description: string;
+  };
+  palestinian: {
+    label: string;
+    icon: JSX.Element;
+    color: string;
+    description: string;
+  };
+};
 
 type PartyId = "israeli" | "palestinian";
 type ViewMode = "mixed" | "grouped";
@@ -71,10 +86,40 @@ export default function PeaceAgreementContent({
     palestinian: 0,
     total: 0,
   });
+  const [newlyCreatedSolutionId, setNewlyCreatedSolutionId] = useState<
+    string | null
+  >(null);
   const router = useRouter();
-  const { setUserInteraction } = useInteractions();
+  const { setUserInteraction, getUserInteraction, getInteractionCount } =
+    useInteractions();
 
-  const perspectiveConfig = {
+  // Helper function to get the most up-to-date stats for a solution
+  const getUpdatedStats = useCallback(
+    (solutionId: string) => {
+      const serverStats = solutionStats[solutionId] || {
+        likes: 0,
+        dislikes: 0,
+        shares: 0,
+        comments: 0,
+      };
+
+      // Get counts from interaction context (which may be more up-to-date)
+      const contextLikes = getInteractionCount("like", solutionId);
+      const contextDislikes = getInteractionCount("dislike", solutionId);
+      const contextShares = getInteractionCount("share", solutionId);
+      const contextComments = getInteractionCount("comment", solutionId);
+
+      return {
+        likes: contextLikes || serverStats.likes,
+        dislikes: contextDislikes || serverStats.dislikes,
+        shares: contextShares || serverStats.shares,
+        comments: contextComments || serverStats.comments,
+      };
+    },
+    [solutionStats, getInteractionCount]
+  );
+
+  const partyConfig: PartyConfig = {
     israeli: {
       label: "Israel",
       icon: <IsraelFlag width={20} height={16} />,
@@ -149,9 +194,37 @@ export default function PeaceAgreementContent({
 
           const interactions = await Promise.all(interactionPromises);
           interactions.forEach(({ solutionId, interactions }) => {
-            setUserInteraction("like", solutionId, interactions.hasLiked);
-            setUserInteraction("dislike", solutionId, interactions.hasDisliked);
-            setUserInteraction("share", solutionId, interactions.hasShared);
+            // Get current state from context (which may have been loaded from sessionStorage)
+            const currentLiked = getUserInteraction("like", solutionId);
+            const currentDisliked = getUserInteraction("dislike", solutionId);
+            const currentShared = getUserInteraction("share", solutionId);
+
+            // Only update from server if there's no local state (meaning the user hasn't interacted yet in this session)
+            // Check if we have any interaction data in context for this solution
+            const hasLocalInteractionData =
+              getInteractionCount("like", solutionId) > 0 ||
+              getInteractionCount("dislike", solutionId) > 0 ||
+              currentLiked ||
+              currentDisliked ||
+              currentShared;
+
+            if (!hasLocalInteractionData) {
+              // No local data, safe to use server data
+              if (interactions.hasLiked !== currentLiked) {
+                setUserInteraction("like", solutionId, interactions.hasLiked);
+              }
+              if (interactions.hasDisliked !== currentDisliked) {
+                setUserInteraction(
+                  "dislike",
+                  solutionId,
+                  interactions.hasDisliked
+                );
+              }
+              if (interactions.hasShared !== currentShared) {
+                setUserInteraction("share", solutionId, interactions.hasShared);
+              }
+            }
+            // If we have local data, keep it (user interacted in this session and it's stored in sessionStorage)
           });
         }
       } catch (error) {
@@ -204,8 +277,17 @@ export default function PeaceAgreementContent({
 
       const createdSolution = await response.json();
 
-      // Update solutions list
-      setSolutions((prev) => [...prev, createdSolution]);
+      // Ensure the created solution has all necessary properties
+      const completeSolution = {
+        ...createdSolution,
+        partyId: createdSolution.partyId || newSolution.partyId,
+        likes: 0,
+        comments: 0,
+        expanded: false,
+      };
+
+      // Add to the end of the list (new solutions go at bottom since they have no likes)
+      setSolutions((prev) => [...prev, completeSolution]);
 
       // Update party counts immediately
       setPartyCounts((prev) => ({
@@ -214,12 +296,30 @@ export default function PeaceAgreementContent({
         total: prev.total + 1,
       }));
 
-      // Refresh all data to ensure consistency (skip loading to avoid UI flicker)
-      await refreshSolutions(true);
+      // Update stats for the new solution
+      setSolutionStats((prev) => ({
+        ...prev,
+        [createdSolution.id]: {
+          likes: 0,
+          dislikes: 0,
+          shares: 0,
+          comments: 0,
+        },
+      }));
+
+      // Mark as newly created for visual feedback
+      setNewlyCreatedSolutionId(createdSolution.id);
+
+      // Remove the "newly created" highlight after 3 seconds
+      setTimeout(() => {
+        setNewlyCreatedSolutionId(null);
+      }, 3000);
 
       setIsCreateSolutionOpen(false);
       setNewSolution({ title: "", description: "", partyId: "israeli" });
-      toast.success("Solution created successfully");
+      toast.success(
+        `Solution created successfully! Directed to ${partyConfig[newSolution.partyId].label}`
+      );
     } catch (error) {
       logger.error("Error creating solution:", error);
       toast.error("Failed to create solution");
@@ -269,29 +369,42 @@ export default function PeaceAgreementContent({
   };
 
   // Sort solutions by likes in descending order
-  const sortedSolutions = [...solutions].sort((a, b) => {
-    const aLikes = solutionStats[a.id]?.likes || 0;
-    const bLikes = solutionStats[b.id]?.likes || 0;
-    return bLikes - aLikes;
-  });
+  // Solutions are sorted on initial load and refresh, but maintain position during user interactions
+  const sortedSolutions = useMemo(() => {
+    return [...solutions].sort((a, b) => {
+      // Use server stats for consistent sorting (not context updates)
+      // This ensures ranking is based on persistent data, not temporary optimistic updates
+      const aStats = solutionStats[a.id] || {
+        likes: 0,
+        dislikes: 0,
+        shares: 0,
+        comments: 0,
+      };
+      const bStats = solutionStats[b.id] || {
+        likes: 0,
+        dislikes: 0,
+        shares: 0,
+        comments: 0,
+      };
+
+      const aLikes = aStats.likes;
+      const bLikes = bStats.likes;
+
+      // Sort by likes in descending order (most likes first)
+      if (aLikes !== bLikes) {
+        return bLikes - aLikes;
+      }
+
+      // If same likes, maintain original order (newer solutions stay at bottom)
+      return 0;
+    });
+  }, [solutions, solutionStats]);
 
   // Group solutions by party
   const groupedSolutions = {
     israeli: sortedSolutions.filter((s) => s.partyId === "israeli"),
     palestinian: sortedSolutions.filter((s) => s.partyId === "palestinian"),
   };
-
-  // Update solutions when stats change
-  useEffect(() => {
-    if (solutions.length > 0 && Object.keys(solutionStats).length > 0) {
-      const updatedSolutions = [...solutions].sort((a, b) => {
-        const aLikes = solutionStats[a.id]?.likes || 0;
-        const bLikes = solutionStats[b.id]?.likes || 0;
-        return bLikes - aLikes;
-      });
-      setSolutions(updatedSolutions);
-    }
-  }, [solutionStats, solutions.length]);
 
   // Función para refrescar solutions después de cambios
   const refreshSolutions = async (skipLoading = false) => {
@@ -303,28 +416,32 @@ export default function PeaceAgreementContent({
 
     try {
       const fetchedSolutions = await getSolutions(campaignId);
-      setSolutions(fetchedSolutions);
 
-      // Refetch stats
-      const statsRes = await fetch(
-        `${API_URL}/solutions/campaign/${campaignId}/stats`
-      );
-      if (statsRes.ok) {
-        const statsArr = await statsRes.json();
-        const statsMap: Record<string, any> = {};
-        statsArr.forEach((item: any) => {
-          statsMap[item.solutionId] = item.stats;
-        });
-        setSolutionStats(statsMap);
-      }
+      // Only update solutions if we got valid data
+      if (Array.isArray(fetchedSolutions)) {
+        setSolutions(fetchedSolutions);
 
-      // Refetch party counts
-      const partyCountsRes = await fetch(
-        `${API_URL}/solutions/campaign/${campaignId}/party-counts`
-      );
-      if (partyCountsRes.ok) {
-        const counts = await partyCountsRes.json();
-        setPartyCounts(counts);
+        // Refetch stats
+        const statsRes = await fetch(
+          `${API_URL}/solutions/campaign/${campaignId}/stats`
+        );
+        if (statsRes.ok) {
+          const statsArr = await statsRes.json();
+          const statsMap: Record<string, any> = {};
+          statsArr.forEach((item: any) => {
+            statsMap[item.solutionId] = item.stats;
+          });
+          setSolutionStats(statsMap);
+        }
+
+        // Refetch party counts
+        const partyCountsRes = await fetch(
+          `${API_URL}/solutions/campaign/${campaignId}/party-counts`
+        );
+        if (partyCountsRes.ok) {
+          const counts = await partyCountsRes.json();
+          setPartyCounts(counts);
+        }
       }
     } catch (error) {
       logger.error("Error refreshing solutions:", error);
@@ -362,7 +479,7 @@ export default function PeaceAgreementContent({
               {solutionsSection?.subheading}
             </h2>
             <div className="flex w-full md:w-auto items-end">
-              {solutions.length > 0 && addSolutionButton()}
+              {addSolutionButton()}
             </div>
           </div>
 
@@ -402,7 +519,7 @@ export default function PeaceAgreementContent({
               </div>
 
               <div className="flex gap-4 text-sm">
-                {Object.entries(perspectiveConfig).map(([key, config]) => {
+                {Object.entries(partyConfig).map(([key, config]) => {
                   const maxPerParty = Math.floor(10 / 2); // 5 per party
                   const currentCount = partyCounts[key as PartyId] || 0;
 
@@ -410,13 +527,16 @@ export default function PeaceAgreementContent({
                     <div key={key} className="flex items-center gap-2">
                       <span className="w-4 h-4">{config.icon}</span>
                       <span
-                        className={`font-medium ${currentCount >= maxPerParty ? "text-red-600" : "text-gray-700"}`}
+                        className={`font-medium transition-colors duration-200 ${currentCount >= maxPerParty ? "text-red-600" : "text-gray-700"}`}
                       >
                         {currentCount}/{maxPerParty}
                       </span>
                     </div>
                   );
                 })}
+                {/* <div className="text-gray-500 text-xs">
+                  Total: {partyCounts.total}/10
+                </div> */}
               </div>
             </div>
           )}
@@ -431,24 +551,19 @@ export default function PeaceAgreementContent({
               <p className="text-gray-600 mb-4">
                 Be the first to propose a solution for this campaign
               </p>
-              {addSolutionButton()}
+              <div className="mt-4">{addSolutionButton()}</div>
             </div>
           ) : viewMode === "mixed" ? (
             <div className="space-y-6">
               {sortedSolutions.map((solution, index) => (
                 <div key={solution.id} className="relative">
-                  <div className="absolute top-5 md:top-8 left-28 md:left-32 z-10">
-                    <Badge
-                      className={
-                        perspectiveConfig[solution.partyId as PartyId].color
-                      }
-                    >
-                      <span className="mr-1">
-                        {perspectiveConfig[solution.partyId as PartyId].icon}
-                      </span>
-                      {perspectiveConfig[solution.partyId as PartyId].label}
-                    </Badge>
-                  </div>
+                  {newlyCreatedSolutionId === solution.id && (
+                    <div className="absolute top-2 right-2 z-20">
+                      <Badge className="bg-green-500 text-white animate-pulse">
+                        New!
+                      </Badge>
+                    </div>
+                  )}
                   <SolutionPost
                     rank={index + 1}
                     solution={{
@@ -456,18 +571,11 @@ export default function PeaceAgreementContent({
                       partyId: solution.partyId || "israeli",
                       likes:
                         (solution as any).likes ??
-                        solutionStats[solution.id]?.likes ??
-                        0,
+                        getUpdatedStats(solution.id).likes,
                       comments:
                         (solution as any).comments ??
-                        solutionStats[solution.id]?.comments ??
-                        0,
-                      stats: solutionStats[solution.id] || {
-                        likes: 0,
-                        dislikes: 0,
-                        shares: 0,
-                        comments: 0,
-                      },
+                        getUpdatedStats(solution.id).comments,
+                      stats: getUpdatedStats(solution.id),
                     }}
                     onCommentClick={onCommentClick}
                     activeSolutionId={activeSolutionId || ""}
@@ -475,6 +583,8 @@ export default function PeaceAgreementContent({
                     index={index}
                     toggleExpand={toggleExpand}
                     onRefresh={refreshSolutions}
+                    showPartyBadge={true}
+                    postPartyConfig={partyConfig}
                   />
                 </div>
               ))}
@@ -486,12 +596,12 @@ export default function PeaceAgreementContent({
                   <div key={partyId}>
                     <div className="flex items-center gap-3 mb-4">
                       <Badge
-                        className={`${perspectiveConfig[partyId as PartyId].color} text-base px-3 py-1`}
+                        className={`${partyConfig[partyId as PartyId].color} text-base px-3 py-1`}
                       >
                         <span className="mr-2">
-                          {perspectiveConfig[partyId as PartyId].icon}
+                          {partyConfig[partyId as PartyId].icon}
                         </span>
-                        {perspectiveConfig[partyId as PartyId].label}
+                        {partyConfig[partyId as PartyId].label}
                       </Badge>
                       <span className="text-gray-500">
                         ({solutionList.length} solutions)
@@ -499,40 +609,41 @@ export default function PeaceAgreementContent({
                     </div>
                     <div className="space-y-4">
                       {solutionList.map((solution, index) => (
-                        <SolutionPost
-                          key={solution.id}
-                          rank={
-                            sortedSolutions.findIndex(
-                              (s) => s.id === solution.id
-                            ) + 1
-                          }
-                          solution={{
-                            ...(solution as any),
-                            partyId: solution.partyId || "israeli",
-                            likes:
-                              (solution as any).likes ??
-                              solutionStats[solution.id]?.likes ??
-                              0,
-                            comments:
-                              (solution as any).comments ??
-                              solutionStats[solution.id]?.comments ??
-                              0,
-                            stats: solutionStats[solution.id] || {
-                              likes: 0,
-                              dislikes: 0,
-                              shares: 0,
-                              comments: 0,
-                            },
-                          }}
-                          onCommentClick={onCommentClick}
-                          activeSolutionId={activeSolutionId || ""}
-                          onSolutionChange={onSolutionChange || (() => {})}
-                          index={sortedSolutions.findIndex(
-                            (s) => s.id === solution.id
+                        <div key={solution.id} className="relative">
+                          {newlyCreatedSolutionId === solution.id && (
+                            <div className="absolute top-2 right-2 z-20">
+                              <Badge className="bg-green-500 text-white animate-pulse">
+                                New!
+                              </Badge>
+                            </div>
                           )}
-                          toggleExpand={toggleExpand}
-                          onRefresh={refreshSolutions}
-                        />
+                          <SolutionPost
+                            rank={
+                              sortedSolutions.findIndex(
+                                (s) => s.id === solution.id
+                              ) + 1
+                            }
+                            solution={{
+                              ...(solution as any),
+                              partyId: solution.partyId || "israeli",
+                              likes:
+                                (solution as any).likes ??
+                                getUpdatedStats(solution.id).likes,
+                              comments:
+                                (solution as any).comments ??
+                                getUpdatedStats(solution.id).comments,
+                              stats: getUpdatedStats(solution.id),
+                            }}
+                            onCommentClick={onCommentClick}
+                            activeSolutionId={activeSolutionId || ""}
+                            onSolutionChange={onSolutionChange || (() => {})}
+                            index={sortedSolutions.findIndex(
+                              (s) => s.id === solution.id
+                            )}
+                            toggleExpand={toggleExpand}
+                            onRefresh={refreshSolutions}
+                          />
+                        </div>
                       ))}
                     </div>
                   </div>
@@ -580,7 +691,7 @@ export default function PeaceAgreementContent({
                   }
                   className="mt-2"
                 >
-                  {Object.entries(perspectiveConfig).map(([key, config]) => {
+                  {Object.entries(partyConfig).map(([key, config]) => {
                     const maxPerParty = Math.floor(10 / 2); // 5 per party
                     const currentCount = partyCounts[key as PartyId] || 0;
                     const isDisabled = currentCount >= maxPerParty;

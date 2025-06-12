@@ -5,9 +5,10 @@ import SolutionActionsBar from "./solution-actions-bar";
 import AdminActions from "@/components/admin/admin-actions";
 import { Solution } from "@/lib/types/index";
 import { useEffect } from "react";
-import { useInteractions } from "../shared/interaction-context";
 import { useInteractionManager } from "../shared/use-interaction-manager";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
+import { PartyConfig } from "./peace-agreement-content";
+import { Badge } from "@/components/ui/badge";
 
 interface SolutionPostProps {
   solution: Solution;
@@ -18,7 +19,11 @@ interface SolutionPostProps {
   toggleExpand: (solutionId: string) => void;
   rank: number;
   onRefresh?: () => Promise<void>;
+  showPartyBadge?: boolean;
+  postPartyConfig?: PartyConfig;
 }
+
+type PartyId = "israeli" | "palestinian";
 
 export default function SolutionPost({
   solution,
@@ -29,11 +34,26 @@ export default function SolutionPost({
   toggleExpand,
   rank,
   onRefresh,
+  showPartyBadge,
+  postPartyConfig,
 }: SolutionPostProps) {
   const { count, setCount } = useInteractionManager({
     solutionId: solution.id,
     initialCount: 0,
   });
+
+  // const postPartyConfig = {
+  //   israeli: {
+  //     label: "Israel",
+  //     icon: <IsraelFlag width={20} height={16} />,
+  //     color: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-transparent",
+  //   },
+  //   palestinian: {
+  //     label: "Palestine",
+  //     icon: <PalestineFlag width={20} height={16} />,
+  //     color: "bg-green-50 text-green-700 border-green-200 hover:bg-transparent",
+  //   },
+  // };
 
   // Hook para verificar permisos de administración
   const { canDelete } = useAdminPermissions();
@@ -101,30 +121,42 @@ export default function SolutionPost({
     >
       <div className="border-t p-3 md:p-6 border-gray-100 gap-3 flex flex-col">
         <div className="flex flex-col gap-0">
-          <div className="flex items-center justify-between mb-4 md:mb-0">
+          <div className="flex items-center justify-between mb-4 md:mb-2">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-gray-600" />
               <div className="text-sm text-gray-600">Ranked #{rank}</div>
             </div>
 
-            {/* Botón de administración - Solo visible si el usuario tiene permisos */}
-            {canDelete(solution.userId) && (
-              <AdminActions
-                type="solution"
-                resourceId={solution.id}
-                resourceOwnerId={solution.userId}
-                onDeleted={async () => {
-                  // Usar la función de refresh si está disponible
-                  if (onRefresh) {
-                    await onRefresh();
-                  } else {
-                    // Como último recurso, refrescar la página
-                    window.location.reload();
-                  }
-                }}
-                className="md:opacity-0 group-hover:opacity-100 transition-opacity"
-              />
-            )}
+            <div className="flex items-center gap-2">
+              {/* Botón de administración - Solo visible si el usuario tiene permisos */}
+              {canDelete(solution.userId) && (
+                <AdminActions
+                  type="solution"
+                  resourceId={solution.id}
+                  resourceOwnerId={solution.userId}
+                  onDeleted={async () => {
+                    // Usar la función de refresh si está disponible
+                    if (onRefresh) {
+                      await onRefresh();
+                    } else {
+                      // Como último recurso, refrescar la página
+                      window.location.reload();
+                    }
+                  }}
+                  className="md:opacity-0 group-hover:opacity-100 transition-opacity"
+                />
+              )}
+              {showPartyBadge && (
+                <Badge
+                  className={`${postPartyConfig?.[solution.partyId as PartyId].color} hover:bg-transparent`}
+                >
+                  <span className="mr-1">
+                    {postPartyConfig?.[solution.partyId as PartyId].icon}
+                  </span>
+                  {postPartyConfig?.[solution.partyId as PartyId].label}
+                </Badge>
+              )}
+            </div>
           </div>
 
           <h4 className="text-lg font-semibold">{solution.title}</h4>

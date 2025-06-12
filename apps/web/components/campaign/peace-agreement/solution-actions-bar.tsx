@@ -45,8 +45,13 @@ export default function SolutionActionsBar({
 }: SolutionActionsBarProps) {
   const { data: session } = useSession();
   const router = useRouter();
-  const { getUserInteraction, setUserInteraction, handleInteraction } =
-    useInteractions();
+  const {
+    getUserInteraction,
+    setUserInteraction,
+    handleInteraction,
+    updateInteraction,
+    syncUserInteraction,
+  } = useInteractions();
   const [likes, setLikes] = useState(likeCount);
   const [dislikes, setDislikes] = useState(dislikeCount);
   const [shares, setShares] = useState(shareCount);
@@ -60,6 +65,66 @@ export default function SolutionActionsBar({
   const hasCommented = getUserInteraction("comment", solutionId);
   const hasShared = getUserInteraction("share", solutionId);
 
+  // Force sync user interaction state from sessionStorage on component mount
+  useEffect(() => {
+    if (typeof window !== "undefined" && session?.user) {
+      try {
+        const stored = sessionStorage.getItem("user-interactions");
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const solutionData = parsed[solutionId];
+          if (solutionData) {
+            // Sync stored user interaction states
+            if (solutionData.userLiked !== undefined) {
+              syncUserInteraction("like", solutionId, solutionData.userLiked);
+            }
+            if (solutionData.userDisliked !== undefined) {
+              syncUserInteraction(
+                "dislike",
+                solutionId,
+                solutionData.userDisliked
+              );
+            }
+            if (solutionData.userCommented !== undefined) {
+              syncUserInteraction(
+                "comment",
+                solutionId,
+                solutionData.userCommented
+              );
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to restore user interaction state:", e);
+      }
+    }
+  }, [solutionId, session?.user, syncUserInteraction]);
+
+  // Sync user interaction states when component mounts or when session changes
+  useEffect(() => {
+    if (session?.user) {
+      // Sync user interaction states based on current counts
+      // This helps ensure the UI state matches the stored interaction state
+      if (likes > 0 && getUserInteraction("like", solutionId)) {
+        syncUserInteraction("like", solutionId, true);
+      }
+      if (dislikes > 0 && getUserInteraction("dislike", solutionId)) {
+        syncUserInteraction("dislike", solutionId, true);
+      }
+      if (shares > 0 && getUserInteraction("share", solutionId)) {
+        syncUserInteraction("share", solutionId, true);
+      }
+    }
+  }, [
+    session?.user,
+    solutionId,
+    likes,
+    dislikes,
+    shares,
+    syncUserInteraction,
+    getUserInteraction,
+  ]);
+
   // Sync comment count with parent component and check if user has commented
   useEffect(() => {
     // Only update if the comment count has actually changed
@@ -72,34 +137,31 @@ export default function SolutionActionsBar({
     // For now, we'll just maintain the local state
   }, [commentCount, comments, session?.user?.id, solutionId]);
 
-  // Refrescar stats cada 5 minutos
-  useEffect(() => {
-    const updateStats = async () => {
-      try {
-        const stats = await getSolutionStats(solutionId);
-        setLikes(stats.likes);
-        setDislikes(stats.dislikes);
-        setShares(stats.shares || 0); // Ensure shares is a number
-      } catch (e) {
-        // Silenciar errores
-      }
-    };
-
-    // Initial load
-    updateStats();
-
-    // Set up interval for refreshes
-    const interval = setInterval(updateStats, 5 * 60 * 1000); // 5 minutos
-    return () => clearInterval(interval);
-  }, [solutionId]);
-
   // Sincronizar estado local con props al cambiar solución
+  // Solo sincronizar cuando cambia la solución, no cuando cambian los contadores
   useEffect(() => {
     setLikes(likeCount);
     setDislikes(dislikeCount);
     setShares(shareCount);
     setComments(commentCount);
-  }, [likeCount, dislikeCount, shareCount, commentCount, solutionId]);
+  }, [solutionId]); // Solo cuando cambia la solución, no los contadores
+
+  // Sincronizar contadores solo si son significativamente diferentes (para evitar conflictos con actualizaciones optimistas)
+  useEffect(() => {
+    // Solo actualizar si la diferencia es mayor a 1 (indica que vienen datos frescos del servidor)
+    if (Math.abs(likes - likeCount) > 1) {
+      setLikes(likeCount);
+    }
+    if (Math.abs(dislikes - dislikeCount) > 1) {
+      setDislikes(dislikeCount);
+    }
+    if (Math.abs(shares - shareCount) > 1) {
+      setShares(shareCount);
+    }
+    if (Math.abs(comments - commentCount) > 1) {
+      setComments(commentCount);
+    }
+  }, [likeCount, dislikeCount, shareCount, commentCount]);
 
   const handleLike = async () => {
     if (!session) {
@@ -107,21 +169,45 @@ export default function SolutionActionsBar({
       setShowLoginModal(true);
       return;
     }
+
+    const wasLiked = hasLiked;
+    const wasDisliked = hasDisliked;
+
     try {
-      if (hasLiked) {
-        await likeSolution(solutionId);
-        setLikes((prev) => Math.max(prev - 1, 0));
-        setUserInteraction("like", solutionId, false);
-      } else {
-        await likeSolution(solutionId);
-        setLikes((prev) => prev + 1);
-        setUserInteraction("like", solutionId, true);
-        if (hasDisliked) {
-          setDislikes((prev) => Math.max(prev - 1, 0));
-          setUserInteraction("dislike", solutionId, false);
-        }
+      // Calculate new counts
+      const newLikeCount = wasLiked ? Math.max(likes - 1, 0) : likes + 1;
+      const newDislikeCount =
+        wasDisliked && !wasLiked ? Math.max(dislikes - 1, 0) : dislikes;
+
+      // Optimistic update - update local state first
+      setLikes(newLikeCount);
+      if (wasDisliked && !wasLiked) {
+        setDislikes(newDislikeCount);
       }
+
+      // Update interaction context with both count and user interaction state
+      updateInteraction("like", solutionId, newLikeCount, !wasLiked);
+      if (wasDisliked && !wasLiked) {
+        updateInteraction("dislike", solutionId, newDislikeCount, false);
+      }
+
+      // Make API call
+      await likeSolution(solutionId);
+
+      toast.success(wasLiked ? "Like removed" : "Solution liked!");
     } catch (error) {
+      // Revert optimistic update on error
+      setLikes(likes);
+      if (wasDisliked && !wasLiked) {
+        setDislikes(dislikes);
+      }
+
+      // Revert context state
+      updateInteraction("like", solutionId, likes, wasLiked);
+      if (wasDisliked && !wasLiked) {
+        updateInteraction("dislike", solutionId, dislikes, wasDisliked);
+      }
+
       toast.error("Failed to update like");
       logger.error("Error handling like:", error);
     }
@@ -133,22 +219,48 @@ export default function SolutionActionsBar({
       setShowLoginModal(true);
       return;
     }
+
+    const wasDisliked = hasDisliked;
+    const wasLiked = hasLiked;
+
     try {
-      if (hasDisliked) {
-        await dislikeSolution(solutionId);
-        setDislikes((prev) => Math.max(prev - 1, 0));
-        setUserInteraction("dislike", solutionId, false);
-      } else {
-        await dislikeSolution(solutionId);
-        setDislikes((prev) => prev + 1);
-        setUserInteraction("dislike", solutionId, true);
-        if (hasLiked) {
-          setLikes((prev) => Math.max(prev - 1, 0));
-          setUserInteraction("like", solutionId, false);
-        }
+      // Calculate new counts
+      const newDislikeCount = wasDisliked
+        ? Math.max(dislikes - 1, 0)
+        : dislikes + 1;
+      const newLikeCount =
+        wasLiked && !wasDisliked ? Math.max(likes - 1, 0) : likes;
+
+      // Optimistic update - update local state first
+      setDislikes(newDislikeCount);
+      if (wasLiked && !wasDisliked) {
+        setLikes(newLikeCount);
       }
+
+      // Update interaction context with both count and user interaction state
+      updateInteraction("dislike", solutionId, newDislikeCount, !wasDisliked);
+      if (wasLiked && !wasDisliked) {
+        updateInteraction("like", solutionId, newLikeCount, false);
+      }
+
+      // Make API call
+      await dislikeSolution(solutionId);
+
+      toast.success(wasDisliked ? "Dislike removed" : "Solution disliked!");
       onInteraction?.(solutionId, "dislike");
     } catch (error) {
+      // Revert optimistic update on error
+      setDislikes(dislikes);
+      if (wasLiked && !wasDisliked) {
+        setLikes(likes);
+      }
+
+      // Revert context state
+      updateInteraction("dislike", solutionId, dislikes, wasDisliked);
+      if (wasLiked && !wasDisliked) {
+        updateInteraction("like", solutionId, likes, wasLiked);
+      }
+
       toast.error("Failed to update dislike");
       logger.error("Error handling dislike:", error);
     }
