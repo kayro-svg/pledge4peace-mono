@@ -83,7 +83,7 @@ export interface SanitySolution {
 
 export interface SanitySolutionsSection {
   heading: string;
-  paragraphs: string[];
+  introParagraphs: any[];
   subheading: string;
   // solutions: SanitySolution[];
 }

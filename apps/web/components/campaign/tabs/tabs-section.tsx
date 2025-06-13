@@ -12,6 +12,8 @@ interface TabsSectionProps {
   onSolutionChange?: (solutionId: string) => void;
   onCommentClick?: (solutionId: string | React.MouseEvent) => void;
   campaignId: string;
+  campaignSlug?: string;
+  campaignTitle?: string;
 }
 
 export default function TabsSection({
@@ -20,6 +22,8 @@ export default function TabsSection({
   onSolutionChange,
   onCommentClick,
   campaignId,
+  campaignSlug,
+  campaignTitle,
 }: TabsSectionProps) {
   const [activeTab, setActiveTab] = useState("solution-proposals");
   const [activeSolutionId, setActiveSolutionId] = useState("");
@@ -52,9 +56,9 @@ export default function TabsSection({
         )}
         {activeTab === "ways-to-support" && (
           <WaysToSupport
-            // mainTab="ways-to-support"
-            // campaignSlug={campaignSlug}
             waysToSupportTabs={waysToSupportTabs}
+            campaignSlug={campaignSlug}
+            campaignTitle={campaignTitle}
           />
         )}
       </div>

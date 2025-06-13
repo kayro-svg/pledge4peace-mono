@@ -21,8 +21,6 @@ import {
   handleRegistrationError,
   getEventRegistrationStatus,
 } from "@/lib/api/brevo";
-import { useRouter } from "next/navigation";
-import { logger } from "@/lib/utils/logger";
 import { cleanTimezone, debugTimezone } from "@/lib/utils/clean-timezone";
 
 interface ConferenceTabProps {
@@ -248,7 +246,7 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
                   )}
                 </Button>
               ) : (
-                <Link href="/auth/signin" className="w-full">
+                <Link href="/login" className="w-full">
                   <Button
                     variant="outline"
                     className="w-full border-[#d03c37] text-[#d03c37] hover:bg-[#d03c37] hover:text-white"

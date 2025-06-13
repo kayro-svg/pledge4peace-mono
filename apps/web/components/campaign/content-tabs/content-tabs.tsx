@@ -1,8 +1,6 @@
 import TabsSection from "../tabs/tabs-section";
 import SidebarSection from "../sidebar/sidebar-section";
 import { SanityWaysToSupportTab, SanitySolutionsSection } from "@/lib/types";
-import { Button } from "@/components/ui/button";
-import { MessageSquare } from "lucide-react";
 
 interface ContentTabsProps {
   mainContentWidth?: string;
@@ -13,31 +11,33 @@ interface ContentTabsProps {
   activeSolutionId: string;
   onSolutionChange: (solutionId: string) => void;
   onCommentClick?: (solutionId: string | React.MouseEvent) => void;
+  campaignSlug?: string;
+  campaignTitle?: string;
 }
 
 export default function ContentTabs({
-  mainContentWidth,
-  sidebarWidth,
   solutionsSection,
   waysToSupportTabs,
   campaignId,
   activeSolutionId,
   onSolutionChange,
   onCommentClick,
+  campaignSlug,
+  campaignTitle,
 }: ContentTabsProps) {
   const handleSolutionClick = (solutionId: string) => {
     onSolutionChange(solutionId);
   };
 
-  const handleCommentButtonClick = (
-    e: React.MouseEvent,
-    solutionId: string
-  ) => {
-    e.stopPropagation();
-    if (onCommentClick) {
-      onCommentClick(solutionId);
-    }
-  };
+  // const handleCommentButtonClick = (
+  //   e: React.MouseEvent,
+  //   solutionId: string
+  // ) => {
+  //   e.stopPropagation();
+  //   if (onCommentClick) {
+  //     onCommentClick(solutionId);
+  //   }
+  // };
 
   return (
     <div className="flex flex-row gap-8" data-tab-value="comments">
@@ -48,6 +48,8 @@ export default function ContentTabs({
           onSolutionChange={handleSolutionClick}
           campaignId={campaignId}
           onCommentClick={onCommentClick}
+          campaignSlug={campaignSlug}
+          campaignTitle={campaignTitle}
         />
       </div>
 

@@ -1,10 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { CalendarDays, Share2 } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import { SanityConference } from "@/lib/types";
 import { ShareSocialButton } from "../campaign/ways-to-support/share/share-social-button";
-import { logger } from "@/lib/utils/logger";
 
 interface EventActionsProps {
   event: SanityConference;
@@ -50,26 +49,6 @@ export default function EventActions({ event }: EventActionsProps) {
 
     if (typeof window !== "undefined") {
       window.open(googleCalendarUrl.toString(), "_blank");
-    }
-  };
-
-  const handleShare = async () => {
-    if (typeof window === "undefined") return;
-
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: event.title,
-          text: `Check out this event: ${event.title}`,
-          url: window.location.href,
-        });
-      } catch (error) {
-        logger.error("Error sharing:", error);
-      }
-    } else {
-      // Fallback: Copiar al portapapeles
-      navigator.clipboard.writeText(window.location.href);
-      alert("Link copied to clipboard!");
     }
   };
 

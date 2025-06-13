@@ -41,28 +41,29 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
               {article.title}
             </h1>
 
-            <div className="flex items-center gap-6 text-gray-600">
-              {/* Author */}
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-6 text-gray-600">
               <div className="flex items-center gap-3">
-                <div className="relative w-10 h-10 rounded-full overflow-hidden">
-                  <Image
-                    src={
-                      article.author?.image?.asset?.url ||
-                      "/p4p_rounded_logo.png"
-                    }
-                    alt={article.author?.name || "Author"}
-                    fill
-                    className="object-cover"
-                  />
+                {/* Author */}
+                <div className="flex items-center gap-3">
+                  <div className="relative w-10 h-10 rounded-full overflow-hidden">
+                    <Image
+                      src={
+                        article.author?.image?.asset?.url ||
+                        "/p4p_rounded_logo.png"
+                      }
+                      alt={article.author?.name || "Author"}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <span className="font-medium">{article.author?.name}</span>
                 </div>
-                <span className="font-medium">{article.author?.name}</span>
+
+                {/* Date */}
+                <time dateTime={article.publishedAt}>
+                  {formatDate(article.publishedAt)}
+                </time>
               </div>
-
-              {/* Date */}
-              <time dateTime={article.publishedAt}>
-                {formatDate(article.publishedAt)}
-              </time>
-
               {/* Categories */}
               <div className="flex gap-2">
                 {article.categories?.map((category) => (

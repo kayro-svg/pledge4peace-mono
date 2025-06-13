@@ -1,5 +1,5 @@
 // lib/sanity/queries.ts
-import { client, getClient } from "./client";
+import { getClient } from "./client";
 import { logger } from "@/lib/utils/logger";
 import { cleanTimezone } from "@/lib/utils/clean-timezone";
 import {
@@ -285,7 +285,42 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
         },
         solutionsSection {
           heading,
-          paragraphs,
+          introParagraphs[] {
+              ...,
+              _type == "inlineImage" => {
+                ...,
+                asset-> {
+                  url,
+                  metadata {
+                    dimensions {
+                      width,
+                      height
+                    }
+                  }
+                }
+              },
+              _type == "videoEmbed" => {
+                ...,
+                url,
+                title,
+                caption
+              },
+              _type == "callout" => {
+                ...,
+                type,
+                title,
+                content
+              },
+              _type == "divider" => {
+                ...,
+                style
+              },
+              _type == "columns" => {
+                ...,
+                leftColumn,
+                rightColumn
+              }
+            },
           subheading,
         },
         waysToSupportTabs[] {

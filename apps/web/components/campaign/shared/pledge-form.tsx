@@ -147,7 +147,7 @@ export default function PledgeForm({
   }
 
   return (
-    <div className="border border-gray-200 rounded-xl p-6 bg-[#f8f9f0]">
+    <div className="border border-gray-200 rounded-xl p-3 md:p-6 bg-[#f8f9f0]">
       <div className="mb-4">
         <h3 className="text-lg font-medium text-gray-800">I pledge to:</h3>
         {/* <p className="text-sm text-gray-700 mt-2">
