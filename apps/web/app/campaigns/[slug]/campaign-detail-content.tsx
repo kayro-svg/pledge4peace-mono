@@ -91,6 +91,8 @@ export function CampaignDetailContent({
                 activeSolutionId={activeSolutionId}
                 onSolutionChange={setActiveSolutionId}
                 onCommentClick={handleCommentClick}
+                campaignSlug={campaign?.slug?.current}
+                campaignTitle={campaign?.title}
               />
 
               {/* Mobile Comments Modal - Only visible on mobile/tablet */}

@@ -1,38 +1,31 @@
 "use client";
 
 import AuthContainer from "@/components/login/auth-container";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { IsraelFlag, PalestineFlag } from "@/components/ui/flags";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { portableTextComponents } from "@/components/ui/portable-text-components";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Textarea } from "@/components/ui/textarea";
 import { getSolutions, getUserInteractions } from "@/lib/api/solutions";
 import { API_ENDPOINTS, API_URL } from "@/lib/config";
 import { SanitySolutionsSection, Solution } from "@/lib/types";
-import {
-  Loader2,
-  Plus,
-  LogIn,
-  ToggleLeft,
-  ToggleRight,
-  Lightbulb,
-} from "lucide-react";
+import { logger } from "@/lib/utils/logger";
+import { PortableText } from "@portabletext/react";
+import { Loader2, LogIn, Plus, ToggleLeft, ToggleRight } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useInteractions } from "../shared/interaction-context";
 import SolutionPost from "./solution-post";
-import { logger } from "@/lib/utils/logger";
-import { IsraelFlag } from "@/components/ui/flags";
-import { PalestineFlag } from "@/components/ui/flags";
 
 interface PeaceAgreementContentProps {
   campaignId: string;
@@ -89,7 +82,6 @@ export default function PeaceAgreementContent({
   const [newlyCreatedSolutionId, setNewlyCreatedSolutionId] = useState<
     string | null
   >(null);
-  const router = useRouter();
   const { setUserInteraction, getUserInteraction, getInteractionCount } =
     useInteractions();
 
@@ -461,16 +453,18 @@ export default function PeaceAgreementContent({
         {/* Dynamic content section */}
         <div className="prose max-w-none">
           {solutionsSection?.heading && (
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
               {solutionsSection?.heading}
             </h2>
           )}
 
-          {solutionsSection?.paragraphs?.map((paragraph, index) => (
-            <p key={index} className="text-gray-700 mt-4">
-              {paragraph}
-            </p>
-          ))}
+          {solutionsSection.introParagraphs &&
+            Array.isArray(solutionsSection.introParagraphs) && (
+              <PortableText
+                value={solutionsSection.introParagraphs}
+                components={portableTextComponents}
+              />
+            )}
         </div>
 
         <div>
@@ -551,7 +545,7 @@ export default function PeaceAgreementContent({
               <p className="text-gray-600 mb-4">
                 Be the first to propose a solution for this campaign
               </p>
-              <div className="mt-4">{addSolutionButton()}</div>
+              {/* <div className="mt-4">{addSolutionButton()}</div> */}
             </div>
           ) : viewMode === "mixed" ? (
             <div className="space-y-6">

@@ -5,6 +5,7 @@ import { Providers } from "./providers";
 import { Toaster } from "sonner";
 import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import { CookieBanner } from "@/components/cookies/cookie-banner";
+import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -50,6 +51,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} h-full w-[100%]`}>
+        <GoogleAnalytics />
         <Providers>
           <LayoutWrapper>{children}</LayoutWrapper>
           <Toaster />

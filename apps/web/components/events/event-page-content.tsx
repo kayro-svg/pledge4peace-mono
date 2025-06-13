@@ -155,12 +155,12 @@ export default function EventPageContent({
       </div>
 
       {/* Event Content */}
-      <div className="lg:container mx-auto px-4 md:px-6 -mt-32 relative z-10">
+      <div className="lg:container mx-auto  px-2 md:px-6 -mt-32 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="md:col-span-2 space-y-6">
             {/* Event Card */}
-            <div className="bg-white rounded-lg shadow-lg p-6">
+            <div className="bg-white rounded-lg shadow-lg p-4 md:p-6">
               <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
                 <span className="px-3 py-1 bg-gray-100 rounded-full">
                   {event.category || "Virtual"}
@@ -174,7 +174,7 @@ export default function EventPageContent({
                 {event.title}
               </h1>
 
-              <div className="flex items-center gap-6 text-gray-600 text-sm mb-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-6 text-gray-600 text-sm mb-6">
                 <div className="flex items-center gap-2">
                   <CalendarDays className="w-5 h-5" />
                   <div>

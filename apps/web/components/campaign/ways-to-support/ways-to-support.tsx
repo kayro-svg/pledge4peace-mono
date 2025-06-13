@@ -15,6 +15,7 @@ import { SanityWaysToSupportTab } from "@/lib/types";
 interface WaysToSupportProps {
   waysToSupportTabs: SanityWaysToSupportTab[];
   campaignSlug?: string;
+  campaignTitle?: string;
 }
 
 function getTabIcon(type: string) {
@@ -48,7 +49,11 @@ function getTabIcon(type: string) {
   }
 }
 
-function getTabContent(tab: SanityWaysToSupportTab) {
+function getTabContent(
+  tab: SanityWaysToSupportTab,
+  campaignSlug?: string,
+  campaignTitle?: string
+) {
   if (tab.type === "conference") {
     // Puedes pasar conferenceRef o conferenceDetails si lo necesitas
     return <ConferenceTab conferenceRef={tab.conferenceRef} />;
@@ -57,7 +62,9 @@ function getTabContent(tab: SanityWaysToSupportTab) {
     return <VolunteeringTab />;
   }
   if (tab.type === "share") {
-    return <ShareTab />;
+    return (
+      <ShareTab campaignSlug={campaignSlug} campaignTitle={campaignTitle} />
+    );
   }
   // Puedes personalizar el contenido para otros tipos si lo deseas
   return <div>{tab.content}</div>;
@@ -65,6 +72,8 @@ function getTabContent(tab: SanityWaysToSupportTab) {
 
 export default function WaysToSupport({
   waysToSupportTabs,
+  campaignSlug,
+  campaignTitle,
 }: WaysToSupportProps) {
   const [subTab, setSubTab] = useState(waysToSupportTabs?.[0]?.type || "");
 
@@ -102,7 +111,9 @@ export default function WaysToSupport({
           {waysToSupportTabs
             .filter((t) => t.type === subTab)
             .map((tab) => (
-              <div key={tab.type}>{getTabContent(tab)}</div>
+              <div key={tab.type}>
+                {getTabContent(tab, campaignSlug, campaignTitle)}
+              </div>
             ))}
         </CardContent>
       </Card>

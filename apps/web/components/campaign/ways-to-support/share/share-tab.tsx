@@ -7,16 +7,34 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ShareSocialButton, ShareData } from "./share-social-button";
 import { logger } from "@/lib/utils/logger";
 
-const shareData: ShareData = {
-  title: "Pledge for Peace",
-  text: "Join me in supporting peace initiatives around the world. Together we can make a difference!",
-  url: "https://pledge4peace.org",
-  hashtags: "PeaceForAll,Pledge4Peace",
-};
+interface ShareTabProps {
+  campaignSlug?: string;
+  campaignTitle?: string;
+}
 
-export default function ShareTab() {
+export default function ShareTab({
+  campaignSlug,
+  campaignTitle,
+}: ShareTabProps) {
   const [isLinkCopied, setIsLinkCopied] = useState(false);
-  const shareUrl = shareData.url;
+
+  // Create campaign-specific URL
+  const baseUrl =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://pledge4peace.org";
+  const campaignUrl = campaignSlug
+    ? `${baseUrl}/campaigns/${campaignSlug}`
+    : baseUrl;
+
+  const shareData: ShareData = {
+    title: campaignTitle ? `Support: ${campaignTitle}` : "Pledge for Peace",
+    text: campaignTitle
+      ? `Join me in supporting "${campaignTitle}" and other peace initiatives around the world. Together we can make a difference!`
+      : "Join me in supporting peace initiatives around the world. Together we can make a difference!",
+    url: campaignUrl,
+    hashtags: "PeaceForAll,Pledge4Peace",
+  };
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -64,7 +82,7 @@ export default function ShareTab() {
               <h4 className="font-medium">Social Media</h4>
             </div>
             <p className="text-sm text-muted-foreground">
-              Share our campaign on Facebook, X (Twitter), Instagram, and
+              Share our campaign on WhatsApp, Facebook, X (Twitter), and
               LinkedIn to reach your friends and followers.
             </p>
             <ShareSocialButton shareData={shareData} showNativeShareButton />
@@ -114,13 +132,13 @@ export default function ShareTab() {
       <div className="bg-muted/50 rounded-lg p-4 space-y-3">
         <h4 className="font-medium text-center">Share Our Campaign Link</h4>
         <div className="flex gap-2">
-          <div className="flex-1 bg-background rounded border px-3 py-2 text-sm text-muted-foreground">
-            {shareUrl}
+          <div className="flex-1 bg-background rounded border px-3 py-2 text-sm text-muted-foreground break-all">
+            {shareData.url}
           </div>
           <Button
             size="sm"
             onClick={async () => {
-              await copyToClipboard(shareUrl);
+              await copyToClipboard(shareData.url);
             }}
             disabled={isLinkCopied}
             className="whitespace-nowrap"
