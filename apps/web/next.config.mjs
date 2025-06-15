@@ -19,6 +19,7 @@ const nextConfig = {
       exclude: ['error'] // Keep console.error for important errors
     } : false,
   },
+  allowedDevOrigins: ['local-origin.dev', '*.local-origin.dev'],
 }
 
 export default nextConfig

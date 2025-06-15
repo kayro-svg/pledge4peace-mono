@@ -15,9 +15,19 @@ import { signOut } from "next-auth/react";
 import { User } from "next-auth";
 import { LogOut, User as UserIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { clearAllUserInteractions } from "@/lib/utils/interaction-utils";
 
 export function HeaderUser({ user }: { user: User | null }) {
   const router = useRouter();
+
+  const handleSignOut = () => {
+    // Clear all user-specific data from sessionStorage
+    clearAllUserInteractions();
+
+    signOut({ redirect: false });
+    router.refresh();
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -42,12 +52,7 @@ export function HeaderUser({ user }: { user: User | null }) {
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => {
-            signOut({ redirect: false });
-            router.refresh();
-          }}
-        >
+        <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

@@ -1,7 +1,7 @@
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 // Validation for registration
 const registerSchema = z.object({
@@ -90,6 +90,33 @@ export class AuthController {
             brevoError
           );
         }
+
+        // Enviar notificación al admin sobre el nuevo registro
+        try {
+          await authService.emailService.sendNewUserRegistrationNotification({
+            name: validation.data.name,
+            email: validation.data.email,
+            registrationDate: new Date().toLocaleString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZoneName: "short",
+            }),
+          });
+
+          logger.log(
+            "✅ New user registration notification sent to admin:",
+            validation.data.email
+          );
+        } catch (emailError) {
+          // No fallar el registro si el email de notificación falla
+          logger.error(
+            "⚠️ Failed to send registration notification to admin:",
+            emailError
+          );
+        }
       }
 
       return c.json(result, 201);
@@ -172,7 +199,7 @@ export class AuthController {
         frontendBase
       );
 
-      // 3) If the user does not exist, result.message = “If your email is…”
+      // 3) If the user does not exist, result.message = "If your email is…"
       return c.json(result, 200);
     } catch (error) {
       // 4) If an HTTPException was thrown, return the body and status

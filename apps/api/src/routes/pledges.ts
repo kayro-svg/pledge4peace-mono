@@ -1,10 +1,11 @@
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { pledges, campaignPledgeCounts } from "../db/schema/pledges";
+import { users } from "../db/schema/users";
 import { and, eq, sql } from "drizzle-orm";
 import { getJWTPayload, requireAuth } from "../middleware/auth";
 import { MiddlewareHandler } from "hono";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 // Define environment type for Hono context
 type Bindings = {
@@ -50,10 +51,7 @@ pledgesRoutes.get("/campaign/:campaignId/count", async (c) => {
       .select({ count: sql`count(*)` })
       .from(pledges)
       .where(
-        and(
-          eq(pledges.campaignId, campaignId),
-          eq(pledges.status, "active")
-        )
+        and(eq(pledges.campaignId, campaignId), eq(pledges.status, "active"))
       )
       .then((rows) => rows[0]);
 
@@ -77,7 +75,7 @@ pledgesRoutes.get("/campaign/:campaignId/count", async (c) => {
 pledgesRoutes.get("/check/:campaignId", requireAuth, async (c) => {
   const { campaignId } = c.req.param();
   const db = drizzle(c.env.DB);
-  const userId = c.get('userId');
+  const userId = c.get("userId");
 
   try {
     const existingPledge = await db
@@ -91,7 +89,7 @@ pledgesRoutes.get("/check/:campaignId", requireAuth, async (c) => {
         )
       )
       .limit(1)
-      .then(rows => rows[0]);
+      .then((rows) => rows[0]);
 
     return c.json({ hasPledged: !!existingPledge });
   } catch (error) {
@@ -102,11 +100,11 @@ pledgesRoutes.get("/check/:campaignId", requireAuth, async (c) => {
 
 // Create a new pledge - requires authentication
 pledgesRoutes.post("/", requireAuth, async (c) => {
-  const body = await c.req.json() as Partial<CreatePledgeBody>;
+  const body = (await c.req.json()) as Partial<CreatePledgeBody>;
   const db = drizzle(c.env.DB);
 
   // Validate required fields
-  if (!body.campaignId || typeof body.campaignId !== 'string') {
+  if (!body.campaignId || typeof body.campaignId !== "string") {
     return c.json({ error: "Valid campaign ID is required" }, 400);
   }
 
@@ -115,7 +113,7 @@ pledgesRoutes.post("/", requireAuth, async (c) => {
   }
 
   // Get user ID from the middleware - this is guaranteed to exist because of the requireAuth middleware
-  const userId = c.get('userId');
+  const userId = c.get("userId");
 
   try {
     // Check if user has already pledged to this campaign
@@ -130,7 +128,7 @@ pledgesRoutes.post("/", requireAuth, async (c) => {
         )
       )
       .limit(1)
-      .then(rows => rows[0]);
+      .then((rows) => rows[0]);
 
     if (existingPledge) {
       // Return the existing pledge without creating a new one
@@ -138,26 +136,40 @@ pledgesRoutes.post("/", requireAuth, async (c) => {
         .select({ count: campaignPledgeCounts.count })
         .from(campaignPledgeCounts)
         .where(eq(campaignPledgeCounts.campaignId, body.campaignId))
-        .then(rows => rows[0]);
+        .then((rows) => rows[0]);
 
       return c.json({
         success: true,
         pledge: existingPledge,
         pledgeCount: countResult?.count || 1,
-        alreadyPledged: true
+        alreadyPledged: true,
       });
     }
 
+    // Get user information for the notification
+    const userInfo = await db
+      .select({
+        name: users.name,
+        email: users.email,
+      })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
+      .then((rows) => rows[0]);
+
     // Create the pledge
-    const newPledge = await db.insert(pledges).values({
-      id: crypto.randomUUID(),
-      campaignId: body.campaignId,
-      userId: userId,
-      agreeToTerms: true,
-      subscribeToUpdates: Boolean(body.subscribeToUpdates),
-      createdAt: new Date(),
-      status: "active"
-    }).returning();
+    const newPledge = await db
+      .insert(pledges)
+      .values({
+        id: crypto.randomUUID(),
+        campaignId: body.campaignId,
+        userId: userId,
+        agreeToTerms: true,
+        subscribeToUpdates: Boolean(body.subscribeToUpdates),
+        createdAt: new Date(),
+        status: "active",
+      })
+      .returning();
 
     // Update the pledge count using a single query with upsert
     await db
@@ -165,14 +177,14 @@ pledgesRoutes.post("/", requireAuth, async (c) => {
       .values({
         campaignId: body.campaignId,
         count: 1,
-        lastUpdated: new Date()
+        lastUpdated: new Date(),
       })
       .onConflictDoUpdate({
         target: campaignPledgeCounts.campaignId,
         set: {
           count: sql`${campaignPledgeCounts.count} + 1`,
-          lastUpdated: new Date()
-        }
+          lastUpdated: new Date(),
+        },
       });
 
     // Get the updated count
@@ -180,19 +192,63 @@ pledgesRoutes.post("/", requireAuth, async (c) => {
       .select({ count: campaignPledgeCounts.count })
       .from(campaignPledgeCounts)
       .where(eq(campaignPledgeCounts.campaignId, body.campaignId))
-      .then(rows => rows[0]);
+      .then((rows) => rows[0]);
 
-    return c.json({
-      success: true,
-      pledge: newPledge[0],
-      pledgeCount: countResult?.count || 1
-    }, 201);
+    // Send notification email to admin if user information is available
+    if (userInfo) {
+      try {
+        // Get auth service from context
+        const authService = c.get("authService");
+
+        if (authService) {
+          await authService.emailService.sendPledgeNotification({
+            userName: userInfo.name,
+            userEmail: userInfo.email,
+            campaignId: body.campaignId,
+            pledgeDate: new Date().toLocaleString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZoneName: "short",
+            }),
+            subscribeToUpdates: Boolean(body.subscribeToUpdates),
+          });
+
+          logger.log(
+            "✅ Pledge notification sent to admin:",
+            userInfo.email,
+            "for campaign:",
+            body.campaignId
+          );
+        }
+      } catch (adminEmailError) {
+        // No fallar el pledge si el email al admin falla
+        logger.error(
+          "⚠️ Failed to send pledge notification to admin:",
+          adminEmailError
+        );
+      }
+    }
+
+    return c.json(
+      {
+        success: true,
+        pledge: newPledge[0],
+        pledgeCount: countResult?.count || 1,
+      },
+      201
+    );
   } catch (error) {
     logger.error("Error creating pledge:", error);
-    return c.json({ 
-      error: "Failed to create pledge",
-      details: error instanceof Error ? error.message : 'Unknown error'
-    }, 500);
+    return c.json(
+      {
+        error: "Failed to create pledge",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      500
+    );
   }
 });
 

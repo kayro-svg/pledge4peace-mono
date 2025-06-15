@@ -301,4 +301,271 @@ export class EmailService {
 
     return await response.json();
   }
+
+  /**
+   * Envía notificación de nuevo registro de usuario al admin
+   */
+  async sendNewUserRegistrationNotification(userData: {
+    name: string;
+    email: string;
+    registrationDate: string;
+  }) {
+    const body = {
+      sender: {
+        name: this.fromName,
+        email: this.fromEmail,
+      },
+      to: [
+        {
+          email: "info@pledge4peace.org",
+          name: "Pledge4Peace Admin",
+        },
+      ],
+      subject: "New User Registration - Pledge4Peace",
+      htmlContent: `
+        <h1>New User Registration</h1>
+        <p>A new user has registered on the Pledge4Peace platform:</p>
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <h3>User Details:</h3>
+          <ul>
+            <li><strong>Name:</strong> ${userData.name}</li>
+            <li><strong>Email:</strong> ${userData.email}</li>
+            <li><strong>Registration Date:</strong> ${userData.registrationDate}</li>
+          </ul>
+        </div>
+        <p>Please review the registration and take any necessary follow-up actions.</p>
+        <br>
+        <p>Best regards,<br>Pledge4Peace System</p>
+      `,
+    };
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error(
+        "Brevo sendNewUserRegistrationNotification error:",
+        response.status,
+        text
+      );
+      throw new Error("Failed to send user registration notification email");
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Envía notificación de formulario de contacto al admin
+   */
+  async sendContactFormNotification(contactData: {
+    name: string;
+    email: string;
+    subject: string;
+    message: string;
+    submissionDate: string;
+  }) {
+    const body = {
+      sender: {
+        name: this.fromName,
+        email: this.fromEmail,
+      },
+      to: [
+        {
+          email: "info@pledge4peace.org",
+          name: "Pledge4Peace Admin",
+        },
+      ],
+      subject: `New Contact Form Submission: ${contactData.subject}`,
+      htmlContent: `
+        <h1>New Contact Form Submission</h1>
+        <p>A new contact form has been submitted on the Pledge4Peace website:</p>
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <h3>Contact Details:</h3>
+          <ul>
+            <li><strong>Name:</strong> ${contactData.name}</li>
+            <li><strong>Email:</strong> ${contactData.email}</li>
+            <li><strong>Subject:</strong> ${contactData.subject}</li>
+            <li><strong>Submission Date:</strong> ${contactData.submissionDate}</li>
+          </ul>
+          <h3>Message:</h3>
+          <div style="background-color: white; padding: 10px; border-left: 4px solid #548281; margin-top: 10px;">
+            <p>${contactData.message.replace(/\n/g, "<br>")}</p>
+          </div>
+        </div>
+        <p>Please respond to this inquiry as soon as possible.</p>
+        <br>
+        <p>Best regards,<br>Pledge4Peace System</p>
+      `,
+    };
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error(
+        "Brevo sendContactFormNotification error:",
+        response.status,
+        text
+      );
+      throw new Error("Failed to send contact form notification email");
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Envía notificación de aplicación de voluntario al admin
+   */
+  async sendVolunteerApplicationNotification(volunteerData: {
+    name: string;
+    email: string;
+    about: string;
+    skills: string;
+    availability: string;
+    submissionDate: string;
+  }) {
+    const body = {
+      sender: {
+        name: this.fromName,
+        email: this.fromEmail,
+      },
+      to: [
+        {
+          email: "info@pledge4peace.org",
+          name: "Pledge4Peace Admin",
+        },
+      ],
+      subject: `New Volunteer Application from ${volunteerData.name}`,
+      htmlContent: `
+        <h1>New Volunteer Application</h1>
+        <p>A new volunteer application has been submitted:</p>
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <h3>Volunteer Information:</h3>
+          <ul>
+            <li><strong>Name:</strong> ${volunteerData.name}</li>
+            <li><strong>Email:</strong> ${volunteerData.email}</li>
+            <li><strong>Submission Date:</strong> ${volunteerData.submissionDate}</li>
+          </ul>
+          
+          <h3>About:</h3>
+          <div style="background-color: white; padding: 10px; border-left: 4px solid #548281; margin: 10px 0;">
+            <p>${volunteerData.about.replace(/\n/g, "<br>")}</p>
+          </div>
+          
+          <h3>Skills:</h3>
+          <div style="background-color: white; padding: 10px; border-left: 4px solid #548281; margin: 10px 0;">
+            <p>${volunteerData.skills.replace(/\n/g, "<br>")}</p>
+          </div>
+          
+          <h3>Availability:</h3>
+          <div style="background-color: white; padding: 10px; border-left: 4px solid #548281; margin: 10px 0;">
+            <p>${volunteerData.availability.replace(/\n/g, "<br>")}</p>
+          </div>
+        </div>
+        <p>Please review this application and contact the volunteer to discuss next steps.</p>
+        <br>
+        <p>Best regards,<br>Pledge4Peace System</p>
+      `,
+    };
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error(
+        "Brevo sendVolunteerApplicationNotification error:",
+        response.status,
+        text
+      );
+      throw new Error(
+        "Failed to send volunteer application notification email"
+      );
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Envía notificación de nuevo pledge al admin
+   */
+  async sendPledgeNotification(pledgeData: {
+    userName: string;
+    userEmail: string;
+    campaignId: string;
+    pledgeDate: string;
+    subscribeToUpdates: boolean;
+  }) {
+    const body = {
+      sender: {
+        name: this.fromName,
+        email: this.fromEmail,
+      },
+      to: [
+        {
+          email: "info@pledge4peace.org",
+          name: "Pledge4Peace Admin",
+        },
+      ],
+      subject: `New Pledge from ${pledgeData.userName}`,
+      htmlContent: `
+        <h1>New Pledge Received</h1>
+        <p>A new pledge has been made on the Pledge4Peace platform:</p>
+        <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 15px 0;">
+          <h3>Pledge Details:</h3>
+          <ul>
+            <li><strong>User Name:</strong> ${pledgeData.userName}</li>
+            <li><strong>User Email:</strong> ${pledgeData.userEmail}</li>
+            <li><strong>Campaign ID:</strong> ${pledgeData.campaignId}</li>
+            <li><strong>Pledge Date:</strong> ${pledgeData.pledgeDate}</li>
+            <li><strong>Subscribed to Updates:</strong> ${pledgeData.subscribeToUpdates ? "Yes" : "No"}</li>
+          </ul>
+        </div>
+        <p>This user has successfully committed to supporting this campaign's peace initiatives.</p>
+        <br>
+        <p>Best regards,<br>Pledge4Peace System</p>
+      `,
+    };
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error(
+        "Brevo sendPledgeNotification error:",
+        response.status,
+        text
+      );
+      throw new Error("Failed to send pledge notification email");
+    }
+
+    return await response.json();
+  }
 }
