@@ -30,6 +30,35 @@ export class VolunteerController {
       const brevoListsService = c.get("brevoListsService");
       const authService = c.get("authService");
 
+      // Verificar si el email ya está registrado en la lista de voluntarios
+      try {
+        const isAlreadyVolunteer =
+          await brevoListsService.isEmailInVolunteersList(email);
+
+        if (isAlreadyVolunteer) {
+          logger.log(
+            "⚠️ Volunteer application rejected - email already registered:",
+            email
+          );
+
+          return c.json(
+            {
+              message:
+                "This email address has already been used for a volunteer application. If you need to update your information, please contact us directly.",
+              email: email,
+              alreadyRegistered: true,
+            },
+            400
+          );
+        }
+      } catch (duplicateCheckError) {
+        // Si hay error verificando duplicados, loggeamos pero continuamos
+        logger.error(
+          "⚠️ Error checking for duplicate volunteer application:",
+          duplicateCheckError
+        );
+      }
+
       try {
         // Split name into first and last name
         const [firstName, ...lastNameParts] = name.split(" ");
@@ -64,6 +93,36 @@ export class VolunteerController {
             emailError
           );
           // Don't fail the application if email fails
+        }
+
+        // Send notification email to admin
+        try {
+          await authService.emailService.sendVolunteerApplicationNotification({
+            name,
+            email,
+            about,
+            skills,
+            availability,
+            submissionDate: new Date().toLocaleString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZoneName: "short",
+            }),
+          });
+
+          logger.log(
+            "✅ Volunteer application notification sent to admin:",
+            email
+          );
+        } catch (adminEmailError) {
+          // No fallar la aplicación si el email al admin falla
+          logger.error(
+            "⚠️ Failed to send volunteer application notification to admin:",
+            adminEmailError
+          );
         }
 
         return c.json(

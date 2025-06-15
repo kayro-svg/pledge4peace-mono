@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { LogOut, UserIcon } from "lucide-react";
+import { clearAllUserInteractions } from "@/lib/utils/interaction-utils";
 
 interface HeaderUserProps {
   user: User | null | undefined;
@@ -13,6 +14,9 @@ interface HeaderUserProps {
 
 export function HeaderUserMobile({ user }: HeaderUserProps) {
   const handleSignOut = () => {
+    // Clear all user-specific data from sessionStorage
+    clearAllUserInteractions();
+
     signOut({ callbackUrl: "/" });
   };
 

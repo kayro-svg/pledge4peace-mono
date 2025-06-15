@@ -159,7 +159,7 @@ export default function SolutionPost({
             </div>
           </div>
 
-          <h4 className="text-lg font-semibold">{solution.title}</h4>
+          <h4 className="text-base font-semibold">{solution.title}</h4>
         </div>
 
         <button
@@ -211,6 +211,7 @@ export default function SolutionPost({
             }
           }
         }}
+        solutionToShare={solution.title}
       />
     </div>
   );

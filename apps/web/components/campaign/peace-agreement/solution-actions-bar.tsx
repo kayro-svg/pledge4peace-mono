@@ -31,6 +31,7 @@ interface SolutionActionsBarProps {
     solutionId: string,
     interactionType: "like" | "dislike" | "comment" | "share"
   ) => void;
+  solutionToShare?: string;
 }
 
 export default function SolutionActionsBar({
@@ -42,6 +43,7 @@ export default function SolutionActionsBar({
   onCommentAdded,
   onCommentClick,
   onInteraction,
+  solutionToShare,
 }: SolutionActionsBarProps) {
   const { data: session } = useSession();
   const router = useRouter();
@@ -65,103 +67,22 @@ export default function SolutionActionsBar({
   const hasCommented = getUserInteraction("comment", solutionId);
   const hasShared = getUserInteraction("share", solutionId);
 
-  // Force sync user interaction state from sessionStorage on component mount
-  useEffect(() => {
-    if (typeof window !== "undefined" && session?.user) {
-      try {
-        const stored = sessionStorage.getItem("user-interactions");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          const solutionData = parsed[solutionId];
-          if (solutionData) {
-            // Sync stored user interaction states
-            if (solutionData.userLiked !== undefined) {
-              syncUserInteraction("like", solutionId, solutionData.userLiked);
-            }
-            if (solutionData.userDisliked !== undefined) {
-              syncUserInteraction(
-                "dislike",
-                solutionId,
-                solutionData.userDisliked
-              );
-            }
-            if (solutionData.userCommented !== undefined) {
-              syncUserInteraction(
-                "comment",
-                solutionId,
-                solutionData.userCommented
-              );
-            }
-          }
-        }
-      } catch (e) {
-        console.warn("Failed to restore user interaction state:", e);
-      }
-    }
-  }, [solutionId, session?.user, syncUserInteraction]);
-
-  // Sync user interaction states when component mounts or when session changes
-  useEffect(() => {
-    if (session?.user) {
-      // Sync user interaction states based on current counts
-      // This helps ensure the UI state matches the stored interaction state
-      if (likes > 0 && getUserInteraction("like", solutionId)) {
-        syncUserInteraction("like", solutionId, true);
-      }
-      if (dislikes > 0 && getUserInteraction("dislike", solutionId)) {
-        syncUserInteraction("dislike", solutionId, true);
-      }
-      if (shares > 0 && getUserInteraction("share", solutionId)) {
-        syncUserInteraction("share", solutionId, true);
-      }
-    }
-  }, [
-    session?.user,
-    solutionId,
-    likes,
-    dislikes,
-    shares,
-    syncUserInteraction,
-    getUserInteraction,
-  ]);
-
-  // Sync comment count with parent component and check if user has commented
-  useEffect(() => {
-    // Only update if the comment count has actually changed
-    if (comments !== commentCount) {
-      setComments(commentCount);
-    }
-
-    // If there are comments and a user is logged in, check if they've commented
-    // This would typically be an API call in a real app
-    // For now, we'll just maintain the local state
-  }, [commentCount, comments, session?.user?.id, solutionId]);
-
-  // Sincronizar estado local con props al cambiar solución
-  // Solo sincronizar cuando cambia la solución, no cuando cambian los contadores
+  // Sync local state with props when solution changes
   useEffect(() => {
     setLikes(likeCount);
     setDislikes(dislikeCount);
     setShares(shareCount);
     setComments(commentCount);
-  }, [solutionId]); // Solo cuando cambia la solución, no los contadores
+  }, [solutionId, likeCount, dislikeCount, shareCount, commentCount]);
 
-  // Sincronizar contadores solo si son significativamente diferentes (para evitar conflictos con actualizaciones optimistas)
+  // Sync comment count with parent component
   useEffect(() => {
-    // Solo actualizar si la diferencia es mayor a 1 (indica que vienen datos frescos del servidor)
-    if (Math.abs(likes - likeCount) > 1) {
-      setLikes(likeCount);
-    }
-    if (Math.abs(dislikes - dislikeCount) > 1) {
-      setDislikes(dislikeCount);
-    }
-    if (Math.abs(shares - shareCount) > 1) {
-      setShares(shareCount);
-    }
+    // Only update if the comment count has actually changed significantly
+    // This prevents conflicts with optimistic updates
     if (Math.abs(comments - commentCount) > 1) {
       setComments(commentCount);
     }
-  }, [likeCount, dislikeCount, shareCount, commentCount]);
+  }, [commentCount]);
 
   const handleLike = async () => {
     if (!session) {
@@ -297,7 +218,7 @@ export default function SolutionActionsBar({
       if (navigator.share) {
         await navigator.share({
           title: "Check out this solution on Pledge4Peace",
-          text: `"${solutionId}" - See more solutions on Pledge4Peace`,
+          text: `"${solutionToShare}" - See more solutions on Pledge4Peace`,
           url: window.location.href,
         });
       } else {

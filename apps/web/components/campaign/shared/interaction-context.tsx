@@ -1,6 +1,7 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 
 type InteractionType = "like" | "dislike" | "comment" | "share";
 
@@ -56,23 +57,90 @@ export function InteractionProvider({
   children,
   initialStats = {},
 }: InteractionProviderProps) {
-  const [interactions, setInteractions] = useState<InteractionState>(() => {
-    // Try to restore from sessionStorage on initial load
-    if (typeof window !== "undefined") {
-      try {
-        const stored = sessionStorage.getItem("user-interactions");
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          return { ...parsed, ...initialStats };
-        }
-      } catch (e) {
-        console.warn("Failed to restore interactions from sessionStorage:", e);
+  const { data: session, status } = useSession();
+  const [interactions, setInteractions] = useState<InteractionState>({});
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Helper function to get the storage key for current user
+  const getStorageKey = () => {
+    const userId = session?.user?.id || session?.user?.email || "anonymous";
+    return `user-interactions-${userId}`;
+  };
+
+  // Helper function to load interactions from sessionStorage
+  const loadInteractionsFromStorage = () => {
+    if (typeof window === "undefined") return {};
+
+    try {
+      const storageKey = getStorageKey();
+      const stored = sessionStorage.getItem(storageKey);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      console.warn("Failed to restore interactions from sessionStorage:", e);
+    }
+    return {};
+  };
+
+  // Helper function to save interactions to sessionStorage
+  const saveInteractionsToStorage = (newInteractions: InteractionState) => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const storageKey = getStorageKey();
+      sessionStorage.setItem(storageKey, JSON.stringify(newInteractions));
+    } catch (e) {
+      console.warn("Failed to persist interactions to sessionStorage:", e);
+    }
+  };
+
+  // Helper function to clear old user data when user changes
+  const clearOldUserData = (oldUserId: string | null) => {
+    if (typeof window === "undefined" || !oldUserId) return;
+
+    try {
+      const oldStorageKey = `user-interactions-${oldUserId}`;
+      sessionStorage.removeItem(oldStorageKey);
+      // Also remove the old generic key if it exists
+      sessionStorage.removeItem("user-interactions");
+    } catch (e) {
+      console.warn("Failed to clear old user interactions:", e);
+    }
+  };
+
+  // Effect to handle user session changes
+  useEffect(() => {
+    const newUserId = session?.user?.id || session?.user?.email || null;
+
+    // If user changed, clear old data and load new data
+    if (currentUserId !== newUserId) {
+      // Clear old user data
+      if (currentUserId) {
+        clearOldUserData(currentUserId);
+      }
+
+      // Update current user ID
+      setCurrentUserId(newUserId);
+
+      // Load interactions for new user (or clear if no user)
+      if (newUserId) {
+        const userInteractions = loadInteractionsFromStorage();
+        setInteractions({ ...initialStats, ...userInteractions });
+      } else {
+        // No user logged in, clear interactions
+        setInteractions({});
       }
     }
-    return initialStats || {};
-  });
+  }, [
+    session?.user?.id,
+    session?.user?.email,
+    status,
+    currentUserId,
+    initialStats,
+  ]);
 
-  // Helper function to get user interaction status - defined first so it can be used by setUserInteraction
+  // Helper function to get user interaction status
   const getUserInteraction = (
     type: InteractionType,
     solutionId: string
@@ -99,6 +167,9 @@ export function InteractionProvider({
     count: number,
     userInteracted: boolean
   ) => {
+    // Only update if user is logged in
+    if (!session?.user) return;
+
     setInteractions((prev) => {
       const current = prev[solutionId] || {
         likes: 0,
@@ -137,13 +208,7 @@ export function InteractionProvider({
       };
 
       // Persist to sessionStorage
-      if (typeof window !== "undefined") {
-        try {
-          sessionStorage.setItem("user-interactions", JSON.stringify(newState));
-        } catch (e) {
-          console.warn("Failed to persist interactions to sessionStorage:", e);
-        }
-      }
+      saveInteractionsToStorage(newState);
 
       return newState;
     });
@@ -154,6 +219,9 @@ export function InteractionProvider({
     solutionId: string,
     count: number
   ) => {
+    // Only update if user is logged in
+    if (!session?.user) return;
+
     setInteractions((prev) => {
       const current = prev[solutionId] || {
         likes: 0,
@@ -175,7 +243,6 @@ export function InteractionProvider({
               ? "comments"
               : "shares";
 
-      // Always update the count (remove the early return)
       const newState = {
         ...prev,
         [solutionId]: {
@@ -185,13 +252,7 @@ export function InteractionProvider({
       };
 
       // Persist to sessionStorage
-      if (typeof window !== "undefined") {
-        try {
-          sessionStorage.setItem("user-interactions", JSON.stringify(newState));
-        } catch (e) {
-          console.warn("Failed to persist interactions to sessionStorage:", e);
-        }
-      }
+      saveInteractionsToStorage(newState);
 
       return newState;
     });
@@ -202,6 +263,9 @@ export function InteractionProvider({
     solutionId: string,
     value: boolean
   ) => {
+    // Only update if user is logged in
+    if (!session?.user) return;
+
     // First check if this is actually a change to avoid unnecessary rerenders
     const currentValue = getUserInteraction(type, solutionId);
 
@@ -218,7 +282,6 @@ export function InteractionProvider({
           userCommented: false,
         };
 
-        // Return a new object only if there's an actual change
         const userPropKey =
           type === "like"
             ? "userLiked"
@@ -235,19 +298,7 @@ export function InteractionProvider({
         };
 
         // Persist to sessionStorage
-        if (typeof window !== "undefined") {
-          try {
-            sessionStorage.setItem(
-              "user-interactions",
-              JSON.stringify(newState)
-            );
-          } catch (e) {
-            console.warn(
-              "Failed to persist interactions to sessionStorage:",
-              e
-            );
-          }
-        }
+        saveInteractionsToStorage(newState);
 
         return newState;
       });
@@ -278,6 +329,10 @@ export function InteractionProvider({
     setInteractions({});
     if (typeof window !== "undefined") {
       try {
+        // Clear current user's interactions
+        const storageKey = getStorageKey();
+        sessionStorage.removeItem(storageKey);
+        // Also remove the old generic key if it exists
         sessionStorage.removeItem("user-interactions");
       } catch (e) {
         console.warn("Failed to clear interactions from sessionStorage:", e);
@@ -290,6 +345,9 @@ export function InteractionProvider({
     solutionId: string,
     userInteracted: boolean
   ) => {
+    // Only update if user is logged in
+    if (!session?.user) return;
+
     setInteractions((prev) => {
       const current = prev[solutionId] || {
         likes: 0,
@@ -319,19 +377,7 @@ export function InteractionProvider({
         };
 
         // Persist to sessionStorage
-        if (typeof window !== "undefined") {
-          try {
-            sessionStorage.setItem(
-              "user-interactions",
-              JSON.stringify(newState)
-            );
-          } catch (e) {
-            console.warn(
-              "Failed to persist interactions to sessionStorage:",
-              e
-            );
-          }
-        }
+        saveInteractionsToStorage(newState);
 
         return newState;
       }

@@ -41,6 +41,32 @@ export class ContactController {
           email
         );
 
+        // Send notification email to admin
+        try {
+          await authService.emailService.sendContactFormNotification({
+            name,
+            email,
+            subject,
+            message,
+            submissionDate: new Date().toLocaleString("en-US", {
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZoneName: "short",
+            }),
+          });
+
+          logger.log("✅ Contact form notification sent to admin:", email);
+        } catch (adminEmailError) {
+          // No fallar el proceso si el email al admin falla
+          logger.error(
+            "⚠️ Failed to send contact form notification to admin:",
+            adminEmailError
+          );
+        }
+
         // Here you could also save the contact form to your database
         // or send it to another service for processing
 

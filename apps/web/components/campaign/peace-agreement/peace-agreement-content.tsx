@@ -186,37 +186,17 @@ export default function PeaceAgreementContent({
 
           const interactions = await Promise.all(interactionPromises);
           interactions.forEach(({ solutionId, interactions }) => {
-            // Get current state from context (which may have been loaded from sessionStorage)
-            const currentLiked = getUserInteraction("like", solutionId);
-            const currentDisliked = getUserInteraction("dislike", solutionId);
-            const currentShared = getUserInteraction("share", solutionId);
-
-            // Only update from server if there's no local state (meaning the user hasn't interacted yet in this session)
-            // Check if we have any interaction data in context for this solution
-            const hasLocalInteractionData =
-              getInteractionCount("like", solutionId) > 0 ||
-              getInteractionCount("dislike", solutionId) > 0 ||
-              currentLiked ||
-              currentDisliked ||
-              currentShared;
-
-            if (!hasLocalInteractionData) {
-              // No local data, safe to use server data
-              if (interactions.hasLiked !== currentLiked) {
-                setUserInteraction("like", solutionId, interactions.hasLiked);
-              }
-              if (interactions.hasDisliked !== currentDisliked) {
-                setUserInteraction(
-                  "dislike",
-                  solutionId,
-                  interactions.hasDisliked
-                );
-              }
-              if (interactions.hasShared !== currentShared) {
-                setUserInteraction("share", solutionId, interactions.hasShared);
-              }
+            // Set user interactions from server data
+            // The context will handle proper user separation and persistence
+            if (interactions.hasLiked) {
+              setUserInteraction("like", solutionId, true);
             }
-            // If we have local data, keep it (user interacted in this session and it's stored in sessionStorage)
+            if (interactions.hasDisliked) {
+              setUserInteraction("dislike", solutionId, true);
+            }
+            if (interactions.hasShared) {
+              setUserInteraction("share", solutionId, true);
+            }
           });
         }
       } catch (error) {

@@ -288,4 +288,23 @@ export class BrevoListsService {
 
     return await response.json();
   }
+
+  /**
+   * Verifica si un contacto ya está en la lista de voluntarios
+   */
+  async isEmailInVolunteersList(email: string): Promise<boolean> {
+    try {
+      const contact = await this.getContact(email);
+
+      if (contact && contact.listIds && Array.isArray(contact.listIds)) {
+        return contact.listIds.includes(this.volunteersListId);
+      }
+
+      return false;
+    } catch (error) {
+      logger.error("❌ Error checking if email is in volunteers list:", error);
+      // En caso de error, devolvemos false para permitir que continúe el proceso
+      return false;
+    }
+  }
 }

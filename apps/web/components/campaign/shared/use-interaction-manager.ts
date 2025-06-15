@@ -12,42 +12,36 @@ export function useInteractionManager({
 }: UseInteractionManagerProps) {
   const [count, setLocalCount] = useState(initialCount);
   const { handleInteraction, getInteractionCount } = useInteractions();
-  const [lastUpdate, setLastUpdate] = useState(0);
-  const RATE_LIMIT_MS = 1000; // 1 second rate limit
 
-  // Sync with context count
+  // Sync with context count when it changes
   useEffect(() => {
     const contextCount = getInteractionCount("comment", solutionId);
-    if (contextCount !== count) {
+    if (contextCount !== count && contextCount > 0) {
       setLocalCount(contextCount);
     }
   }, [solutionId, getInteractionCount, count]);
 
+  // Update initial count when it changes (new solution or fresh data)
+  useEffect(() => {
+    setLocalCount(initialCount);
+  }, [initialCount, solutionId]);
+
   const setCount = useCallback(
     async (newCount: number) => {
-      const now = Date.now();
-      if (now - lastUpdate < RATE_LIMIT_MS) {
-        return;
+      // Only update if the count actually changed
+      if (newCount !== count) {
+        setLocalCount(newCount);
+        await handleInteraction("comment", solutionId, newCount);
       }
-
-      setLocalCount(newCount);
-      setLastUpdate(now);
-      await handleInteraction("comment", solutionId, newCount);
     },
-    [solutionId, handleInteraction, lastUpdate]
+    [solutionId, handleInteraction, count]
   );
 
   const incrementCount = useCallback(async () => {
-    const now = Date.now();
-    if (now - lastUpdate < RATE_LIMIT_MS) {
-      return;
-    }
-
     const newCount = count + 1;
     setLocalCount(newCount);
-    setLastUpdate(now);
     await handleInteraction("comment", solutionId, newCount);
-  }, [solutionId, handleInteraction, count, lastUpdate]);
+  }, [solutionId, handleInteraction, count]);
 
   return {
     count,
