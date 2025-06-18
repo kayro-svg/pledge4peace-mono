@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { IsraelFlag, PalestineFlag } from "@/components/ui/flags";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { portableTextComponents } from "@/components/ui/portable-text-components";
@@ -17,7 +16,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { getSolutions, getUserInteractions } from "@/lib/api/solutions";
 import { API_ENDPOINTS, API_URL } from "@/lib/config";
-import { SanitySolutionsSection, Solution } from "@/lib/types";
+import { SanitySolutionsSection, SanityParty, Solution } from "@/lib/types";
 import { logger } from "@/lib/utils/logger";
 import { PortableText } from "@portabletext/react";
 import { Loader2, LogIn, Plus, ToggleLeft, ToggleRight } from "lucide-react";
@@ -26,6 +25,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useInteractions } from "../shared/interaction-context";
 import SolutionPost from "./solution-post";
+import Image from "next/image";
 
 interface PeaceAgreementContentProps {
   campaignId: string;
@@ -34,24 +34,19 @@ interface PeaceAgreementContentProps {
   onSolutionChange?: (solutionId: string) => void;
   onCommentClick?: (solutionId: string | React.MouseEvent) => void;
   activeSolutionId?: string;
+  parties: SanityParty[]; // Nuevo: partidos dinámicos de la campaña
 }
 
-export type PartyConfig = {
-  israeli: {
+export type PartyConfig = Record<
+  string,
+  {
     label: string;
     icon: JSX.Element;
     color: string;
     description: string;
-  };
-  palestinian: {
-    label: string;
-    icon: JSX.Element;
-    color: string;
-    description: string;
-  };
-};
+  }
+>;
 
-type PartyId = "israeli" | "palestinian";
 type ViewMode = "mixed" | "grouped";
 
 export default function PeaceAgreementContent({
@@ -60,23 +55,33 @@ export default function PeaceAgreementContent({
   onCommentClick,
   activeSolutionId,
   solutionsSection,
+  parties,
 }: PeaceAgreementContentProps) {
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateSolutionOpen, setIsCreateSolutionOpen] = useState(false);
   const { data: session } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Helper para obtener el primer party slug como default
+  const getDefaultPartySlug = () => parties?.[0]?.slug || "";
+
   const [newSolution, setNewSolution] = useState({
     title: "",
     description: "",
-    partyId: "israeli" as PartyId,
+    partyId: getDefaultPartySlug(),
   });
+
+  // Actualizar partyId si cambian los partidos
+  useEffect(() => {
+    if (parties && parties.length > 0 && !newSolution.partyId) {
+      setNewSolution((prev) => ({ ...prev, partyId: getDefaultPartySlug() }));
+    }
+  }, [parties, newSolution.partyId]);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [solutionStats, setSolutionStats] = useState<Record<string, any>>({});
   const [viewMode, setViewMode] = useState<ViewMode>("mixed");
-  const [partyCounts, setPartyCounts] = useState({
-    israeli: 0,
-    palestinian: 0,
+  const [partyCounts, setPartyCounts] = useState<Record<string, number>>({
     total: 0,
   });
   const [newlyCreatedSolutionId, setNewlyCreatedSolutionId] = useState<
@@ -111,22 +116,39 @@ export default function PeaceAgreementContent({
     [solutionStats, getInteractionCount]
   );
 
-  const partyConfig: PartyConfig = {
-    israeli: {
-      label: "Israel",
-      icon: <IsraelFlag width={20} height={16} />,
-      color: "bg-blue-50 text-blue-700 border-blue-200",
-      description:
-        "Solutions directed to Israeli leadership and decision-makers",
-    },
-    palestinian: {
-      label: "Palestine",
-      icon: <PalestineFlag width={20} height={16} />,
-      color: "bg-green-50 text-green-700 border-green-200",
-      description:
-        "Solutions directed to Palestinian leadership and decision-makers",
-    },
-  };
+  // Generar configuración dinámica basada en los partidos del CMS
+  const partyConfig: PartyConfig = useMemo(() => {
+    const config: PartyConfig = {};
+
+    parties?.forEach((party) => {
+      const colorMap = {
+        blue: "bg-blue-50 text-blue-700 border-blue-200",
+        green: "bg-green-50 text-green-700 border-green-200",
+        red: "bg-red-50 text-red-700 border-red-200",
+        purple: "bg-purple-50 text-purple-700 border-purple-200",
+        orange: "bg-orange-50 text-orange-700 border-orange-200",
+        teal: "bg-teal-50 text-teal-700 border-teal-200",
+        gray: "bg-gray-50 text-gray-700 border-gray-200",
+      };
+
+      config[party.slug] = {
+        label: party.name,
+        icon: (
+          <Image
+            src={party.icon.asset.url}
+            alt={`${party.name} icon`}
+            width={20}
+            height={16}
+            className="inline-block"
+          />
+        ),
+        color: colorMap[party.color] || colorMap.blue,
+        description: party.description,
+      };
+    });
+
+    return config;
+  }, [parties]);
 
   useEffect(() => {
     const fetchSolutions = async () => {
@@ -264,7 +286,7 @@ export default function PeaceAgreementContent({
       // Update party counts immediately
       setPartyCounts((prev) => ({
         ...prev,
-        [newSolution.partyId]: prev[newSolution.partyId] + 1,
+        [newSolution.partyId]: (prev[newSolution.partyId] || 0) + 1,
         total: prev.total + 1,
       }));
 
@@ -302,7 +324,7 @@ export default function PeaceAgreementContent({
 
   const addSolutionButton = () => {
     const maxTotal = 10;
-    const maxPerParty = Math.floor(maxTotal / 2); // 5 per party
+    const maxPerParty = Math.floor(maxTotal / (parties?.length || 2)); // Dynamic per party based on number of parties
 
     if (partyCounts.total >= maxTotal) {
       return (
@@ -312,13 +334,17 @@ export default function PeaceAgreementContent({
       );
     }
 
-    const canAddIsraeli = partyCounts.israeli < maxPerParty;
-    const canAddPalestinian = partyCounts.palestinian < maxPerParty;
+    // Check if any party can still add solutions
+    const canAnyPartyAdd =
+      parties?.some((party) => {
+        const currentCount = partyCounts[party.slug] || 0;
+        return currentCount < maxPerParty;
+      }) || false;
 
-    if (!canAddIsraeli && !canAddPalestinian) {
+    if (!canAnyPartyAdd) {
       return (
         <div className="text-center text-sm text-gray-500">
-          All party limits reached (5/5 each)
+          All party limits reached ({maxPerParty}/{maxPerParty} each)
         </div>
       );
     }
@@ -372,11 +398,19 @@ export default function PeaceAgreementContent({
     });
   }, [solutions, solutionStats]);
 
-  // Group solutions by party
-  const groupedSolutions = {
-    israeli: sortedSolutions.filter((s) => s.partyId === "israeli"),
-    palestinian: sortedSolutions.filter((s) => s.partyId === "palestinian"),
-  };
+  // Group solutions by party - DYNAMIC based on CMS parties
+  const groupedSolutions = useMemo(() => {
+    const grouped: Record<string, typeof sortedSolutions> = {};
+
+    // Initialize groups for each party from CMS
+    parties?.forEach((party) => {
+      grouped[party.slug] = sortedSolutions.filter(
+        (s) => s.partyId === party.slug
+      );
+    });
+
+    return grouped;
+  }, [sortedSolutions, parties]);
 
   // Función para refrescar solutions después de cambios
   const refreshSolutions = async (skipLoading = false) => {
@@ -495,7 +529,7 @@ export default function PeaceAgreementContent({
               <div className="flex gap-4 text-sm">
                 {Object.entries(partyConfig).map(([key, config]) => {
                   const maxPerParty = Math.floor(10 / 2); // 5 per party
-                  const currentCount = partyCounts[key as PartyId] || 0;
+                  const currentCount = partyCounts[key] || 0;
 
                   return (
                     <div key={key} className="flex items-center gap-2">
@@ -570,12 +604,12 @@ export default function PeaceAgreementContent({
                   <div key={partyId}>
                     <div className="flex items-center gap-3 mb-4">
                       <Badge
-                        className={`${partyConfig[partyId as PartyId].color} text-base px-3 py-1`}
+                        className={`${partyConfig[partyId]?.color || ""} text-base px-3 py-1 hover:bg-transparent`}
                       >
                         <span className="mr-2">
-                          {partyConfig[partyId as PartyId].icon}
+                          {partyConfig[partyId]?.icon}
                         </span>
-                        {partyConfig[partyId as PartyId].label}
+                        {partyConfig[partyId]?.label}
                       </Badge>
                       <span className="text-gray-500">
                         ({solutionList.length} solutions)
@@ -660,14 +694,14 @@ export default function PeaceAgreementContent({
                 </Label>
                 <RadioGroup
                   value={newSolution.partyId}
-                  onValueChange={(value: PartyId) =>
+                  onValueChange={(value: string) =>
                     setNewSolution({ ...newSolution, partyId: value })
                   }
                   className="mt-2"
                 >
                   {Object.entries(partyConfig).map(([key, config]) => {
                     const maxPerParty = Math.floor(10 / 2); // 5 per party
-                    const currentCount = partyCounts[key as PartyId] || 0;
+                    const currentCount = partyCounts[key] || 0;
                     const isDisabled = currentCount >= maxPerParty;
 
                     return (
@@ -767,6 +801,7 @@ export default function PeaceAgreementContent({
                 setShowLoginModal(false);
                 setIsCreateSolutionOpen(true);
               }}
+              isModal
             />
           </div>
         </DialogContent>

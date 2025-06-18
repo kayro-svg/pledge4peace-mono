@@ -9,7 +9,7 @@ export interface CreateSolutionDTO {
   userId: string;
   title: string;
   description: string;
-  partyId: "israeli" | "palestinian";
+  partyId: string; // Cambió de enum fijo a string genérico
   metadata?: Record<string, any>;
 }
 
@@ -26,10 +26,19 @@ export interface SolutionWithStats extends Solution {
   stats: SolutionStats;
 }
 
+export interface PartySolutionCounts {
+  total: number;
+  [partySlug: string]: number;
+}
+
 export class SolutionsService {
   constructor(private db: DbClient) {}
 
   async createSolution(data: CreateSolutionDTO) {
+    // TODO: Validar que el partyId esté dentro de los partidos permitidos para la campaña
+    // Esta validación se implementaría consultando los partidos de la campaña desde Sanity
+    // Por ahora, aceptamos cualquier string como partyId para compatibilidad
+
     // Check if the campaign has reached the solution limit (10 solutions max total)
     const campaignSolutionCount = await this.db
       .select()
@@ -240,8 +249,9 @@ export class SolutionsService {
   }
 
   async getPartySolutionCounts(
-    campaignId: string
-  ): Promise<{ israeli: number; palestinian: number; total: number }> {
+    campaignId: string,
+    partySlugs?: string[]
+  ): Promise<PartySolutionCounts> {
     const allSolutions = await this.db
       .select()
       .from(solutions)
@@ -252,12 +262,22 @@ export class SolutionsService {
         )
       );
 
-    const counts = {
-      israeli: allSolutions.filter((s) => s.partyId === "israeli").length,
-      palestinian: allSolutions.filter((s) => s.partyId === "palestinian")
-        .length,
-      total: allSolutions.length,
-    };
+    const counts: PartySolutionCounts = { total: allSolutions.length };
+
+    // Si se proporcionan party slugs, contar específicamente por cada uno
+    if (partySlugs && partySlugs.length > 0) {
+      partySlugs.forEach((slug) => {
+        counts[slug] = allSolutions.filter((s) => s.partyId === slug).length;
+      });
+    } else {
+      // Si no se proporcionan, contar todos los partyIds únicos
+      const uniquePartyIds = [...new Set(allSolutions.map((s) => s.partyId))];
+      uniquePartyIds.forEach((partyId) => {
+        counts[partyId] = allSolutions.filter(
+          (s) => s.partyId === partyId
+        ).length;
+      });
+    }
 
     return counts;
   }

@@ -153,6 +153,7 @@ export default function CommentsSection({
               <div className="flex flex-col items-center">
                 <AuthContainer
                   onLoginSuccess={() => setShowLoginModal(false)}
+                  isModal
                 />
               </div>
             </DialogContent>

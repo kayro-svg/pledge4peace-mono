@@ -32,7 +32,7 @@ export default function RecentProjects({
       className="bg-[#fdfdf0] py-16 p-0 md:p-8 px-4 sm:px-6 md:px-8 lg:px-12"
       id="projects-section"
     >
-      <div className="max-w-6xl mx-auto">
+      <div className="w-full">
         <div className="text-center mb-12">
           <h2 className="text-[#2F4858] uppercase text-sm font-medium tracking-wider mb-4 border-b-2 w-fit mx-auto border-[#2F4858]">
             RECENT CAMPAIGNS
@@ -51,7 +51,7 @@ export default function RecentProjects({
         {/* <div className="grid md:grid-cols-2 gap-8"> */}
         <div className="flex flex-row items-center justify-center gap-8">
           {sectionData.campaigns?.map((campaign) => {
-            const onlyOneCampaign = sectionData.campaigns.length === 1;
+            const moreThanOneCampaign = sectionData.campaigns.length > 1;
             return (
               <CampaignCard
                 key={campaign._id}
@@ -63,7 +63,7 @@ export default function RecentProjects({
                 category={campaign.category || ""}
                 action="Pledge Now"
                 goal={campaign.goalPledges}
-                variant={onlyOneCampaign ? "horizontal-large" : "default"}
+                variant={moreThanOneCampaign ? "default" : "horizontal-large"}
               />
             );
           })}

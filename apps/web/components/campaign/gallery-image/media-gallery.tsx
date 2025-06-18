@@ -44,7 +44,7 @@ export default function MediaGallery({
       </div>
 
       {/* Thumbnails */}
-      <div className="flex gap-auto overflow-x-auto p-1 items-center justify-between">
+      <div className="flex gap-auto overflow-x-auto p-1 items-center justify-start gap-4">
         {media.map((item, index) => (
           <button
             key={index}

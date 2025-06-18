@@ -81,6 +81,14 @@ export interface SanitySolution {
   description: string;
 }
 
+export interface SanityParty {
+  name: string;
+  slug: string;
+  description: string;
+  icon: SanityImage;
+  color: "blue" | "green" | "red" | "purple" | "orange" | "teal" | "gray";
+}
+
 export interface SanitySolutionsSection {
   heading: string;
   introParagraphs: any[];
@@ -111,6 +119,7 @@ export interface SanityCampaign {
   contentText?: SanityCampaignContentText;
   featuredImage?: SanityImage;
   gallery?: SanityCampaignGalleryItem[];
+  parties?: SanityParty[];
   solutionsSection?: SanitySolutionsSection;
   waysToSupportTabs?: SanityWaysToSupportTab[];
 }
@@ -380,7 +389,7 @@ export interface Solution {
   title: string;
   description: string;
   rank: string;
-  partyId: "israeli" | "palestinian";
+  partyId: string; // Cambió de enum fijo a string genérico
   userId: string;
   expanded?: boolean;
   details?: SolutionDetails;

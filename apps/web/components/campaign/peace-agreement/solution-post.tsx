@@ -23,7 +23,7 @@ interface SolutionPostProps {
   postPartyConfig?: PartyConfig;
 }
 
-type PartyId = "israeli" | "palestinian";
+// Tipo eliminado - ahora partyId es string genérico
 
 export default function SolutionPost({
   solution,
@@ -148,12 +148,12 @@ export default function SolutionPost({
               )}
               {showPartyBadge && (
                 <Badge
-                  className={`${postPartyConfig?.[solution.partyId as PartyId].color} hover:bg-transparent`}
+                  className={`${postPartyConfig?.[solution.partyId]?.color || ""} hover:bg-transparent`}
                 >
                   <span className="mr-1">
-                    {postPartyConfig?.[solution.partyId as PartyId].icon}
+                    {postPartyConfig?.[solution.partyId]?.icon}
                   </span>
-                  {postPartyConfig?.[solution.partyId as PartyId].label}
+                  {postPartyConfig?.[solution.partyId]?.label}
                 </Badge>
               )}
             </div>
