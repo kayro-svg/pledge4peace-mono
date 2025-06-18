@@ -1,6 +1,10 @@
 "use client";
 
-import { SanitySolutionsSection, SanityWaysToSupportTab } from "@/lib/types";
+import {
+  SanitySolutionsSection,
+  SanityWaysToSupportTab,
+  SanityParty,
+} from "@/lib/types";
 import { useEffect, useState } from "react";
 import PeaceAgreementContent from "../peace-agreement/peace-agreement-content";
 import WaysToSupport from "../ways-to-support/ways-to-support";
@@ -14,6 +18,7 @@ interface TabsSectionProps {
   campaignId: string;
   campaignSlug?: string;
   campaignTitle?: string;
+  parties: SanityParty[]; // Nuevo: partidos dinámicos
 }
 
 export default function TabsSection({
@@ -24,6 +29,7 @@ export default function TabsSection({
   campaignId,
   campaignSlug,
   campaignTitle,
+  parties,
 }: TabsSectionProps) {
   const [activeTab, setActiveTab] = useState("solution-proposals");
   const [activeSolutionId, setActiveSolutionId] = useState("");
@@ -52,6 +58,7 @@ export default function TabsSection({
             onCommentClick={onCommentClick}
             activeSolutionId={activeSolutionId}
             campaignId={campaignId}
+            parties={parties}
           />
         )}
         {activeTab === "ways-to-support" && (

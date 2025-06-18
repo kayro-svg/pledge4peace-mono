@@ -358,6 +358,7 @@ export default function SolutionActionsBar({
               onLoginSuccess={() => {
                 setShowLoginModal(false);
               }}
+              isModal
             />
           </div>
         </DialogContent>

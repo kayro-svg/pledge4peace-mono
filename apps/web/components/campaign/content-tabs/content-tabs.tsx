@@ -1,6 +1,10 @@
 import TabsSection from "../tabs/tabs-section";
 import SidebarSection from "../sidebar/sidebar-section";
-import { SanityWaysToSupportTab, SanitySolutionsSection } from "@/lib/types";
+import {
+  SanityWaysToSupportTab,
+  SanitySolutionsSection,
+  SanityParty,
+} from "@/lib/types";
 
 interface ContentTabsProps {
   mainContentWidth?: string;
@@ -13,6 +17,7 @@ interface ContentTabsProps {
   onCommentClick?: (solutionId: string | React.MouseEvent) => void;
   campaignSlug?: string;
   campaignTitle?: string;
+  parties: SanityParty[]; // Nuevo: partidos dinámicos
 }
 
 export default function ContentTabs({
@@ -24,6 +29,7 @@ export default function ContentTabs({
   onCommentClick,
   campaignSlug,
   campaignTitle,
+  parties,
 }: ContentTabsProps) {
   const handleSolutionClick = (solutionId: string) => {
     onSolutionChange(solutionId);
@@ -50,6 +56,7 @@ export default function ContentTabs({
           onCommentClick={onCommentClick}
           campaignSlug={campaignSlug}
           campaignTitle={campaignTitle}
+          parties={parties}
         />
       </div>
 

@@ -18,11 +18,7 @@ const createSolutionSchema = z.object({
   campaignId: z.string(),
   title: z.string().min(1),
   description: z.string().min(1),
-  partyId: z.enum(["israeli", "palestinian"], {
-    errorMap: () => ({
-      message: "Party must be either 'israeli' or 'palestinian'",
-    }),
-  }),
+  partyId: z.string().min(1), // Cambió de enum fijo a string genérico
   metadata: z.record(z.any()).optional(),
 });
 
@@ -89,6 +85,11 @@ export class SolutionsController {
 
       // Handle solution limit error
       if (error instanceof Error && error.message.includes("maximum limit")) {
+        throw new HTTPException(400, { message: error.message });
+      }
+
+      // Handle invalid party error
+      if (error instanceof Error && error.message.includes("Invalid party")) {
         throw new HTTPException(400, { message: error.message });
       }
 

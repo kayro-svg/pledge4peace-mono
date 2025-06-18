@@ -3,7 +3,7 @@ export interface Solution {
   title: string;
   description: string;
   rank: string;
-  partyId: "israeli" | "palestinian";
+  partyId: string; // Cambiado de enum fijo a string genérico
   // Agregar userId para verificaciones de permisos
   userId: string;
   expanded?: boolean;

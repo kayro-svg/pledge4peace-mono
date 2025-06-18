@@ -6,7 +6,7 @@ export const solutions = sqliteTable("solutions", {
   userId: text("user_id").notNull(),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  partyId: text("party_id", { enum: ["israeli", "palestinian"] }).notNull(),
+  partyId: text("party_id").notNull(), // Cambió de enum fijo a string genérico
   status: text("status", { enum: ["draft", "published", "archived"] })
     .notNull()
     .default("draft"),

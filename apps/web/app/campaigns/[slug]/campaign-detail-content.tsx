@@ -93,6 +93,7 @@ export function CampaignDetailContent({
                 onCommentClick={handleCommentClick}
                 campaignSlug={campaign?.slug?.current}
                 campaignTitle={campaign?.title}
+                parties={campaign?.parties || []}
               />
 
               {/* Mobile Comments Modal - Only visible on mobile/tablet */}

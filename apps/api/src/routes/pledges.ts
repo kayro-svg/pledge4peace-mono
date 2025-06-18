@@ -6,6 +6,7 @@ import { and, eq, sql } from "drizzle-orm";
 import { getJWTPayload, requireAuth } from "../middleware/auth";
 import { MiddlewareHandler } from "hono";
 import { logger } from "../utils/logger";
+import { Context } from "hono";
 
 // Define environment type for Hono context
 type Bindings = {
@@ -99,7 +100,7 @@ pledgesRoutes.get("/check/:campaignId", requireAuth, async (c) => {
 });
 
 // Create a new pledge - requires authentication
-pledgesRoutes.post("/", requireAuth, async (c) => {
+pledgesRoutes.post("/", requireAuth, async (c: Context) => {
   const body = (await c.req.json()) as Partial<CreatePledgeBody>;
   const db = drizzle(c.env.DB);
 

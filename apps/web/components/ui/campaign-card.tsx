@@ -170,7 +170,7 @@ export default function CampaignCard({
 
   if (variant === "horizontal-large") {
     return (
-      <Card className="overflow-hidden rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md flex flex-col md:flex-row">
+      <Card className="overflow-hidden max-w-7xl rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md flex flex-col md:flex-row">
         <div className="aspect-video w-full md:w-[50%] overflow-hidden">
           <Image
             src={featuredImage || "/placeholder.svg"}

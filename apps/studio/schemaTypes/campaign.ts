@@ -128,6 +128,84 @@ export default {
 
     // SOLUTION PROPOSALS
     {
+      name: 'parties',
+      title: 'Campaign Parties/Sides',
+      type: 'array',
+      group: 'solutions',
+      description: 'Define exactly two parties/sides that can propose solutions for this campaign.',
+      validation: (Rule: any) =>
+        Rule.required().length(2).error('You must define exactly 2 parties'),
+      of: [
+        {
+          type: 'object',
+          title: 'Party',
+          fields: [
+            {
+              name: 'name',
+              title: 'Party Name',
+              type: 'string',
+              description:
+                'Full display name of the party (e.g., "Israel", "Palestine", "Democrats", "Republicans")',
+              validation: (Rule: any) => Rule.required(),
+            },
+            {
+              name: 'slug',
+              title: 'Party Slug',
+              type: 'string',
+              description:
+                'Short identifier without spaces (e.g., "israeli", "palestinian", "democrats", "republicans")',
+              validation: (Rule: any) =>
+                Rule.required().regex(/^[a-z]+$/, {
+                  name: 'lowercase letters only',
+                  invert: false,
+                }),
+            },
+            {
+              name: 'description',
+              title: 'Party Description',
+              type: 'text',
+              description:
+                'Brief description to who these solutions are for (e.g., "Israeli solutions", "Palestinian solutions", "Democratic solutions", "Republican solutions")',
+              validation: (Rule: any) => Rule.required(),
+            },
+            {
+              name: 'icon',
+              title: 'Party Icon/Flag',
+              type: 'image',
+              description: 'Icon, flag, or symbol representing this party',
+              options: {hotspot: true},
+              validation: (Rule: any) => Rule.required(),
+            },
+            {
+              name: 'color',
+              title: 'Party Color Theme',
+              type: 'string',
+              description: 'Color theme for this party (affects badges and UI elements)',
+              options: {
+                list: [
+                  {title: 'Blue', value: 'blue'},
+                  {title: 'Green', value: 'green'},
+                  {title: 'Red', value: 'red'},
+                  {title: 'Purple', value: 'purple'},
+                  {title: 'Orange', value: 'orange'},
+                  {title: 'Teal', value: 'teal'},
+                  {title: 'Gray', value: 'gray'},
+                ],
+              },
+              initialValue: 'blue',
+            },
+          ],
+          preview: {
+            select: {
+              title: 'name',
+              subtitle: 'slug',
+              media: 'icon',
+            },
+          },
+        },
+      ],
+    },
+    {
       name: 'solutionsSection',
       title: 'Solution Proposals Section',
       type: 'object',
