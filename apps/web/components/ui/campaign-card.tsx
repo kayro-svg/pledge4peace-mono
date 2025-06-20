@@ -228,7 +228,7 @@ export default function CampaignCard({
   // Default variant
   return (
     <Card
-      className="overflow-hidden max-w-xl rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md"
+      className="flex-1 overflow-hidden max-w-xl rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md"
       onMouseEnter={handleMouseEnter}
     >
       <div className="aspect-video w-full overflow-hidden">
@@ -240,7 +240,7 @@ export default function CampaignCard({
           className="h-full w-full object-cover transition-transform hover:scale-105"
         />
       </div>
-      <CardHeader className="p-3 sm:p-4 md:p-6 pb-4 sm:pb-6 md:pb-8">
+      <CardHeader className="p-3 sm:p-4 md:p-4 pb-4 sm:pb-6 md:pb-4">
         <div className="flex items-center justify-between">
           <Badge
             variant="outline"
@@ -259,18 +259,18 @@ export default function CampaignCard({
           {description}
         </CardDescription>
       </CardHeader>
-      <CardContent className="p-3 sm:p-4 md:p-6 pb-4 sm:pb-6 md:pb-8">
+      <CardContent className="p-3 sm:p-4 md:p-4 pb-4 sm:pb-4 md:pb-4">
         <Progress value={progress} className="h-1.5 sm:h-2" />
         <div className="mt-2 flex items-center justify-between text-xs sm:text-sm">
-          <span className="font-medium">
+          <span className="font-medium text-left">
             +{pledgeCount.toLocaleString()} Peace Pledges
           </span>
-          <span className="text-slate-500 text-xs sm:text-sm">
+          <span className="text-slate-500 text-xs sm:text-sm text-right">
             +{goal.toLocaleString()} Peace Pledges
           </span>
         </div>
       </CardContent>
-      <CardFooter className="p-3 sm:p-4 md:p-6">
+      <CardFooter className="p-3 sm:p-4 md:p-4">
         <Button
           className="w-full bg-[#548281] hover:bg-[#2f4858] text-white text-xs sm:text-sm md:text-md font-medium sm:font-semibold rounded-full py-1.5 sm:py-2 md:py-3"
           onClick={navigateToCampaign}

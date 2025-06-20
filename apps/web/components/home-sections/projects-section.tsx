@@ -27,6 +27,8 @@ export default function RecentProjects({
     campaigns: data?.campaigns ?? DEFAULT_SECTION_DATA.campaigns,
   };
 
+  const moreThanOneCampaign = sectionData.campaigns.length > 1;
+
   return (
     <section
       className="bg-[#fdfdf0] py-16 p-0 md:p-8 px-4 sm:px-6 md:px-8 lg:px-12"
@@ -49,9 +51,14 @@ export default function RecentProjects({
         </div>
 
         {/* <div className="grid md:grid-cols-2 gap-8"> */}
-        <div className="flex flex-row items-center justify-center gap-8">
+        <div
+          className={`items-center justify-center gap-8 ${
+            moreThanOneCampaign
+              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 "
+              : "flex flex-row lg:flex-col justify-center"
+          }`}
+        >
           {sectionData.campaigns?.map((campaign) => {
-            const moreThanOneCampaign = sectionData.campaigns.length > 1;
             return (
               <CampaignCard
                 key={campaign._id}
