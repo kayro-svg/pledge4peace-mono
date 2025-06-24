@@ -585,6 +585,25 @@ export async function getArticleBySlug(slug: string): Promise<{
           }
         },
         excerpt,
+        // SEO Fields
+        seo {
+          metaTitle,
+          metaDescription,
+          keywords,
+          ogImage { 
+            asset-> { 
+              url,
+              metadata {
+                dimensions {
+                  width,
+                  height
+                }
+              }
+            }
+          },
+          noIndex,
+          canonicalUrl
+        },
         content[] {
           ...,
           _type == "inlineImage" => {

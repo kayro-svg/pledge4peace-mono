@@ -6,41 +6,49 @@
 import React from "react";
 import { useAnalytics } from "@/hooks/use-analytics";
 
-export function ExampleComponent() {
-  const analytics = useAnalytics();
-
-  const handlePledgeSubmit = () => {
-    // Ejemplo: trackear cuando alguien hace un pledge
-    analytics.trackPledgeCreated("pledge-123", "peace");
-    console.log("Pledge tracked in Google Analytics");
-  };
+export function ExampleUsage() {
+  const {
+    track,
+    trackPage,
+    trackButtonClick,
+    trackFormSubmit,
+    trackPledgeCreated,
+    trackVolunteerRegistration,
+    trackCampaignView,
+    trackFacebookCustom,
+  } = useAnalytics();
 
   const handleButtonClick = () => {
-    // Ejemplo: trackear clicks de botones
-    analytics.trackButtonClick("example-button", "home-page");
-    console.log("Button click tracked in Google Analytics");
+    // Esto enviará eventos tanto a Google Analytics como a Facebook Pixel
+    trackButtonClick("cta_button", "homepage");
   };
 
-  const handleFormSubmit = (success: boolean) => {
-    // Ejemplo: trackear envío de formularios
-    analytics.trackFormSubmit("contact-form", success);
-    console.log("Form submit tracked in Google Analytics");
+  const handleFormSubmit = () => {
+    // Esto enviará eventos tanto a Google Analytics como a Facebook Pixel
+    trackFormSubmit("contact_form", true);
+  };
+
+  const handlePledgeCreated = (pledgeId: string) => {
+    // Esto enviará eventos a GA y un evento Lead a Facebook Pixel
+    trackPledgeCreated(pledgeId, "peace");
   };
 
   const handleVolunteerRegistration = () => {
-    // Ejemplo: trackear registro de voluntarios
-    analytics.trackVolunteerRegistration("event-456");
-    console.log("Volunteer registration tracked in Google Analytics");
+    // Esto enviará eventos a GA y un evento CompleteRegistration a Facebook Pixel
+    trackVolunteerRegistration("event_123");
   };
 
-  const handleCustomEvent = () => {
-    // Ejemplo: trackear evento personalizado
-    analytics.track("custom_event", {
-      category: "user_interaction",
-      action: "custom_action",
+  const handleCampaignView = () => {
+    // Esto enviará eventos a GA y un evento ViewContent a Facebook Pixel
+    trackCampaignView("campaign_123", "Peace Campaign");
+  };
+
+  const handleCustomFacebookEvent = () => {
+    // Solo para Facebook Pixel - evento personalizado
+    trackFacebookCustom("CustomPeaceAction", {
+      action_type: "petition_signed",
       value: 1,
     });
-    console.log("Custom event tracked in Google Analytics");
   };
 
   return (
@@ -55,17 +63,17 @@ export function ExampleComponent() {
       </button>
 
       <button
-        onClick={handlePledgeSubmit}
-        className="px-4 py-2 bg-green-500 text-white rounded"
+        onClick={handleFormSubmit}
+        className="px-4 py-2 bg-purple-500 text-white rounded"
       >
-        Track Pledge Created
+        Track Form Submit
       </button>
 
       <button
-        onClick={() => handleFormSubmit(true)}
-        className="px-4 py-2 bg-purple-500 text-white rounded"
+        onClick={() => handlePledgeCreated("pledge_123")}
+        className="px-4 py-2 bg-green-500 text-white rounded"
       >
-        Track Form Submit (Success)
+        Track Pledge Created
       </button>
 
       <button
@@ -76,10 +84,17 @@ export function ExampleComponent() {
       </button>
 
       <button
-        onClick={handleCustomEvent}
+        onClick={handleCampaignView}
+        className="px-4 py-2 bg-yellow-500 text-white rounded"
+      >
+        Track Campaign View
+      </button>
+
+      <button
+        onClick={handleCustomFacebookEvent}
         className="px-4 py-2 bg-red-500 text-white rounded"
       >
-        Track Custom Event
+        Track Custom Facebook Event
       </button>
 
       <div className="mt-4 p-3 bg-gray-100 rounded">
@@ -106,4 +121,14 @@ export function MiComponente() {
 
   return <button onClick={handleClick}>Mi Botón</button>;
 }
+*/
+
+// Eventos estándar de Facebook Pixel que ya están integrados:
+/*
+1. PageView - Se ejecuta automáticamente en trackPage()
+2. Lead - Se ejecuta en trackPledgeCreated() 
+3. CompleteRegistration - Se ejecuta en trackVolunteerRegistration()
+4. ViewContent - Se ejecuta en trackCampaignView()
+
+Para eventos personalizados, usa trackFacebookCustom()
 */

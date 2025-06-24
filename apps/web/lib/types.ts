@@ -144,6 +144,26 @@ export interface SanityCategory {
   description?: string;
 }
 
+// SEO Interface for articles
+export interface SanitySEO {
+  metaTitle?: string;
+  metaDescription?: string;
+  keywords?: string[];
+  ogImage?: {
+    asset?: {
+      url?: string;
+      metadata?: {
+        dimensions?: {
+          width?: number;
+          height?: number;
+        };
+      };
+    };
+  };
+  noIndex?: boolean;
+  canonicalUrl?: string;
+}
+
 export interface SanityArticle {
   _id: string;
   title: string;
@@ -151,6 +171,7 @@ export interface SanityArticle {
   publishedAt: string;
   image?: SanityImage;
   excerpt?: string;
+  seo?: SanitySEO; // Add SEO fields
   author?: SanityAuthor;
   categories?: SanityCategory[];
   content?: any[]; // Portable Text content
