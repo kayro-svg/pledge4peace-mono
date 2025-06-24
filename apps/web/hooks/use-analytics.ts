@@ -3,17 +3,24 @@ import {
   trackEvent,
   trackPageView,
 } from "@/components/analytics/google-analytics";
+import {
+  trackFacebookEvent,
+  trackFacebookCustomEvent,
+  trackFacebookPageView,
+} from "@/components/analytics/facebook-pixel";
 
 export const useAnalytics = () => {
   const track = useCallback(
     (eventName: string, parameters?: Record<string, unknown>) => {
       trackEvent(eventName, parameters);
+      trackFacebookEvent(eventName, parameters);
     },
     []
   );
 
   const trackPage = useCallback((url: string) => {
     trackPageView(url);
+    trackFacebookPageView();
   }, []);
 
   // Eventos comunes pre-definidos
@@ -43,6 +50,13 @@ export const useAnalytics = () => {
         pledge_id: pledgeId,
         category: category || "unknown",
       });
+      // Facebook Pixel evento estándar para Lead
+      trackFacebookEvent("Lead", {
+        content_name: "Pledge Created",
+        content_category: category || "unknown",
+        value: 1,
+        currency: "USD",
+      });
     },
     [track]
   );
@@ -50,6 +64,11 @@ export const useAnalytics = () => {
   const trackVolunteerRegistration = useCallback(
     (eventId?: string) => {
       track("volunteer_registration", {
+        event_id: eventId || "general",
+      });
+      // Facebook Pixel evento estándar para CompleteRegistration
+      trackFacebookEvent("CompleteRegistration", {
+        content_name: "Volunteer Registration",
         event_id: eventId || "general",
       });
     },
@@ -62,8 +81,22 @@ export const useAnalytics = () => {
         campaign_id: campaignId,
         campaign_name: campaignName || "unknown",
       });
+      // Facebook Pixel evento estándar para ViewContent
+      trackFacebookEvent("ViewContent", {
+        content_type: "campaign",
+        content_ids: [campaignId],
+        content_name: campaignName || "unknown",
+      });
     },
     [track]
+  );
+
+  // Funciones específicas de Facebook Pixel
+  const trackFacebookCustom = useCallback(
+    (eventName: string, parameters?: Record<string, unknown>) => {
+      trackFacebookCustomEvent(eventName, parameters);
+    },
+    []
   );
 
   return {
@@ -74,5 +107,6 @@ export const useAnalytics = () => {
     trackPledgeCreated,
     trackVolunteerRegistration,
     trackCampaignView,
+    trackFacebookCustom,
   };
 };

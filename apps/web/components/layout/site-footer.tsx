@@ -1,7 +1,9 @@
 import instagramIcon from "@/public/ig.svg";
 import linkedinIcon from "@/public/lnkdn.svg";
 import xIcon from "@/public/x.svg";
+import tiktokIcon from "@/public/tiktok_icon.svg";
 import youtubeIcon from "@/public/yt.svg";
+import facebookIcon from "@/public/facebook_icon.svg";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -83,42 +85,80 @@ export default function SiteFooter() {
           {/* Social media and mission */}
           <div className="w-full lg:w-auto lg:max-w-[300px] mt-6 lg:mt-0">
             <div className="flex space-x-4 mb-4 sm:mb-6 items-center">
-              <Link href="#" className="hover:opacity-80 transition-opacity">
-                <Image
-                  src={xIcon}
-                  alt="X"
-                  width={20}
-                  height={20}
-                  className="w-5 h-5 sm:w-6 sm:h-6"
-                />
-              </Link>
-              <Link href="#" className="hover:opacity-80 transition-opacity">
+              <Link
+                href="https://www.instagram.com/pledge4peaceorg?igsh=MWxuNXFqZzhnd2g5NA=="
+                target="_blank"
+                className="hover:opacity-80 transition-opacity"
+              >
                 <Image
                   src={instagramIcon}
                   alt="Instagram"
-                  width={22}
-                  height={22}
-                  className="w-5 h-5 sm:w-6 sm:h-6"
+                  width={26}
+                  height={26}
+                  className="w-9 h-9 md:w-8 md:h-8"
                 />
               </Link>
-              <Link href="#" className="hover:opacity-80 transition-opacity">
+              <Link
+                href="https://www.tiktok.com/@pledge4peace5?_t=ZT-8xMmpO4sL9x&_r=1"
+                target="_blank"
+                className="hover:opacity-80 transition-opacity"
+              >
+                <Image
+                  src={tiktokIcon}
+                  alt="Tiktok"
+                  width={26}
+                  height={26}
+                  className="w-9 h-9 md:w-8 md:h-8"
+                />
+              </Link>
+              <Link
+                href="https://x.com/pledge4peaceorg?s=21&t=F5cL8vzgEmm7vjgbe1oAiw"
+                target="_blank"
+                className="hover:opacity-80 transition-opacity"
+              >
+                <Image
+                  src={xIcon}
+                  alt="X"
+                  width={25}
+                  height={25}
+                  className="w-8 h-8 md:w-7 md:h-7"
+                />
+              </Link>
+              <Link
+                href="https://www.facebook.com/share/1F8FxiQ6Hh/?mibextid=wwXIfr"
+                target="_blank"
+                className="hover:opacity-80 transition-opacity"
+              >
+                <Image
+                  src={facebookIcon}
+                  alt="Facebook"
+                  width={26}
+                  height={26}
+                  className="w-8 h-8 md:w-7 md:h-7"
+                />
+              </Link>
+              <Link
+                href="https://youtube.com/@pledge4peace?si=d47VEbPcEoU_y-kL"
+                target="_blank"
+                className="hover:opacity-80 transition-opacity"
+              >
                 <Image
                   src={youtubeIcon}
                   alt="Youtube"
                   width={26}
                   height={26}
-                  className="w-6 h-6 sm:w-7 sm:h-7"
+                  className="w-9 h-9 md:w-8 md:h-8"
                 />
               </Link>
-              <Link href="#" className="hover:opacity-80 transition-opacity">
+              {/* <Link href="#" className="hover:opacity-80 transition-opacity">
                 <Image
                   src={linkedinIcon}
                   alt="Linkedin"
                   width={22}
                   height={22}
-                  className="w-5 h-5 sm:w-6 sm:h-6"
+                  className="w-8 h-8 md:w-7 md:h-7"
                 />
-              </Link>
+              </Link> */}
             </div>
             <address className="not-italic text-[#2F4858] text-sm sm:text-base">
               <p className="mb-2">

@@ -48,6 +48,68 @@ export default {
       type: 'array',
       of: [{type: 'reference', to: [{type: 'category'}]}],
     },
+    // SEO Section
+    {
+      name: 'seo',
+      title: 'SEO Settings',
+      type: 'object',
+      description: 'Search Engine Optimization settings',
+      fields: [
+        {
+          name: 'metaTitle',
+          title: 'Meta Title',
+          type: 'string',
+          description: 'Title for search engines (50-60 characters recommended)',
+          validation: (Rule: any) =>
+            Rule.max(60).warning('Keep it under 60 characters for optimal SEO'),
+        },
+        {
+          name: 'metaDescription',
+          title: 'Meta Description',
+          type: 'text',
+          rows: 3,
+          description: 'Description for search engines (150-160 characters recommended)',
+          validation: (Rule: any) =>
+            Rule.max(160).warning('Keep it under 160 characters for optimal SEO'),
+        },
+        {
+          name: 'keywords',
+          title: 'Keywords',
+          type: 'array',
+          of: [{type: 'string'}],
+          description: 'Keywords for SEO (add relevant keywords)',
+          options: {
+            layout: 'tags',
+          },
+        },
+        {
+          name: 'ogImage',
+          title: 'Open Graph Image',
+          type: 'image',
+          description: 'Image for social media sharing (1200x630px recommended)',
+          options: {
+            hotspot: true,
+          },
+        },
+        {
+          name: 'noIndex',
+          title: 'No Index',
+          type: 'boolean',
+          description: 'Check this to prevent search engines from indexing this article',
+          initialValue: false,
+        },
+        {
+          name: 'canonicalUrl',
+          title: 'Canonical URL',
+          type: 'url',
+          description: 'If this article was originally published elsewhere, add the original URL',
+        },
+      ],
+      options: {
+        collapsible: true,
+        collapsed: true,
+      },
+    },
     {
       name: 'content',
       title: 'Article Content',
