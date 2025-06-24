@@ -34,6 +34,7 @@ const handler = NextAuth({
             name: data.user.name,
             emailVerified: data.user.emailVerified,
             role: data.user.role,
+            createdAt: data.user.createdAt,
             accessToken: data.token,
           };
         } catch (error) {
@@ -55,6 +56,7 @@ const handler = NextAuth({
         token.userEmail = user.email as string;
         token.userName = user.name as string;
         token.userRole = (user.role as "user" | "superAdmin") || "user";
+        token.createdAt = user.createdAt as Date;
       }
       return token;
     },
@@ -67,6 +69,7 @@ const handler = NextAuth({
         session.user.emailVerified = token.emailVerified as boolean | null;
         session.user.role = (token.userRole as "user" | "superAdmin") || "user";
         session.user.accessToken = token.accessToken as string;
+        session.user.createdAt = token.createdAt as Date;
       }
 
       // También agregar el token a la raíz de la sesión para compatibilidad

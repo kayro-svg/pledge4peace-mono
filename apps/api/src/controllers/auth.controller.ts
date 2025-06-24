@@ -8,6 +8,11 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   name: z.string().min(2),
+  userType: z.string().min(1),
+  office: z.string().optional(),
+  organization: z.string().optional(),
+  institution: z.string().optional(),
+  otherRole: z.string().optional(),
 });
 
 // Validation for login
@@ -63,32 +68,66 @@ export class AuthController {
 
       const result = await authService.register(validation.data, baseUrl);
 
-      // Si el registro fue exitoso, agregar usuario a Brevo Subscribers
+      // Si el registro fue exitoso, agregar usuario a Brevo Subscribers y lista específica por tipo
       if (result && result.user) {
         try {
           // Preparar datos del contacto para Brevo
           const [firstName, ...lastNameParts] = validation.data.name.split(" ");
           const lastName = lastNameParts.join(" ");
 
-          await brevoListsService.addToSubscribersList({
-            email: validation.data.email,
-            attributes: {
-              FIRSTNAME: firstName || "",
-              LASTNAME: lastName || "",
-              EXT_ID: result.user?.id || "", // ID del usuario en nuestra DB
+          // Agregar información específica del tipo de usuario a los atributos
+          const userAttributes: any = {
+            FIRSTNAME: firstName || "",
+            LASTNAME: lastName || "",
+            EXT_ID: result.user?.id || "", // ID del usuario en nuestra DB
+            USER_TYPE: validation.data.userType,
+          };
+
+          // Agregar atributos específicos según el tipo de usuario
+          if (
+            validation.data.userType === "politician" &&
+            validation.data.office
+          ) {
+            userAttributes.OFFICE_POSITION = validation.data.office;
+          }
+          if (
+            validation.data.userType === "organization" &&
+            validation.data.organization
+          ) {
+            userAttributes.ORGANIZATION_NAME = validation.data.organization;
+          }
+          if (
+            validation.data.userType === "student" &&
+            validation.data.institution
+          ) {
+            userAttributes.INSTITUTION = validation.data.institution;
+          }
+          if (
+            validation.data.userType === "other" &&
+            validation.data.otherRole
+          ) {
+            userAttributes.OTHER_ROLE = validation.data.otherRole;
+          }
+
+          // Agregar a la lista de subscribers Y a la lista específica del tipo de usuario
+          await brevoListsService.addToSubscribersAndUserTypeList(
+            {
+              email: validation.data.email,
+              attributes: userAttributes,
             },
-          });
+            validation.data.userType
+          );
 
           logger.log(
-            "✅ User added to Brevo Subscribers list:",
-            validation.data.email
+            "✅ User added to Brevo Subscribers and user type specific list:",
+            {
+              email: validation.data.email,
+              userType: validation.data.userType,
+            }
           );
         } catch (brevoError) {
           // No fallar el registro si Brevo falla, solo loggear el error
-          logger.error(
-            "⚠️ Failed to add user to Brevo Subscribers:",
-            brevoError
-          );
+          logger.error("⚠️ Failed to add user to Brevo lists:", brevoError);
         }
 
         // Enviar notificación al admin sobre el nuevo registro

@@ -7,11 +7,19 @@ import { FormField } from "./form-field";
 import { PasswordInput } from "./password-input";
 import { OrDivider } from "./or-divider";
 import { SocialButton } from "./social-button";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { toast } from "sonner";
 import { register as registerUser } from "@/lib/api/register";
 import { useRouter } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
+import { Label } from "../ui/label";
 
 interface RegisterFormData {
   name: string;
@@ -19,6 +27,11 @@ interface RegisterFormData {
   password: string;
   confirmPassword: string;
   agreeTerms: boolean;
+  userType: string;
+  office?: string;
+  organization?: string;
+  institution?: string;
+  otherRole?: string;
 }
 
 interface RegisterFormProps {
@@ -33,6 +46,18 @@ export default function RegisterForm({
   const form = useForm<RegisterFormData>();
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const [userType, setUserType] = useState("");
+  const userTypeRef = useRef<HTMLButtonElement>(null);
+
+  // Handle form errors and focus
+  useEffect(() => {
+    if (form.formState.errors.userType) {
+      toast.error("Please select your user type");
+      if (userTypeRef.current) {
+        userTypeRef.current.focus();
+      }
+    }
+  }, [form.formState.errors.userType]);
 
   const onSubmit = async (data: RegisterFormData) => {
     try {
@@ -41,6 +66,8 @@ export default function RegisterForm({
         return;
       }
 
+      // Clear any existing errors - handled by react-hook-form
+
       setIsLoading(true);
 
       // Register the user usando la función reutilizable
@@ -48,6 +75,11 @@ export default function RegisterForm({
         name: data.name,
         email: data.email,
         password: data.password,
+        userType: data.userType,
+        office: data.office,
+        organization: data.organization,
+        institution: data.institution,
+        otherRole: data.otherRole,
       });
 
       const registerData = await registerResponse.json();
@@ -84,7 +116,7 @@ export default function RegisterForm({
   };
 
   return (
-    <div className={`w-full ${isModal ? "mt-0" : "mt-14"}`}>
+    <div className="w-full">
       <h1 className="text-3xl font-semibold tracking-tight text-gray-900 mb-1 text-center">
         Create Account
       </h1>
@@ -103,24 +135,110 @@ export default function RegisterForm({
       </p>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          id="name"
-          label="Full Name"
-          placeholder="Enter your full name"
-          {...form.register("name", { required: true })}
-          required
-        />
+        <div className="flex flex-col md:flex-row gap-6 justify-between w-full">
+          <FormField
+            id="name"
+            label="Full Name"
+            placeholder="Enter your full name"
+            {...form.register("name", { required: true })}
+            required
+            className="w-full flex-1  mr-8"
+          />
 
-        <FormField
-          id="email"
-          label="Email"
-          type="email"
-          placeholder="Enter your email"
-          {...form.register("email", { required: true })}
-          // fieldName="email"
-          required
-          autoComplete="email"
-        />
+          <FormField
+            id="email"
+            label="Email"
+            type="email"
+            placeholder="Enter your email"
+            {...form.register("email", { required: true })}
+            required
+            autoComplete="email"
+            className="w-full flex-1 mr-8"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label
+            htmlFor="userType"
+            className="block text-sm font-medium text-gray-700"
+          >
+            I am a:
+          </Label>
+          <Select
+            value={userType}
+            onValueChange={(value) => {
+              setUserType(value);
+              form.setValue("userType", value);
+              // Clear react-hook-form errors for this field
+              form.clearErrors("userType");
+            }}
+          >
+            <SelectTrigger
+              ref={userTypeRef}
+              className={`${form.formState.errors.userType ? "border-red-500 ring-red-500" : ""}`}
+            >
+              <SelectValue placeholder="Select your role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="citizen">Citizen/Advocate</SelectItem>
+              <SelectItem value="politician">
+                Politician/Elected Official
+              </SelectItem>
+              <SelectItem value="organization">
+                Organization Representative
+              </SelectItem>
+              <SelectItem value="student">Student</SelectItem>
+              <SelectItem value="other">Other (please specify)</SelectItem>
+            </SelectContent>
+          </Select>
+          <input
+            type="hidden"
+            {...form.register("userType", {
+              required: "Please select your user type",
+            })}
+          />
+          {form.formState.errors.userType && (
+            <p className="text-red-500 text-sm mt-1">
+              {form.formState.errors.userType?.message ||
+                "Please select your user type"}
+            </p>
+          )}
+        </div>
+
+        {userType === "politician" && (
+          <FormField
+            id="office"
+            label="Office/Position"
+            placeholder="e.g., Mayor, City Council, State Representative"
+            {...form.register("office")}
+          />
+        )}
+
+        {userType === "organization" && (
+          <FormField
+            id="organization"
+            label="Organization Name"
+            placeholder="e.g., Red Cross, Amnesty International, Local NGO"
+            {...form.register("organization")}
+          />
+        )}
+
+        {userType === "student" && (
+          <FormField
+            id="institution"
+            label="Educational Institution"
+            placeholder="e.g., Harvard University, Local High School"
+            {...form.register("institution")}
+          />
+        )}
+
+        {userType === "other" && (
+          <FormField
+            id="otherRole"
+            label="Please specify your role"
+            placeholder="Describe your role or profession"
+            {...form.register("otherRole")}
+          />
+        )}
 
         <PasswordInput
           id="password"

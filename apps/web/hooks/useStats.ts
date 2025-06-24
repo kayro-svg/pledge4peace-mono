@@ -42,7 +42,7 @@ export function useStats() {
 
       const data = await response.json();
       if (data.success) {
-        logger.log("[Stats] Successfully fetched statistics:", data.data);
+        // logger.log("[Stats] Successfully fetched statistics:", data.data);
         setStats(data.data);
         setError(null);
       } else {

@@ -69,6 +69,12 @@ app.use("*", async (c, next) => {
     subscribersListId: 25, // P4P - Subscribers #25
     conferenceAttendeesListId: 23, // P4P - Conference Attendees #23
     volunteersListId: 21, // P4P - Volunteers #21
+    // User type specific lists
+    citizensListId: 61, // P4P - citizens/Advocates #61
+    politiciansListId: 60, // P4P - Politicians #60
+    organizationsListId: 62, // P4P - Organizations #62
+    studentsListId: 63, // P4P - Students #63
+    othersListId: 64, // P4P - Others #64
   });
   c.set("brevoListsService", brevoListsService);
 

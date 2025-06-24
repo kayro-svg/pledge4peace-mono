@@ -84,23 +84,23 @@ export function cleanTimezone(timezone?: string | null): ValidTimezone {
  * Función auxiliar para debuggear timezones corruptos
  * @param timezone - El timezone a debuggear
  */
-export function debugTimezone(timezone: string, context = "Unknown") {
-  logger.log(`🐛 [${context}] Timezone debug:`, {
-    value: timezone,
-    length: timezone.length,
-    charCodes: Array.from(timezone).map((char) => char.charCodeAt(0)),
-    hasInvisibleChars:
-      /[\u200B-\u200D\uFEFF\u2060\u180E\u00AD\u0000-\u001F\u007F-\u009F\u2000-\u206F\uE000-\uF8FF\uFFF0-\uFFFF]/.test(
-        timezone
-      ),
-    invisibleCharCount:
-      timezone.length -
-      timezone.replace(
-        /[\u200B-\u200D\uFEFF\u2060\u180E\u00AD\u0000-\u001F\u007F-\u009F\u2000-\u206F\uE000-\uF8FF\uFFF0-\uFFFF]/g,
-        ""
-      ).length,
-  });
-}
+// export function debugTimezone(timezone: string, context = "Unknown") {
+//   logger.log(`🐛 [${context}] Timezone debug:`, {
+//     value: timezone,
+//     length: timezone.length,
+//     charCodes: Array.from(timezone).map((char) => char.charCodeAt(0)),
+//     hasInvisibleChars:
+//       /[\u200B-\u200D\uFEFF\u2060\u180E\u00AD\u0000-\u001F\u007F-\u009F\u2000-\u206F\uE000-\uF8FF\uFFF0-\uFFFF]/.test(
+//         timezone
+//       ),
+//     invisibleCharCount:
+//       timezone.length -
+//       timezone.replace(
+//         /[\u200B-\u200D\uFEFF\u2060\u180E\u00AD\u0000-\u001F\u007F-\u009F\u2000-\u206F\uE000-\uF8FF\uFFF0-\uFFFF]/g,
+//         ""
+//       ).length,
+//   });
+// }
 
 /**
  * Hook para limpiar automáticamente objetos de evento

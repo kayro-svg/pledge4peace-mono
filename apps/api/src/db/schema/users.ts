@@ -12,6 +12,13 @@ export const users = sqliteTable("users", {
   role: text("role", { enum: ["user", "superAdmin"] })
     .notNull()
     .default("user"),
+  userType: text("user_type", {
+    enum: ["citizen", "politician", "organization", "student", "other"],
+  }).default("citizen"),
+  office: text("office"),
+  organization: text("organization"),
+  institution: text("institution"),
+  otherRole: text("other_role"),
   emailVerified: integer("email_verified").notNull().default(0),
   verificationToken: text("verification_token"),
   verificationTokenExpiresAt: integer("verification_token_expires_at", {
