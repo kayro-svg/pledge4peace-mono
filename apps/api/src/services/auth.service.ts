@@ -16,6 +16,11 @@ export interface RegisterUserDTO {
   email: string;
   password: string;
   name: string;
+  userType: string;
+  office?: string;
+  organization?: string;
+  institution?: string;
+  otherRole?: string;
 }
 
 export interface LoginDTO {
@@ -73,6 +78,16 @@ export class AuthService {
         email: emailNormalized,
         name: data.name.trim(),
         password: hashedPassword,
+        userType: data.userType as
+          | "citizen"
+          | "politician"
+          | "organization"
+          | "student"
+          | "other",
+        office: data.office || null,
+        organization: data.organization || null,
+        institution: data.institution || null,
+        otherRole: data.otherRole || null,
         createdAt: now,
         updatedAt: now,
         emailVerified: 0,
@@ -141,6 +156,7 @@ export class AuthService {
         name: user.name,
         emailVerified: user.emailVerified === 1,
         role: user.role || "user",
+        createdAt: user.createdAt,
       },
       token,
     };

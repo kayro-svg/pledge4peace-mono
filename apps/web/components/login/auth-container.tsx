@@ -3,6 +3,7 @@
 import { useState } from "react";
 import LoginForm from "./login-form";
 import RegisterForm from "./register-form";
+import { LogoHeader } from "./logo-header";
 
 interface AuthContainerProps {
   onLoginSuccess?: () => void;
@@ -26,7 +27,8 @@ export default function AuthContainer({
   };
 
   return (
-    <div className="w-full max-w-md">
+    <div className="w-full max-w-lg items-center justify-center pl-0 md:pl-[20px]">
+      <LogoHeader />
       {isLoginView ? (
         <LoginForm
           onSwitchToRegister={handleSwitchToRegister}

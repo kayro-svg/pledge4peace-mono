@@ -22,6 +22,12 @@ export interface BrevoListsConfig {
   subscribersListId: number;
   conferenceAttendeesListId: number;
   volunteersListId: number;
+  // User type specific lists
+  citizensListId: number;
+  politiciansListId: number;
+  organizationsListId: number;
+  studentsListId: number;
+  othersListId: number;
 }
 
 export class BrevoListsService {
@@ -29,6 +35,12 @@ export class BrevoListsService {
   private subscribersListId: number;
   private conferenceAttendeesListId: number;
   private volunteersListId: number;
+  // User type specific lists
+  private citizensListId: number;
+  private politiciansListId: number;
+  private organizationsListId: number;
+  private studentsListId: number;
+  private othersListId: number;
   private baseUrl = "https://api.brevo.com/v3";
 
   constructor(config: BrevoListsConfig) {
@@ -36,6 +48,12 @@ export class BrevoListsService {
     this.subscribersListId = config.subscribersListId;
     this.conferenceAttendeesListId = config.conferenceAttendeesListId;
     this.volunteersListId = config.volunteersListId;
+    // User type specific lists
+    this.citizensListId = config.citizensListId;
+    this.politiciansListId = config.politiciansListId;
+    this.organizationsListId = config.organizationsListId;
+    this.studentsListId = config.studentsListId;
+    this.othersListId = config.othersListId;
   }
 
   /**
@@ -88,6 +106,95 @@ export class BrevoListsService {
     };
 
     return this.createOrUpdateContact(payload);
+  }
+
+  /**
+   * Agrega un contacto a la lista de subscribers y a la lista específica según el tipo de usuario
+   */
+  async addToSubscribersAndUserTypeList(
+    contact: BrevoContact,
+    userType: string
+  ): Promise<any> {
+    const userTypeListId = this.getUserTypeListId(userType);
+    const userTypeListName = this.getUserTypeListName(userType);
+
+    const payload = {
+      ...contact,
+      listIds: [this.subscribersListId, userTypeListId],
+      updateEnabled: true,
+    };
+
+    logger.log(
+      `📧 Adding contact to Subscribers list and ${userTypeListName} list:`,
+      {
+        email: contact.email,
+        userType,
+        listIds: payload.listIds,
+      }
+    );
+
+    return this.createOrUpdateContact(payload);
+  }
+
+  /**
+   * Agrega un contacto solo a la lista específica según el tipo de usuario
+   */
+  async addToUserTypeList(
+    contact: BrevoContact,
+    userType: string
+  ): Promise<any> {
+    const userTypeListId = this.getUserTypeListId(userType);
+
+    const payload = {
+      ...contact,
+      listIds: [userTypeListId],
+      updateEnabled: true,
+    };
+
+    return this.createOrUpdateContact(payload);
+  }
+
+  /**
+   * Obtiene el ID de la lista específica según el tipo de usuario
+   */
+  private getUserTypeListId(userType: string): number {
+    switch (userType) {
+      case "citizen":
+        return this.citizensListId;
+      case "politician":
+        return this.politiciansListId;
+      case "organization":
+        return this.organizationsListId;
+      case "student":
+        return this.studentsListId;
+      case "other":
+        return this.othersListId;
+      default:
+        logger.error(
+          `Unknown user type: ${userType}, defaulting to citizens list`
+        );
+        return this.citizensListId;
+    }
+  }
+
+  /**
+   * Obtiene el nombre de la lista según el tipo de usuario (para logging)
+   */
+  public getUserTypeListName(userType: string): string {
+    switch (userType) {
+      case "citizen":
+        return "P4P - citizens/Advocates";
+      case "politician":
+        return "P4P - Politicians";
+      case "organization":
+        return "P4P - Organizations";
+      case "student":
+        return "P4P - Students";
+      case "other":
+        return "P4P - Others";
+      default:
+        return "P4P - citizens/Advocates (default)";
+    }
   }
 
   /**

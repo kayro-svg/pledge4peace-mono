@@ -4,6 +4,11 @@ interface RegisterFormData {
   name: string;
   email: string;
   password: string;
+  userType: string;
+  office?: string;
+  organization?: string;
+  institution?: string;
+  otherRole?: string;
 }
 
 export async function register(data: RegisterFormData) {

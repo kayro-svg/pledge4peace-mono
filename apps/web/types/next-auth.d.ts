@@ -8,6 +8,7 @@ declare module "next-auth" {
     emailVerified: boolean | Date | null;
     accessToken: string;
     role: "user" | "superAdmin";
+    createdAt: Date;
   }
 
   interface Session {
@@ -24,5 +25,6 @@ declare module "next-auth/jwt" {
     userEmail: string;
     userName: string;
     userRole: "user" | "superAdmin";
+    createdAt: Date;
   }
 }

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, Clock, MapPin } from "lucide-react";
 import { logger } from "@/lib/utils/logger";
 
-import { cleanTimezone, debugTimezone } from "@/lib/utils/clean-timezone";
+import { cleanTimezone } from "@/lib/utils/clean-timezone";
 
 interface ExtendedEventCardProps {
   id: string;
@@ -32,17 +32,17 @@ export default function ExtendedEventCard({
   const cleanedTimezone = cleanTimezone(timezone);
 
   // Debug del timezone original si está corrupto
-  if (timezone && timezone.length > 50) {
-    debugTimezone(timezone, "extended-event-card.tsx");
-  }
+  // if (timezone && timezone.length > 50) {
+  //   debugTimezone(timezone, "extended-event-card.tsx");
+  // }
 
   // Debug logging
-  logger.log("ExtendedEventCard data:", {
-    title,
-    startDateTime,
-    endDateTime,
-    timezone,
-  });
+  // logger.log("ExtendedEventCard data:", {
+  //   title,
+  //   startDateTime,
+  //   endDateTime,
+  //   timezone,
+  // });
 
   // Parse datetime - treat Sanity format as local time in event timezone
   const parseEventDateTime = (dateTimeString: string) => {
@@ -90,21 +90,21 @@ export default function ExtendedEventCard({
     : null;
 
   // Debug logging para timezone
-  if (timezone) {
-    logger.log("🐛 Timezone debugging:", {
-      original: timezone,
-      length: timezone.length,
-      charCodes: Array.from(timezone).map((c) => c.charCodeAt(0)),
-      hasInvisibleChars: /[\u200B-\u200D\uFEFF]/.test(timezone),
-    });
-  }
+  // if (timezone) {
+  //   logger.log("🐛 Timezone debugging:", {
+  //     original: timezone,
+  //     length: timezone.length,
+  //     charCodes: Array.from(timezone).map((c) => c.charCodeAt(0)),
+  //     hasInvisibleChars: /[\u200B-\u200D\uFEFF]/.test(timezone),
+  //   });
+  // }
 
-  logger.log("Date parsing result:", {
-    isValidDateTime,
-    originalString: startDateTime,
-    parsedDateTime,
-    timezone,
-  });
+  // logger.log("Date parsing result:", {
+  //   isValidDateTime,
+  //   originalString: startDateTime,
+  //   parsedDateTime,
+  //   timezone,
+  // });
 
   // Format the parsed datetime for display
   const formatEventDateTime = () => {

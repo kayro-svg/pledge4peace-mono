@@ -67,7 +67,7 @@ export default function LoginForm({
   };
 
   return (
-    <div className="w-full flex flex-col justify-center">
+    <div className="w-full flex flex-col justify-center mt-0 md:mt-14">
       <h1 className="text-3xl font-semibold tracking-tight text-gray-900 mb-1 text-center">
         Welcome
       </h1>
