@@ -43,14 +43,14 @@ export default function WaysToSupportSection({
       linkHref: "/#projects-section",
       type: "make-a-pledge",
     },
-    {
-      icon: <HandCoins className="w-7 h-7 text-[#86AC9D]" />,
-      title: "Donate",
-      description:
-        "Support our operations with a one-time or recurring donation. Every contribution helps us expand our impact.",
-      linkText: "Donate Now",
-      linkHref: "/donate",
-    },
+    // {
+    //   icon: <HandCoins className="w-7 h-7 text-[#86AC9D]" />,
+    //   title: "Donate",
+    //   description:
+    //     "Support our operations with a one-time or recurring donation. Every contribution helps us expand our impact.",
+    //   linkText: "Donate Now",
+    //   linkHref: "/donate",
+    // },
     {
       icon: <Users className="w-7 h-7 text-[#86AC9D]" />,
       title: "Volunteer",
@@ -73,22 +73,22 @@ export default function WaysToSupportSection({
       },
       type: "share",
     },
-    {
-      icon: <BriefcaseBusiness className="w-7 h-7 text-[#86AC9D]" />,
-      title: "Corporate Partnership",
-      description:
-        "Align your organization with our mission. We offer various partnership opportunities for businesses.",
-      linkText: "Become a Partner",
-      linkHref: "/partner",
-    },
-    {
-      icon: <CalendarCheck2 className="w-7 h-7 text-[#86AC9D]" />,
-      title: "Monthly Giving Program",
-      description:
-        "Join our Peace Sustainers program with a monthly donation. Provide consistent support for our ongoing initiatives.",
-      linkText: "Become a Sustainer",
-      linkHref: "/monthly-giving",
-    },
+    // {
+    //   icon: <BriefcaseBusiness className="w-7 h-7 text-[#86AC9D]" />,
+    //   title: "Corporate Partnership",
+    //   description:
+    //     "Align your organization with our mission. We offer various partnership opportunities for businesses.",
+    //   linkText: "Become a Partner",
+    //   linkHref: "/partner",
+    // },
+    // {
+    //   icon: <CalendarCheck2 className="w-7 h-7 text-[#86AC9D]" />,
+    //   title: "Monthly Giving Program",
+    //   description:
+    //     "Join our Peace Sustainers program with a monthly donation. Provide consistent support for our ongoing initiatives.",
+    //   linkText: "Become a Sustainer",
+    //   linkHref: "/monthly-giving",
+    // },
   ];
 
   const DEFAULT_SECTION_DATA = {
