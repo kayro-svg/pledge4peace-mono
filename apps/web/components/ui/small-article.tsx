@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { SanitySlug } from "@/lib/types";
+import { useRouter } from "next/navigation";
 
 interface SmallArticleProps {
   image: string;
@@ -18,6 +19,7 @@ export default function SmallArticle({
   date,
   slug,
 }: SmallArticleProps) {
+  const router = useRouter();
   const formattedDate = new Date(date).toLocaleDateString("en-US", {
     month: "long",
     day: "numeric",
@@ -26,7 +28,10 @@ export default function SmallArticle({
 
   return (
     <div className="flex flex-col md:flex-row rounded-2xl overflow-hidden bg-white shadow-card hover:shadow-soft transition-all duration-300 hover:-translate-y-1 group">
-      <div className="relative w-[100%] h-[200px] md:w-1/3 md:h-[100%] overflow-hidden">
+      <div
+        className="relative w-[100%] h-[200px] md:w-1/3 md:h-[100%] overflow-hidden cursor-pointer"
+        onClick={() => router.push(slug as string)}
+      >
         <Image
           src={image || "/placeholder.svg"}
           alt={title}
@@ -38,7 +43,10 @@ export default function SmallArticle({
       <div className="w-full md:w-2/3 gap-4 p-5 flex flex-col justify-between">
         <div className="flex flex-col justify-between gap-2">
           <div className="flex flex-col justify-start gap-0 items-start">
-            <h4 className="text-lg font-bold group-hover:text-brand-500 transition-colors text-[#2F4858]">
+            <h4
+              className="text-lg font-bold group-hover:text-brand-500 transition-colors text-[#2F4858] cursor-pointer"
+              onClick={() => router.push(slug as string)}
+            >
               {title}
             </h4>
             <p className="text-sm text-[#2F4858] line-clamp-3">

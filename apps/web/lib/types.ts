@@ -87,6 +87,7 @@ export interface SanityParty {
   description: string;
   icon: SanityImage;
   color: "blue" | "green" | "red" | "purple" | "orange" | "teal" | "gray";
+  solutionLimit: number;
 }
 
 export interface SanitySolutionsSection {

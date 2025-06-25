@@ -20,6 +20,8 @@ const createSolutionSchema = z.object({
   description: z.string().min(1),
   partyId: z.string().min(1), // Cambió de enum fijo a string genérico
   metadata: z.record(z.any()).optional(),
+  // New: Party limits information from CMS
+  partyLimits: z.record(z.number()).optional(),
 });
 
 export class SolutionsController {

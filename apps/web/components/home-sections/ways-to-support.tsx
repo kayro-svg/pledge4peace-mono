@@ -1,7 +1,14 @@
 import { ReactNode } from "react";
 import { SupportCard } from "../ui/support-card";
 import { SanityIcon } from "../ui/sanity-icon";
-import { Users, CircleFadingPlus, Handshake } from "lucide-react";
+import {
+  Users,
+  CircleFadingPlus,
+  Handshake,
+  BriefcaseBusiness,
+  CalendarCheck2,
+  HandCoins,
+} from "lucide-react";
 import { SanityWaysToSupportSection } from "@/lib/types";
 
 export interface ShareData {

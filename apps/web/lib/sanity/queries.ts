@@ -252,7 +252,8 @@ export async function getCampaigns(): Promise<SanityCampaign[]> {
         slug,
         description,
         icon { asset-> { url } },
-        color
+        color,
+        solutionLimit
       }
     }`,
     {},
@@ -295,7 +296,8 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
           slug,
           description,
           icon { asset-> { url } },
-          color
+          color,
+          solutionLimit
         },
         solutionsSection {
           heading,

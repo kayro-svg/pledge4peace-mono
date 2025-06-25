@@ -69,7 +69,10 @@ export default function CampaignCard({
   if (variant === "horizontal") {
     return (
       <Card className="overflow-hidden rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md flex flex-col md:flex-row">
-        <div className="relative h-48 md:h-auto w-full md:w-[40%]">
+        <div
+          className="relative h-48 md:h-auto w-full md:w-[40%] cursor-pointer"
+          onClick={navigateToCampaign}
+        >
           <Image
             src={featuredImage || "/placeholder.svg"}
             alt={title}
@@ -89,7 +92,10 @@ export default function CampaignCard({
               {progress}%
             </span>
           </div>
-          <h3 className="mb-1 line-clamp-1 text-sm sm:text-base font-semibold">
+          <h3
+            className="mb-1 line-clamp-1 text-sm sm:text-base font-semibold cursor-pointer"
+            onClick={navigateToCampaign}
+          >
             {title}
           </h3>
           <p className="mb-2 sm:mb-3 line-clamp-2 text-xs text-slate-500">
@@ -123,7 +129,10 @@ export default function CampaignCard({
         className="overflow-hidden rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md h-full"
         onMouseEnter={handleMouseEnter}
       >
-        <div className="aspect-[4/3] w-full overflow-hidden">
+        <div
+          className="aspect-[4/3] w-full overflow-hidden cursor-pointer"
+          onClick={navigateToCampaign}
+        >
           <Image
             src={featuredImage || "/placeholder.svg"}
             alt={title}
@@ -144,7 +153,10 @@ export default function CampaignCard({
               {progress}%
             </span>
           </div>
-          <CardTitle className="line-clamp-1 text-xs sm:text-sm mt-1">
+          <CardTitle
+            className="line-clamp-1 text-xs sm:text-sm mt-1 cursor-pointer"
+            onClick={navigateToCampaign}
+          >
             {title}
           </CardTitle>
         </CardHeader>
@@ -171,7 +183,10 @@ export default function CampaignCard({
   if (variant === "horizontal-large") {
     return (
       <Card className="overflow-hidden max-w-7xl rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md flex flex-col md:flex-row">
-        <div className="aspect-video w-full md:w-[50%] overflow-hidden">
+        <div
+          className="aspect-video w-full md:w-[50%] overflow-hidden cursor-pointer"
+          onClick={navigateToCampaign}
+        >
           <Image
             src={featuredImage || "/placeholder.svg"}
             alt={title}
@@ -193,7 +208,10 @@ export default function CampaignCard({
             </span>
           </div>
           <CardHeader className="p-2 sm:p-4 pb-4 sm:pb-6 md:pb-8">
-            <CardTitle className="text-xl sm:text-xl md:text-2xl font-bold">
+            <CardTitle
+              className="text-xl sm:text-xl md:text-2xl font-bold cursor-pointer"
+              onClick={navigateToCampaign}
+            >
               {title}
             </CardTitle>
             <CardDescription className="text-base">
@@ -231,7 +249,10 @@ export default function CampaignCard({
       className="flex-1 overflow-hidden max-w-xl rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md"
       onMouseEnter={handleMouseEnter}
     >
-      <div className="aspect-video w-full overflow-hidden">
+      <div
+        className="aspect-video w-full overflow-hidden cursor-pointer"
+        onClick={navigateToCampaign}
+      >
         <Image
           src={featuredImage || "/placeholder.svg"}
           alt={title}
@@ -252,7 +273,10 @@ export default function CampaignCard({
             {progress}%
           </span>
         </div>
-        <CardTitle className="line-clamp-2 text-lg sm:text-xl md:text-2xl mt-2">
+        <CardTitle
+          className="line-clamp-2 text-lg sm:text-xl md:text-2xl mt-2 cursor-pointer"
+          onClick={navigateToCampaign}
+        >
           {title}
         </CardTitle>
         <CardDescription className="line-clamp-2 text-xs sm:text-sm md:text-md mt-1">
