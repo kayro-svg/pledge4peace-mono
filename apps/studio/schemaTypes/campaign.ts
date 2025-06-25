@@ -132,9 +132,9 @@ export default {
       title: 'Campaign Parties/Sides',
       type: 'array',
       group: 'solutions',
-      description: 'Define exactly two parties/sides that can propose solutions for this campaign.',
-      validation: (Rule: any) =>
-        Rule.required().length(2).error('You must define exactly 2 parties'),
+      description:
+        'Define the parties/sides that can propose solutions for this campaign. You can add multiple parties with custom solution limits.',
+      validation: (Rule: any) => Rule.required().min(2).error('You must define at least 2 parties'),
       of: [
         {
           type: 'object',
@@ -193,6 +193,14 @@ export default {
                 ],
               },
               initialValue: 'blue',
+            },
+            {
+              name: 'solutionLimit',
+              title: 'Solution Limit',
+              type: 'number',
+              description: 'Maximum number of solutions this party can have (e.g., 5, 10, 15)',
+              validation: (Rule: any) => Rule.required().positive().integer().min(1).max(50),
+              initialValue: 5,
             },
           ],
           preview: {

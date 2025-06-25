@@ -8,9 +8,6 @@ export default function RecentProjects({
   data: SanityCampaignsSection;
   campaigns: Campaign[];
 }) {
-  // Get campaigns from the API
-  // const campaigns = await getCampaigns();
-
   const DEFAULT_SECTION_DATA = {
     campaignsHeading: "Recent Campaigns",
     campaignsDescription:

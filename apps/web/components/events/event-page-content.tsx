@@ -19,7 +19,7 @@ import { PortableText } from "@portabletext/react";
 import { portableTextComponents } from "@/components/ui/portable-text-components";
 import { useRouter } from "next/navigation";
 import { logger } from "@/lib/utils/logger";
-import { cleanTimezone, debugTimezone } from "@/lib/utils/clean-timezone";
+import { cleanTimezone } from "@/lib/utils/clean-timezone";
 
 // Helper function to format conference time with timezone - FIXED VERSION
 const formatConferenceDateTime = (event: SanityConference) => {
@@ -36,9 +36,9 @@ const formatConferenceDateTime = (event: SanityConference) => {
   const cleanedTimezone = cleanTimezone(event.timezone);
 
   // Debug del timezone original si está corrupto
-  if (event.timezone && event.timezone.length > 50) {
-    debugTimezone(event.timezone, "event-page-content.tsx");
-  }
+  // if (event.timezone && event.timezone.length > 50) {
+  //   debugTimezone(event.timezone, "event-page-content.tsx");
+  // }
 
   // Parse the UTC datetime string
   const startDateTime = new Date(event.startDateTime);
@@ -139,7 +139,7 @@ export default function EventPageContent({
   }, [event._id, session]);
 
   return (
-    <section className="min-h-screen bg-gray-50">
+    <section className="min-h-screen pb-10">
       {/* Header with Image */}
       <div className="relative w-full h-[300px] bg-gray-900">
         {event.image?.asset?.url && (

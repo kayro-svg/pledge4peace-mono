@@ -11,6 +11,8 @@ export interface CreateSolutionDTO {
   description: string;
   partyId: string; // Cambió de enum fijo a string genérico
   metadata?: Record<string, any>;
+  // New: Party limits information from CMS
+  partyLimits?: Record<string, number>;
 }
 
 export interface SolutionStats {
@@ -35,30 +37,15 @@ export class SolutionsService {
   constructor(private db: DbClient) {}
 
   async createSolution(data: CreateSolutionDTO) {
-    // TODO: Validar que el partyId esté dentro de los partidos permitidos para la campaña
-    // Esta validación se implementaría consultando los partidos de la campaña desde Sanity
-    // Por ahora, aceptamos cualquier string como partyId para compatibilidad
-
-    // Check if the campaign has reached the solution limit (10 solutions max total)
-    const campaignSolutionCount = await this.db
-      .select()
-      .from(solutions)
-      .where(
-        and(
-          eq(solutions.campaignId, data.campaignId),
-          eq(solutions.status, "published") // Only count published solutions
-        )
-      )
-      .then((rows) => rows.length);
-
-    if (campaignSolutionCount >= 10) {
-      throw new Error(
-        "This campaign has reached the maximum limit of 10 solutions"
-      );
+    // Validate that partyId is within allowed parties for the campaign
+    if (data.partyLimits && !data.partyLimits[data.partyId]) {
+      throw new Error(`Invalid party ID "${data.partyId}" for this campaign`);
     }
 
-    // Check equitable distribution: max 5 solutions per party
-    const partyMaxLimit = Math.floor(10 / 2); // 5 solutions per party
+    // Get the maximum limit for this specific party
+    const partyMaxLimit = data.partyLimits?.[data.partyId] || 5; // Default to 5 if no limits provided (backward compatibility)
+
+    // Check party-specific solution limit
     const partySolutionCount = await this.db
       .select()
       .from(solutions)
@@ -72,9 +59,31 @@ export class SolutionsService {
       .then((rows) => rows.length);
 
     if (partySolutionCount >= partyMaxLimit) {
-      const partyLabel = data.partyId === "israeli" ? "Israeli" : "Palestinian";
       throw new Error(
-        `Maximum limit of ${partyMaxLimit} solutions for ${partyLabel} perspective has been reached. Please try the other perspective.`
+        `Maximum limit of ${partyMaxLimit} solutions for this party has been reached. Please try another party.`
+      );
+    }
+
+    // Calculate total campaign limit as sum of all party limits
+    const totalCampaignLimit = data.partyLimits
+      ? Object.values(data.partyLimits).reduce((sum, limit) => sum + limit, 0)
+      : 10; // Default to 10 if no limits provided (backward compatibility)
+
+    // Check if the campaign has reached the total solution limit
+    const campaignSolutionCount = await this.db
+      .select()
+      .from(solutions)
+      .where(
+        and(
+          eq(solutions.campaignId, data.campaignId),
+          eq(solutions.status, "published") // Only count published solutions
+        )
+      )
+      .then((rows) => rows.length);
+
+    if (campaignSolutionCount >= totalCampaignLimit) {
+      throw new Error(
+        `This campaign has reached the maximum limit of ${totalCampaignLimit} solutions`
       );
     }
 
@@ -273,7 +282,7 @@ export class SolutionsService {
       // Si no se proporcionan, contar todos los partyIds únicos
       const uniquePartyIds = [...new Set(allSolutions.map((s) => s.partyId))];
       uniquePartyIds.forEach((partyId) => {
-        counts[partyId] = allSolutions.filter(
+        counts[partyId as string] = allSolutions.filter(
           (s) => s.partyId === partyId
         ).length;
       });

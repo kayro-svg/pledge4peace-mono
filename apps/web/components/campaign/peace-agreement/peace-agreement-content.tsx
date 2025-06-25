@@ -251,6 +251,17 @@ export default function PeaceAgreementContent({
     e.preventDefault();
     setIsSubmitting(true);
     try {
+      // Create party limits object from campaign parties
+      // BACKWARD COMPATIBILITY: Use solutionLimit if available, otherwise default to 5
+      const partyLimits =
+        parties?.reduce(
+          (acc, party) => {
+            acc[party.slug] = party.solutionLimit || 5; // Fallback for campaigns without solutionLimit
+            return acc;
+          },
+          {} as Record<string, number>
+        ) || {};
+
       const response = await fetch(API_ENDPOINTS.solutions.create, {
         method: "POST",
         headers: {
@@ -262,6 +273,7 @@ export default function PeaceAgreementContent({
           title: newSolution.title,
           description: newSolution.description,
           partyId: newSolution.partyId,
+          partyLimits: partyLimits,
         }),
       });
 
@@ -310,7 +322,11 @@ export default function PeaceAgreementContent({
       }, 3000);
 
       setIsCreateSolutionOpen(false);
-      setNewSolution({ title: "", description: "", partyId: "israeli" });
+      setNewSolution({
+        title: "",
+        description: "",
+        partyId: getDefaultPartySlug(),
+      });
       toast.success(
         `Solution created successfully! Directed to ${partyConfig[newSolution.partyId].label}`
       );
@@ -323,8 +339,11 @@ export default function PeaceAgreementContent({
   };
 
   const addSolutionButton = () => {
-    const maxTotal = 10;
-    const maxPerParty = Math.floor(maxTotal / (parties?.length || 2)); // Dynamic per party based on number of parties
+    // Calculate total limit from all parties' individual limits
+    // BACKWARD COMPATIBILITY: Use solutionLimit if available, otherwise default to 5
+    const maxTotal =
+      parties?.reduce((sum, party) => sum + (party.solutionLimit || 5), 0) ||
+      10;
 
     if (partyCounts.total >= maxTotal) {
       return (
@@ -335,16 +354,18 @@ export default function PeaceAgreementContent({
     }
 
     // Check if any party can still add solutions
+    // BACKWARD COMPATIBILITY: Use solutionLimit if available, otherwise default to 5
     const canAnyPartyAdd =
       parties?.some((party) => {
         const currentCount = partyCounts[party.slug] || 0;
-        return currentCount < maxPerParty;
+        const partyLimit = party.solutionLimit || 5; // Fallback for campaigns without solutionLimit
+        return currentCount < partyLimit;
       }) || false;
 
     if (!canAnyPartyAdd) {
       return (
         <div className="text-center text-sm text-gray-500">
-          All party limits reached ({maxPerParty}/{maxPerParty} each)
+          All party limits reached
         </div>
       );
     }
@@ -528,7 +549,9 @@ export default function PeaceAgreementContent({
 
               <div className="flex gap-4 text-sm">
                 {Object.entries(partyConfig).map(([key, config]) => {
-                  const maxPerParty = Math.floor(10 / 2); // 5 per party
+                  // Find the party's solution limit from the parties array
+                  const party = parties?.find((p) => p.slug === key);
+                  const maxPerParty = party?.solutionLimit || 5; // Default to 5 if not found
                   const currentCount = partyCounts[key] || 0;
 
                   return (
@@ -700,7 +723,9 @@ export default function PeaceAgreementContent({
                   className="mt-2"
                 >
                   {Object.entries(partyConfig).map(([key, config]) => {
-                    const maxPerParty = Math.floor(10 / 2); // 5 per party
+                    // Find the party's solution limit from the parties array
+                    const party = parties?.find((p) => p.slug === key);
+                    const maxPerParty = party?.solutionLimit || 5; // Default to 5 if not found
                     const currentCount = partyCounts[key] || 0;
                     const isDisabled = currentCount >= maxPerParty;
 
