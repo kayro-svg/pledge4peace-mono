@@ -31,7 +31,7 @@ importers:
         version: 2.2.0
       '@hono/zod-validator':
         specifier: ^0.5.0
-        version: 0.5.0(hono@4.7.10)(zod@3.25.34)
+        version: 0.5.0(hono@4.7.10)(zod@3.25.67)
       '@sanity/client':
         specifier: ^7.6.0
         version: 7.6.0(debug@4.4.1)
@@ -42,7 +42,7 @@ importers:
         specifier: ^3.0.2
         version: 3.0.2
       drizzle-orm:
-        specifier: ^0.29.0
+        specifier: ^0.29.5
         version: 0.29.5(@cloudflare/workers-types@4.20250529.0)(@types/react@18.3.23)(react@19.1.0)
       hono:
         specifier: ^4.0.0
@@ -51,8 +51,8 @@ importers:
         specifier: ^4.5.1
         version: 4.5.1(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       zod:
-        specifier: ^3.24.4
-        version: 3.25.34
+        specifier: ^3.25.67
+        version: 3.25.67
     devDependencies:
       '@cloudflare/vitest-pool-workers':
         specifier: ^0.8.19
@@ -9307,7 +9307,7 @@ snapshots:
       semver: 7.7.2
       vitest: 3.0.9(@types/node@22.15.24)(jiti@2.4.2)(jsdom@26.1.0)(terser@5.16.9)(yaml@2.8.0)
       wrangler: 4.17.0(@cloudflare/workers-types@4.20250529.0)
-      zod: 3.25.34
+      zod: 3.25.67
     transitivePeerDependencies:
       - '@cloudflare/workers-types'
       - bufferutil
@@ -9714,15 +9714,15 @@ snapshots:
     dependencies:
       hono: 4.7.10
 
-  '@hono/zod-validator@0.2.2(hono@4.7.10)(zod@3.25.34)':
+  '@hono/zod-validator@0.2.2(hono@4.7.10)(zod@3.25.67)':
     dependencies:
       hono: 4.7.10
-      zod: 3.25.34
+      zod: 3.25.67
 
-  '@hono/zod-validator@0.5.0(hono@4.7.10)(zod@3.25.34)':
+  '@hono/zod-validator@0.5.0(hono@4.7.10)(zod@3.25.67)':
     dependencies:
       hono: 4.7.10
-      zod: 3.25.34
+      zod: 3.25.67
 
   '@hookform/resolvers@3.10.0(react-hook-form@7.56.4(react@19.1.0))':
     dependencies:
@@ -13601,7 +13601,7 @@ snapshots:
     dependencies:
       '@esbuild-kit/esm-loader': 2.6.5
       '@hono/node-server': 1.14.3(hono@4.7.10)
-      '@hono/zod-validator': 0.2.2(hono@4.7.10)(zod@3.25.34)
+      '@hono/zod-validator': 0.2.2(hono@4.7.10)(zod@3.25.67)
       camelcase: 7.0.1
       chalk: 5.4.1
       commander: 9.5.0
@@ -13615,7 +13615,7 @@ snapshots:
       minimatch: 7.4.6
       semver: 7.7.2
       superjson: 2.2.2
-      zod: 3.25.34
+      zod: 3.25.67
     transitivePeerDependencies:
       - supports-color
 
