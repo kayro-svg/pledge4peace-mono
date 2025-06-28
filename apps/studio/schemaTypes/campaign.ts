@@ -134,7 +134,7 @@ export default {
       group: 'solutions',
       description:
         'Define the parties/sides that can propose solutions for this campaign. You can add multiple parties with custom solution limits.',
-      validation: (Rule: any) => Rule.required().min(2).error('You must define at least 2 parties'),
+      validation: (Rule: any) => Rule.required().min(1).error('You must define at least 1 party'),
       of: [
         {
           type: 'object',

@@ -59,8 +59,11 @@ export class SolutionsService {
       .then((rows) => rows.length);
 
     if (partySolutionCount >= partyMaxLimit) {
+      const hasMultipleParties =
+        data.partyLimits && Object.keys(data.partyLimits).length > 1;
+      const suggestion = hasMultipleParties ? " Please try another party." : "";
       throw new Error(
-        `Maximum limit of ${partyMaxLimit} solutions for this party has been reached. Please try another party.`
+        `Maximum limit of ${partyMaxLimit} solutions for this party has been reached.${suggestion}`
       );
     }
 
