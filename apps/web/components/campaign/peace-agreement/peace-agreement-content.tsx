@@ -64,7 +64,9 @@ export default function PeaceAgreementContent({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Helper para obtener el primer party slug como default
-  const getDefaultPartySlug = () => parties?.[0]?.slug || "";
+  const getDefaultPartySlug = useCallback(() => {
+    return parties?.[0]?.slug || "";
+  }, [parties]);
 
   const [newSolution, setNewSolution] = useState({
     title: "",
@@ -77,7 +79,7 @@ export default function PeaceAgreementContent({
     if (parties && parties.length > 0 && !newSolution.partyId) {
       setNewSolution((prev) => ({ ...prev, partyId: getDefaultPartySlug() }));
     }
-  }, [parties, newSolution.partyId]);
+  }, [parties, newSolution.partyId, getDefaultPartySlug]);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [solutionStats, setSolutionStats] = useState<Record<string, any>>({});
   const [viewMode, setViewMode] = useState<ViewMode>("mixed");
@@ -377,12 +379,20 @@ export default function PeaceAgreementContent({
             setShowLoginModal(true);
             return;
           }
+          // Ensure partyId is set when opening modal
+          if (parties.length === 1 && !newSolution.partyId) {
+            setNewSolution((prev) => ({ ...prev, partyId: parties[0].slug }));
+          }
           setIsCreateSolutionOpen(true);
         }}
         className="flex items-center gap-2 w-full md:w-auto bg-slate-600 hover:bg-slate-700"
       >
         {session ? <Plus className="h-4 w-4" /> : <LogIn className="h-4 w-4" />}
-        {session ? "Add Solution" : "Sign in to add a solution"}
+        {session
+          ? parties.length === 1
+            ? "Add Solution"
+            : "Add Solution"
+          : "Sign in to add a solution"}
       </Button>
     );
   };
@@ -512,8 +522,8 @@ export default function PeaceAgreementContent({
             </div>
           </div>
 
-          {/* View Toggle */}
-          {solutions.length > 0 && (
+          {/* View Toggle - Only show when there are multiple parties */}
+          {solutions.length > 0 && parties.length > 1 && (
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 p-4 bg-white rounded-lg border mb-6">
               <div className="flex flex-col md:flex-row md:items-center gap-4">
                 <span className="font-medium text-gray-700">View Mode:</span>
@@ -547,28 +557,36 @@ export default function PeaceAgreementContent({
                 </div>
               </div>
 
-              <div className="flex gap-4 text-sm">
-                {Object.entries(partyConfig).map(([key, config]) => {
-                  // Find the party's solution limit from the parties array
-                  const party = parties?.find((p) => p.slug === key);
-                  const maxPerParty = party?.solutionLimit || 5; // Default to 5 if not found
-                  const currentCount = partyCounts[key] || 0;
+              {/* Party counters - Only show when there are multiple parties */}
+              {parties.length > 1 ? (
+                <div className="flex gap-4 text-sm">
+                  {Object.entries(partyConfig).map(([key, config]) => {
+                    // Find the party's solution limit from the parties array
+                    const party = parties?.find((p) => p.slug === key);
+                    const maxPerParty = party?.solutionLimit || 5; // Default to 5 if not found
+                    const currentCount = partyCounts[key] || 0;
 
-                  return (
-                    <div key={key} className="flex items-center gap-2">
-                      <span className="w-4 h-4">{config.icon}</span>
-                      <span
-                        className={`font-medium transition-colors duration-200 ${currentCount >= maxPerParty ? "text-red-600" : "text-gray-700"}`}
-                      >
-                        {currentCount}/{maxPerParty}
-                      </span>
-                    </div>
-                  );
-                })}
-                {/* <div className="text-gray-500 text-xs">
-                  Total: {partyCounts.total}/10
-                </div> */}
-              </div>
+                    return (
+                      <div key={key} className="flex items-center gap-2">
+                        <span className="w-4 h-4">{config.icon}</span>
+                        <span
+                          className={`font-medium transition-colors duration-200 ${currentCount >= maxPerParty ? "text-red-600" : "text-gray-700"}`}
+                        >
+                          {currentCount}/{maxPerParty}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                // For single party, show total count instead
+                <div className="text-sm text-gray-700">
+                  <span className="font-medium">
+                    {partyCounts.total}/{parties[0]?.solutionLimit || 5}{" "}
+                    solutions
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
@@ -584,7 +602,7 @@ export default function PeaceAgreementContent({
               </p>
               {/* <div className="mt-4">{addSolutionButton()}</div> */}
             </div>
-          ) : viewMode === "mixed" ? (
+          ) : viewMode === "mixed" || parties.length === 1 ? (
             <div className="space-y-6">
               {sortedSolutions.map((solution, index) => (
                 <div key={solution.id} className="relative">
@@ -614,7 +632,7 @@ export default function PeaceAgreementContent({
                     index={index}
                     toggleExpand={toggleExpand}
                     onRefresh={refreshSolutions}
-                    showPartyBadge={true}
+                    showPartyBadge={parties.length > 1}
                     postPartyConfig={partyConfig}
                   />
                 </div>
@@ -713,60 +731,88 @@ export default function PeaceAgreementContent({
 
               <div className="space-y-2">
                 <Label className="text-sm font-medium">
-                  I want to direct my solution to
+                  {parties.length === 1
+                    ? "Solution directed to:"
+                    : "I want to direct my solution to"}
                 </Label>
-                <RadioGroup
-                  value={newSolution.partyId}
-                  onValueChange={(value: string) =>
-                    setNewSolution({ ...newSolution, partyId: value })
-                  }
-                  className="mt-2"
-                >
-                  {Object.entries(partyConfig).map(([key, config]) => {
-                    // Find the party's solution limit from the parties array
-                    const party = parties?.find((p) => p.slug === key);
-                    const maxPerParty = party?.solutionLimit || 5; // Default to 5 if not found
-                    const currentCount = partyCounts[key] || 0;
-                    const isDisabled = currentCount >= maxPerParty;
+                {parties.length === 1 ? (
+                  // Single party: show as informational display
+                  <div className="p-3 bg-gray-50 rounded-lg border">
+                    <div className="flex items-center gap-2">
+                      <span className="w-4 h-4">
+                        {partyConfig[parties[0]?.slug]?.icon}
+                      </span>
+                      <span className="font-medium">
+                        {partyConfig[parties[0]?.slug]?.label}
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        ({partyCounts[parties[0]?.slug] || 0}/
+                        {parties[0]?.solutionLimit || 5})
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {partyConfig[parties[0]?.slug]?.description}
+                    </p>
+                  </div>
+                ) : (
+                  // Multiple parties: show radio group selection
+                  <RadioGroup
+                    value={newSolution.partyId}
+                    onValueChange={(value: string) =>
+                      setNewSolution({ ...newSolution, partyId: value })
+                    }
+                    className="mt-2"
+                  >
+                    {Object.entries(partyConfig).map(([key, config]) => {
+                      // Find the party's solution limit from the parties array
+                      const party = parties?.find((p) => p.slug === key);
+                      const maxPerParty = party?.solutionLimit || 5; // Default to 5 if not found
+                      const currentCount = partyCounts[key] || 0;
+                      const isDisabled = currentCount >= maxPerParty;
 
-                    return (
-                      <div key={key} className="space-y-2">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem
-                            value={key}
-                            id={key}
-                            disabled={isDisabled}
-                            className={
-                              isDisabled ? "opacity-50 cursor-not-allowed" : ""
-                            }
-                          />
-                          <Label
-                            htmlFor={key}
-                            className={`flex items-center gap-2 font-medium ${
-                              isDisabled ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
+                      return (
+                        <div key={key} className="space-y-2">
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem
+                              value={key}
+                              id={key}
+                              disabled={isDisabled}
+                              className={
+                                isDisabled
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }
+                            />
+                            <Label
+                              htmlFor={key}
+                              className={`flex items-center gap-2 font-medium ${
+                                isDisabled
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }`}
+                            >
+                              <span className="w-4 h-4">{config.icon}</span>
+                              {config.label}
+                              <span className="text-xs text-gray-500">
+                                ({currentCount}/{maxPerParty})
+                              </span>
+                            </Label>
+                          </div>
+                          <p
+                            className={`text-sm text-gray-500 ml-6 ${isDisabled ? "opacity-50" : ""}`}
                           >
-                            <span className="w-4 h-4">{config.icon}</span>
-                            {config.label}
-                            <span className="text-xs text-gray-500">
-                              ({currentCount}/{maxPerParty})
-                            </span>
-                          </Label>
+                            {config.description}
+                            {isDisabled && (
+                              <span className="text-red-500 block">
+                                ⚠️ Limit reached for this party
+                              </span>
+                            )}
+                          </p>
                         </div>
-                        <p
-                          className={`text-sm text-gray-500 ml-6 ${isDisabled ? "opacity-50" : ""}`}
-                        >
-                          {config.description}
-                          {isDisabled && (
-                            <span className="text-red-500 block">
-                              ⚠️ Limit reached for this party
-                            </span>
-                          )}
-                        </p>
-                      </div>
-                    );
-                  })}
-                </RadioGroup>
+                      );
+                    })}
+                  </RadioGroup>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -816,7 +862,9 @@ export default function PeaceAgreementContent({
           <DialogHeader>
             <DialogTitle>
               <p className="text-lg font-semibold mb-4 text-center">
-                To add a solution you must login
+                {parties.length === 1
+                  ? "To add a solution you must login"
+                  : "To propose a solution to any party you must login"}
               </p>
             </DialogTitle>
           </DialogHeader>
