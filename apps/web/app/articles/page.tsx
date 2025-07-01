@@ -8,18 +8,6 @@ export default async function ArticlesPage() {
 
   return (
     <main className="min-h-screen">
-      {/* Hero Section */}
-      {/* <section className="bg-[#2F4858] text-white py-20">
-        <div className="container mx-auto px-6 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
-            Articles & Updates
-          </h1>
-          <p className="text-lg md:text-xl max-w-2xl mx-auto opacity-90">
-            Stay informed with our latest articles, insights, and updates on
-            global peace initiatives and community actions.
-          </p>
-        </div>
-      </section> */}
       <HeroBanner
         heroSection={{
           heroHeading: "Articles & Updates",

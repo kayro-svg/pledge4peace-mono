@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from "@/lib/config";
 import { logger } from "@/lib/utils/logger";
-// import { getSession } from "next-auth/react";
+import { apiClient } from "@/lib/api-client";
 
 interface EventRegistrationData {
   eventId: string;
@@ -58,82 +58,59 @@ interface SubscriptionResponse {
 
 /**
  * Registra al usuario a un evento y lo agrega a la lista de Conference Attendees en Brevo
+ * Now uses apiClient with automatic session management
  */
 export async function registerToEvent(
-  data: EventRegistrationData,
-  token: string | undefined
+  data: EventRegistrationData
 ): Promise<EventRegistrationResponse> {
-  //   const token = await getAuthToken();
-
-  const response = await fetch(API_ENDPOINTS.events.register, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify(data),
-  });
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message || "Failed to register to event");
+  try {
+    // Extract endpoint path from API_ENDPOINTS.events.register
+    const endpoint = API_ENDPOINTS.events.register.replace(
+      process.env.NEXT_PUBLIC_API_URL || "",
+      ""
+    );
+    return await apiClient.post<EventRegistrationResponse>(endpoint, data);
+  } catch (error) {
+    // apiClient handles session expiration automatically
+    throw new Error("Failed to register to event");
   }
-
-  return result;
 }
 
 /**
  * Suscribe al usuario logueado a la lista de subscribers (para usuarios que no se registraron originalmente)
+ * Now uses apiClient with automatic session management
  */
-export async function subscribeToNewsletter(
-  token: string | undefined
-): Promise<SubscriptionResponse> {
-  //   const token = await getAuthToken();
-
-  const response = await fetch(API_ENDPOINTS.users.subscribe, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message || "Failed to subscribe to newsletter");
+export async function subscribeToNewsletter(): Promise<SubscriptionResponse> {
+  try {
+    // Extract endpoint path from API_ENDPOINTS.users.subscribe
+    const endpoint = API_ENDPOINTS.users.subscribe.replace(
+      process.env.NEXT_PUBLIC_API_URL || "",
+      ""
+    );
+    return await apiClient.post<SubscriptionResponse>(endpoint);
+  } catch (error) {
+    // apiClient handles session expiration automatically
+    throw new Error("Failed to subscribe to newsletter");
   }
-
-  return result;
 }
 
 /**
  * Verifica si el usuario está registrado a un evento específico
+ * Now uses apiClient with automatic session management
  */
 export async function getEventRegistrationStatus(
-  eventId: string,
-  token: string | undefined
+  eventId: string
 ): Promise<EventRegistrationStatusResponse> {
-  //   const token = await getAuthToken();
-
-  const response = await fetch(
-    API_ENDPOINTS.events.getRegistrationStatus(eventId),
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
-
-  const result = await response.json();
-
-  if (!response.ok) {
-    throw new Error(result.message || "Failed to get registration status");
+  try {
+    // Extract endpoint path from API_ENDPOINTS.events.getRegistrationStatus
+    const endpoint = API_ENDPOINTS.events
+      .getRegistrationStatus(eventId)
+      .replace(process.env.NEXT_PUBLIC_API_URL || "", "");
+    return await apiClient.get<EventRegistrationStatusResponse>(endpoint);
+  } catch (error) {
+    // apiClient handles session expiration automatically
+    throw new Error("Failed to get registration status");
   }
-
-  return result;
 }
 
 /**

@@ -3,11 +3,11 @@
 import { Separator } from "@/components/ui/separator";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { NavUser } from "@/components/dashboard/nav-user";
-import { useSession } from "next-auth/react";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import { User } from "next-auth";
 
 export function SiteHeader() {
-  const { data: session } = useSession();
+  const { session } = useAuthSession();
   return (
     <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
       <div className="flex w-full items-center justify-between gap-1 px-4 lg:gap-2 lg:px-6">

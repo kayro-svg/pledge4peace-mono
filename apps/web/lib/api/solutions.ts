@@ -1,8 +1,7 @@
 import { Solution, Comment, CreateCommentDto } from "@/lib/types/index";
-import { getSession } from "next-auth/react";
 import { API_ENDPOINTS } from "@/lib/config";
-import { API_URL } from "@/lib/config";
 import { logger } from "@/lib/utils/logger";
+import { apiClient } from "@/lib/api-client";
 
 // Cache solutions by campaign ID to prevent excessive API calls
 const solutionsCache: Record<string, { data: Solution[]; timestamp: number }> =
@@ -76,63 +75,30 @@ export async function getSolutions(campaignId: string): Promise<Solution[]> {
 }
 
 export async function likeSolution(solutionId: string) {
-  const session = await getSession();
-  if (!session?.accessToken) {
-    throw new Error("Authentication required");
-  }
-
-  const response = await fetch(`${API_URL}/solutions/${solutionId}/like`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${session.accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
+  try {
+    return await apiClient.post(`/solutions/${solutionId}/like`);
+  } catch (error) {
+    // apiClient handles session expiration automatically
     throw new Error("Failed to like solution");
   }
-
-  return response.json();
 }
 
 export async function dislikeSolution(solutionId: string) {
-  const session = await getSession();
-  if (!session?.accessToken) {
-    throw new Error("Authentication required");
-  }
-
-  const response = await fetch(`${API_URL}/solutions/${solutionId}/dislike`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${session.accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
+  try {
+    return await apiClient.post(`/solutions/${solutionId}/dislike`);
+  } catch (error) {
+    // apiClient handles session expiration automatically
     throw new Error("Failed to dislike solution");
   }
-
-  return response.json();
 }
 
 export async function shareSolution(solutionId: string) {
-  const session = await getSession();
-  if (!session?.accessToken) {
-    throw new Error("Authentication required");
-  }
-
-  const response = await fetch(`${API_URL}/solutions/${solutionId}/share`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${session.accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
+  try {
+    return await apiClient.post(`/solutions/${solutionId}/share`);
+  } catch (error) {
+    // apiClient handles session expiration automatically
     throw new Error("Failed to share solution");
   }
-
-  return response.json();
 }
 
 // Cache for solution stats to prevent excessive API calls
@@ -147,26 +113,26 @@ export async function getSolutionStats(solutionId: string) {
       return cachedStats.data;
     }
 
-    const session = await getSession();
-    const response = await fetch(`${API_URL}/solutions/${solutionId}/stats`, {
-      headers: session?.accessToken
-        ? { Authorization: `Bearer ${session.accessToken}` }
-        : {},
-    });
+    try {
+      const data = await apiClient.get<any>(`/solutions/${solutionId}/stats`);
 
-    if (!response.ok) {
-      throw new Error("Failed to get solution stats");
+      // Cache the response
+      statsCache[solutionId] = {
+        data,
+        timestamp: Date.now(),
+      };
+
+      return data;
+    } catch (error) {
+      logger.error("Error fetching solution stats:", error);
+      // Return cached data if available, even if expired
+      if (statsCache[solutionId]) {
+        logger.log("Using cached stats for solution:", solutionId);
+        return statsCache[solutionId].data;
+      }
+      // Otherwise return default stats
+      return { likes: 0, dislikes: 0, shares: 0, comments: 0 };
     }
-
-    const data = await response.json();
-
-    // Cache the response
-    statsCache[solutionId] = {
-      data,
-      timestamp: Date.now(),
-    };
-
-    return data;
   } catch (error) {
     logger.error("Error fetching solution stats:", error);
     // Return cached data if available, even if expired
@@ -190,21 +156,9 @@ const userInteractionsCache: Record<
 const USER_INTERACTIONS_CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache lifetime
 
 export async function getUserInteractions(solutionId: string) {
-  // Get session only once and cache it
-  const session = await getSession();
-
   try {
-    // If no session or no access token, return default values immediately without API call
-    if (!session?.accessToken) {
-      return {
-        hasLiked: false,
-        hasDisliked: false,
-        hasShared: false,
-      };
-    }
-
-    // Check if we have cached data for this solution and user session
-    const cacheKey = `${solutionId}-${session.user?.email || "anonymous"}`;
+    // Check if we have cached data for this solution
+    const cacheKey = `${solutionId}-user-interactions`;
     const cachedData = userInteractionsCache[cacheKey];
 
     if (
@@ -214,31 +168,30 @@ export async function getUserInteractions(solutionId: string) {
       return cachedData.data;
     }
 
-    const response = await fetch(
-      API_ENDPOINTS.solutions.userInteractions(solutionId),
-      {
-        headers: {
-          Authorization: `Bearer ${session.accessToken}`,
-        },
-      }
-    );
+    try {
+      const data = await apiClient.get<{
+        hasLiked: boolean;
+        hasDisliked: boolean;
+        hasShared: boolean;
+      }>(`/solutions/${solutionId}/interactions`);
 
-    // Handle different response statuses
-    if (response.status === 401 || response.status === 403) {
-      // Authentication error - return default values
-      return {
-        hasLiked: false,
-        hasDisliked: false,
-        hasShared: false,
+      // Cache the response
+      userInteractionsCache[cacheKey] = {
+        data,
+        timestamp: Date.now(),
       };
-    }
 
-    if (!response.ok) {
-      logger.error(`Failed to get user interactions: ${response.status}`);
+      return data;
+    } catch (error) {
+      // If session expired, apiClient handles it automatically
+      // For other errors or if user is not authenticated, return default values
+      logger.warn("Error fetching user interactions, using defaults:", error);
+
       // Return cached data if available
       if (cachedData) {
         return cachedData.data;
       }
+
       // Otherwise return default values
       return {
         hasLiked: false,
@@ -246,24 +199,8 @@ export async function getUserInteractions(solutionId: string) {
         hasShared: false,
       };
     }
-
-    const data = await response.json();
-
-    // Cache the response
-    userInteractionsCache[cacheKey] = {
-      data,
-      timestamp: Date.now(),
-    };
-
-    return data;
   } catch (error) {
     logger.error("Error fetching user interactions:", error);
-    // Check if we have cached data
-    const cacheKey = `${solutionId}-${session?.user?.email || "anonymous"}`;
-    const cachedData = userInteractionsCache[cacheKey];
-    if (cachedData) {
-      return cachedData.data;
-    }
     // Return default values if no cache available
     return {
       hasLiked: false,
@@ -286,25 +223,16 @@ export async function getComments(solutionId: string): Promise<Comment[]> {
 }
 
 export async function createComment(data: CreateCommentDto): Promise<Comment> {
-  const session = await getSession();
-  if (!session?.accessToken) {
-    throw new Error("Authentication required");
-  }
-
-  const response = await fetch(API_ENDPOINTS.comments.create(data.solutionId), {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${session.accessToken}`,
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
+  try {
+    // Extract endpoint path from API_ENDPOINTS.comments.create
+    const endpoint = API_ENDPOINTS.comments
+      .create(data.solutionId)
+      .replace(process.env.NEXT_PUBLIC_API_URL || "", "");
+    return await apiClient.post<Comment>(endpoint, data);
+  } catch (error) {
+    // apiClient handles session expiration automatically
     throw new Error("Failed to create comment");
   }
-
-  return response.json();
 }
 
 /**
@@ -314,29 +242,19 @@ export async function createComment(data: CreateCommentDto): Promise<Comment> {
 export async function deleteSolution(
   solutionId: string
 ): Promise<{ success: boolean; message: string }> {
-  const session = await getSession();
-  if (!session?.accessToken) {
-    throw new Error("Authentication required");
+  try {
+    const data = await apiClient.delete<{ success: boolean; message: string }>(
+      `/solutions/${solutionId}`
+    );
+
+    // Invalidar todos los caches después de eliminar exitosamente
+    invalidateAllSolutionsCache();
+
+    return data;
+  } catch (error) {
+    // apiClient handles session expiration automatically
+    throw new Error("Failed to delete solution");
   }
-
-  const response = await fetch(`${API_URL}/solutions/${solutionId}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${session.accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || "Failed to delete solution");
-  }
-
-  const data = await response.json();
-
-  // Invalidar todos los caches después de eliminar exitosamente
-  invalidateAllSolutionsCache();
-
-  return data;
 }
 
 /**
@@ -346,27 +264,17 @@ export async function deleteSolution(
 export async function deleteComment(
   commentId: string
 ): Promise<{ success: boolean; message: string }> {
-  const session = await getSession();
-  if (!session?.accessToken) {
-    throw new Error("Authentication required");
+  try {
+    const data = await apiClient.delete<{ success: boolean; message: string }>(
+      `/solutions/comments/${commentId}`
+    );
+
+    // Invalidar todos los caches después de eliminar exitosamente
+    invalidateAllSolutionsCache();
+
+    return data;
+  } catch (error) {
+    // apiClient handles session expiration automatically
+    throw new Error("Failed to delete comment");
   }
-
-  const response = await fetch(`${API_URL}/solutions/comments/${commentId}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${session.accessToken}`,
-    },
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || "Failed to delete comment");
-  }
-
-  const data = await response.json();
-
-  // Invalidar todos los caches después de eliminar exitosamente
-  invalidateAllSolutionsCache();
-
-  return data;
 }

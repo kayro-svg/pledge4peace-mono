@@ -49,6 +49,18 @@ export async function authMiddleware(c: Context, next: Next) {
     await next();
   } catch (error) {
     if (error instanceof HTTPException) throw error;
+
+    // Check if it's a token expiration error
+    if (error && typeof error === "object" && "message" in error) {
+      const errorMessage = String(error.message).toLowerCase();
+      if (
+        errorMessage.includes("expired") ||
+        errorMessage.includes("jwt expired")
+      ) {
+        throw new HTTPException(401, { message: "Token expired" });
+      }
+    }
+
     throw new HTTPException(401, { message: "Authentication failed" });
   }
 }

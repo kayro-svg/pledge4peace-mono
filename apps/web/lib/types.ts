@@ -116,6 +116,7 @@ export interface SanityCampaign {
   category?: "Peace" | "Democracy" | "Environment" | "Education" | "Health";
   description: string;
   goalPledges: number;
+  countriesInvolved?: string[];
   pledgeCommitmentItems?: string[];
   contentText?: SanityCampaignContentText;
   featuredImage?: SanityImage;
@@ -123,6 +124,7 @@ export interface SanityCampaign {
   parties?: SanityParty[];
   solutionsSection?: SanitySolutionsSection;
   waysToSupportTabs?: SanityWaysToSupportTab[];
+  _createdAt: string;
 }
 
 export interface SanityCampaignsSection {

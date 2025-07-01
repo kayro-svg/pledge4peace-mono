@@ -45,6 +45,7 @@ const handler = NextAuth({
   ],
   session: {
     strategy: "jwt",
+    maxAge: 7 * 24 * 60 * 60, // 7 days to match backend token expiration
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -57,10 +58,42 @@ const handler = NextAuth({
         token.userName = user.name as string;
         token.userRole = (user.role as "user" | "superAdmin") || "user";
         token.createdAt = user.createdAt as Date;
+
+        // Extract expiration from backend JWT token
+        try {
+          const backendTokenParts = (user.accessToken as string).split(".");
+          if (backendTokenParts.length === 3) {
+            const payload = JSON.parse(atob(backendTokenParts[1]));
+            token.backendTokenExpires = payload.exp;
+          }
+        } catch (error) {
+          console.error("Error parsing backend token:", error);
+        }
       }
+
+      // Check if backend token is expired
+      if (
+        token.backendTokenExpires &&
+        typeof token.backendTokenExpires === "number"
+      ) {
+        const currentTime = Math.floor(Date.now() / 1000);
+        if (token.backendTokenExpires < currentTime) {
+          // Backend token expired, mark as expired but keep structure
+          token.accessToken = "";
+          token.userId = "";
+          token.userEmail = "";
+          token.userName = "";
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
+      // If token is empty (expired), return null session
+      if (!token.accessToken) {
+        return null as any;
+      }
+
       if (session.user) {
         // Asegurar que todos los datos del usuario estén disponibles en la sesión
         session.user.id = token.userId as string;
@@ -74,6 +107,7 @@ const handler = NextAuth({
 
       // También agregar el token a la raíz de la sesión para compatibilidad
       session.accessToken = token.accessToken as string;
+      session.backendTokenExpires = token.backendTokenExpires as number;
 
       return session;
     },
