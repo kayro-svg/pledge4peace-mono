@@ -90,7 +90,7 @@ export default function AllCampaignsContent({
               placeholder="Search campaigns..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-4 py-4 md:py-6 text-sm md:text-lg rounded-full shadow-lg bg-white"
+              className="pl-12 pr-4 py-4 md:py-6 text-base md:text-lg rounded-full shadow-lg bg-white"
             />
             {searchQuery && (
               <Button
