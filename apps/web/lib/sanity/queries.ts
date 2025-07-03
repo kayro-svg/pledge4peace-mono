@@ -238,6 +238,7 @@ export async function getCampaigns(): Promise<SanityCampaign[]> {
       category,
       description,
       goalPledges,
+      countriesInvolved[], 
       pledgeCommitmentItems[],
       contentText,
       featuredImage { asset-> { url } },
@@ -254,7 +255,8 @@ export async function getCampaigns(): Promise<SanityCampaign[]> {
         icon { asset-> { url } },
         color,
         solutionLimit
-      }
+      },
+      _createdAt
     }`,
     {},
     {
@@ -282,6 +284,7 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
         category,
         description,
         goalPledges,
+        countriesInvolved[], 
         pledgeCommitmentItems[],
         contentText,
         featuredImage { asset-> { url } },

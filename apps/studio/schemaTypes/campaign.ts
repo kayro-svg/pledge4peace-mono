@@ -114,7 +114,36 @@ export default {
       description: 'The target number of pledges for this campaign.',
       validation: (Rule: any) => Rule.required().positive(),
     },
-
+    // Countries involved
+    {
+      name: 'countriesInvolved',
+      title: 'Countries/Regions Involved',
+      type: 'array',
+      description: 'Select the countries or regions involved in this campaign.',
+      of: [
+        {
+          type: 'string',
+          options: {
+            list: [
+              {title: 'Israel', value: 'israel'},
+              {title: 'Palestine', value: 'palestine'},
+              {title: 'United States', value: 'usa'},
+              {title: 'Ukraine', value: 'ukraine'},
+              {title: 'Sudan', value: 'sudan'},
+              {title: 'Pakistan', value: 'pakistan'},
+              {title: 'India', value: 'india'},
+              /* …el resto de países… */
+              {title: 'Other', value: 'other'},
+            ],
+          },
+        },
+      ],
+      options: {
+        layout: 'tags',
+      },
+      validation: (Rule: any) =>
+        Rule.required().min(1).error('Please select at least one country/region'),
+    },
     // PLEDGE FORM
     {
       name: 'pledgeCommitmentItems',

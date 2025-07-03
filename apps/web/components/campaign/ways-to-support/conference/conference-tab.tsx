@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { SanityConference } from "@/lib/types";
 import { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import { toast } from "sonner";
 import { PortableText } from "@portabletext/react";
 import { portableTextComponents } from "@/components/ui/portable-text-components";
@@ -21,7 +21,7 @@ import {
   handleRegistrationError,
   getEventRegistrationStatus,
 } from "@/lib/api/brevo";
-import { cleanTimezone, debugTimezone } from "@/lib/utils/clean-timezone";
+import { cleanTimezone } from "@/lib/utils/clean-timezone";
 
 interface ConferenceTabProps {
   conferenceRef:
@@ -45,9 +45,9 @@ const formatConferenceDateTime = (event: SanityConference) => {
   const cleanedTimezone = cleanTimezone(event.timezone);
 
   // Debug del timezone original si está corrupto
-  if (event.timezone && event.timezone.length > 50) {
-    debugTimezone(event.timezone, "conference-tab.tsx");
-  }
+  // if (event.timezone && event.timezone.length > 50) {
+  //   debugTimezone(event.timezone, "conference-tab.tsx");
+  // }
 
   // Parse the UTC datetime string
   const startDateTime = new Date(event.startDateTime);
@@ -102,15 +102,12 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
   const timeInfo = formatConferenceDateTime(conference);
   const [isLoading, setIsLoading] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
-  const { data: session } = useSession();
+  const { session, isAuthenticated } = useAuthSession();
 
   useEffect(() => {
     if (!session) return;
     const checkRegistrationStatus = async () => {
-      const data = await getEventRegistrationStatus(
-        conference._id,
-        session?.accessToken
-      );
+      const data = await getEventRegistrationStatus(conference._id);
       setIsRegistered(data.isRegistered);
     };
     checkRegistrationStatus();
@@ -131,13 +128,10 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
   const handleRegisterNow = async () => {
     setIsLoading(true);
     try {
-      const data = await registerToEvent(
-        {
-          eventId: conference._id,
-          eventTitle: conference.title,
-        },
-        session?.accessToken
-      );
+      const data = await registerToEvent({
+        eventId: conference._id,
+        eventTitle: conference.title,
+      });
 
       setIsRegistered(data.brevoRegistered);
       if (data.brevoRegistered) {

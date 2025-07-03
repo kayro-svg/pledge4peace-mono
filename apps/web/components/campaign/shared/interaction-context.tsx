@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useAuthSession } from "@/hooks/use-auth-session";
 
 type InteractionType = "like" | "dislike" | "comment" | "share";
 
@@ -57,7 +57,7 @@ export function InteractionProvider({
   children,
   initialStats = {},
 }: InteractionProviderProps) {
-  const { data: session, status } = useSession();
+  const { session, status, isAuthenticated } = useAuthSession();
   const [interactions, setInteractions] = useState<InteractionState>({});
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 

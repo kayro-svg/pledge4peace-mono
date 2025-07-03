@@ -1,5 +1,8 @@
 import CampaignCard from "@/components/ui/campaign-card";
 import { Campaign, SanityCampaignsSection } from "@/lib/types";
+import { Button } from "../ui/button";
+import { useRouter } from "next/navigation";
+import { ArrowRight, Eye, Grid3X3 } from "lucide-react";
 
 export default function RecentProjects({
   data,
@@ -8,6 +11,8 @@ export default function RecentProjects({
   data: SanityCampaignsSection;
   campaigns: Campaign[];
 }) {
+  const router = useRouter();
+
   const DEFAULT_SECTION_DATA = {
     campaignsHeading: "Recent Campaigns",
     campaignsDescription:
@@ -49,7 +54,7 @@ export default function RecentProjects({
 
         {/* <div className="grid md:grid-cols-2 gap-8"> */}
         <div
-          className={`items-center justify-center gap-8 ${
+          className={`lg:container mx-auto items-center justify-center gap-8 ${
             moreThanOneCampaign
               ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 "
               : "flex flex-row lg:flex-col justify-center"
@@ -71,6 +76,30 @@ export default function RecentProjects({
               />
             );
           })}
+        </div>
+        <div className="relative mt-10">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-300"></div>
+          </div>
+          <div className="relative flex justify-center items-center">
+            <div className="bg-[#fdfdf0] px-8">
+              <div className="flex items-center space-x-2 text-sm text-gray-500 mb-4">
+                <Eye className="h-4 w-4" />
+                <span>Want to see more campaigns?</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="text-center mt-8 group">
+          <Button
+            size="lg"
+            className="text-white border-0 rounded-full px-12 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300"
+            onClick={() => router.push("/campaigns")}
+          >
+            <Grid3X3 className="mr-3 h-5 w-5" />
+            View All Campaigns
+            <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-all duration-300" />
+          </Button>
         </div>
       </div>
     </section>

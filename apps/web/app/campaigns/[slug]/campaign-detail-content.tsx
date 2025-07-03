@@ -20,6 +20,8 @@ import {
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { logger } from "@/lib/utils/logger";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 interface CampaignDetailContentProps {
   campaign: SanityCampaign;
@@ -32,6 +34,7 @@ export function CampaignDetailContent({
   // Este hook hace que la sesión se cargue una sola vez aquí, y luego
   // estará disponible en caché para los componentes hijos
   useSession();
+  const router = useRouter();
 
   // Estado para controlar el diálogo de comentarios
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
@@ -67,13 +70,13 @@ export function CampaignDetailContent({
       <div className="container mx-auto px-4 py-8">
         <div className="w-full mx-auto">
           <div className="mb-8">
-            <Link
-              href="/"
-              className="text-brand-500 hover:underline flex items-center"
+            <Button
+              onClick={() => router.back()}
+              className="text-brand-500 hover:underline flex items-center bg-transparent border-none hover:bg-transparent"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
-            </Link>
+              Go back
+            </Button>
           </div>
 
           <div className="flex flex-col gap-8">

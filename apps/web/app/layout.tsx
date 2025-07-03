@@ -7,6 +7,7 @@ import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import { CookieBanner } from "@/components/cookies/cookie-banner";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { FacebookPixel } from "@/components/analytics/facebook-pixel";
+import { SessionExpiryWarning } from "@/components/auth/session-expiry-warning";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -56,6 +57,7 @@ export default function RootLayout({
         <FacebookPixel />
         <Providers>
           <LayoutWrapper>{children}</LayoutWrapper>
+          <SessionExpiryWarning />
           <Toaster />
           <CookieBanner position="bottom" />
         </Providers>

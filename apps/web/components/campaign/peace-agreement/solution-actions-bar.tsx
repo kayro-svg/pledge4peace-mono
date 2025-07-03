@@ -10,7 +10,7 @@ import {
 } from "@/lib/api/solutions";
 import { useInteractions } from "../shared/interaction-context";
 import { Heart, MessageCircle, Share2, ThumbsDownIcon } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -45,7 +45,7 @@ export default function SolutionActionsBar({
   onInteraction,
   solutionToShare,
 }: SolutionActionsBarProps) {
-  const { data: session } = useSession();
+  const { session, isAuthenticated } = useAuthSession();
   const router = useRouter();
   const {
     getUserInteraction,
@@ -85,7 +85,7 @@ export default function SolutionActionsBar({
   }, [commentCount]);
 
   const handleLike = async () => {
-    if (!session) {
+    if (!isAuthenticated) {
       toast.error("Please sign in to like solutions");
       setShowLoginModal(true);
       return;
@@ -135,7 +135,7 @@ export default function SolutionActionsBar({
   };
 
   const handleDislike = async () => {
-    if (!session) {
+    if (!isAuthenticated) {
       toast.error("Please sign in to dislike solutions");
       setShowLoginModal(true);
       return;
@@ -190,7 +190,7 @@ export default function SolutionActionsBar({
   const handleShare = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (!session) {
+    if (!isAuthenticated) {
       toast.error("Please sign in to share solutions");
       setShowLoginModal(true);
       return;
@@ -257,7 +257,7 @@ export default function SolutionActionsBar({
     }
 
     // If user is not logged in, show login modal
-    if (!session) {
+    if (!isAuthenticated) {
       toast.error("Please sign in to comment");
       if (window.innerWidth > 1024) {
         setShowLoginModal(true);

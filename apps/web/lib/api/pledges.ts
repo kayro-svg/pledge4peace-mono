@@ -1,5 +1,4 @@
-import { API_URL } from "@/lib/config";
-import { getSession } from "next-auth/react";
+import { apiClient } from "@/lib/api-client";
 import { logger } from "@/lib/utils/logger";
 
 export interface PledgeData {
@@ -27,50 +26,29 @@ export async function checkExistingPledge(
   try {
     logger.log(`[API] Checking if user has pledged to campaign: ${campaignId}`);
 
-    // Get session info
-    const session = await getSession();
-    const accessToken = session?.accessToken || session?.user?.accessToken;
-
     // Generate random pledge status for this campaign if needed (for mock data)
     if (MOCK_USER_PLEDGES[campaignId] === undefined) {
       // 30% chance the user has already pledged
       MOCK_USER_PLEDGES[campaignId] = Math.random() < 0.3;
     }
 
-    if (!accessToken) {
-      logger.warn("[API] No access token found in session, using mock data");
-      return MOCK_USER_PLEDGES[campaignId];
-    }
-
-    // Add timeout to prevent hanging requests
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 3000);
-
-    const response = await fetch(`${API_URL}/pledges/check/${campaignId}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${accessToken}`,
-      },
-      credentials: "same-origin",
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      logger.warn(
-        `[API] Error checking pledge status: ${response.status} ${response.statusText}`
+    try {
+      const data = await apiClient.get<{ hasPledged: boolean }>(
+        `/pledges/check/${campaignId}`
       );
-      // Fall back to mock data
+      logger.log(
+        `[API] User pledge status for campaign ${campaignId}: ${data.hasPledged}`
+      );
+      return data.hasPledged === true;
+    } catch (error) {
+      // If session expired, apiClient will handle it automatically
+      // For other errors or if user is not authenticated, fall back to mock data
+      logger.warn(
+        "[API] Error checking pledge status, using mock data:",
+        error
+      );
       return MOCK_USER_PLEDGES[campaignId];
     }
-
-    const data = await response.json();
-    logger.log(
-      `[API] User pledge status for campaign ${campaignId}: ${data.hasPledged}`
-    );
-    return data.hasPledged === true;
   } catch (error) {
     logger.error("[API] Error checking existing pledge:", error);
     // Fall back to mock data
@@ -80,117 +58,54 @@ export async function checkExistingPledge(
 
 /**
  * Creates a pledge for a campaign
- * Enhanced with mock response handling for development and better error management
+ * Now using apiClient with automatic session management
  */
 export async function createPledge(data: PledgeData) {
   try {
     logger.log(`[API] Creating pledge for campaign: ${data.campaignId}`);
 
-    // Get the session with all the details
-    const session = await getSession();
-
-    // For authenticated users, include the token
-    const headers: HeadersInit = {
-      "Content-Type": "application/json",
-    };
-
-    // Get the access token from the session
-    const accessToken = session?.accessToken || session?.user?.accessToken;
-
-    if (accessToken) {
-      logger.log("[API] Access token found in session");
-      headers.Authorization = `Bearer ${accessToken}`;
-    } else {
-      logger.warn("[API] No access token found in session");
-
-      // Try to refresh the session
-      try {
-        const refreshedSession = await getSession();
-        const refreshedToken =
-          refreshedSession?.accessToken || refreshedSession?.user?.accessToken;
-
-        if (refreshedToken) {
-          logger.log("[API] Access token found after refreshing session");
-          headers.Authorization = `Bearer ${refreshedToken}`;
-        } else {
-          logger.warn(
-            "[API] Still no token after refresh, using anonymous pledge"
-          );
-          // Continue without token (anonymous pledge)
-        }
-      } catch (refreshError) {
-        logger.error("[API] Error refreshing session:", refreshError);
-        // Continue without token (anonymous pledge)
-      }
-    }
-
-    // Use timeout to prevent hanging requests
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
     try {
-      const response = await fetch(`${API_URL}/pledges`, {
-        method: "POST",
-        headers,
-        credentials: "same-origin",
-        body: JSON.stringify(data),
-        signal: controller.signal,
-      });
+      const responseData = await apiClient.post<any>("/pledges", data);
+      logger.log(`[API] Pledge created successfully:`, responseData);
 
-      clearTimeout(timeoutId);
+      // Update the mock user pledge status for consistency
+      MOCK_USER_PLEDGES[data.campaignId] = true;
 
-      let responseData;
-      try {
-        responseData = await response.json();
-      } catch (parseError) {
-        logger.warn("[API] Error parsing JSON response:", parseError);
-        responseData = {};
-      }
-
-      logger.log(
-        `[API] Pledge creation response: ${response.status}`,
-        responseData
-      );
-
-      if (!response.ok) {
-        logger.warn(
-          `[API] Error creating pledge: ${response.status} ${response.statusText}`
-        );
-
-        // For development, simulate a successful response
-        if (process.env.NODE_ENV === "development") {
-          logger.log(
-            "[API] Returning mock successful pledge in development environment"
-          );
-
-          // Update the mock user pledge status
-          MOCK_USER_PLEDGES[data.campaignId] = true;
-
-          // Increment the mock pledge count
-          if (MOCK_PLEDGE_COUNTS[data.campaignId]) {
-            MOCK_PLEDGE_COUNTS[data.campaignId]++;
-          }
-
-          return {
-            id: `mock-pledge-${Date.now()}`,
-            campaignId: data.campaignId,
-            userId: "mock-user",
-            createdAt: new Date().toISOString(),
-            success: true,
-          };
-        }
-
-        throw new Error(
-          `Failed to create pledge: ${response.status} ${response.statusText}`,
-          {
-            cause: responseData.error || "Unknown error",
-          }
-        );
+      // Increment the mock pledge count
+      if (MOCK_PLEDGE_COUNTS[data.campaignId]) {
+        MOCK_PLEDGE_COUNTS[data.campaignId]++;
       }
 
       return responseData;
-    } finally {
-      clearTimeout(timeoutId);
+    } catch (error) {
+      // Session expiration is handled automatically by apiClient
+      // For development or other errors, return mock data
+      logger.warn("[API] Error creating pledge, using mock response:", error);
+
+      if (process.env.NODE_ENV === "development") {
+        logger.log(
+          "[API] Returning mock successful pledge in development environment"
+        );
+
+        // Update the mock user pledge status
+        MOCK_USER_PLEDGES[data.campaignId] = true;
+
+        // Increment the mock pledge count
+        if (MOCK_PLEDGE_COUNTS[data.campaignId]) {
+          MOCK_PLEDGE_COUNTS[data.campaignId]++;
+        }
+
+        return {
+          id: `mock-pledge-${Date.now()}`,
+          campaignId: data.campaignId,
+          userId: "mock-user",
+          createdAt: new Date().toISOString(),
+          success: true,
+        };
+      }
+
+      // Re-throw the error for production
+      throw error;
     }
   } catch (error) {
     logger.error("[API] Error in createPledge:", error);
@@ -244,27 +159,19 @@ export async function getCampaignPledgeCount(
       MOCK_PLEDGE_COUNTS[campaignId] = Math.floor(Math.random() * 4900) + 100;
     }
 
-    // Try to fetch from the API
-    logger.log(`[API] Fetching pledge count for campaign: ${campaignId}`);
-    const response = await fetch(
-      `${API_URL}/pledges/campaign/${campaignId}/count`,
-      {
-        // Add a small timeout to prevent hanging requests
-        signal: AbortSignal.timeout(3000),
-      }
-    );
-
-    if (!response.ok) {
-      logger.warn(
-        `[API] Error fetching pledge count: ${response.status} ${response.statusText}`
+    try {
+      // Try to fetch from the API using apiClient
+      logger.log(`[API] Fetching pledge count for campaign: ${campaignId}`);
+      const data = await apiClient.get<{ count: number }>(
+        `/pledges/campaign/${campaignId}/count`
       );
+      logger.log(`[API] Successfully fetched pledge count: ${data.count}`);
+      return data.count;
+    } catch (error) {
+      logger.warn("[API] Error fetching pledge count, using mock data:", error);
       // Return mock data if API fails
       return MOCK_PLEDGE_COUNTS[campaignId];
     }
-
-    const data = await response.json();
-    logger.log(`[API] Successfully fetched pledge count: ${data.count}`);
-    return data.count;
   } catch (error) {
     logger.error("[API] Error in getCampaignPledgeCount:", error);
     // Return mock data as fallback

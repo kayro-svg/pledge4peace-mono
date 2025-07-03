@@ -14,6 +14,7 @@ declare module "next-auth" {
   interface Session {
     user: User;
     accessToken: string;
+    backendTokenExpires?: number;
   }
 }
 
@@ -26,5 +27,6 @@ declare module "next-auth/jwt" {
     userName: string;
     userRole: "user" | "superAdmin";
     createdAt: Date;
+    backendTokenExpires?: number;
   }
 }

@@ -108,13 +108,10 @@ export default function EventPageContent({
         return;
       }
 
-      const data = await registerToEvent(
-        {
-          eventId: event._id,
-          eventTitle: event.title,
-        },
-        session?.accessToken
-      );
+      const data = await registerToEvent({
+        eventId: event._id,
+        eventTitle: event.title,
+      });
       setIsRegistered(data.brevoRegistered);
       toast.success(`Successfully registered to "${event.title}"!`);
     } catch (error) {
@@ -128,10 +125,7 @@ export default function EventPageContent({
   useEffect(() => {
     if (!session) return;
     const checkRegistrationStatus = async () => {
-      const data = await getEventRegistrationStatus(
-        event._id,
-        session?.accessToken
-      );
+      const data = await getEventRegistrationStatus(event._id);
       logger.log(data);
       setIsRegistered(data.isRegistered);
     };

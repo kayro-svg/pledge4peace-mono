@@ -4,12 +4,11 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { SanityHeroSection } from "@/lib/types";
-import { useSession } from "next-auth/react";
+import { useAuthSession } from "@/hooks/use-auth-session";
 
 export default function HeroButtons({ data }: { data: SanityHeroSection }) {
   const router = useRouter();
-  const { data: session, status } = useSession();
-  const isAuthenticated = status === "authenticated";
+  const { session, isAuthenticated } = useAuthSession();
 
   const handleClick = () => {
     const el = document.getElementById("projects-section");

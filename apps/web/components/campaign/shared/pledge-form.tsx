@@ -4,7 +4,7 @@ import { ArrowRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { createPledge, checkExistingPledge } from "@/lib/api/pledges";
 import { toast } from "sonner";
-import { useSession } from "next-auth/react";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import {
   Dialog,
   DialogContent,
@@ -28,8 +28,7 @@ export default function PledgeForm({
   campaignId,
   onPledgeCreated,
 }: PledgeFormProps) {
-  const { data: session, status } = useSession();
-  const isAuthenticated = status === "authenticated";
+  const { session, status, isAuthenticated } = useAuthSession();
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [subscribeToUpdates, setSubscribeToUpdates] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);

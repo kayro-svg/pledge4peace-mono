@@ -6,7 +6,7 @@ import CommentForm from "./comment-form";
 import { useInteractionManager } from "../shared/use-interaction-manager";
 import Image from "next/image";
 import { getComments, createComment } from "@/lib/api/solutions";
-import { useSession } from "next-auth/react";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import { toast } from "sonner";
 import { Comment } from "@/lib/types/index";
 import AuthContainer from "@/components/login/auth-container";
@@ -30,7 +30,7 @@ export default function CommentsSection({
 }: CommentsSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
-  const { data: session } = useSession();
+  const { session, isAuthenticated } = useAuthSession();
   const { count, setCount, incrementCount } = useInteractionManager({
     solutionId: solutionId || "",
     initialCount: 0,
