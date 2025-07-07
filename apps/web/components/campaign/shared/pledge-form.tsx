@@ -20,12 +20,14 @@ import Link from "next/link";
 interface PledgeFormProps {
   pledgeCommitmentItems: string[];
   campaignId: string;
+  campaignTitle: string;
   onPledgeCreated?: (newCount: number) => void;
 }
 
 export default function PledgeForm({
   pledgeCommitmentItems,
   campaignId,
+  campaignTitle,
   onPledgeCreated,
 }: PledgeFormProps) {
   const { session, status, isAuthenticated } = useAuthSession();
@@ -86,6 +88,7 @@ export default function PledgeForm({
       // Submit the pledge
       const response = await createPledge({
         campaignId,
+        campaignTitle,
         agreeToTerms,
         subscribeToUpdates,
       });

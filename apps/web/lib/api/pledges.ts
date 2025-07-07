@@ -3,6 +3,7 @@ import { logger } from "@/lib/utils/logger";
 
 export interface PledgeData {
   campaignId: string;
+  campaignTitle: string;
   agreeToTerms: boolean;
   subscribeToUpdates: boolean;
 }

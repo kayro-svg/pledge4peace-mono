@@ -448,6 +448,10 @@ export class EmailService {
           email: "info@pledge4peace.org",
           name: "Pledge4Peace Admin",
         },
+        {
+          email: "shelsys@pledge4peace.org",
+          name: "Shelsys Rivera - Marketing Chief",
+        },
       ],
       subject: `New Volunteer Application from ${volunteerData.name}`,
       htmlContent: `
@@ -512,7 +516,7 @@ export class EmailService {
   async sendPledgeNotification(pledgeData: {
     userName: string;
     userEmail: string;
-    campaignId: string;
+    campaignTitle: string;
     pledgeDate: string;
     subscribeToUpdates: boolean;
   }) {
@@ -526,6 +530,10 @@ export class EmailService {
           email: "info@pledge4peace.org",
           name: "Pledge4Peace Admin",
         },
+        {
+          email: "shelsys@pledge4peace.org",
+          name: "Shelsys Rivera - Marketing Chief",
+        },
       ],
       subject: `New Pledge from ${pledgeData.userName}`,
       htmlContent: `
@@ -536,9 +544,8 @@ export class EmailService {
           <ul>
             <li><strong>User Name:</strong> ${pledgeData.userName}</li>
             <li><strong>User Email:</strong> ${pledgeData.userEmail}</li>
-            <li><strong>Campaign ID:</strong> ${pledgeData.campaignId}</li>
+            <li><strong>Campaign Title:</strong> ${pledgeData.campaignTitle}</li>
             <li><strong>Pledge Date:</strong> ${pledgeData.pledgeDate}</li>
-            <li><strong>Subscribed to Updates:</strong> ${pledgeData.subscribeToUpdates ? "Yes" : "No"}</li>
           </ul>
         </div>
         <p>This user has successfully committed to supporting this campaign's peace initiatives.</p>

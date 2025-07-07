@@ -1,3 +1,34 @@
+// import { Hono } from "hono";
+// import { requireAuth } from "../middleware/auth";
+// import { PledgesController } from "../controllers/pledges.controller";
+
+// /* --------------------  Tipos de contexto  -------------------- */
+// type Bindings = {
+//   DB: D1Database;
+//   JWT_SECRET: string;
+// };
+
+// type Variables = {
+//   userId: string;
+// };
+
+// /* ---------------------  Instancias  -------------------------- */
+// const pledgesRoutes = new Hono<{ Bindings: Bindings; Variables: Variables }>();
+// const controller = new PledgesController();
+
+// /* -------------------------  Rutas  --------------------------- */
+// pledgesRoutes.get("/campaign/:campaignId/count", (c) =>
+//   controller.getCampaignPledgeCount(c)
+// );
+
+// pledgesRoutes.get("/check/:campaignId", requireAuth, (c) =>
+//   controller.checkUserHasPledged(c)
+// );
+
+// pledgesRoutes.post("/", requireAuth, (c) => controller.createPledge(c));
+
+// export { pledgesRoutes };
+
 import { Hono } from "hono";
 import { drizzle } from "drizzle-orm/d1";
 import { pledges, campaignPledgeCounts } from "../db/schema/pledges";
@@ -21,6 +52,7 @@ type Variables = {
 
 interface CreatePledgeBody {
   campaignId: string;
+  campaignTitle: string;
   agreeToTerms: boolean;
   subscribeToUpdates: boolean;
 }
@@ -205,7 +237,7 @@ pledgesRoutes.post("/", requireAuth, async (c: Context) => {
           await authService.emailService.sendPledgeNotification({
             userName: userInfo.name,
             userEmail: userInfo.email,
-            campaignId: body.campaignId,
+            campaignTitle: body.campaignTitle || "",
             pledgeDate: new Date().toLocaleString("en-US", {
               year: "numeric",
               month: "long",
@@ -230,6 +262,33 @@ pledgesRoutes.post("/", requireAuth, async (c: Context) => {
           "⚠️ Failed to send pledge notification to admin:",
           adminEmailError
         );
+      }
+    }
+
+    // 6. Agregar al Brevo - Campaigns List
+    const brevoListsService = c.get("brevoListsService");
+    if (brevoListsService && userInfo) {
+      try {
+        // Transform userInfo into a proper BrevoContact structure
+        const brevoContact = {
+          email: userInfo.email,
+          attributes: {
+            FIRSTNAME: userInfo.name || "",
+          },
+        };
+
+        const brevoResponse = await brevoListsService.addToCampaignsList(
+          brevoContact,
+          body.campaignId,
+          body.campaignTitle || ""
+        );
+        logger.log(
+          "✅ Pledge notification sent to Brevo - Campaigns List:",
+          brevoResponse
+        );
+      } catch (brevoError) {
+        // No fallar el pledge si el Brevo falla
+        logger.error("⚠️ Failed to add to Brevo campaigns list:", brevoError);
       }
     }
 

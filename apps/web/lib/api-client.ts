@@ -75,14 +75,32 @@ class ApiClient {
         }
       }
 
+      // if (!response.ok) {
+      //   const errorData = await response.json();
+      //   throw new Error(
+      //     errorData.message || `HTTP error! status: ${response.status}`
+      //   );
+      // }
+
+      // return await response.json();
+      const isJson = response.headers
+        .get("content-type")
+        ?.includes("application/json");
+
+      // cuerpo parseado o texto plano según corresponda
+      const body = isJson ? await response.json() : await response.text();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || `HTTP error! status: ${response.status}`
-        );
+        // body puede ser objeto ({error, message}) o string
+        const message =
+          (typeof body === "string" ? body : body?.error || body?.message) ??
+          `HTTP error! status: ${response.status}`;
+        throw new Error(message);
       }
 
-      return await response.json();
+      // para peticiones OK devolvemos el cuerpo ya parseado o en texto
+      // (ajusta el tipo de retorno si sólo admites JSON en respuestas exitosas)
+      return body as unknown as T;
     } catch (error) {
       if (error instanceof Error && error.message === "Session expired") {
         throw error;
