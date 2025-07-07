@@ -531,9 +531,8 @@ export class EmailService {
           name: "Pledge4Peace Admin",
         },
         {
-          // email: "shelsys@pledge4peace.org",
-          email: "kayrov@weversity.org",
-          name: "Kayro Test - this will be replaced by Shelsys Rivera - Marketing Chief",
+          email: "shelsys@pledge4peace.org",
+          name: "Shelsys Rivera - Marketing Chief",
         },
       ],
       subject: `New Pledge from ${pledgeData.userName}`,
