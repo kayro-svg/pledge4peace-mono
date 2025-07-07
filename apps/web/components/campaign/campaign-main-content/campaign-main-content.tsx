@@ -53,6 +53,7 @@ export default function MainContentSection({
             <PledgeForm
               pledgeCommitmentItems={campaign.pledgeCommitmentItems || []}
               campaignId={campaignId || ""}
+              campaignTitle={campaign.title || ""}
               onPledgeCreated={handlePledgeCreated}
             />
           </div>

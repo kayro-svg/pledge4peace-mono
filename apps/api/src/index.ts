@@ -9,6 +9,7 @@ import { eventsRoutes } from "./routes/events";
 import { usersRoutes } from "./routes/users";
 import { volunteerRoutes } from "./routes/volunteer";
 import { contactRoutes } from "./routes/contact";
+// import { userInvolvementRoutes } from "./routes/user-involvement";
 import { AuthService } from "./services/auth.service";
 import { BrevoListsService } from "./services/brevo-lists.service";
 import { createDb } from "./db";
@@ -75,6 +76,7 @@ app.use("*", async (c, next) => {
     organizationsListId: 62, // P4P - Organizations #62
     studentsListId: 63, // P4P - Students #63
     othersListId: 64, // P4P - Others #64
+    campaignsListId: 69, // P4P - Campaigns #69
   });
   c.set("brevoListsService", brevoListsService);
 
@@ -91,5 +93,6 @@ app.route("/api/events", eventsRoutes);
 app.route("/api/users", usersRoutes);
 app.route("/api/volunteer", volunteerRoutes);
 app.route("/api/contact", contactRoutes);
+// app.route("/api/user-involvement", userInvolvementRoutes);
 
 export default app;

@@ -11,6 +11,8 @@ export interface BrevoContact {
     JOB_TITLE?: string;
     LINKEDIN?: string;
     SKILLS?: string;
+    P4PCAMPAIGNID?: string;
+    P4PCAMPAIGNTITLE?: string;
     [key: string]: any;
   };
   listIds?: number[];
@@ -28,6 +30,7 @@ export interface BrevoListsConfig {
   organizationsListId: number;
   studentsListId: number;
   othersListId: number;
+  campaignsListId: number;
 }
 
 export class BrevoListsService {
@@ -41,6 +44,7 @@ export class BrevoListsService {
   private organizationsListId: number;
   private studentsListId: number;
   private othersListId: number;
+  private campaignsListId: number;
   private baseUrl = "https://api.brevo.com/v3";
 
   constructor(config: BrevoListsConfig) {
@@ -54,6 +58,7 @@ export class BrevoListsService {
     this.organizationsListId = config.organizationsListId;
     this.studentsListId = config.studentsListId;
     this.othersListId = config.othersListId;
+    this.campaignsListId = config.campaignsListId;
   }
 
   /**
@@ -413,5 +418,65 @@ export class BrevoListsService {
       // En caso de error, devolvemos false para permitir que continúe el proceso
       return false;
     }
+  }
+
+  /**
+   * Agrega / actualiza al contacto en la lista "P4P – Campaigns" (#69)
+   * ▸ Si ya tiene otros pledges, los conserva y añade el nuevo (id + título)
+   * ▸ Los valores quedan unidos por comas en el MISMO campo
+   */
+  async addToCampaignsList(
+    contact: BrevoContact, // ⇢ { email, attributes: { FIRSTNAME, ... } }
+    campaignId: string,
+    campaignTitle: string
+  ): Promise<any> {
+    /* 1️⃣  Leer contacto actual (si existe) ---------------------------- */
+    let existing: any = null;
+    try {
+      existing = await this.getContact(contact.email);
+    } catch {
+      /* 404 ⇒ sigue como null */
+    }
+
+    /* 2️⃣  Construir sets con los valores existentes + el nuevo -------- */
+    const idSet = new Set<string>();
+    const titleSet = new Set<string>();
+
+    // Verificar que existing y existing.attributes existan antes de acceder
+    if (existing && existing.attributes && existing.attributes.P4PCAMPAIGNID) {
+      for (const id of (existing.attributes.P4PCAMPAIGNID as string).split(
+        ","
+      )) {
+        if (id.trim()) idSet.add(id.trim());
+      }
+    }
+    if (
+      existing &&
+      existing.attributes &&
+      existing.attributes.P4PCAMPAIGNTITLE
+    ) {
+      for (const t of (existing.attributes.P4PCAMPAIGNTITLE as string).split(
+        ","
+      )) {
+        if (t.trim()) titleSet.add(t.trim());
+      }
+    }
+
+    idSet.add(campaignId);
+    titleSet.add(campaignTitle);
+
+    /* 3️⃣  Upsert con los valores fusionados --------------------------- */
+    const payload: BrevoContact = {
+      ...contact, // FIRSTNAME, LASTNAME, etc.
+      listIds: [this.campaignsListId],
+      updateEnabled: true,
+      attributes: {
+        ...contact.attributes,
+        P4PCAMPAIGNID: [...idSet].join(","), // "idA,idB,idC"
+        P4PCAMPAIGNTITLE: [...titleSet].join(","), // "Campaña A,Campaña B"
+      },
+    };
+
+    return this.createOrUpdateContact(payload);
   }
 }
