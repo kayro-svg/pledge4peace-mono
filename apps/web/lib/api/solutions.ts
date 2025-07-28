@@ -76,7 +76,19 @@ export async function getSolutions(campaignId: string): Promise<Solution[]> {
 
 export async function likeSolution(solutionId: string) {
   try {
-    return await apiClient.post(`/solutions/${solutionId}/like`);
+    return await apiClient.post<{
+      liked: boolean;
+      stats: {
+        likes: number;
+        dislikes: number;
+        shares: number;
+      };
+      userInteractions: {
+        hasLiked: boolean;
+        hasDisliked: boolean;
+        hasShared: boolean;
+      };
+    }>(`/solutions/${solutionId}/like`);
   } catch (error) {
     // apiClient handles session expiration automatically
     throw new Error("Failed to like solution");
@@ -85,7 +97,19 @@ export async function likeSolution(solutionId: string) {
 
 export async function dislikeSolution(solutionId: string) {
   try {
-    return await apiClient.post(`/solutions/${solutionId}/dislike`);
+    return await apiClient.post<{
+      disliked: boolean;
+      stats: {
+        likes: number;
+        dislikes: number;
+        shares: number;
+      };
+      userInteractions: {
+        hasLiked: boolean;
+        hasDisliked: boolean;
+        hasShared: boolean;
+      };
+    }>(`/solutions/${solutionId}/dislike`);
   } catch (error) {
     // apiClient handles session expiration automatically
     throw new Error("Failed to dislike solution");
@@ -161,25 +185,25 @@ export async function getUserInteractions(solutionId: string) {
     const cacheKey = `${solutionId}-user-interactions`;
     const cachedData = userInteractionsCache[cacheKey];
 
-    if (
-      cachedData &&
-      Date.now() - cachedData.timestamp < USER_INTERACTIONS_CACHE_TTL
-    ) {
-      return cachedData.data;
-    }
+    // if (
+    //   cachedData &&
+    //   Date.now() - cachedData.timestamp < USER_INTERACTIONS_CACHE_TTL
+    // ) {
+    //   return cachedData.data;
+    // }
 
     try {
       const data = await apiClient.get<{
         hasLiked: boolean;
         hasDisliked: boolean;
         hasShared: boolean;
-      }>(`/solutions/${solutionId}/interactions`);
+      }>(`/solutions/${solutionId}/user-interactions`);
 
       // Cache the response
-      userInteractionsCache[cacheKey] = {
-        data,
-        timestamp: Date.now(),
-      };
+      // userInteractionsCache[cacheKey] = {
+      //   data,
+      //   timestamp: Date.now(),
+      // };
 
       return data;
     } catch (error) {
@@ -188,9 +212,9 @@ export async function getUserInteractions(solutionId: string) {
       logger.warn("Error fetching user interactions, using defaults:", error);
 
       // Return cached data if available
-      if (cachedData) {
-        return cachedData.data;
-      }
+      // if (cachedData) {
+      //   return cachedData.data;
+      // }
 
       // Otherwise return default values
       return {
@@ -228,7 +252,17 @@ export async function createComment(data: CreateCommentDto): Promise<Comment> {
     const endpoint = API_ENDPOINTS.comments
       .create(data.solutionId)
       .replace(process.env.NEXT_PUBLIC_API_URL || "", "");
-    return await apiClient.post<Comment>(endpoint, data);
+
+    // Prepare request body with parentId if it exists
+    const requestBody = {
+      content: data.content,
+      solutionId: data.solutionId,
+      ...(data.parentId && { parentId: data.parentId }),
+      ...(data.userName && { userName: data.userName }),
+      ...(data.userAvatar && { userAvatar: data.userAvatar }),
+    };
+
+    return await apiClient.post<Comment>(endpoint, requestBody);
   } catch (error) {
     // apiClient handles session expiration automatically
     throw new Error("Failed to create comment");
@@ -261,18 +295,17 @@ export async function deleteSolution(
  * Elimina un comment específico
  * Solo permitido para el propietario o superAdmin
  */
-export async function deleteComment(
-  commentId: string
-): Promise<{ success: boolean; message: string }> {
+export async function deleteComment(commentId: string): Promise<{
+  success: boolean;
+  message: string;
+  deletedReplies?: string[];
+}> {
   try {
-    const data = await apiClient.delete<{ success: boolean; message: string }>(
-      `/solutions/comments/${commentId}`
-    );
+    const endpoint = API_ENDPOINTS.comments
+      .delete(commentId)
+      .replace(process.env.NEXT_PUBLIC_API_URL || "", "");
 
-    // Invalidar todos los caches después de eliminar exitosamente
-    invalidateAllSolutionsCache();
-
-    return data;
+    return await apiClient.delete(endpoint);
   } catch (error) {
     // apiClient handles session expiration automatically
     throw new Error("Failed to delete comment");

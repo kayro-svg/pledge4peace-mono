@@ -11,7 +11,7 @@ export function SiteHeader() {
   return (
     <header className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
       <div className="flex w-full items-center justify-between gap-1 px-4 lg:gap-2 lg:px-6">
-        <div className="flex items-center">
+        <div className="flex flex-row-reverse md:flex-row items-center justify-between md:justify-start w-full">
           <SidebarTrigger className="-ml-1" />
           <Separator
             orientation="vertical"
@@ -21,7 +21,7 @@ export function SiteHeader() {
             Welcome back, {session?.user?.name?.split(" ")[0]}!
           </h1>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
           <NavUser user={session?.user as User} />
         </div>
       </div>

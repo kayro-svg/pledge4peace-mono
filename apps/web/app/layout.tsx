@@ -7,6 +7,7 @@ import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import { CookieBanner } from "@/components/cookies/cookie-banner";
 import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import { FacebookPixel } from "@/components/analytics/facebook-pixel";
+import { GoogleTranslate } from "@/components/analytics/google-translate";
 import { SessionExpiryWarning } from "@/components/auth/session-expiry-warning";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -55,6 +56,7 @@ export default function RootLayout({
       <body className={`${inter.className} h-full w-[100%]`}>
         <GoogleAnalytics />
         <FacebookPixel />
+        <GoogleTranslate />
         <Providers>
           <LayoutWrapper>{children}</LayoutWrapper>
           <SessionExpiryWarning />

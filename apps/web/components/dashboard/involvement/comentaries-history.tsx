@@ -1,72 +1,126 @@
-import { Button } from "@/components/ui/button";
-import { CommentHistoryCard } from "./comment-history-card";
-import { ChevronRight } from "lucide-react";
+"use client";
 
-const userComments = [
-  {
-    title: "Strengthen Democracy & Accountability within Political Parties",
-    comment:
-      "I believe this solution is fundamental for democratic development. We need more transparent and accountable political parties that account to citizens and not to private interests.",
-    date: "3 days ago",
-    likes: 12,
-    replies: 3,
-    solution: {
-      category: "Democracy",
-      rank: 1,
-    },
-  },
-  {
-    title:
-      "Land Reforms, Eliminate Mafias, and Redistribute Resources in Pakistan",
-    comment:
-      "The redistribution of resources is key to reducing inequality, but it must be done with a solid legal framework that prevents corruption and ensures that benefits reach those who need them most.",
-    date: "1 week ago",
-    likes: 8,
-    replies: 1,
-    solution: {
-      category: "Peace",
-      rank: 2,
-    },
-  },
-  {
-    title: "Implement Nationwide Education Reform",
-    comment:
-      "Education is the foundation of development. This reform should prioritize universal access and quality education, especially in rural and marginalized communities where access to education is limited.",
-    date: "2 weeks ago",
-    likes: 15,
-    replies: 5,
-    solution: {
-      category: "Democracy",
-      rank: 3,
-    },
-  },
-];
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { MessageSquare, ExternalLink, Clock } from "lucide-react";
+import { useUserComments } from "@/hooks/useUserInvolvement";
+import { CommentHistoryCard } from "./comment-history-card";
+import { useRouter } from "next/navigation";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export function CommentariesHistory() {
-  return (
-    <div className="py-8">
-      <div className="mb-8 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">
-            Recent Comments
-          </h2>
-          <p className="mt-2 text-lg text-slate-600">
-            Your latest comments on solutions
-          </p>
-        </div>
-        {/* <Button
-          variant="outline"
-          className="gap-2 rounded-full border-[#2f4858] text-[#2f4858]"
-        >
-          View All Comments <ChevronRight className="h-4 w-4" />
-        </Button> */}
-      </div>
+  const [showAll, setShowAll] = useState(false);
+  const {
+    comments,
+    isCommentsLoading: isLoading,
+    commentsError: error,
+    refetchComments,
+    campaignDetails,
+    isCampaignsLoading,
+  } = useUserComments(showAll ? 20 : 3);
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {userComments.map((comment, index) => (
-          <CommentHistoryCard key={index} comment={comment} />
-        ))}
-      </div>
-    </div>
+  if (isLoading || isCampaignsLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5" />
+            Recent Comments
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-center">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Card key={index} className="w-full border border-gray-200">
+                <CardHeader className="pb-2">
+                  <Skeleton className="h-6 w-3/4 mb-2" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-20 w-full mb-4" />
+                  <Skeleton className="h-4 w-1/3" />
+                </CardContent>
+                <div className="p-4 pt-0">
+                  <Skeleton className="h-9 w-full rounded-full" />
+                </div>
+              </Card>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <MessageSquare className="w-5 h-5" />
+            Recent Comments
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-700 mb-2">Error loading comments: {error}</p>
+            <Button onClick={refetchComments} variant="outline" size="sm">
+              Try again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <MessageSquare className="w-5 h-5" />
+          Recent Comments
+        </CardTitle>
+        <p className="text-sm text-slate-500">
+          Your latest comments on solutions
+        </p>
+      </CardHeader>
+      <CardContent>
+        {comments.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+              <MessageSquare className="w-8 h-8 text-gray-400" />
+            </div>
+            <p className="text-slate-500 mb-2">No comments yet</p>
+            <p className="text-sm text-slate-400">
+              Start commenting on solutions to see your comments here.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-center">
+            {comments.map((comment) => (
+              <div key={comment.id} className="w-full h-full">
+                <CommentHistoryCard
+                  comment={comment}
+                  campaignSlug={campaignDetails[comment.campaignId]?.slug}
+                />
+              </div>
+            ))}
+
+            {/* View More/Less Button */}
+            {comments.length >= 3 && (
+              <div className="text-center pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAll(!showAll)}
+                  disabled={isLoading}
+                >
+                  {showAll ? "View less comments" : "View more comments"}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

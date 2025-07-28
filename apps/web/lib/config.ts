@@ -53,4 +53,10 @@ export const API_ENDPOINTS = {
     subscribe: `${API_URL}/users/subscribe`,
     subscriptionStatus: `${API_URL}/users/subscription-status`,
   },
+  userInvolvement: {
+    dashboard: `${API_URL}/user-involvement/dashboard`,
+    stats: `${API_URL}/user-involvement/stats`,
+    activity: `${API_URL}/user-involvement/activity`,
+    comments: `${API_URL}/user-involvement/comments`,
+  },
 };

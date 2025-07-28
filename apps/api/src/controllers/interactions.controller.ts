@@ -3,7 +3,7 @@ import { InteractionsService } from "../services/interactions.service";
 import { createDb } from "../db";
 import { HTTPException } from "hono/http-exception";
 import { getAuthUser } from "../middleware/auth.middleware";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 export class InteractionsController {
   async toggleLike(c: Context) {
@@ -19,7 +19,18 @@ export class InteractionsController {
       const service = new InteractionsService(db);
 
       const isLiked = await service.toggleLike(solutionId, user.id);
-      return c.json({ liked: isLiked });
+
+      // Get updated stats and user interactions
+      const [stats, userInteractions] = await Promise.all([
+        service.getInteractionStats(solutionId),
+        service.getUserInteraction(solutionId, user.id),
+      ]);
+
+      return c.json({
+        liked: isLiked,
+        stats,
+        userInteractions,
+      });
     } catch (error) {
       logger.error("Error toggling like:", error);
 
@@ -44,7 +55,18 @@ export class InteractionsController {
       const service = new InteractionsService(db);
 
       const isDisliked = await service.toggleDislike(solutionId, user.id);
-      return c.json({ disliked: isDisliked });
+
+      // Get updated stats and user interactions
+      const [stats, userInteractions] = await Promise.all([
+        service.getInteractionStats(solutionId),
+        service.getUserInteraction(solutionId, user.id),
+      ]);
+
+      return c.json({
+        disliked: isDisliked,
+        stats,
+        userInteractions,
+      });
     } catch (error) {
       if (error instanceof HTTPException) throw error;
       logger.error("Error toggling dislike:", error);

@@ -14,6 +14,7 @@ import { NavSecondary } from "@/components/dashboard/nav-secondary";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -21,6 +22,10 @@ import {
 } from "@/components/ui/sidebar";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { NavUser } from "./nav-user";
+import { User } from "next-auth";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { useAuthSession } from "@/hooks/use-auth-session";
 
 const data = {
   user: {
@@ -131,8 +136,15 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter();
+  const isMobile = useIsMobile();
+  const { session } = useAuthSession();
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
+    <Sidebar
+      side={isMobile ? "right" : "left"}
+      collapsible="icon"
+      {...props}
+      className="border-r bg-white md:bg-transparent"
+    >
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
@@ -142,6 +154,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               onClick={() => {
                 router.push("/");
               }}
+              tooltip="Home"
             >
               <a href="#">
                 <ArrowUpCircleIcon className="h-5 w-5" />
@@ -161,9 +174,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         {/* <NavDocuments items={data.documents} /> */}
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>
-      {/* <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter> */}
+      {isMobile && (
+        <SidebarFooter>
+          <SidebarMenuItem>
+            <NavUser user={session?.user as User} />
+          </SidebarMenuItem>
+        </SidebarFooter>
+      )}
     </Sidebar>
   );
 }

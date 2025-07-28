@@ -136,12 +136,21 @@ export class CommentsController {
       const userIdForDeletion = isSuperAdmin(c)
         ? existingComment.userId
         : user.id;
+
+      // Encontrar todos los comentarios hijos para incluir en la respuesta
+      const childCommentIds = await service.findAllChildCommentIds(id);
+
+      // Realizar la eliminación (ahora también elimina los hijos)
       await service.deleteComment(id, userIdForDeletion);
 
       return c.json({
         success: true,
-        message: "Comment deleted successfully",
+        message:
+          childCommentIds.length > 0
+            ? `Comment and ${childCommentIds.length} replies deleted successfully`
+            : "Comment deleted successfully",
         commentId: id,
+        deletedReplies: childCommentIds,
       });
     } catch (error) {
       if (error instanceof HTTPException) throw error;

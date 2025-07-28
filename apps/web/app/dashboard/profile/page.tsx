@@ -1,8 +1,5 @@
 "use client";
 
-import UserMetaCard from "@/components/dashboard/user-profile/user-meta-card";
-import UserInfoCard from "@/components/dashboard/user-profile/user-info-card";
-import UserAddressCard from "@/components/dashboard/user-profile/user-address-card";
 import UserProfilePage from "@/components/dashboard/user-profile/user-profile-page";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { User } from "next-auth";

@@ -7,7 +7,7 @@ import { Button } from "../ui/button";
 
 interface StatsCardProps {
   title: string;
-  value: number;
+  value: number | null;
   percentage: number;
   description: string;
   buttonText: string;
@@ -31,39 +31,39 @@ export function StatsDashboardCard({
     switch (variant) {
       case "campaigns":
         return {
+          color: "bg-orange-100",
+          icon: <HandHeart className="h-6 w-6 text-orange-600" />,
+          iconBackground: "bg-orange-100",
+          textColor: "text-orange-600",
+          buttonColor: "text-orange-600",
+          hoverCircleColor: "bg-orange-200",
+        };
+      case "pledges":
+        return {
           color: "bg-emerald-100",
-          icon: <HandHeart className="h-6 w-6 text-emerald-600" />,
+          icon: <HandshakeIcon className="h-6 w-6 text-emerald-600" />,
           iconBackground: "bg-emerald-100",
           textColor: "text-emerald-600",
           buttonColor: "text-emerald-600",
           hoverCircleColor: "bg-emerald-200",
         };
-      case "pledges":
+      case "votes":
         return {
           color: "bg-blue-100",
-          icon: <HandshakeIcon className="h-6 w-6 text-blue-600" />,
+          icon: <VoteIcon className="h-6 w-6 text-blue-600" />,
           iconBackground: "bg-blue-100",
           textColor: "text-blue-600",
           buttonColor: "text-blue-600",
           hoverCircleColor: "bg-blue-200",
         };
-      case "votes":
-        return {
-          color: "bg-red-100",
-          icon: <VoteIcon className="h-6 w-6 text-red-600" />,
-          iconBackground: "bg-red-100",
-          textColor: "text-red-600",
-          buttonColor: "text-red-600",
-          hoverCircleColor: "bg-red-200",
-        };
       default:
         return {
-          color: "bg-emerald-100",
-          icon: <HandHeart className="h-6 w-6 text-emerald-600" />,
-          iconBackground: "bg-emerald-100",
-          textColor: "text-emerald-600",
-          buttonColor: "text-emerald-600",
-          hoverCircleColor: "bg-emerald-200",
+          color: "bg-orange-100",
+          icon: <HandHeart className="h-6 w-6 text-orange-600" />,
+          iconBackground: "bg-orange-100",
+          textColor: "text-orange-600",
+          buttonColor: "text-orange-600",
+          hoverCircleColor: "bg-orange-200",
         };
     }
   };
@@ -77,22 +77,26 @@ export function StatsDashboardCard({
           colorBasedOnVariant(variant).hoverCircleColor
         }`}
       />
-      <div className="relative">
-        <div
-          className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
-            colorBasedOnVariant(variant).iconBackground
-          }`}
-        >
-          {colorBasedOnVariant(variant).icon}
+      <div className="relative flex flex-col gap-2 items-start justify-between h-full">
+        <div className="flex flex-col gap-2">
+          <div
+            className={`mb-4 flex h-12 w-12 items-center justify-center rounded-full ${
+              colorBasedOnVariant(variant).iconBackground
+            }`}
+          >
+            {colorBasedOnVariant(variant).icon}
+          </div>
+          <h3 className="mb-1 text-sm font-medium text-slate-500">{title}</h3>
+          <div className="mb-2 flex items-baseline gap-2">
+            <span className="text-3xl font-bold text-slate-900">
+              {value || 0}
+            </span>
+            <TrendingUpIcon
+              className={`h-4 w-4 ${colorBasedOnVariant(variant).textColor}`}
+            />
+          </div>
+          <p className="text-sm text-slate-600">{description}</p>
         </div>
-        <h3 className="mb-1 text-sm font-medium text-slate-500">{title}</h3>
-        <div className="mb-2 flex items-baseline gap-2">
-          <span className="text-3xl font-bold text-slate-900">{value}</span>
-          <TrendingUpIcon
-            className={`h-4 w-4 ${colorBasedOnVariant(variant).textColor}`}
-          />
-        </div>
-        <p className="text-sm text-slate-600">{description}</p>
         <Button
           variant="ghost"
           size="sm"

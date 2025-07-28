@@ -7,23 +7,31 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface CommentFormProps {
   solutionId: string;
-  onSubmit: (content: string, solutionId: string) => void;
+  parentId?: string;
+  onSubmit: (content: string, solutionId: string, parentId?: string) => void;
+  onCancel?: () => void;
   userAvatar?: string;
   userName?: string;
+  placeholder?: string;
+  isReply?: boolean;
 }
 
 export default function CommentForm({
   solutionId,
+  parentId,
   onSubmit,
+  onCancel,
   userAvatar,
   userName = "Guest User",
+  placeholder = "Add a comment...",
+  isReply = false,
 }: CommentFormProps) {
   const [comment, setComment] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (comment.trim()) {
-      onSubmit(comment, solutionId);
+      onSubmit(comment, solutionId, parentId);
       setComment("");
     }
   };
@@ -36,26 +44,42 @@ export default function CommentForm({
     .toUpperCase();
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-3 mt-4">
-      <Avatar className="h-8 w-8 mt-1">
+    <form
+      onSubmit={handleSubmit}
+      className={`flex gap-3 ${isReply ? "mt-2" : "mt-4"}`}
+    >
+      <Avatar className={`${isReply ? "h-6 w-6" : "h-8 w-8"} mt-1`}>
         <AvatarImage src={userAvatar} alt={userName} />
-        <AvatarFallback>{initials}</AvatarFallback>
+        <AvatarFallback className={isReply ? "text-xs" : ""}>
+          {initials}
+        </AvatarFallback>
       </Avatar>
       <div className="flex-1 space-y-2">
         <Textarea
-          placeholder="Add a comment..."
+          placeholder={placeholder}
           value={comment}
           onChange={(e) => setComment(e.target.value)}
-          className="resize-none min-h-24 text-sm"
+          className={`resize-none ${isReply ? "min-h-16 text-sm" : "min-h-24 text-sm"}`}
           data-comment-input
         />
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          {isReply && onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onCancel}
+            >
+              Cancel
+            </Button>
+          )}
           <Button
             type="submit"
             disabled={!comment.trim()}
+            size={isReply ? "sm" : "default"}
             className="bg-[#2F4858] hover:bg-[#1e2f38] text-white"
           >
-            Comment
+            {isReply ? "Reply" : "Comment"}
           </Button>
         </div>
       </div>

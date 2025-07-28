@@ -210,16 +210,13 @@ export default function UserMetaCard({ user }: { user: User }) {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex gap-2">
+              {/* <div className="flex gap-2">
                 <Button className="w-8 h-8 ring-1 ring-gray-300 rounded-lg bg-transparent text-gray-700 hover:bg-transparent">
                   <Facebook className="w-4 h-4" />
                 </Button>
                 <Button
-                  // size="sm"
-                  // variant="outline"
                   className="w-8 h-8 ring-1 ring-gray-300 rounded-lg bg-transparent text-gray-700 hover:bg-transparent"
                 >
-                  {/* <Twitter className="w-4 h-4" /> */}
                   <svg
                     className="fill-current"
                     width="20"
@@ -240,7 +237,7 @@ export default function UserMetaCard({ user }: { user: User }) {
                 <Button className="w-8 h-8 ring-1 ring-gray-300 rounded-lg bg-transparent text-gray-700 hover:bg-transparent">
                   <Instagram className="w-4 h-4" />
                 </Button>
-              </div>
+              </div> */}
               <Button onClick={() => setIsOpen(true)}>
                 <Edit className="w-4 h-4 mr-2" />
                 Edit Profile
@@ -251,7 +248,7 @@ export default function UserMetaCard({ user }: { user: User }) {
       </Card>
 
       <Dialog open={isOpen} onOpenChange={() => setIsOpen(false)}>
-        <DialogContent className="max-w-[700px] m-4 bg-white">
+        <DialogContent className="max-w-[700px] m-4 bg-white max-h-[80vh] md:h-[fit-content] overflow-y-auto">
           <DialogTitle>Edit Personal Information</DialogTitle>
           <p className="text-sm text-gray-500 dark:text-gray-400">
             Update your details to keep your profile up-to-date.
@@ -292,7 +289,7 @@ export default function UserMetaCard({ user }: { user: User }) {
                   </div> */}
                   </div>
                 </div>
-                <div className="mt-7">
+                {/* <div className="mt-7">
                   <h5 className="mb-5 text-lg font-medium text-gray-800 dark:text-white/90 lg:mb-6">
                     Social Links
                   </h5>
@@ -318,7 +315,7 @@ export default function UserMetaCard({ user }: { user: User }) {
                       <Input type="text" defaultValue="/dashboard/profile" />
                     </div>
                   </div>
-                </div>
+                </div> */}
               </div>
               <div className="flex items-center gap-3 px-2 mt-6 lg:justify-end">
                 <Button

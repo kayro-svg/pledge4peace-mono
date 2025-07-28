@@ -5,7 +5,7 @@ import SolutionActionsBar from "./solution-actions-bar";
 import AdminActions from "@/components/admin/admin-actions";
 import { Solution } from "@/lib/types/index";
 import { useEffect } from "react";
-import { useInteractionManager } from "../shared/use-interaction-manager";
+import { useInteractions } from "../shared/interaction-context";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { PartyConfig } from "./peace-agreement-content";
 import { Badge } from "@/components/ui/badge";
@@ -15,7 +15,6 @@ interface SolutionPostProps {
   activeSolutionId: string;
   onSolutionChange: (solutionId: string) => void;
   onCommentClick?: (solutionId: string | React.MouseEvent) => void;
-  index: number;
   toggleExpand: (solutionId: string) => void;
   rank: number;
   onRefresh?: () => Promise<void>;
@@ -30,61 +29,36 @@ export default function SolutionPost({
   activeSolutionId,
   onSolutionChange,
   onCommentClick,
-  index,
   toggleExpand,
   rank,
   onRefresh,
   showPartyBadge,
   postPartyConfig,
 }: SolutionPostProps) {
-  const { count, setCount } = useInteractionManager({
-    solutionId: solution.id,
-    initialCount: 0,
-  });
+  const { getInteractionCount, updateCommentCount } = useInteractions();
 
-  // const postPartyConfig = {
-  //   israeli: {
-  //     label: "Israel",
-  //     icon: <IsraelFlag width={20} height={16} />,
-  //     color: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-transparent",
-  //   },
-  //   palestinian: {
-  //     label: "Palestine",
-  //     icon: <PalestineFlag width={20} height={16} />,
-  //     color: "bg-green-50 text-green-700 border-green-200 hover:bg-transparent",
-  //   },
-  // };
+  // Get comment count from context
+  const commentCount = getInteractionCount("comment", solution.id);
 
   // Hook para verificar permisos de administración
   const { canDelete } = useAdminPermissions();
 
-  useEffect(() => {
-    if (solution.expanded) {
-      setCount(solution.comments || 0);
-    }
-  }, [solution.expanded, solution.comments, solution.id, setCount]);
-
   // Callback to update comment count in the UI when a comment is added
   const handleCommentAdded = () => {
-    // Increment the local comment count
-    const newCount = count + 1;
-    setCount(newCount);
-
-    // Also update the counter in the solution object to keep it in sync
-    if (solution.stats) {
-      solution.stats.comments = newCount;
-    }
+    // Increment the comment count in the context
+    const newCount = commentCount + 1;
+    updateCommentCount(solution.id, newCount);
   };
 
   // This effect ensures the comment count stays in sync with the solution data
   useEffect(() => {
     if (
       solution.stats?.comments !== undefined &&
-      solution.stats.comments !== count
+      solution.stats.comments !== commentCount
     ) {
-      setCount(solution.stats.comments);
+      updateCommentCount(solution.id, solution.stats.comments);
     }
-  }, [solution.stats?.comments, count, setCount]);
+  }, [solution.stats?.comments, commentCount, solution.id, updateCommentCount]);
 
   // Handle interaction from action bar (like, dislike, share, comment)
   const handleInteraction = (

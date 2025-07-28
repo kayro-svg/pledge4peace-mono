@@ -89,7 +89,7 @@ export default function PeaceAgreementContent({
   const [newlyCreatedSolutionId, setNewlyCreatedSolutionId] = useState<
     string | null
   >(null);
-  const { setUserInteraction, getUserInteraction, getInteractionCount } =
+  const { getInteractionCount, initializeSolution, forceInitializeSolution } =
     useInteractions();
 
   // Helper function to get the most up-to-date stats for a solution
@@ -210,17 +210,17 @@ export default function PeaceAgreementContent({
 
           const interactions = await Promise.all(interactionPromises);
           interactions.forEach(({ solutionId, interactions }) => {
-            // Set user interactions from server data
-            // The context will handle proper user separation and persistence
-            if (interactions.hasLiked) {
-              setUserInteraction("like", solutionId, true);
-            }
-            if (interactions.hasDisliked) {
-              setUserInteraction("dislike", solutionId, true);
-            }
-            if (interactions.hasShared) {
-              setUserInteraction("share", solutionId, true);
-            }
+            // Use forceInitializeSolution to ensure fresh state on page load
+            forceInitializeSolution(
+              solutionId,
+              {
+                likes: solutionStats[solutionId]?.likes || 0,
+                dislikes: solutionStats[solutionId]?.dislikes || 0,
+                shares: solutionStats[solutionId]?.shares || 0,
+                comments: solutionStats[solutionId]?.comments || 0,
+              },
+              interactions
+            );
           });
         }
       } catch (error) {
@@ -629,7 +629,6 @@ export default function PeaceAgreementContent({
                     onCommentClick={onCommentClick}
                     activeSolutionId={activeSolutionId || ""}
                     onSolutionChange={onSolutionChange || (() => {})}
-                    index={index}
                     toggleExpand={toggleExpand}
                     onRefresh={refreshSolutions}
                     showPartyBadge={parties.length > 1}
@@ -686,9 +685,6 @@ export default function PeaceAgreementContent({
                             onCommentClick={onCommentClick}
                             activeSolutionId={activeSolutionId || ""}
                             onSolutionChange={onSolutionChange || (() => {})}
-                            index={sortedSolutions.findIndex(
-                              (s) => s.id === solution.id
-                            )}
                             toggleExpand={toggleExpand}
                             onRefresh={refreshSolutions}
                           />
@@ -706,7 +702,7 @@ export default function PeaceAgreementContent({
           open={isCreateSolutionOpen}
           onOpenChange={setIsCreateSolutionOpen}
         >
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-lg h-[80vh] md:h-[fit-content]">
             <DialogHeader>
               <DialogTitle>Create New Solution</DialogTitle>
             </DialogHeader>
@@ -858,7 +854,8 @@ export default function PeaceAgreementContent({
       </div>
 
       <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
-        <DialogContent className="max-w-lg w-full max-h-[100vh] overflow-y-auto">
+        {/* <DialogContent className="max-w-lg w-full max-h-[80vh] md:max-h-[85%]"> */}
+        <DialogContent className="max-w-lg w-full h-[80vh] md:h-[fit-content]">
           <DialogHeader>
             <DialogTitle>
               <p className="text-lg font-semibold mb-4 text-center">

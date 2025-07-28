@@ -1,7 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { solutionsRoutes } from "./routes/solutions";
-import { commentsRoutes } from "./routes/comments";
 import { authRoutes } from "./routes/auth";
 import { pledgesRoutes } from "./routes/pledges";
 import { statsRoutes } from "./routes/stats";
@@ -9,7 +8,7 @@ import { eventsRoutes } from "./routes/events";
 import { usersRoutes } from "./routes/users";
 import { volunteerRoutes } from "./routes/volunteer";
 import { contactRoutes } from "./routes/contact";
-// import { userInvolvementRoutes } from "./routes/user-involvement";
+import { userInvolvementRoutes } from "./routes/user-involvement";
 import { AuthService } from "./services/auth.service";
 import { BrevoListsService } from "./services/brevo-lists.service";
 import { createDb } from "./db";
@@ -33,6 +32,7 @@ app.use(
       "http://localhost:3001",
       "https://pledge4peace.vercel.app",
       "https://www.pledge4peace.org",
+      "https://5a08b44a2da0.ngrok-free.app",
       // Add other allowed origins in production
     ],
     credentials: true, // Allow credentials (cookies, authorization headers)
@@ -86,13 +86,12 @@ app.use("*", async (c, next) => {
 // Routes
 app.route("/api/auth", authRoutes);
 app.route("/api/solutions", solutionsRoutes);
-app.route("/api/comments", commentsRoutes);
 app.route("/api/pledges", pledgesRoutes);
 app.route("/api/stats", statsRoutes);
 app.route("/api/events", eventsRoutes);
 app.route("/api/users", usersRoutes);
 app.route("/api/volunteer", volunteerRoutes);
 app.route("/api/contact", contactRoutes);
-// app.route("/api/user-involvement", userInvolvementRoutes);
+app.route("/api/user-involvement", userInvolvementRoutes);
 
 export default app;

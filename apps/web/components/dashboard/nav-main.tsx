@@ -10,8 +10,12 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { NavUser } from "@/components/dashboard/nav-user";
+import { User } from "next-auth";
+import { useAuthSession } from "@/hooks/use-auth-session";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export function NavMain({
   items,
@@ -26,6 +30,14 @@ export function NavMain({
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const pathname = usePathname();
   const router = useRouter();
+  const isMobile = useIsMobile();
+  const { session } = useAuthSession();
+
+  useEffect(() => {
+    const activePath = items.find((item) => item.url === pathname);
+    setActiveItem(activePath?.title || null);
+  }, [pathname]);
+
   return (
     <SidebarGroup>
       <SidebarGroupContent className="flex flex-col gap-2">

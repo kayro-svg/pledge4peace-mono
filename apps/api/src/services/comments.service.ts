@@ -1,4 +1,4 @@
-import { eq, and, desc } from "drizzle-orm";
+import { eq, and, desc, inArray } from "drizzle-orm";
 import { comments } from "../db/schema/comments";
 import type { DbClient } from "../types";
 
@@ -24,7 +24,7 @@ export interface CommentWithReplies extends Comment {
 export class CommentsService {
   constructor(private db: DbClient) {}
 
-  async createComment(data: CreateCommentDTO) {
+  async createComment(data: CreateCommentDTO): Promise<CommentWithReplies> {
     const newComment = await this.db
       .insert(comments)
       .values({
@@ -44,12 +44,8 @@ export class CommentsService {
     const comment = newComment[0];
     return {
       ...comment,
-      author: {
-        id: comment.userId,
-        name: comment.userName || "Anonymous",
-        avatar: comment.userAvatar,
-      },
-    };
+      replies: [], // Initialize empty replies array for consistency
+    } as CommentWithReplies;
   }
 
   async getCommentsBySolution(
@@ -69,7 +65,10 @@ export class CommentsService {
 
     // Primero, mapear todos los comentarios por ID
     allComments.forEach((comment) => {
-      commentMap.set(comment.id, { ...comment, replies: [] });
+      commentMap.set(comment.id, {
+        ...comment,
+        replies: [],
+      } as unknown as CommentWithReplies);
     });
 
     // Luego, organizar la estructura jerárquica
@@ -101,18 +100,58 @@ export class CommentsService {
   }
 
   async deleteComment(id: string, userId: string) {
-    // Cambiar lógica para permitir eliminación sin verificar userId
-    // (la verificación de permisos ya se hizo en el controller)
+    // 1. Primero, encontrar todos los comentarios hijos (replies) recursivamente
+    const allChildCommentIds = await this.findAllChildCommentIds(id);
+
+    // 2. Marcar el comentario principal como eliminado
     const updated = await this.db
       .update(comments)
       .set({
         status: "deleted",
         updatedAt: new Date(),
       })
-      .where(eq(comments.id, id)) // Solo verificar ID, no userId
+      .where(eq(comments.id, id))
       .returning();
 
+    // 3. Si hay comentarios hijos, marcarlos como eliminados también
+    if (allChildCommentIds.length > 0) {
+      await this.db
+        .update(comments)
+        .set({
+          status: "deleted",
+          updatedAt: new Date(),
+        })
+        .where(inArray(comments.id, allChildCommentIds));
+    }
+
     return updated[0];
+  }
+
+  // Método auxiliar para encontrar todos los IDs de comentarios hijos recursivamente
+  async findAllChildCommentIds(commentId: string): Promise<string[]> {
+    // 1. Encontrar los hijos directos
+    const directChildren = await this.db.query.comments.findMany({
+      where: eq(comments.parentId, commentId),
+      columns: { id: true },
+    });
+
+    // 2. Si no hay hijos, retornar array vacío
+    if (directChildren.length === 0) {
+      return [];
+    }
+
+    // 3. Obtener los IDs de los hijos directos
+    const directChildrenIds = directChildren.map((child) => child.id);
+
+    // 4. Para cada hijo directo, encontrar sus hijos recursivamente
+    const nestedChildrenIds: string[] = [];
+    for (const childId of directChildrenIds) {
+      const nestedIds = await this.findAllChildCommentIds(childId);
+      nestedChildrenIds.push(...nestedIds);
+    }
+
+    // 5. Combinar todos los IDs (directos + anidados)
+    return [...directChildrenIds, ...nestedChildrenIds];
   }
 
   async getCommentById(id: string) {

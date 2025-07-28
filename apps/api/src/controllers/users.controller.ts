@@ -1,6 +1,6 @@
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
-import { logger } from '../utils/logger';
+import { logger } from "../utils/logger";
 
 export class UsersController {
   async subscribe(c: Context) {
@@ -151,4 +151,50 @@ export class UsersController {
       return c.json({ message: "Error getting subscription status" }, 500);
     }
   }
+
+  // async pledgeToCampaign(c: Context) {
+  //   try {
+  //     const user = c.get("user");
+  //     if (!user) {
+  //       return c.json({ message: "Authentication required" }, 401);
+  //     }
+
+  //     const brevoListsService = c.get("brevoListsService");
+
+  //     const { campaignId, campaignTitle } = await c.req.json();
+
+  //     if (!campaignId || !campaignTitle) {
+  //       return c.json({ message: "Campaign ID and title are required" }, 400);
+  //     }
+
+  //     try {
+  //       const contact = await brevoListsService.getContact(user.email);
+
+  //       if (!contact) {
+  //         return c.json({ message: "User not found" }, 404);
+  //       }
+
+  //       await brevoListsService.addToCampaignsList(
+  //         contact,
+  //         campaignId,
+  //         campaignTitle
+  //       );
+
+  //       return c.json({
+  //         message: "User pledged to campaign",
+  //         user: {
+  //           id: user.id,
+  //           email: user.email,
+  //           name: user.name,
+  //         },
+  //       });
+  //     } catch (brevoError) {
+  //       logger.error("Error pledging user to campaign:", brevoError);
+  //       return c.json({ message: "Error pledging user to campaign" }, 500);
+  //     }
+  //   } catch (error) {
+  //     logger.error("Error pledging user to campaign:", error);
+  //     return c.json({ message: "Error pledging user to campaign" }, 500);
+  //   }
+  // }
 }

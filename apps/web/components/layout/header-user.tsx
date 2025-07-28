@@ -13,7 +13,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { signOut } from "next-auth/react";
 import { User } from "next-auth";
-import { LogOut, User as UserIcon } from "lucide-react";
+import {
+  LayoutDashboardIcon,
+  LogOut,
+  UserCircleIcon,
+  User as UserIcon,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { clearAllUserInteractions } from "@/lib/utils/interaction-utils";
 
@@ -51,6 +56,10 @@ export function HeaderUser({ user }: { user: User | null }) {
             </p>
           </div>
         </DropdownMenuLabel>
+        {/* <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+          <LayoutDashboardIcon />
+          Dashboard
+        </DropdownMenuItem> */}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />

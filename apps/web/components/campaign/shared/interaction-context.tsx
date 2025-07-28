@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback } from "react";
 import { useAuthSession } from "@/hooks/use-auth-session";
 
 type InteractionType = "like" | "dislike" | "comment" | "share";
@@ -13,391 +13,268 @@ interface InteractionData {
   userLiked: boolean;
   userDisliked: boolean;
   userCommented: boolean;
+  userShared: boolean;
 }
 
 type InteractionState = Record<string, InteractionData>;
 
 interface InteractionContextType {
-  handleInteraction: (
-    type: InteractionType,
-    solutionId: string,
-    count: number
-  ) => Promise<void>;
-  updateInteraction: (
-    type: InteractionType,
-    solutionId: string,
-    count: number,
-    userInteracted: boolean
-  ) => void;
-  syncUserInteraction: (
-    type: InteractionType,
-    solutionId: string,
-    userInteracted: boolean
-  ) => void;
+  // Get current stats
   getInteractionCount: (type: InteractionType, solutionId: string) => number;
   getUserInteraction: (type: InteractionType, solutionId: string) => boolean;
-  setUserInteraction: (
-    type: InteractionType,
+
+  // Update from backend API responses
+  updateFromBackend: (
     solutionId: string,
-    value: boolean
+    stats: {
+      likes: number;
+      dislikes: number;
+      shares: number;
+    },
+    userInteractions: {
+      hasLiked: boolean;
+      hasDisliked: boolean;
+      hasShared: boolean;
+    }
   ) => void;
-  clearAllInteractions: () => void;
+
+  // Initialize solution with initial data
+  initializeSolution: (
+    solutionId: string,
+    initialStats: {
+      likes: number;
+      dislikes: number;
+      comments: number;
+      shares: number;
+    },
+    userInteractions?: {
+      hasLiked: boolean;
+      hasDisliked: boolean;
+      hasShared: boolean;
+    }
+  ) => void;
+
+  // Force re-initialize solution (useful for refreshing state)
+  forceInitializeSolution: (
+    solutionId: string,
+    initialStats: {
+      likes: number;
+      dislikes: number;
+      comments: number;
+      shares: number;
+    },
+    userInteractions?: {
+      hasLiked: boolean;
+      hasDisliked: boolean;
+      hasShared: boolean;
+    }
+  ) => void;
+
+  // Update comment count
+  updateCommentCount: (solutionId: string, count: number) => void;
 }
 
 const InteractionContext = createContext<InteractionContextType | undefined>(
   undefined
 );
 
-interface InteractionProviderProps {
-  children: React.ReactNode;
-  initialStats?: InteractionState;
-}
-
 export function InteractionProvider({
   children,
-  initialStats = {},
-}: InteractionProviderProps) {
-  const { session, status, isAuthenticated } = useAuthSession();
+}: {
+  children: React.ReactNode;
+}) {
   const [interactions, setInteractions] = useState<InteractionState>({});
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const { session } = useAuthSession();
 
-  // Helper function to get the storage key for current user
-  const getStorageKey = () => {
-    const userId = session?.user?.id || session?.user?.email || "anonymous";
-    return `user-interactions-${userId}`;
-  };
+  // Get interaction count for a specific type
+  const getInteractionCount = useCallback(
+    (type: InteractionType, solutionId: string): number => {
+      const solutionData = interactions[solutionId];
+      if (!solutionData) return 0;
 
-  // Helper function to load interactions from sessionStorage
-  const loadInteractionsFromStorage = () => {
-    if (typeof window === "undefined") return {};
-
-    try {
-      const storageKey = getStorageKey();
-      const stored = sessionStorage.getItem(storageKey);
-      if (stored) {
-        return JSON.parse(stored);
+      switch (type) {
+        case "like":
+          return solutionData.likes;
+        case "dislike":
+          return solutionData.dislikes;
+        case "comment":
+          return solutionData.comments;
+        case "share":
+          return solutionData.shares;
+        default:
+          return 0;
       }
-    } catch (e) {
-      console.warn("Failed to restore interactions from sessionStorage:", e);
-    }
-    return {};
-  };
+    },
+    [interactions]
+  );
 
-  // Helper function to save interactions to sessionStorage
-  const saveInteractionsToStorage = (newInteractions: InteractionState) => {
-    if (typeof window === "undefined") return;
+  // Get user interaction status
+  const getUserInteraction = useCallback(
+    (type: InteractionType, solutionId: string): boolean => {
+      if (!session) return false;
 
-    try {
-      const storageKey = getStorageKey();
-      sessionStorage.setItem(storageKey, JSON.stringify(newInteractions));
-    } catch (e) {
-      console.warn("Failed to persist interactions to sessionStorage:", e);
-    }
-  };
+      const solutionData = interactions[solutionId];
+      if (!solutionData) return false;
 
-  // Helper function to clear old user data when user changes
-  const clearOldUserData = (oldUserId: string | null) => {
-    if (typeof window === "undefined" || !oldUserId) return;
-
-    try {
-      const oldStorageKey = `user-interactions-${oldUserId}`;
-      sessionStorage.removeItem(oldStorageKey);
-      // Also remove the old generic key if it exists
-      sessionStorage.removeItem("user-interactions");
-    } catch (e) {
-      console.warn("Failed to clear old user interactions:", e);
-    }
-  };
-
-  // Effect to handle user session changes
-  useEffect(() => {
-    const newUserId = session?.user?.id || session?.user?.email || null;
-
-    // If user changed, clear old data and load new data
-    if (currentUserId !== newUserId) {
-      // Clear old user data
-      if (currentUserId) {
-        clearOldUserData(currentUserId);
+      switch (type) {
+        case "like":
+          return solutionData.userLiked;
+        case "dislike":
+          return solutionData.userDisliked;
+        case "comment":
+          return solutionData.userCommented;
+        case "share":
+          return solutionData.userShared;
+        default:
+          return false;
       }
+    },
+    [interactions, session]
+  );
 
-      // Update current user ID
-      setCurrentUserId(newUserId);
-
-      // Load interactions for new user (or clear if no user)
-      if (newUserId) {
-        const userInteractions = loadInteractionsFromStorage();
-        setInteractions({ ...initialStats, ...userInteractions });
-      } else {
-        // No user logged in, clear interactions
-        setInteractions({});
+  // Update from backend API response
+  const updateFromBackend = useCallback(
+    (
+      solutionId: string,
+      stats: {
+        likes: number;
+        dislikes: number;
+        shares: number;
+      },
+      userInteractions: {
+        hasLiked: boolean;
+        hasDisliked: boolean;
+        hasShared: boolean;
       }
-    }
-  }, [
-    session?.user?.id,
-    session?.user?.email,
-    status,
-    currentUserId,
-    initialStats,
-  ]);
-
-  // Helper function to get user interaction status
-  const getUserInteraction = (
-    type: InteractionType,
-    solutionId: string
-  ): boolean => {
-    const solution = interactions[solutionId];
-    if (!solution) return false;
-    switch (type) {
-      case "like":
-        return !!solution.userLiked;
-      case "dislike":
-        return !!solution.userDisliked;
-      case "comment":
-        return !!solution.userCommented;
-      case "share":
-        return false; // No userShared property in our model
-      default:
-        return false;
-    }
-  };
-
-  const updateInteraction = (
-    type: InteractionType,
-    solutionId: string,
-    count: number,
-    userInteracted: boolean
-  ) => {
-    // Only update if user is logged in
-    if (!session?.user) return;
-
-    setInteractions((prev) => {
-      const current = prev[solutionId] || {
-        likes: 0,
-        dislikes: 0,
-        comments: 0,
-        shares: 0,
-        userLiked: false,
-        userDisliked: false,
-        userCommented: false,
-      };
-
-      // Determine which fields to update based on the interaction type
-      const countField =
-        type === "like"
-          ? "likes"
-          : type === "dislike"
-            ? "dislikes"
-            : type === "comment"
-              ? "comments"
-              : "shares";
-
-      const userPropKey =
-        type === "like"
-          ? "userLiked"
-          : type === "dislike"
-            ? "userDisliked"
-            : "userCommented";
-
-      const newState = {
+    ) => {
+      setInteractions((prev) => ({
         ...prev,
         [solutionId]: {
-          ...current,
-          [countField]: count,
-          [userPropKey]: userInteracted,
+          ...prev[solutionId],
+          likes: stats.likes,
+          dislikes: stats.dislikes,
+          shares: stats.shares,
+          userLiked: userInteractions.hasLiked,
+          userDisliked: userInteractions.hasDisliked,
+          userShared: userInteractions.hasShared,
+          // Keep existing comment data
+          comments: prev[solutionId]?.comments || 0,
+          userCommented: prev[solutionId]?.userCommented || false,
         },
-      };
+      }));
+    },
+    []
+  );
 
-      // Persist to sessionStorage
-      saveInteractionsToStorage(newState);
-
-      return newState;
-    });
-  };
-
-  const handleInteraction = async (
-    type: InteractionType,
-    solutionId: string,
-    count: number
-  ) => {
-    // Only update if user is logged in
-    if (!session?.user) return;
-
-    setInteractions((prev) => {
-      const current = prev[solutionId] || {
-        likes: 0,
-        dislikes: 0,
-        comments: 0,
-        shares: 0,
-        userLiked: false,
-        userDisliked: false,
-        userCommented: false,
-      };
-
-      // Determine which field to update based on the interaction type
-      const countField =
-        type === "like"
-          ? "likes"
-          : type === "dislike"
-            ? "dislikes"
-            : type === "comment"
-              ? "comments"
-              : "shares";
-
-      const newState = {
-        ...prev,
-        [solutionId]: {
-          ...current,
-          [countField]: count,
-        },
-      };
-
-      // Persist to sessionStorage
-      saveInteractionsToStorage(newState);
-
-      return newState;
-    });
-  };
-
-  const setUserInteraction = (
-    type: InteractionType,
-    solutionId: string,
-    value: boolean
-  ) => {
-    // Only update if user is logged in
-    if (!session?.user) return;
-
-    // First check if this is actually a change to avoid unnecessary rerenders
-    const currentValue = getUserInteraction(type, solutionId);
-
-    // Only update if the value is actually different
-    if (currentValue !== value) {
+  // Initialize solution with initial data
+  const initializeSolution = useCallback(
+    (
+      solutionId: string,
+      initialStats: {
+        likes: number;
+        dislikes: number;
+        comments: number;
+        shares: number;
+      },
+      userInteractions?: {
+        hasLiked: boolean;
+        hasDisliked: boolean;
+        hasShared: boolean;
+      }
+    ) => {
       setInteractions((prev) => {
-        const current = prev[solutionId] || {
-          likes: 0,
-          dislikes: 0,
-          comments: 0,
-          shares: 0,
-          userLiked: false,
-          userDisliked: false,
-          userCommented: false,
-        };
+        // Only initialize if solution doesn't exist
+        if (prev[solutionId]) {
+          return prev;
+        }
 
-        const userPropKey =
-          type === "like"
-            ? "userLiked"
-            : type === "dislike"
-              ? "userDisliked"
-              : "userCommented";
-
-        const newState = {
+        return {
           ...prev,
           [solutionId]: {
-            ...current,
-            [userPropKey]: value,
+            likes: initialStats.likes,
+            dislikes: initialStats.dislikes,
+            comments: initialStats.comments,
+            shares: initialStats.shares,
+            userLiked: userInteractions?.hasLiked || false,
+            userDisliked: userInteractions?.hasDisliked || false,
+            userCommented: false,
+            userShared: userInteractions?.hasShared || false,
           },
         };
-
-        // Persist to sessionStorage
-        saveInteractionsToStorage(newState);
-
-        return newState;
       });
-    }
-  };
+    },
+    []
+  );
 
-  const getInteractionCount = (
-    type: InteractionType,
-    solutionId: string
-  ): number => {
-    const solution = interactions[solutionId];
-    if (!solution) return 0;
-    switch (type) {
-      case "like":
-        return solution.likes;
-      case "dislike":
-        return solution.dislikes;
-      case "comment":
-        return solution.comments;
-      case "share":
-        return solution.shares;
-      default:
-        return 0;
-    }
-  };
-
-  const clearAllInteractions = () => {
-    setInteractions({});
-    if (typeof window !== "undefined") {
-      try {
-        // Clear current user's interactions
-        const storageKey = getStorageKey();
-        sessionStorage.removeItem(storageKey);
-        // Also remove the old generic key if it exists
-        sessionStorage.removeItem("user-interactions");
-      } catch (e) {
-        console.warn("Failed to clear interactions from sessionStorage:", e);
+  // Force re-initialize solution (useful for refreshing state)
+  const forceInitializeSolution = useCallback(
+    (
+      solutionId: string,
+      initialStats: {
+        likes: number;
+        dislikes: number;
+        comments: number;
+        shares: number;
+      },
+      userInteractions?: {
+        hasLiked: boolean;
+        hasDisliked: boolean;
+        hasShared: boolean;
       }
-    }
-  };
-
-  const syncUserInteraction = (
-    type: InteractionType,
-    solutionId: string,
-    userInteracted: boolean
-  ) => {
-    // Only update if user is logged in
-    if (!session?.user) return;
-
-    setInteractions((prev) => {
-      const current = prev[solutionId] || {
-        likes: 0,
-        dislikes: 0,
-        comments: 0,
-        shares: 0,
-        userLiked: false,
-        userDisliked: false,
-        userCommented: false,
-      };
-
-      const userPropKey =
-        type === "like"
-          ? "userLiked"
-          : type === "dislike"
-            ? "userDisliked"
-            : "userCommented";
-
-      // Only update if the value is different
-      if (current[userPropKey] !== userInteracted) {
-        const newState = {
+    ) => {
+      setInteractions((prev) => {
+        // Force re-initialize by setting all fields to their initial values
+        return {
           ...prev,
           [solutionId]: {
-            ...current,
-            [userPropKey]: userInteracted,
+            likes: initialStats.likes,
+            dislikes: initialStats.dislikes,
+            comments: initialStats.comments,
+            shares: initialStats.shares,
+            userLiked: userInteractions?.hasLiked || false,
+            userDisliked: userInteractions?.hasDisliked || false,
+            userCommented: false,
+            userShared: userInteractions?.hasShared || false,
           },
         };
+      });
+    },
+    []
+  );
 
-        // Persist to sessionStorage
-        saveInteractionsToStorage(newState);
+  // Update comment count
+  const updateCommentCount = useCallback(
+    (solutionId: string, count: number) => {
+      setInteractions((prev) => ({
+        ...prev,
+        [solutionId]: {
+          ...prev[solutionId],
+          comments: count,
+          // Initialize with defaults if solution doesn't exist
+          likes: prev[solutionId]?.likes || 0,
+          dislikes: prev[solutionId]?.dislikes || 0,
+          shares: prev[solutionId]?.shares || 0,
+          userLiked: prev[solutionId]?.userLiked || false,
+          userDisliked: prev[solutionId]?.userDisliked || false,
+          userCommented: prev[solutionId]?.userCommented || false,
+          userShared: prev[solutionId]?.userShared || false,
+        },
+      }));
+    },
+    []
+  );
 
-        return newState;
-      }
-
-      return prev;
-    });
+  const value = {
+    getInteractionCount,
+    getUserInteraction,
+    updateFromBackend,
+    initializeSolution,
+    forceInitializeSolution,
+    updateCommentCount,
   };
 
   return (
-    <InteractionContext.Provider
-      value={{
-        handleInteraction,
-        updateInteraction,
-        syncUserInteraction,
-        getInteractionCount,
-        getUserInteraction,
-        setUserInteraction,
-        clearAllInteractions,
-      }}
-    >
+    <InteractionContext.Provider value={value}>
       {children}
     </InteractionContext.Provider>
   );

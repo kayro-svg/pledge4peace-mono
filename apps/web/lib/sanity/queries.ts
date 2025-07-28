@@ -226,12 +226,14 @@ export async function getHomePageData(): Promise<SanityHomePage> {
 // CONSULTAS PARA ELEMENTOS INDEPENDIENTES
 // Estas consultas son para cuando necesitas estos elementos fuera del contexto de la página principal
 
-export async function getCampaigns(): Promise<SanityCampaign[]> {
+export async function getCampaigns(limit?: number): Promise<SanityCampaign[]> {
   // 🚀 Usar cliente inteligente por entorno
   const sanityClient = getClient({ forceFresh: isDevelopment });
 
   return sanityClient.fetch(
-    `*[_type == "campaign"] {
+    `*[_type == "campaign"] | order(publishedAt desc) ${
+      limit ? `[0..${limit}]` : ""
+    } {
       _id,
       title,
       slug,
@@ -460,6 +462,34 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
   }
 }
 
+export async function getCampaignForDashboard(id: string): Promise<{
+  title: string;
+  id: string;
+  slug: string;
+}> {
+  const sanityClient = getClient({ forceFresh: isDevelopment });
+  const campaignTitle = await sanityClient.fetch(
+    `*[_type == "campaign" && _id == $id][0] {
+      _id,
+      title,
+      slug { current }
+    }`,
+    { id },
+    {
+      // ⚡ Cache inteligente por entorno para evitar que se haga la consulta cada vez que se renderiza el componente
+      next: {
+        revalidate: cache.long,
+        tags: ["campaign", `campaign-${id}`],
+      },
+    }
+  );
+  return {
+    title: campaignTitle.title,
+    id: campaignTitle._id,
+    slug: campaignTitle.slug.current,
+  };
+}
+
 export async function getCampaignSlugs(): Promise<SanitySlug[]> {
   logger.log("[Sanity] Fetching campaign slugs");
 
@@ -482,12 +512,14 @@ export async function getCampaignSlugs(): Promise<SanitySlug[]> {
   return slugs;
 }
 
-export async function getArticles(): Promise<SanityArticle[]> {
+export async function getArticles(limit?: number): Promise<SanityArticle[]> {
   // 🚀 Usar cliente inteligente por entorno
   const sanityClient = getClient({ forceFresh: isDevelopment });
 
   return sanityClient.fetch(
-    `*[_type == "article"] | order(publishedAt desc) {
+    `*[_type == "article"] | order(publishedAt desc) ${
+      limit ? `[0..${limit}]` : ""
+    } {
       _id,
       title,
       slug { current },

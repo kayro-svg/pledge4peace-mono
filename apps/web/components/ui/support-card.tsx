@@ -1,20 +1,21 @@
 import { useRouter } from "next/navigation";
-import { ReactNode } from "react";
+import React from "react";
 import { ShareSocialButton } from "../campaign/ways-to-support/share/share-social-button";
 import { ShareData } from "../home-sections/ways-to-support";
 import { Button } from "./button";
 
 export interface SupportCardProps {
-  icon: ReactNode;
+  icon: React.ReactNode;
   title: string;
   description: string;
   linkText: string;
-  linkHref: string;
-  type?: "share" | "volunteer" | "make-a-pledge";
+  linkHref?: string;
+  type?: "share" | "volunteer" | "make-a-pledge" | "donate";
   shareData?: ShareData;
+  onDonateClick?: () => void;
 }
 
-export const SupportCard = ({
+export function SupportCard({
   icon,
   title,
   description,
@@ -22,7 +23,8 @@ export const SupportCard = ({
   linkHref,
   type,
   shareData,
-}: SupportCardProps) => {
+  onDonateClick,
+}: SupportCardProps) {
   const router = useRouter();
 
   const handleClick = () => {
@@ -31,7 +33,9 @@ export const SupportCard = ({
       if (el) {
         el.scrollIntoView({ behavior: "smooth" });
       }
-    } else {
+    } else if (type === "donate" && onDonateClick) {
+      onDonateClick();
+    } else if (linkHref) {
       router.push(linkHref);
     }
   };
@@ -62,4 +66,4 @@ export const SupportCard = ({
       </div>
     </div>
   );
-};
+}

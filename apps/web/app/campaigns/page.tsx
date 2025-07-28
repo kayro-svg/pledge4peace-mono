@@ -1,10 +1,7 @@
 import HeroBanner from "@/components/about/hero-banner";
 import AllCampaignsContent from "./all-campaigns-content";
-import { getCampaigns } from "@/lib/sanity/queries";
 
-export default async function CampaignsPage() {
-  const campaigns = await getCampaigns();
-
+export default function CampaignsPage() {
   return (
     <main className="min-h-screen">
       <HeroBanner
@@ -20,7 +17,7 @@ export default async function CampaignsPage() {
         textCenter
         dropShadow
       />
-      <AllCampaignsContent initialCampaigns={campaigns} />
+      <AllCampaignsContent />
     </main>
   );
 }

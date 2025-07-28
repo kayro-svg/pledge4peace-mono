@@ -43,6 +43,7 @@ export default function CampaignCard({
   campaignId,
 }: CampaignCardProps) {
   const { pledgeCount } = usePledges(campaignId);
+
   const progress = Math.round((pledgeCount / goal) * 100);
   const router = useRouter();
 
@@ -171,7 +172,7 @@ export default function CampaignCard({
           <Button
             size="sm"
             className="w-full bg-[#548281] hover:bg-[#2f4858] text-white text-[10px] sm:text-xs rounded-full py-1 sm:py-1.5"
-            onClick={() => router.push(`/campaigns/${link}`)}
+            onClick={navigateToCampaign}
           >
             {action}
           </Button>

@@ -33,7 +33,7 @@ export const ImpactSection = () => {
   ];
 
   return (
-    <div className="flex justify-center w-full">
+    <div className="flex justify-center w-full max-w-md">
       <div className="bg-background p-4 sm:p-6 rounded-lg shadow-md w-full">
         <h4 className="text-base sm:text-lg font-bold text-[#2f4858] mb-2 sm:mb-4">
           Impact of Your Support
