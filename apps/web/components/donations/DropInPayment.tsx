@@ -20,6 +20,7 @@ export default function DropInPayment({
   clientToken,
   isRecurring = false,
 }: Props) {
+  const enable3DS = process.env.NEXT_PUBLIC_ENABLE_3DS === "false"; // TODO: Change to TRUE when 3d secure is ready to be used
   const hostRef = useRef<HTMLDivElement>(null);
   const dropinRef = useRef<Dropin | null>(null);
 
@@ -95,7 +96,8 @@ export default function DropInPayment({
               height: 40,
             } as any,
           },
-          ...(isRecurring ? {} : { threeDSecure: { amount } }),
+          // ...(isRecurring ? {} : { threeDSecure: { amount } }), // TODO: Add back in when 3d secure is ready to be used
+          ...(!isRecurring && enable3DS ? { threeDSecure: { amount } } : {}),
 
           translations: {
             chooseAnotherWayToPay: "Choose another method",
