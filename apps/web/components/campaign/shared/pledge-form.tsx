@@ -22,6 +22,7 @@ interface PledgeFormProps {
   campaignId: string;
   campaignTitle: string;
   onPledgeCreated?: (newCount: number) => void;
+  onDonateIntent?: () => void; // NEW PROP: callback to open donation modal
 }
 
 export default function PledgeForm({
@@ -29,6 +30,7 @@ export default function PledgeForm({
   campaignId,
   campaignTitle,
   onPledgeCreated,
+  onDonateIntent, // NEW PROP
 }: PledgeFormProps) {
   const { session, status, isAuthenticated } = useAuthSession();
   const [agreeToTerms, setAgreeToTerms] = useState(false);
@@ -133,7 +135,7 @@ export default function PledgeForm({
 
   if (hasPledged) {
     return (
-      <div className="rounded-lg border bg-card p-6 text-center">
+      <div className="rounded-lg border bg-card p-6 text-center mt-4">
         <div className="flex flex-col items-center gap-3">
           <div className="rounded-full bg-green-100 p-3">
             <CheckCircle className="h-8 w-8 text-green-600" />
@@ -143,6 +145,22 @@ export default function PledgeForm({
             Your support means a lot to us. You&apos;ve successfully pledged to
             this campaign.
           </p>
+          {/* Donation CTA */}
+          <div className="mt-2 flex flex-col items-center gap-2">
+            <p className="text-sm font-medium text-gray-700">
+              Would you like to amplify your impact?
+            </p>
+            <p className="text-sm text-muted-foreground max-w-md">
+              Consider making a donation to help us reach more people and
+              strengthen our peace initiatives.
+            </p>
+            <Button
+              className="bg-[#548281] hover:bg-[#3c6665] w-full sm:w-auto mt-2"
+              onClick={() => onDonateIntent && onDonateIntent()}
+            >
+              Support with a donation
+            </Button>
+          </div>
         </div>
       </div>
     );
@@ -176,45 +194,6 @@ export default function PledgeForm({
             </div>
           </div>
         ))}
-
-        {/* <div className="flex items-start space-x-2">
-          <Checkbox
-            id="terms"
-            checked={agreeToTerms}
-            onCheckedChange={(checked) => setAgreeToTerms(checked === true)}
-            className="mt-1 data-[state=checked]:bg-[#548281] data-[state=checked]:text-primary-foreground"
-          />
-          <div className="grid gap-1.5 leading-none">
-            <label
-              htmlFor="terms"
-              className="text-xs leading-snug text-gray-600"
-            >
-              I agree to the terms of service and privacy policy. I understand
-              that my information will be used as described.
-            </label>
-          </div>
-        </div> */}
-
-        {/* <div className="flex items-start space-x-2">
-          <Checkbox
-            id="contact"
-            checked={subscribeToUpdates}
-            onCheckedChange={(checked) =>
-              setSubscribeToUpdates(checked === true)
-            }
-            className="mt-1 data-[state=checked]:bg-[#548281] data-[state=checked]:text-primary-foreground"
-          />
-          <div className="grid gap-1.5 leading-none">
-            <label
-              htmlFor="contact"
-              className="text-xs leading-snug text-gray-600"
-            >
-              I&apos;d like to receive occasional updates about this campaign
-              and other related initiatives.
-            </label>
-          </div>
-        </div> */}
-
         <Button
           className="w-full bg-[#548281] hover:bg-[#3c6665] group"
           onClick={handleSubmit}
@@ -234,7 +213,7 @@ export default function PledgeForm({
 
       {/* Login Modal */}
       <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
-        <DialogContent className="max-w-lg w-full max-h-[100vh] overflow-y-auto">
+        <DialogContent className="max-w-lg w-full max-h-[80vh] md:h-[fit-content]">
           <DialogHeader>
             <DialogTitle>
               <p className="text-lg font-semibold mb-4 text-center">

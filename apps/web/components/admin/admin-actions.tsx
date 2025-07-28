@@ -54,8 +54,16 @@ export default function AdminActions({
         await deleteSolution(resourceId);
         toast.success("Solution deleted successfully");
       } else {
-        await deleteComment(resourceId);
-        toast.success("Comment deleted successfully");
+        const response = await deleteComment(resourceId);
+
+        // Mostrar mensaje de éxito con información sobre replies eliminados
+        if (response.deletedReplies && response.deletedReplies.length > 0) {
+          toast.success(
+            `Comment and ${response.deletedReplies.length} replies deleted successfully`
+          );
+        } else {
+          toast.success("Comment deleted successfully");
+        }
       }
 
       // Llamar callback si se proporciona

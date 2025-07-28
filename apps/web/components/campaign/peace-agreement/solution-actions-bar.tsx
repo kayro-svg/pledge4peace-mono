@@ -49,40 +49,46 @@ export default function SolutionActionsBar({
   const router = useRouter();
   const {
     getUserInteraction,
-    setUserInteraction,
-    handleInteraction,
-    updateInteraction,
-    syncUserInteraction,
+    getInteractionCount,
+    updateFromBackend,
+    updateCommentCount,
   } = useInteractions();
-  const [likes, setLikes] = useState(likeCount);
-  const [dislikes, setDislikes] = useState(dislikeCount);
-  const [shares, setShares] = useState(shareCount);
-  const [comments, setComments] = useState(commentCount);
+
   const [isSharing, setIsSharing] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
+  const [isDisliking, setIsDisliking] = useState(false);
 
-  // Get interaction states from context
+  // Get current state from context (with fallbacks to props)
+  const currentLikes = getInteractionCount("like", solutionId) || likeCount;
+  const currentDislikes =
+    getInteractionCount("dislike", solutionId) || dislikeCount;
+  const currentShares = getInteractionCount("share", solutionId) || shareCount;
+  const currentComments =
+    getInteractionCount("comment", solutionId) || commentCount;
+
   const hasLiked = getUserInteraction("like", solutionId);
   const hasDisliked = getUserInteraction("dislike", solutionId);
   const hasCommented = getUserInteraction("comment", solutionId);
   const hasShared = getUserInteraction("share", solutionId);
 
-  // Sync local state with props when solution changes
+  // Sync comment count with parent - be more aggressive about syncing
   useEffect(() => {
-    setLikes(likeCount);
-    setDislikes(dislikeCount);
-    setShares(shareCount);
-    setComments(commentCount);
-  }, [solutionId, likeCount, dislikeCount, shareCount, commentCount]);
-
-  // Sync comment count with parent component
-  useEffect(() => {
-    // Only update if the comment count has actually changed significantly
-    // This prevents conflicts with optimistic updates
-    if (Math.abs(comments - commentCount) > 1) {
-      setComments(commentCount);
+    // Always sync if there's a significant difference or if context is empty
+    if (
+      commentCount !== currentComments &&
+      commentCount > 0 // Only sync if we have actual data
+    ) {
+      updateCommentCount(solutionId, commentCount);
     }
-  }, [commentCount]);
+  }, [commentCount, currentComments, solutionId, updateCommentCount]);
+
+  // Also sync when the component mounts and we have comment data
+  useEffect(() => {
+    if (commentCount > 0 && currentComments === 0) {
+      updateCommentCount(solutionId, commentCount);
+    }
+  }, [commentCount, currentComments, solutionId, updateCommentCount]);
 
   const handleLike = async () => {
     if (!isAuthenticated) {
@@ -91,46 +97,23 @@ export default function SolutionActionsBar({
       return;
     }
 
-    const wasLiked = hasLiked;
-    const wasDisliked = hasDisliked;
+    if (isLiking) return;
+    setIsLiking(true);
 
     try {
-      // Calculate new counts
-      const newLikeCount = wasLiked ? Math.max(likes - 1, 0) : likes + 1;
-      const newDislikeCount =
-        wasDisliked && !wasLiked ? Math.max(dislikes - 1, 0) : dislikes;
+      // Call backend - it handles all the logic including mutual exclusivity
+      const response = await likeSolution(solutionId);
 
-      // Optimistic update - update local state first
-      setLikes(newLikeCount);
-      if (wasDisliked && !wasLiked) {
-        setDislikes(newDislikeCount);
-      }
+      // Update context with backend response
+      updateFromBackend(solutionId, response.stats, response.userInteractions);
 
-      // Update interaction context with both count and user interaction state
-      updateInteraction("like", solutionId, newLikeCount, !wasLiked);
-      if (wasDisliked && !wasLiked) {
-        updateInteraction("dislike", solutionId, newDislikeCount, false);
-      }
-
-      // Make API call
-      await likeSolution(solutionId);
-
-      toast.success(wasLiked ? "Like removed" : "Solution liked!");
+      toast.success(response.liked ? "Solution liked!" : "Like removed");
+      onInteraction?.(solutionId, "like");
     } catch (error) {
-      // Revert optimistic update on error
-      setLikes(likes);
-      if (wasDisliked && !wasLiked) {
-        setDislikes(dislikes);
-      }
-
-      // Revert context state
-      updateInteraction("like", solutionId, likes, wasLiked);
-      if (wasDisliked && !wasLiked) {
-        updateInteraction("dislike", solutionId, dislikes, wasDisliked);
-      }
-
       toast.error("Failed to update like");
       logger.error("Error handling like:", error);
+    } finally {
+      setIsLiking(false);
     }
   };
 
@@ -141,49 +124,25 @@ export default function SolutionActionsBar({
       return;
     }
 
-    const wasDisliked = hasDisliked;
-    const wasLiked = hasLiked;
+    if (isDisliking) return;
+    setIsDisliking(true);
 
     try {
-      // Calculate new counts
-      const newDislikeCount = wasDisliked
-        ? Math.max(dislikes - 1, 0)
-        : dislikes + 1;
-      const newLikeCount =
-        wasLiked && !wasDisliked ? Math.max(likes - 1, 0) : likes;
+      // Call backend - it handles all the logic including mutual exclusivity
+      const response = await dislikeSolution(solutionId);
 
-      // Optimistic update - update local state first
-      setDislikes(newDislikeCount);
-      if (wasLiked && !wasDisliked) {
-        setLikes(newLikeCount);
-      }
+      // Update context with backend response
+      updateFromBackend(solutionId, response.stats, response.userInteractions);
 
-      // Update interaction context with both count and user interaction state
-      updateInteraction("dislike", solutionId, newDislikeCount, !wasDisliked);
-      if (wasLiked && !wasDisliked) {
-        updateInteraction("like", solutionId, newLikeCount, false);
-      }
-
-      // Make API call
-      await dislikeSolution(solutionId);
-
-      toast.success(wasDisliked ? "Dislike removed" : "Solution disliked!");
+      toast.success(
+        response.disliked ? "Solution disliked!" : "Dislike removed"
+      );
       onInteraction?.(solutionId, "dislike");
     } catch (error) {
-      // Revert optimistic update on error
-      setDislikes(dislikes);
-      if (wasLiked && !wasDisliked) {
-        setLikes(likes);
-      }
-
-      // Revert context state
-      updateInteraction("dislike", solutionId, dislikes, wasDisliked);
-      if (wasLiked && !wasDisliked) {
-        updateInteraction("like", solutionId, likes, wasLiked);
-      }
-
       toast.error("Failed to update dislike");
       logger.error("Error handling dislike:", error);
+    } finally {
+      setIsDisliking(false);
     }
   };
 
@@ -197,24 +156,32 @@ export default function SolutionActionsBar({
     }
 
     if (isSharing) return;
-
     setIsSharing(true);
 
     try {
-      // First, update the share count on the server
+      // Update share count on server
       await shareSolution(solutionId);
 
-      // Update the local state and mark as shared
+      // Update local state
       if (!hasShared) {
-        setShares((prev) => prev + 1);
-        setUserInteraction("share", solutionId, true);
+        updateFromBackend(
+          solutionId,
+          {
+            likes: currentLikes,
+            dislikes: currentDislikes,
+            shares: currentShares + 1,
+          },
+          {
+            hasLiked: hasLiked,
+            hasDisliked: hasDisliked,
+            hasShared: true,
+          }
+        );
       }
 
-      // Always notify parent component about the share interaction
-      // This ensures the solution is selected even if it was already shared
       onInteraction?.(solutionId, "share");
 
-      // Use the Web Share API if available
+      // Handle sharing
       if (navigator.share) {
         await navigator.share({
           title: "Check out this solution on Pledge4Peace",
@@ -222,19 +189,13 @@ export default function SolutionActionsBar({
           url: window.location.href,
         });
       } else {
-        // Fallback for browsers that don't support Web Share API
         await navigator.clipboard.writeText(window.location.href);
-        toast.success(
-          hasShared
-            ? "Link copied to clipboard again!"
-            : "Link copied to clipboard!"
-        );
+        toast.success("Link copied to clipboard!");
       }
     } catch (error) {
       if (error instanceof Error && error.name !== "AbortError") {
         logger.error("Error sharing:", error);
-        // Only show error if we didn't already update the share count
-        if (!navigator.share && !hasShared) {
+        if (!navigator.share) {
           toast.error("Failed to share. Please try again.");
         }
       }
@@ -247,16 +208,12 @@ export default function SolutionActionsBar({
   const handleCommentClick = (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    // Notify parent component about the interaction first
-    // This ensures the solution is selected before any other actions
     onInteraction?.(solutionId, "comment");
 
-    // Call the parent's onCommentClick if provided
     if (onCommentClick) {
       onCommentClick(e);
     }
 
-    // If user is not logged in, show login modal
     if (!isAuthenticated) {
       toast.error("Please sign in to comment");
       if (window.innerWidth > 1024) {
@@ -265,8 +222,7 @@ export default function SolutionActionsBar({
       return;
     }
 
-    // Scroll to and focus the comment input after a small delay
-    // to allow for the solution to expand first
+    // Focus comment input
     setTimeout(() => {
       const commentSection = document.getElementById("comments-section");
       if (commentSection) {
@@ -284,18 +240,20 @@ export default function SolutionActionsBar({
         <Button
           variant="ghost"
           size="sm"
+          disabled={isLiking}
           className={`flex items-center gap-2 p-5 rounded-none transition-all duration-200 ${
             hasLiked ? "text-green-500 bg-green-50" : "text-gray-500"
           } hover:text-green-500 hover:bg-green-50`}
           onClick={handleLike}
         >
           <Heart className={`h-5 w-5 ${hasLiked ? "fill-current" : ""}`} />
-          <span>{likes}</span>
+          <span>{currentLikes}</span>
         </Button>
 
         <Button
           variant="ghost"
           size="sm"
+          disabled={isDisliking}
           className={`flex items-center gap-2 p-5 rounded-none transition-all duration-200 ${
             hasDisliked ? "text-red-500 bg-red-50" : "text-gray-500"
           } hover:text-red-500 hover:bg-red-50`}
@@ -304,7 +262,7 @@ export default function SolutionActionsBar({
           <ThumbsDownIcon
             className={`h-5 w-5 ${hasDisliked ? "fill-current" : ""}`}
           />
-          <span>{dislikes}</span>
+          <span>{currentDislikes}</span>
         </Button>
 
         <Button
@@ -325,42 +283,35 @@ export default function SolutionActionsBar({
           <span
             className={`transition-all duration-200 ${hasCommented ? "font-semibold" : "font-medium"}`}
           >
-            {comments}
+            {currentComments}
           </span>
         </Button>
 
         <Button
           variant="ghost"
           size="sm"
-          className={`flex items-center gap-2 p-5 rounded-none transition-all duration-200 ${
-            hasShared
-              ? "text-orange-500 bg-orange-50 hover:bg-orange-100"
-              : "text-gray-500 hover:bg-orange-50 hover:text-orange-500"
-          } ${isSharing ? "opacity-70" : ""}`}
-          onClick={handleShare}
           disabled={isSharing}
+          className={`flex items-center gap-2 p-5 rounded-none transition-all duration-200 ${
+            hasShared ? "text-blue-500 bg-blue-50" : "text-gray-500"
+          } hover:text-blue-500 hover:bg-blue-50`}
+          onClick={handleShare}
         >
           <Share2 className={`h-5 w-5 ${hasShared ? "fill-current" : ""}`} />
-          <span>{shares}</span>
+          <span>{currentShares}</span>
         </Button>
       </div>
+
       <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
-        <DialogContent className="max-w-lg w-full max-h-[100vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[425px] max-h-[80vh] md:h-[fit-content]">
           <DialogHeader>
-            <DialogTitle>
-              <p className="text-lg font-semibold mb-4 text-center">
-                To interact with this solution you must login
-              </p>
-            </DialogTitle>
+            <DialogTitle>Sign in to interact</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col items-center">
-            <AuthContainer
-              onLoginSuccess={() => {
-                setShowLoginModal(false);
-              }}
-              isModal
-            />
-          </div>
+          <AuthContainer
+            onLoginSuccess={() => {
+              setShowLoginModal(false);
+              toast.success("Welcome! You can now interact with solutions.");
+            }}
+          />
         </DialogContent>
       </Dialog>
     </>

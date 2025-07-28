@@ -16,26 +16,19 @@ export default function InteractionCounter({
   solutionId,
   onClick,
 }: InteractionCounterProps) {
-  const { getInteractionCount, handleInteraction, hasInteracted } =
-    useInteractions();
+  const { getInteractionCount, getUserInteraction } = useInteractions();
 
-  // Obtenemos el conteo actual y si el usuario ya ha interactuado
+  // Get current count and user interaction status
   const count = getInteractionCount(type, solutionId);
-  const isActive = hasInteracted(type, solutionId);
+  const isActive = getUserInteraction(type, solutionId);
 
-  const handleClick = async () => {
+  const handleClick = () => {
     if (onClick) {
       onClick();
-      return;
     }
-
-    // Calculamos el nuevo conteo
-    const newCount = isActive ? count - 1 : count + 1;
-    // Llamamos al manejador del contexto
-    await handleInteraction(type, solutionId, newCount);
   };
 
-  // Formatear el contador para mostrar K, M para grandes números
+  // Format counter for display
   const formatCount = (count: number): string => {
     if (count >= 1000000) {
       return `${(count / 1000000).toFixed(1)}M`;
@@ -49,10 +42,10 @@ export default function InteractionCounter({
     ? type === "like"
       ? "bg-green-50"
       : type === "dislike"
-      ? "bg-red-50"
-      : type === "comment"
-      ? "bg-purple-50"
-      : "bg-blue-50"
+        ? "bg-red-50"
+        : type === "comment"
+          ? "bg-purple-50"
+          : "bg-blue-50"
     : "bg-gray-50";
 
   return (
@@ -66,10 +59,10 @@ export default function InteractionCounter({
             ? type === "like"
               ? "text-green-500"
               : type === "dislike"
-              ? "text-red-500"
-              : type === "comment"
-              ? "text-purple-500"
-              : "text-blue-500"
+                ? "text-red-500"
+                : type === "comment"
+                  ? "text-purple-500"
+                  : "text-blue-500"
             : "text-gray-400"
         } hover:text-gray-700`}
       >
@@ -81,10 +74,10 @@ export default function InteractionCounter({
             ? type === "like"
               ? "text-green-500"
               : type === "dislike"
-              ? "text-red-500"
-              : type === "comment"
-              ? "text-purple-500"
-              : "text-blue-500"
+                ? "text-red-500"
+                : type === "comment"
+                  ? "text-purple-500"
+                  : "text-blue-500"
             : "text-gray-500"
         }`}
       >

@@ -63,8 +63,6 @@ export function CampaignDetailContent({
     }
   };
 
-  logger.log("campaign pledgeCommitmentItems", campaign.pledgeCommitmentItems);
-
   return (
     <main className="min-h-screen bg-[#fffef5]">
       <div className="container mx-auto px-4 py-8">
@@ -81,7 +79,7 @@ export function CampaignDetailContent({
 
           <div className="flex flex-col gap-8">
             <MainContentSection campaign={campaign} />
-            <InteractionProvider initialStats={undefined}>
+            <InteractionProvider>
               <ContentTabs
                 sidebarWidth="30%"
                 solutionsSection={
@@ -102,7 +100,7 @@ export function CampaignDetailContent({
               {/* Mobile Comments Modal - Only visible on mobile/tablet */}
               <div className="lg:hidden">
                 <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-                  <DialogContent className="lg:hidden md:max-w-[500px] h-[80vh] max-h-[80vh] p-0 overflow-hidden flex flex-col gap-0">
+                  <DialogContent className="lg:hidden max-h-[80vh] lg:max-h-[100vh] md:max-w-[500px] h-[80vh] md:h-[fit-content] p-0 overflow-hidden flex flex-col gap-0">
                     <DialogHeader className="p-4 h-fit w-full justify-center items-center flex">
                       <DialogTitle>Comments</DialogTitle>
                     </DialogHeader>

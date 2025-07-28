@@ -47,7 +47,7 @@ export const SANITY_CONFIG = {
     baseUrl:
       process.env.NODE_ENV === "production"
         ? process.env.NEXT_PUBLIC_SITE_URL || "https://tu-dominio.com"
-        : "https://2c2d-190-32-165-59.ngrok-free.app",
+        : "https://5a08b44a2da0.ngrok-free.app/",
   },
 
   // ===== CONFIGURACIÓN DE LOGS =====

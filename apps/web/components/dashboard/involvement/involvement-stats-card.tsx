@@ -5,7 +5,7 @@ interface StatsCardProps {
   value: string;
   change: string;
   icon: React.ReactNode;
-  color: "emerald" | "blue" | "orange" | "purple" | "cyan";
+  color: "emerald" | "blue" | "red" | "purple" | "cyan";
   isActive: boolean;
   onClick: () => void;
 }
@@ -22,7 +22,7 @@ export function InvolvementStatsCard({
   const colorClasses = {
     emerald: "bg-emerald-50 border-emerald-100 ring-emerald-500 cursor-pointer",
     blue: "bg-blue-50 border-blue-100 ring-blue-500 cursor-pointer",
-    orange: "bg-orange-50 border-orange-100 ring-orange-500 cursor-pointer",
+    red: "bg-red-50 border-red-100 ring-red-500 cursor-pointer",
     purple: "bg-purple-50 border-purple-100 ring-purple-500 cursor-pointer",
     cyan: "bg-cyan-50 border-cyan-100 ring-cyan-500 cursor-pointer",
   };
@@ -30,7 +30,7 @@ export function InvolvementStatsCard({
   const textColorClasses = {
     emerald: "text-emerald-600",
     blue: "text-blue-600",
-    orange: "text-orange-600",
+    red: "text-red-600",
     purple: "text-purple-600",
     cyan: "text-cyan-600",
   };

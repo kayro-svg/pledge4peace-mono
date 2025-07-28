@@ -5,14 +5,16 @@ import type { User } from "next-auth";
 import { signOut } from "next-auth/react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { LogOut, UserIcon } from "lucide-react";
+import { LayoutDashboardIcon, LogOut, UserIcon } from "lucide-react";
 import { clearAllUserInteractions } from "@/lib/utils/interaction-utils";
+import { useRouter } from "next/navigation";
 
 interface HeaderUserProps {
   user: User | null | undefined;
 }
 
 export function HeaderUserMobile({ user }: HeaderUserProps) {
+  const router = useRouter();
   const handleSignOut = () => {
     // Clear all user-specific data from sessionStorage
     clearAllUserInteractions();
@@ -35,7 +37,7 @@ export function HeaderUserMobile({ user }: HeaderUserProps) {
 
   return (
     <div className="flex flex-col items-start justify-between space-y-3">
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center space-x-3 mb-2">
         <Avatar className="h-10 w-10 border border-gray-200">
           <AvatarImage src={user.image || ""} alt={user.name || "User"} />
           <AvatarFallback className="bg-[#548281] text-white text-sm font-medium">
@@ -46,18 +48,29 @@ export function HeaderUserMobile({ user }: HeaderUserProps) {
         </Avatar>
 
         <div className="min-w-0 flex-1">
-          <p className="font-medium text-[#2F4858] truncate text-sm">
+          <p className="font-medium text-[#2F4858] truncate text-base">
             {user.name || "User"}
           </p>
-          <p className="text-xs text-[#698D8B] truncate">{user.email || ""}</p>
+          <p className="text-base text-[#698D8B] truncate">
+            {user.email || ""}
+          </p>
         </div>
       </div>
-
+      {/* 
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => router.push("/dashboard")}
+        className="text-[#698D8B] hover:text-[#2F4858] hover:bg-gray-50 font-light text-base"
+      >
+        <LayoutDashboardIcon className="h-4 w-4 mr-2" />
+        <span className="inline"> Dashboard</span>
+      </Button> */}
       <Button
         variant="ghost"
         size="sm"
         onClick={handleSignOut}
-        className="text-[#698D8B] hover:text-[#2F4858] hover:bg-gray-50 font-light text-sm"
+        className="text-[#698D8B] hover:text-[#2F4858] hover:bg-gray-50 font-light text-base"
       >
         <LogOut className="h-4 w-4 mr-2" />
         <span className="inline">Sign out</span>

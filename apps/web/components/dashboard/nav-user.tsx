@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/sidebar";
 import { useRouter } from "next/navigation";
 import { User } from "next-auth";
+import { signOut } from "next-auth/react";
 
 export function NavUser({ user }: { user: User | null }) {
   const router = useRouter();
@@ -76,7 +77,7 @@ export function NavUser({ user }: { user: User | null }) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
               <LogOutIcon />
               Log out
             </DropdownMenuItem>

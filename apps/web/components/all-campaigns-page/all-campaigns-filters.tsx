@@ -29,6 +29,8 @@ interface AllCampaignsFiltersProps {
   onClearFilters: () => void;
   categories: string[];
   countryOptions: (string | undefined)[];
+  selectedQty: number;
+  onQtyChange: (qty: number) => void;
 }
 
 const ALL_REGIONS_LABEL = "All Countries/Regions";
@@ -44,6 +46,8 @@ const AllCampaignsFilters: FC<AllCampaignsFiltersProps> = ({
   onClearFilters,
   categories,
   countryOptions,
+  selectedQty,
+  onQtyChange,
 }) => {
   const activeCount =
     selectedCategories.length + (selectedRegion !== ALL_REGIONS_LABEL ? 1 : 0);
@@ -221,6 +225,27 @@ const AllCampaignsFilters: FC<AllCampaignsFiltersProps> = ({
                       {opt}
                     </SelectItem>
                   ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex flex-row gap-2 items-center">
+              <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
+                Showing:
+              </span>
+              <Select
+                value={selectedQty.toString()}
+                onValueChange={(value) => onQtyChange(Number(value))}
+              >
+                <SelectTrigger className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="9">10</SelectItem>
+                  <SelectItem value="19">20</SelectItem>
+                  <SelectItem value="29">30</SelectItem>
+                  <SelectItem value="39">40</SelectItem>
+                  <SelectItem value="49">50</SelectItem>
                 </SelectContent>
               </Select>
             </div>

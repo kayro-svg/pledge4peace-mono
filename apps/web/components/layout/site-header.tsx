@@ -7,7 +7,17 @@ import { usePathname, useRouter } from "next/navigation";
 import { HeaderUser } from "./header-user";
 import { HeaderUserMobile } from "./header-user-mobile";
 import { useState } from "react";
-import { Menu, X, Home, Info, Heart, Mail, ChevronRight } from "lucide-react";
+import {
+  Menu,
+  X,
+  Home,
+  Info,
+  Heart,
+  Mail,
+  ChevronRight,
+  LayoutDashboardIcon,
+} from "lucide-react";
+import { Button } from "../ui/button";
 
 export default function SiteHeader() {
   const router = useRouter();

@@ -9,7 +9,7 @@ import {
   handleSubscriptionError,
 } from "@/lib/api/brevo";
 import { API_ENDPOINTS } from "@/lib/config";
-import { useSession } from "next-auth/react";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import { toast } from "sonner";
 import { logger } from "@/lib/utils/logger";
 
@@ -21,7 +21,7 @@ interface SubscriptionStatus {
 }
 
 export default function NewsletterSubscription() {
-  const { data: session, status: sessionStatus } = useSession();
+  const { session, status: sessionStatus, isAuthenticated } = useAuthSession();
   const [status, setStatus] = useState<SubscriptionStatus>({
     isSubscribed: false,
     isConferenceAttendee: false,
@@ -89,7 +89,7 @@ export default function NewsletterSubscription() {
   const handleSubscribe = async () => {
     try {
       setIsSubscribing(true);
-      const data = await subscribeToNewsletter(session?.accessToken);
+      const data = await subscribeToNewsletter();
 
       //   showSubscriptionSuccess(data);
       if (data.brevoRegistered) {

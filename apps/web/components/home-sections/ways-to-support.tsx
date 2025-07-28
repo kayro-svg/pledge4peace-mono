@@ -10,6 +10,11 @@ import {
   HandCoins,
 } from "lucide-react";
 import { SanityWaysToSupportSection } from "@/lib/types";
+import Link from "next/link";
+import { ImpactSection } from "../ui/impact-section";
+import { PayPalDonatePortal } from "@/components/ui/paypal-donate-portal";
+import { useState } from "react";
+import DonationModal from "@/components/donations/DonationModal";
 
 export interface ShareData {
   title: string;
@@ -25,7 +30,7 @@ interface SupportOption {
   linkText: string;
   linkHref?: string;
   shareData?: ShareData;
-  type?: "share" | "volunteer" | "make-a-pledge";
+  type?: "share" | "volunteer" | "make-a-pledge" | "donate";
 }
 
 export default function WaysToSupportSection({
@@ -33,6 +38,8 @@ export default function WaysToSupportSection({
 }: {
   data: SanityWaysToSupportSection | SupportOption;
 }) {
+  const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
+
   const supportOptions: SupportOption[] = [
     {
       icon: <Handshake className="w-7 h-7 text-[#86AC9D]" />,
@@ -43,14 +50,15 @@ export default function WaysToSupportSection({
       linkHref: "/#projects-section",
       type: "make-a-pledge",
     },
-    // {
-    //   icon: <HandCoins className="w-7 h-7 text-[#86AC9D]" />,
-    //   title: "Donate",
-    //   description:
-    //     "Support our operations with a one-time or recurring donation. Every contribution helps us expand our impact.",
-    //   linkText: "Donate Now",
-    //   linkHref: "/donate",
-    // },
+    {
+      icon: <HandCoins className="w-7 h-7 text-[#86AC9D]" />,
+      title: "Donate",
+      description:
+        "Support our operations with a one-time or recurring donation. Every contribution helps us expand our impact.",
+      linkText: "Donate Now",
+      linkHref: "#", // Changed from "/donate" to "#" since we'll use modal
+      type: "donate", // Add type to identify donate button
+    },
     {
       icon: <Users className="w-7 h-7 text-[#86AC9D]" />,
       title: "Volunteer",
@@ -80,14 +88,6 @@ export default function WaysToSupportSection({
     //     "Align your organization with our mission. We offer various partnership opportunities for businesses.",
     //   linkText: "Become a Partner",
     //   linkHref: "/partner",
-    // },
-    // {
-    //   icon: <CalendarCheck2 className="w-7 h-7 text-[#86AC9D]" />,
-    //   title: "Monthly Giving Program",
-    //   description:
-    //     "Join our Peace Sustainers program with a monthly donation. Provide consistent support for our ongoing initiatives.",
-    //   linkText: "Become a Sustainer",
-    //   linkHref: "/monthly-giving",
     // },
   ];
 
@@ -123,6 +123,10 @@ export default function WaysToSupportSection({
       })) ?? DEFAULT_SECTION_DATA.waysToSupportItems,
   };
 
+  const handleDonateClick = () => {
+    setIsDonationModalOpen(true);
+  };
+
   return (
     <section className="bg-[#fdfdf0] w-full flex justify-center py-8 sm:py-12 md:py-16 lg:py-20 px-4 sm:px-6 md:px-8 lg:px-12">
       <div className="flex flex-col items-center justify-center max-w-[1400px]">
@@ -137,8 +141,7 @@ export default function WaysToSupportSection({
             {sectionData.waysToSupportDescription}
           </p>
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 sm:gap-6 lg:gap-8">
           {sectionData.waysToSupportItems.map((option, index) => (
             <SupportCard
               key={index}
@@ -155,11 +158,14 @@ export default function WaysToSupportSection({
               linkHref={option.buttonLink}
               type={option?.type}
               shareData={option?.shareData}
+              onDonateClick={
+                option?.type === "donate" ? handleDonateClick : undefined
+              }
             />
           ))}
         </div>
 
-        {/* <div className="mt-8 sm:mt-12 p-4 sm:p-8 md:p-12 bg-[#D6E0B6] rounded-lg shadow-sm group">
+        <div className="mt-8 sm:mt-12 p-4 sm:p-8 md:p-12 bg-[#D6E0B6] rounded-lg shadow-sm group">
           <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center justify-between">
             <div className="w-full md:w-1/2">
               <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#2f4858] mb-3 sm:mb-4">
@@ -181,8 +187,12 @@ export default function WaysToSupportSection({
               <ImpactSection />
             </div>
           </div>
-        </div> */}
+        </div>
       </div>
+      <DonationModal
+        isOpen={isDonationModalOpen}
+        onClose={() => setIsDonationModalOpen(false)}
+      />
     </section>
   );
 }

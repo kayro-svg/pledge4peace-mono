@@ -27,7 +27,11 @@ export default function AuthContainer({
   };
 
   return (
-    <div className="w-full max-w-lg items-center justify-center pl-0 md:pl-[20px]">
+    <div
+      className={`w-full max-w-lg items-center justify-center pl-0 ${
+        isModal ? "md:pl-0" : "md:pl-[20px]"
+      }`}
+    >
       <LogoHeader />
       {isLoginView ? (
         <LoginForm

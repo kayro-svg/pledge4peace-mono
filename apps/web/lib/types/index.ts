@@ -28,9 +28,6 @@ export interface Solution {
   };
 }
 
-// Export SanityCampaign from sanity.ts
-export * from "./sanity";
-
 export interface Comment {
   id: string;
   content: string;
@@ -48,6 +45,7 @@ export interface Comment {
 export interface CreateCommentDto {
   content: string;
   solutionId: string;
+  parentId?: string;
   userName?: string;
   userAvatar?: string;
 }
