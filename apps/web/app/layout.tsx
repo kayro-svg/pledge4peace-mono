@@ -56,7 +56,7 @@ export default function RootLayout({
       <body className={`${inter.className} h-full w-[100%]`}>
         <GoogleAnalytics />
         <FacebookPixel />
-        <GoogleTranslate />
+        {/* <GoogleTranslate /> */}
         <Providers>
           <LayoutWrapper>{children}</LayoutWrapper>
           <SessionExpiryWarning />
