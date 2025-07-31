@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import ArticlesContent from "@/app/articles/articles-content";
+import ArticlesContent from "./articles-content";
 import { getArticles } from "@/lib/sanity/queries";
 import HeroBanner from "@/components/about/hero-banner";
 

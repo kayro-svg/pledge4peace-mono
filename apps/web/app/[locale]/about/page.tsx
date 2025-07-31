@@ -43,7 +43,7 @@ export default async function AboutPage({
 }: {
   params: { locale: any };
 }) {
-  const { locale } = params;
+  const locale = await params.locale;
 
   // Fetch data with the current locale
   const aboutData = await getAboutPageData(locale as "en" | "es");
