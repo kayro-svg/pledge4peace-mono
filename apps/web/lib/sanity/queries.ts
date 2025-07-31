@@ -599,34 +599,70 @@ export async function getArticles(limit?: number): Promise<SanityArticle[]> {
   );
 }
 
-export async function getConferences(): Promise<SanityConference[]> {
+// export async function getConferences(lang: "en" | "es" = "en"): Promise<SanityConference[]> {
+//   const sanityClient = getClient({ forceFresh: isDevelopment });
+
+//   const conferences = await sanityClient.fetch(
+//     `*[_type == "conference"] | order(startDateTime asc) {
+//       _id,
+//       title,
+//       slug,
+//       startDateTime,
+//       endDateTime,
+//       timezone,
+//       location,
+//       image { asset-> { url } },
+//       description
+//     }`,
+//     {},
+//     {
+//       next: {
+//         revalidate: cache.short, // Conferences cambian frecuentemente
+//         tags: ["conference"],
+//       },
+//     }
+//   );
+
+//   // 🧹 Limpiar timezones corruptos en todas las conferences
+//   return conferences.map((conference: SanityConference) => ({
+//     ...conference,
+//     timezone: cleanTimezone(conference.timezone),
+//   }));
+// }
+
+// apps/web/lib/sanity/queries.ts
+export async function getConferences(
+  lang: "en" | "es" = "en"
+): Promise<SanityConference[]> {
   const sanityClient = getClient({ forceFresh: isDevelopment });
 
   const conferences = await sanityClient.fetch(
-    `*[_type == "conference"] | order(startDateTime asc) {
-      _id,
-      title,
-      slug,
-      startDateTime,
-      endDateTime,
-      timezone,
-      location,
-      image { asset-> { url } },
-      description
-    }`,
-    {},
+    /* groq */ `
+      *[_type == "conference"] | order(startDateTime asc) {
+        _id,
+        "title"      : coalesce(title[$lang],      title.en),
+        "description": coalesce(description[$lang],description.en),
+        slug,
+        startDateTime,
+        endDateTime,
+        timezone,
+        location,
+        image { asset->{ url } }
+      }
+    `,
+    { lang },
     {
       next: {
-        revalidate: cache.short, // Conferences cambian frecuentemente
+        revalidate: cache.short, // siguen cambiando frecuentemente
         tags: ["conference"],
       },
     }
   );
 
-  // 🧹 Limpiar timezones corruptos en todas las conferences
-  return conferences.map((conference: SanityConference) => ({
-    ...conference,
-    timezone: cleanTimezone(conference.timezone),
+  // 🧹 Normaliza timezones mal formados
+  return (conferences as SanityConference[]).map((conf) => ({
+    ...conf,
+    timezone: cleanTimezone(conf.timezone),
   }));
 }
 
@@ -765,104 +801,167 @@ export async function getArticleBySlug(slug: string): Promise<{
   );
 }
 
-export async function getConferenceBySlug(slug: string) {
-  const query = `*[_type == "conference" && slug.current == $slug][0] {
-    _id,
-    title,
-    description,
-    startDateTime,
-    endDateTime,
-    timezone,
-    location,
-    category,
-    price,
-    "organizer": {
-      "name": organizer.name,
-      "logo": organizer.logo.asset->url
-    },
-    "slug": slug.current,
-    "image": {
-      "asset": {
-        "url": image.asset->url
-      }
-    },
-    about[] {
-      ...,
-      _type == "inlineImage" => {
-        ...,
-        asset-> {
-          url,
-          metadata {
-            dimensions {
-              width,
-              height
-            }
-          }
-        }
-      },
-      _type == "videoEmbed" => {
-        ...,
-        url,
-        title,
-        caption
-      },
-      _type == "callout" => {
-        ...,
-        type,
-        title,
-        content
-      },
-      _type == "divider" => {
-        ...,
-        style
-      },
-      _type == "columns" => {
-        ...,
-        leftColumn,
-        rightColumn
-      }
-    },
-    speakers[] {
+// export async function getConferenceBySlug(slug: string) {
+//   const query = `*[_type == "conference" && slug.current == $slug][0] {
+//     _id,
+//     title,
+//     description,
+//     startDateTime,
+//     endDateTime,
+//     timezone,
+//     location,
+//     category,
+//     price,
+//     "organizer": {
+//       "name": organizer.name,
+//       "logo": organizer.logo.asset->url
+//     },
+//     "slug": slug.current,
+//     "image": {
+//       "asset": {
+//         "url": image.asset->url
+//       }
+//     },
+//     about[] {
+//       ...,
+//       _type == "inlineImage" => {
+//         ...,
+//         asset-> {
+//           url,
+//           metadata {
+//             dimensions {
+//               width,
+//               height
+//             }
+//           }
+//         }
+//       },
+//       _type == "videoEmbed" => {
+//         ...,
+//         url,
+//         title,
+//         caption
+//       },
+//       _type == "callout" => {
+//         ...,
+//         type,
+//         title,
+//         content
+//       },
+//       _type == "divider" => {
+//         ...,
+//         style
+//       },
+//       _type == "columns" => {
+//         ...,
+//         leftColumn,
+//         rightColumn
+//       }
+//     },
+//     speakers[] {
+//       _id,
+//       name,
+//       role,
+//       "image": {
+//         "asset": {
+//           "url": image.asset->url
+//         }
+//       }
+//     },
+//     "gallery": gallery[].asset->{
+//       "url": url
+//     },
+//     "relatedCampaign": relatedCampaign->{
+//       _id,
+//       title,
+//       "slug": slug.current
+//     }
+//   }`;
+
+//   const sanityClient = getClient({ forceFresh: isDevelopment });
+//   const event = await sanityClient.fetch(
+//     query,
+//     { slug },
+//     {
+//       next: {
+//         revalidate: cache.short, // Conferences pueden cambiar frecuentemente
+//         tags: ["conference", `conference-${slug}`],
+//       },
+//     }
+//   );
+
+//   // 🧹 Limpiar timezone corrupto si existe el evento
+//   if (event && event.timezone) {
+//     return {
+//       ...event,
+//       timezone: cleanTimezone(event.timezone),
+//     };
+//   }
+
+//   return event;
+// }
+
+// apps/web/lib/sanity/queries.ts
+export async function getConferenceBySlug(
+  slug: string,
+  lang: "en" | "es" = "en"
+): Promise<SanityConference | null> {
+  const query = /* groq */ `
+    *[_type == "conference" && slug.current == $slug][0]{
       _id,
-      name,
-      role,
-      "image": {
-        "asset": {
-          "url": image.asset->url
-        }
+
+      "title"      : coalesce(title[$lang],      title.en),
+      "description": coalesce(description[$lang],description.en),
+      "location"   : coalesce(location[$lang],   location.en),
+
+      startDateTime,
+      endDateTime,
+      timezone,
+      category,
+      price,
+
+      "organizer": {
+        "name": coalesce(organizer.name[$lang], organizer.name.en),
+        "logo": organizer.logo.asset->url
+      },
+
+      "slug": slug.current,
+
+      image{ asset->{ url } },
+
+      about[],
+
+      speakers[]{
+        _id,
+        "name": coalesce(name[$lang], name.en),
+        "role": coalesce(role[$lang], role.en),
+        "image": { "asset": { "url": image.asset->url } }
+      },
+
+      "gallery": gallery[].asset->{ url },
+
+      "relatedCampaign": relatedCampaign->{
+        _id,
+        "title": coalesce(title[$lang], title.en),
+        "slug": slug.current
       }
-    },
-    "gallery": gallery[].asset->{
-      "url": url
-    },
-    "relatedCampaign": relatedCampaign->{
-      _id,
-      title,
-      "slug": slug.current
     }
-  }`;
+  `;
 
   const sanityClient = getClient({ forceFresh: isDevelopment });
+
   const event = await sanityClient.fetch(
     query,
-    { slug },
+    { slug, lang },
     {
       next: {
-        revalidate: cache.short, // Conferences pueden cambiar frecuentemente
+        revalidate: cache.short, // ⏱  quick ISR
         tags: ["conference", `conference-${slug}`],
       },
     }
   );
 
-  // 🧹 Limpiar timezone corrupto si existe el evento
-  if (event && event.timezone) {
-    return {
-      ...event,
-      timezone: cleanTimezone(event.timezone),
-    };
-  }
-
-  return event;
+  return event ? { ...event, timezone: cleanTimezone(event.timezone) } : null;
 }
 
 export async function getConferenceByRef(ref: string) {
