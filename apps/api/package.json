@@ -10,7 +10,7 @@
     "test": "vitest",
     "cf-typegen": "wrangler types",
     "generate": "drizzle-kit generate:sqlite",
-    "migrate": "wrangler d1 migrations apply DATABASE",
+    "migrate": "wrangler d1 migrations apply pledge4peace-db",
     "studio": "drizzle-kit studio"
   },
   "dependencies": {

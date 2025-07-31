@@ -16,6 +16,7 @@ import { Loader2 } from "lucide-react";
 import { CheckCircle, CircleHelp } from "lucide-react";
 import { logger } from "@/lib/utils/logger";
 import Link from "next/link";
+import { useLocaleContent } from "@/hooks/use-locale-content";
 
 interface PledgeFormProps {
   pledgeCommitmentItems: string[];
@@ -39,6 +40,8 @@ export default function PledgeForm({
   const [isLoading, setIsLoading] = useState(true);
   const [hasPledged, setHasPledged] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+
+  const { getString } = useLocaleContent();
 
   // Check if user has already pledged to this campaign
   useEffect(() => {
@@ -189,7 +192,8 @@ export default function PledgeForm({
                 htmlFor="terms"
                 className="text-xs leading-snug text-gray-600"
               >
-                {item}
+                {getString(item as any) ||
+                  (typeof item === "string" ? item : "")}
               </label>
             </div>
           </div>

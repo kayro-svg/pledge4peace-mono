@@ -18,6 +18,7 @@ import { getSolutions, getUserInteractions } from "@/lib/api/solutions";
 import { API_ENDPOINTS, API_URL } from "@/lib/config";
 import { SanitySolutionsSection, SanityParty, Solution } from "@/lib/types";
 import { logger } from "@/lib/utils/logger";
+import { useLocaleContent } from "@/hooks/use-locale-content";
 import { PortableText } from "@portabletext/react";
 import { Loader2, LogIn, Plus, ToggleLeft, ToggleRight } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -62,6 +63,9 @@ export default function PeaceAgreementContent({
   const [isCreateSolutionOpen, setIsCreateSolutionOpen] = useState(false);
   const { data: session } = useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Localization helpers (must be declared before usage below)
+  const { getString, getText } = useLocaleContent();
 
   // Helper para obtener el primer party slug como default
   const getDefaultPartySlug = useCallback(() => {
@@ -134,7 +138,9 @@ export default function PeaceAgreementContent({
       };
 
       config[party.slug] = {
-        label: party.name,
+        label:
+          getString(party.name as any) ||
+          (typeof party.name === "string" ? party.name : ""),
         icon: (
           <Image
             src={party.icon.asset.url}
@@ -145,12 +151,14 @@ export default function PeaceAgreementContent({
           />
         ),
         color: colorMap[party.color] || colorMap.blue,
-        description: party.description,
+        description:
+          getText(party.description as any) ||
+          (typeof party.description === "string" ? party.description : ""),
       };
     });
 
     return config;
-  }, [parties]);
+  }, [parties, getString, getText]);
 
   useEffect(() => {
     const fetchSolutions = async () => {
@@ -499,7 +507,10 @@ export default function PeaceAgreementContent({
         <div className="prose max-w-none">
           {solutionsSection?.heading && (
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
-              {solutionsSection?.heading}
+              {getString(solutionsSection.heading as any) ||
+                (typeof solutionsSection.heading === "string"
+                  ? solutionsSection.heading
+                  : "")}
             </h2>
           )}
 
@@ -515,7 +526,10 @@ export default function PeaceAgreementContent({
         <div>
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-8 md:gap-0">
             <h2 className="text-2xl font-bold">
-              {solutionsSection?.subheading}
+              {getString(solutionsSection.subheading as any) ||
+                (typeof solutionsSection.subheading === "string"
+                  ? solutionsSection.subheading
+                  : "")}
             </h2>
             <div className="flex w-full md:w-auto items-end">
               {addSolutionButton()}

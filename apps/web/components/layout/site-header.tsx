@@ -87,7 +87,7 @@ export default function SiteHeader() {
 
         {/* Authentication and Mobile Menu Toggle */}
         <div className="flex items-center space-x-2 sm:space-x-4">
-          <LanguageSwitcher />
+          {/* <LanguageSwitcher /> */}
           {/* Login/User Profile */}
           <div className="hidden sm:block">
             {sessionStatus === "loading" ? (
