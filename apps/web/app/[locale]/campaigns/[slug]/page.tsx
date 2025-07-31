@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 import { logger } from "@/lib/utils/logger";
 
 // Enable Incremental Static Regeneration with a revalidation period of 60 seconds
-export const revalidate = 60;
+// export const revalidate = 60;
+export const dynamic = "force-dynamic";
 
 // Esta función genera estáticamente las rutas en tiempo de compilación
 // export async function generateStaticParams() {
@@ -17,19 +18,29 @@ export const revalidate = 60;
 //     .map((slug) => ({ slug: slug.current }));
 // }
 
+// export async function generateStaticParams() {
+//   const campaigns = await getCampaignSlugs();
+
+//   // Ensure we include the locale segment so that
+//   // /en/... y /es/... se pre-generen y tengan su JSON
+//   const locales = routing.locales ?? ["en"];
+
+//   const validSlugs = campaigns.filter(
+//     (s) => typeof s?.current === "string" && s.current.length > 0
+//   );
+
+//   return locales.flatMap((locale) =>
+//     validSlugs.map((slug) => ({ locale, slug: slug.current }))
+//   );
+// }
+
 export async function generateStaticParams() {
-  const campaigns = await getCampaignSlugs();
-
-  // Ensure we include the locale segment so that
-  // /en/... y /es/... se pre-generen y tengan su JSON
-  const locales = routing.locales ?? ["en"];
-
-  const validSlugs = campaigns.filter(
-    (s) => typeof s?.current === "string" && s.current.length > 0
-  );
-
+  const slugs = await getCampaignSlugs(); // [{slug:{current:'create-...'}}]
+  const locales = ["en", "es"]; // ajusta según i18n
   return locales.flatMap((locale) =>
-    validSlugs.map((slug) => ({ locale, slug: slug.current }))
+    slugs
+      .filter((s) => s?.slug?.current)
+      .map((s) => ({ locale, slug: s.slug.current }))
   );
 }
 

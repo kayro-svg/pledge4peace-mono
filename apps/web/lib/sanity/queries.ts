@@ -228,44 +228,76 @@ export async function getHomePageData(
 // CONSULTAS PARA ELEMENTOS INDEPENDIENTES
 // Estas consultas son para cuando necesitas estos elementos fuera del contexto de la página principal
 
-export async function getCampaigns(limit?: number): Promise<SanityCampaign[]> {
-  // 🚀 Usar cliente inteligente por entorno
+// export async function getCampaigns(limit?: number): Promise<SanityCampaign[]> {
+//   // 🚀 Usar cliente inteligente por entorno
+//   const sanityClient = getClient({ forceFresh: isDevelopment });
+
+//   return sanityClient.fetch(
+//     `*[_type == "campaign"] | order(publishedAt desc) ${
+//       limit ? `[0..${limit}]` : ""
+//     } {
+//       _id,
+//       title,
+//       slug,
+//       category,
+//       description,
+//       goalPledges,
+//       countriesInvolved[],
+//       pledgeCommitmentItems[],
+//       contentText,
+//       featuredImage { asset-> { url } },
+//       gallery[] {
+//         type,
+//         alt,
+//         image { asset-> { url } },
+//         video { asset-> { url } }
+//       },
+//       parties[] {
+//         name,
+//         slug,
+//         description,
+//         icon { asset-> { url } },
+//         color,
+//         solutionLimit
+//       },
+//       _createdAt
+//     }`,
+//     {},
+//     {
+//       next: {
+//         revalidate: cache.medium, // ⚡ Cache inteligente por entorno
+//         tags: ["campaign"],
+//       },
+//     }
+//   );
+// }
+
+// lib/sanity/queries.ts
+export async function getCampaigns(
+  limit?: number,
+  lang: "en" | "es" = "en"
+): Promise<SanityCampaign[]> {
   const sanityClient = getClient({ forceFresh: isDevelopment });
 
   return sanityClient.fetch(
-    `*[_type == "campaign"] | order(publishedAt desc) ${
-      limit ? `[0..${limit}]` : ""
-    } {
-      _id,
-      title,
-      slug,
-      category,
-      description,
-      goalPledges,
-      countriesInvolved[], 
-      pledgeCommitmentItems[],
-      contentText,
-      featuredImage { asset-> { url } },
-      gallery[] {
-        type,
-        alt,
-        image { asset-> { url } },
-        video { asset-> { url } }
-      },
-      parties[] {
-        name,
+    /* groq */ `
+      *[_type == "campaign"] | order(_createdAt desc) ${
+        limit ? `[0..${limit}]` : ""
+      }{
+        _id,
+        "title"      : coalesce(title[$lang],      title.en),
+        "description": coalesce(description[$lang],description.en),
         slug,
-        description,
-        icon { asset-> { url } },
-        color,
-        solutionLimit
-      },
-      _createdAt
-    }`,
-    {},
+        category,
+        goalPledges,
+        countriesInvolved[],
+        featuredImage{asset->{url}}
+      }
+    `,
+    { lang },
     {
       next: {
-        revalidate: cache.medium, // ⚡ Cache inteligente por entorno
+        revalidate: cache.medium,
         tags: ["campaign"],
       },
     }
@@ -854,85 +886,6 @@ export async function getConferenceByRef(ref: string) {
  * Includes hero section, who we are, mission, philosophy, charter, and contact information
  * @returns Promise<SanityAboutPage> - Complete about page data
  */
-// export async function getAboutPageData(
-//   lang: "en" | "es" = "en"
-// ): Promise<SanityAboutPage> {
-//   try {
-//     logger.log("[Sanity] Fetching About Page data");
-
-//     // 🚀 Usar cliente inteligente por entorno
-//     const sanityClient = getClient({ forceFresh: isDevelopment });
-
-//     // Fetch all about page data in a single optimized query
-//     const data = await sanityClient.fetch(
-//       `*[_type == "aboutPage"][0]{
-//         _id,
-//         title,
-//         heroSection{
-//           "heroHeading": heroHeading[$lang],
-//           "heroSubheading": heroSubheading[$lang],
-//           heroBgImage{asset->{url}}
-//         },
-//         whoWeAreSection{
-//           "whoWeAreHeading": whoWeAreHeading[$lang],
-//           "whoWeAreFirstParagraph": whoWeAreFirstParagraph[$lang],
-//           whoWeAreImage{asset->{url}},
-//           "whoWeAreSecondParagraph": whoWeAreSecondParagraph[$lang],
-//           "whoWeAreThirdParagraph": whoWeAreThirdParagraph[$lang]
-//         },
-//         ourMissionSection{
-//           "ourMissionHeading": ourMissionHeading[$lang],
-//           "ourMissionParagraph": ourMissionParagraph[$lang],
-//           ourMissionImage{asset->{url}}
-//         },
-//         ourPhilosophySection{
-//           "ourPhilosophyHeading": ourPhilosophyHeading[$lang],
-//           "ourPhilosophyParagraph": ourPhilosophyParagraph[$lang],
-//           "ourPhilosophyImage": ourPhilosophyImage{asset->{url}}
-//         },
-//         ourCharterSection{
-//           "ourCharterHeading": ourCharterHeading[$lang],
-//           "ourCharterParagraph": ourCharterParagraph[$lang],
-//           "charterPrinciples": charterPrinciples[]{"title": title[$lang]}
-//         },
-//         missionHighlightCard{
-//           "title": title[$lang],
-//           "description": description[$lang]
-//         },
-//         getInTouchCard{
-//           getInTouchHeading[$lang],
-//           contactInformation-> {
-//             _id,title,email,phone,address,
-//             socialMedia[]{platform,url}
-//           }
-//         },
-//         ourCommitmentCard{
-//           "title": title[$lang],
-//           "description": description[$lang]
-//         }
-//       }`,
-//       { lang },
-//       {
-//         next: {
-//           revalidate: cache.medium, // ⚡ Cache inteligente por entorno
-//           tags: ["aboutPage"], // ✅ Tag correcto (coincide con revalidación)
-//         },
-//       }
-//     );
-
-//     if (!data) {
-//       throw new Error("No About Page data found in Sanity");
-//     }
-
-//     logger.log("[Sanity] Successfully fetched About Page data");
-//     return data;
-//   } catch (error) {
-//     logger.error("[Sanity Error] Failed to fetch About Page data:", error);
-//     throw error;
-//   }
-// }
-
-/* aboutPage.ts */
 export const ABOUT_PAGE_QUERY = /* groq */ `
 *[_type == "aboutPage"][0]{
   _id,
@@ -1027,83 +980,6 @@ export async function getAboutPageData(
  * Includes hero section, ways to volunteer, convince high-profile figures, spread the word, and impact sections
  * @returns Promise<SanityVolunteerPage> - Complete volunteer page data
  */
-// export async function getVolunteerPageData(
-//   lang: "en" | "es" = "en"
-// ): Promise<SanityVolunteerPage> {
-//   try {
-//     logger.log("[Sanity] Fetching Volunteer Page data");
-
-//     // 🚀 Usar cliente inteligente por entorno
-//     const sanityClient = getClient({ forceFresh: isDevelopment });
-
-//     // Fetch all volunteer page data in a single optimized query
-//     const data = await sanityClient.fetch(
-//       `*[_type == "volunteerPage"][0] {
-//         _id,
-//         title,
-
-//         // Hero Section
-//         heroSection {
-//           heroHeading,
-//           heroSubheading,
-//           heroButtonText,
-//           heroBgImage { asset-> { url } }
-//         },
-
-//         // Ways to Volunteer Section
-//         waysToVolunteerSection {
-//           "waysToVolunteerHeading": waysToVolunteerHeading[$lang],
-//           "waysToVolunteerParagraph": waysToVolunteerParagraph[$lang]
-//         },
-
-//         // Convince High-Profile Figures Section
-//         convinceHighProfileSection {
-//           "convinceHighProfileHeading": convinceHighProfileHeading[$lang],
-//           "convinceHighProfileParagraph": convinceHighProfileParagraph[$lang],
-//           convinceHighProfileChecklist[] {
-//             "title": title[$lang]
-//           },
-//           convinceHighProfileImage { asset-> { url } }
-//         },
-
-//         // Spread the Word Section
-//         spreadTheWordSection {
-//           "spreadTheWordHeading": spreadTheWordHeading[$lang],
-//           "spreadTheWordParagraph": spreadTheWordParagraph[$lang],
-//           spreadTheWordCards[] {
-//             "title": title[$lang],
-//             "description": description[$lang]
-//           },
-//           spreadTheWordImage { asset-> { url } }
-//         },
-
-//         // Impact Section
-//         impactSection {
-//           impactHeading[$lang],
-//           impactParagraph[$lang],
-//           impactButtonText[$lang]
-//         }
-//       }`,
-//       { lang },
-//       {
-//         next: {
-//           revalidate: cache.medium, // ⚡ Cache inteligente por entorno
-//           tags: ["volunteerPage"], // ✅ Tag correcto (coincide con revalidación)
-//         },
-//       }
-//     );
-
-//     if (!data) {
-//       throw new Error("No Volunteer Page data found in Sanity");
-//     }
-
-//     logger.log("[Sanity] Successfully fetched Volunteer Page data");
-//     return data;
-//   } catch (error) {
-//     logger.error("[Sanity Error] Failed to fetch Volunteer Page data:", error);
-//     throw error;
-//   }
-// }
 
 // lib/sanity/queries/volunteerPage.ts
 export const VOLUNTEER_PAGE_QUERY = /* groq */ `
