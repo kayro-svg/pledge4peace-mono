@@ -1,4 +1,5 @@
 import {defineField, defineType} from 'sanity'
+import {localeString, localeText} from './_localeTypes'
 
 export default defineType({
   name: 'category',
@@ -8,12 +9,12 @@ export default defineType({
     defineField({
       name: 'title',
       title: 'Title',
-      type: 'string',
+      type: 'localeString',
     }),
     defineField({
       name: 'description',
       title: 'Description',
-      type: 'text',
+      type: 'localeText',
     }),
   ],
 })

@@ -30,20 +30,20 @@ export default {
         {
           name: 'heroHeading',
           title: 'Hero Heading',
-          type: 'string',
+          type: 'localeString',
           description: 'The main heading. Example: "Raise your voice..."',
         },
         {
           name: 'heroSubheading',
           title: 'Hero Subheading',
-          type: 'text',
+          type: 'localeText',
           description:
             'The explanatory text below the heading. Example: "Join us in making a difference..."',
         },
         {
           name: 'heroButtonText',
           title: 'Button Text',
-          type: 'string',
+          type: 'localeString',
           description: 'The text for the hero button. Example: "Apply Now"',
         },
         {
@@ -66,13 +66,13 @@ export default {
         {
           name: 'waysToVolunteerHeading',
           title: 'Section Heading',
-          type: 'string',
+          type: 'localeString',
           description: 'The heading for this section. Example: "Ways to Volunteer"',
         },
         {
           name: 'waysToVolunteerParagraph',
           title: 'Section Paragraph',
-          type: 'text',
+          type: 'localeText',
           description:
             'The paragraph for this section. Example: "There are many ways to get involved with our organization. We welcome all volunteers who share our mission and values."',
         },
@@ -120,13 +120,13 @@ export default {
         {
           name: 'convinceHighProfileHeading',
           title: 'Section Heading',
-          type: 'string',
+          type: 'localeString',
           description: 'The heading for this section. Example: "Convince High-Profile Figures"',
         },
         {
           name: 'convinceHighProfileParagraph',
           title: 'Section Paragraph',
-          type: 'text',
+          type: 'localeText',
           description:
             'The paragraph for this section. Example: "We are looking for high-profile figures to help us spread our message and make a difference."',
         },
@@ -141,7 +141,7 @@ export default {
                 {
                   name: 'title',
                   title: 'Checklist Item',
-                  type: 'string',
+                  type: 'localeString',
                   description:
                     'The title for this checklist item. Example: "Convince a High-Profile Figure"',
                 },
@@ -169,13 +169,13 @@ export default {
         {
           name: 'spreadTheWordHeading',
           title: 'Section Heading',
-          type: 'string',
+          type: 'localeString',
           description: 'The heading for this section. Example: "Spread the Word"',
         },
         {
           name: 'spreadTheWordParagraph',
           title: 'Section Paragraph',
-          type: 'text',
+          type: 'localeText',
           description:
             'The paragraph for this section. Example: "We are looking for high-profile figures to help us spread our message and make a difference."',
         },
@@ -190,13 +190,13 @@ export default {
                 {
                   name: 'title',
                   title: 'Card Title',
-                  type: 'string',
+                  type: 'localeString',
                   description: 'The title for this card. Example: "Share on Social Media"',
                 },
                 {
                   name: 'description',
                   title: 'Card Description',
-                  type: 'text',
+                  type: 'localeText',
                   description: 'The description of this card',
                 },
               ],
@@ -223,21 +223,21 @@ export default {
         {
           name: 'impactHeading',
           title: 'Section Heading',
-          type: 'string',
+          type: 'localeString',
           description:
             'The heading for this section. Example: "Hundreds of people are pledging..."',
         },
         {
           name: 'impactParagraph',
           title: 'Section Paragraph',
-          type: 'text',
+          type: 'localeText',
           description:
             'The paragraph for this section. Example: "Together, our community has raised significant..."',
         },
         {
           name: 'impactButtonText',
           title: 'Button Text',
-          type: 'string',
+          type: 'localeString',
           description: 'The text for the button. Example: "Volunteer today"',
         },
       ],

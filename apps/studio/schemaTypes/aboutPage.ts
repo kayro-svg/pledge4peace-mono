@@ -1,3 +1,5 @@
+import {localeString, localeText} from './_localeTypes'
+
 export default {
   name: 'aboutPage',
   title: 'About Page',
@@ -33,13 +35,13 @@ export default {
         {
           name: 'heroHeading',
           title: 'Hero Heading',
-          type: 'string',
+          type: 'localeString',
           description: 'The main heading. Example: "About Us"',
         },
         {
           name: 'heroSubheading',
           title: 'Hero Subheading',
-          type: 'text',
+          type: 'localeText',
           description:
             'The explanatory text below the heading. Example: "We take our freedoms for granted..."',
         },
@@ -64,13 +66,13 @@ export default {
         {
           name: 'whoWeAreHeading',
           title: 'Section Heading',
-          type: 'string',
+          type: 'localeString',
           description: 'The heading for this section. Example: "Who We Are"',
         },
         {
           name: 'whoWeAreFirstParagraph',
           title: 'First Paragraph',
-          type: 'text',
+          type: 'localeText',
           description: 'The first paragraph explaining who we are',
         },
         {
@@ -83,13 +85,13 @@ export default {
         {
           name: 'whoWeAreSecondParagraph',
           title: 'Second Paragraph',
-          type: 'text',
+          type: 'localeText',
           description: 'The second explanatory paragraph about who we are and our mission',
         },
         {
           name: 'whoWeAreThirdParagraph',
           title: 'Third Paragraph',
-          type: 'text',
+          type: 'localeText',
           description: 'Additional information about our group, advocates, and involvement',
         },
       ],
@@ -106,13 +108,13 @@ export default {
         {
           name: 'ourMissionHeading',
           title: 'Section Heading',
-          type: 'string',
+          type: 'localeString',
           description: 'The heading for this section. Example: "Our Mission"',
         },
         {
           name: 'ourMissionParagraph',
           title: 'Mission Statement',
-          type: 'text',
+          type: 'localeText',
           description: 'The main mission statement text',
         },
         {
@@ -136,13 +138,13 @@ export default {
         {
           name: 'ourPhilosophyHeading',
           title: 'Section Heading',
-          type: 'string',
+          type: 'localeString',
           description: 'The heading for this section. Example: "Our Philosophy"',
         },
         {
           name: 'ourPhilosophyParagraph',
           title: 'Philosophy Statement',
-          type: 'text',
+          type: 'localeText',
           description: 'The main text explaining our philosophy',
         },
         {
@@ -166,13 +168,13 @@ export default {
         {
           name: 'ourCharterHeading',
           title: 'Section Heading',
-          type: 'string',
+          type: 'localeString',
           description: 'The heading for this section. Example: "Our Charter"',
         },
         {
           name: 'ourCharterParagraph',
           title: 'Charter Introduction',
-          type: 'text',
+          type: 'localeText',
           description: 'Introductory text about our charter and principles',
         },
         {
@@ -186,7 +188,7 @@ export default {
                 {
                   name: 'title',
                   title: 'Principle Title',
-                  type: 'string',
+                  type: 'localeString',
                   description: 'Title or heading for this principle',
                 },
               ],
@@ -212,13 +214,13 @@ export default {
         {
           name: 'title',
           title: 'Card Title',
-          type: 'string',
+          type: 'localeString',
           description: 'The title for the mission highlight card',
         },
         {
           name: 'description',
           title: 'Card Description',
-          type: 'text',
+          type: 'localeText',
           description: 'The description for the mission highlight card',
         },
       ],
@@ -235,7 +237,7 @@ export default {
         {
           name: 'getInTouchHeading',
           title: 'Section Heading',
-          type: 'string',
+          type: 'localeString',
           description: "The heading for this section. Example: 'Get In Touch'",
         },
         {
@@ -258,13 +260,13 @@ export default {
         {
           name: 'title',
           title: 'Card Title',
-          type: 'string',
+          type: 'localeString',
           description: 'The title for the commitment highlight card',
         },
         {
           name: 'description',
           title: 'Card Description',
-          type: 'text',
+          type: 'localeText',
           description: 'The description for the commitment highlight card',
         },
       ],

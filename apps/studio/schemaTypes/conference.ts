@@ -1,4 +1,6 @@
 // schemaTypes/conference.ts
+import {localeString, localeText} from './_localeTypes'
+
 export default {
   name: 'conference',
   title: 'Conferences',
@@ -7,7 +9,7 @@ export default {
     {
       name: 'title',
       title: 'Conference Title',
-      type: 'string',
+      type: 'localeString',
       validation: (Rule: any) => Rule.required(),
     },
     {
@@ -57,7 +59,7 @@ export default {
     {
       name: 'location',
       title: 'Location',
-      type: 'string',
+      type: 'localeString',
       description: 'Physical location or "Online" for virtual conferences',
     },
     {
@@ -68,7 +70,7 @@ export default {
         {
           name: 'name',
           title: 'Organizer Name',
-          type: 'string',
+          type: 'localeString',
           validation: (Rule: any) => Rule.required(),
         },
         {
@@ -88,7 +90,7 @@ export default {
     {
       name: 'description',
       title: 'Short Description',
-      type: 'text',
+      type: 'localeText',
       rows: 3,
       validation: (Rule: any) => Rule.required(),
       description: 'Brief summary for previews and listings',
@@ -392,17 +394,17 @@ export default {
             {
               name: 'name',
               title: 'Speaker Name',
-              type: 'string',
+              type: 'localeString',
             },
             {
               name: 'role',
               title: 'Role/Title',
-              type: 'string',
+              type: 'localeString',
             },
             {
               name: 'bio',
               title: 'Short Bio',
-              type: 'text',
+              type: 'localeText',
               rows: 3,
             },
             {

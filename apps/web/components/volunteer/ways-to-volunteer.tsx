@@ -14,6 +14,9 @@ export default function WaysToVolunteer({
   icons,
 }: WaysToVolunteerProps) {
   // Create volunteer ways by combining data with icons
+
+  console.log("waysToVolunteerSection", waysToVolunteerSection);
+
   const volunteerWays = [
     {
       icon: icons[0],
@@ -35,10 +38,10 @@ export default function WaysToVolunteer({
       <div className="mx-auto max-w-6xl">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold text-[#2F4858]">
-            {waysToVolunteerSection.waysToVolunteerHeading}
+            {waysToVolunteerSection?.heading}
           </h2>
           <p className="text-lg text-gray-600 mt-4 max-w-3xl mx-auto">
-            {waysToVolunteerSection.waysToVolunteerParagraph}
+            {waysToVolunteerSection?.paragraph}
           </p>
         </div>
 

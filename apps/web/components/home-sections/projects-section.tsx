@@ -1,8 +1,10 @@
+"use client";
 import CampaignCard from "@/components/ui/campaign-card";
 import { Campaign, SanityCampaignsSection } from "@/lib/types";
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, Grid3X3 } from "lucide-react";
+import { useLocaleContent } from "@/hooks/use-locale-content";
 
 export default function RecentProjects({
   data,
@@ -12,6 +14,7 @@ export default function RecentProjects({
   campaigns: Campaign[];
 }) {
   const router = useRouter();
+  const { getString } = useLocaleContent();
 
   const DEFAULT_SECTION_DATA = {
     campaignsHeading: "Recent Campaigns",
@@ -19,6 +22,8 @@ export default function RecentProjects({
       "Here's how you can take action today, by voting and pledging in our recent campaigns.",
     campaigns: campaigns,
   };
+
+  console.log("data campaigns", data?.campaigns);
 
   // Merge the provided data with default values, using nullish coalescing
   const sectionData = {
@@ -66,8 +71,8 @@ export default function RecentProjects({
                 key={campaign._id}
                 campaignId={campaign._id}
                 featuredImage={campaign.featuredImage?.asset?.url as string}
-                title={campaign.title}
-                description={campaign.description}
+                title={getString(campaign.title)}
+                description={getString(campaign.description)}
                 link={campaign.slug.current}
                 category={campaign.category || ""}
                 action="Pledge Now"

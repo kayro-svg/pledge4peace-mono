@@ -1,0 +1,57 @@
+{
+  "Header": {
+    "home": "Inicio",
+    "about": "Acerca de",
+    "campaigns": "Campañas",
+    "events": "Eventos",
+    "articles": "Artículos",
+    "contact": "Contacto",
+    "volunteer": "Voluntariado",
+    "login": "INICIAR SESIÓN"
+  },
+  "Home": {
+    "welcome": "Bienvenido a Pledge4Peace",
+    "howItWorks": "Cómo Funciona",
+    "campaigns": "Nuestras Campañas",
+    "articles": "Artículos y Actualizaciones",
+    "conferences": "Próximas Conferencias y Eventos",
+    "waysToSupport": "Formas de Apoyar"
+  },
+  "Navigation": {
+    "home": "Inicio",
+    "about": "Acerca de",
+    "campaigns": "Campañas",
+    "events": "Eventos",
+    "articles": "Artículos",
+    "contact": "Contacto",
+    "volunteer": "Voluntariado",
+    "login": "Iniciar Sesión",
+    "signup": "Registrarse",
+    "dashboard": "Panel",
+    "logout": "Cerrar Sesión"
+  },
+  "Actions": {
+    "readMore": "Leer Más",
+    "viewAll": "Ver Todo",
+    "donate": "Donar",
+    "pledge": "Comprometerse Ahora",
+    "learnMore": "Más Información",
+    "submit": "Enviar",
+    "cancel": "Cancelar",
+    "save": "Guardar",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
+  "Auth": {
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidó su Contraseña?",
+    "rememberMe": "Recordarme",
+    "loginTitle": "Iniciar sesión en su cuenta",
+    "signupTitle": "Crear una cuenta",
+    "noAccount": "¿No tiene una cuenta?",
+    "alreadyAccount": "¿Ya tiene una cuenta?",
+    "createAccount": "Crear Cuenta",
+    "resetPassword": "Restablecer Contraseña"
+  }
+}

@@ -26,11 +26,7 @@ export default function WhoWeAre({ whoWeAreSection }: WhoWeAreProps) {
             <div className="relative rounded-3xl w-full h-[300px] md:h-[350px] lg:h-[450px] overflow-hidden shadow-lg">
               {hasSanityImage(whoWeAreSection.whoWeAreImage) ? (
                 <Image
-                  src={getSanityImageUrl(
-                    whoWeAreSection.whoWeAreImage,
-                    500,
-                    500
-                  )}
+                  src={whoWeAreSection.whoWeAreImage}
                   alt="About Pledge4Peace"
                   fill
                   priority

@@ -16,19 +16,21 @@ export default function SpreadWordSection({
     <Mail className="h-6 w-6 text-[#2F4858]" />,
     <Globe className="h-6 w-6 text-[#2F4858]" />,
   ];
+
+  console.log("spreadTheWordSection", spreadTheWordSection);
   return (
     <section className="py-16 px-4 bg-[#FDFDF0]" id="spread-word">
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-col md:flex-row gap-12 items-center">
           <div className="md:w-1/2 md:order-2">
             <h2 className="text-3xl font-bold text-[#2F4858] mb-6">
-              {spreadTheWordSection.spreadTheWordHeading}
+              {spreadTheWordSection?.heading}
             </h2>
             <p className="text-lg text-gray-700 mb-6">
-              {spreadTheWordSection.spreadTheWordParagraph}
+              {spreadTheWordSection?.paragraph}
             </p>
             <div className="space-y-6">
-              {spreadTheWordSection.spreadTheWordCards.map((card, index) => (
+              {spreadTheWordSection?.cards?.map((card, index) => (
                 <div key={index} className="bg-white p-6 rounded-lg shadow-sm">
                   <div className="flex items-start">
                     <div className="bg-[#D6E0B6] p-2 rounded-lg mr-4">
@@ -36,9 +38,9 @@ export default function SpreadWordSection({
                     </div>
                     <div>
                       <h3 className="font-bold text-[#2F4858] text-2xl mb-2">
-                        {card.title}
+                        {card?.title}
                       </h3>
-                      <p className="text-gray-600">{card.description}</p>
+                      <p className="text-gray-600">{card?.description}</p>
                     </div>
                   </div>
                 </div>
@@ -46,13 +48,9 @@ export default function SpreadWordSection({
             </div>
           </div>
           <div className="md:w-1/2 md:order-1 relative h-[300px] w-full">
-            {hasSanityImage(spreadTheWordSection.spreadTheWordImage) ? (
+            {hasSanityImage(spreadTheWordSection?.image) ? (
               <Image
-                src={getSanityImageUrl(
-                  spreadTheWordSection.spreadTheWordImage,
-                  600,
-                  400
-                )}
+                src={spreadTheWordSection?.image}
                 alt="Spreading the message of peace"
                 className="rounded-lg object-cover"
                 fill

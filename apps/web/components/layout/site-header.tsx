@@ -2,7 +2,7 @@
 
 import { useSession } from "next-auth/react";
 import Image from "next/image";
-import Link from "next/link";
+// import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { HeaderUser } from "./header-user";
 import { HeaderUserMobile } from "./header-user-mobile";
@@ -18,6 +18,9 @@ import {
   LayoutDashboardIcon,
 } from "lucide-react";
 import { Button } from "../ui/button";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
+import { LanguageSwitcher } from "./language-switcher";
 
 export default function SiteHeader() {
   const router = useRouter();
@@ -26,16 +29,17 @@ export default function SiteHeader() {
   const session = sessionResult?.data;
   const sessionStatus = sessionResult?.status;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const t = useTranslations("Header");
 
   const isActive = (path: string) => {
     return pathname === path ? "text-[#548281]" : "text-[#2F4858]";
   };
 
   const menuItems = [
-    { icon: Home, label: "Home", href: "/" },
-    { icon: Info, label: "About", href: "/about" },
-    { icon: Heart, label: "Volunteer", href: "/volunteer" },
-    { icon: Mail, label: "Contact", href: "/contact" },
+    { icon: Home, label: t("home"), href: "/" },
+    { icon: Info, label: t("about"), href: "/about" },
+    { icon: Heart, label: t("volunteer"), href: "/volunteer" },
+    { icon: Mail, label: t("contact"), href: "/contact" },
   ];
 
   return (
@@ -59,30 +63,31 @@ export default function SiteHeader() {
             href="/"
             className={`text-base lg:text-lg font-medium ${isActive("/")} hover:text-[#698D8B] transition-colors active:text-brand-500`}
           >
-            Home
+            {t("home")}
           </Link>
           <Link
             href="/about"
             className={`text-base lg:text-lg font-medium ${isActive("/about")} hover:text-[#698D8B] transition-colors active:text-brand-500`}
           >
-            About
+            {t("about")}
           </Link>
           <Link
             href="/volunteer"
             className={`text-base lg:text-lg font-medium ${isActive("/volunteer")} hover:text-[#698D8B] transition-colors active:text-brand-500`}
           >
-            Volunteer
+            {t("volunteer")}
           </Link>
           <Link
             href="/contact"
             className={`text-base lg:text-lg font-medium ${isActive("/contact")} hover:text-[#698D8B] transition-colors active:text-brand-500`}
           >
-            Contact
+            {t("contact")}
           </Link>
         </nav>
 
         {/* Authentication and Mobile Menu Toggle */}
         <div className="flex items-center space-x-2 sm:space-x-4">
+          <LanguageSwitcher />
           {/* Login/User Profile */}
           <div className="hidden sm:block">
             {sessionStatus === "loading" ? (
@@ -94,7 +99,7 @@ export default function SiteHeader() {
                 href="/login"
                 className={`tracking-wider inline-flex items-center w-fit justify-center rounded-full px-4 sm:px-5 py-1.5 sm:py-2 text-sm font-bold ${isActive("/login") ? "bg-[#548281] text-white" : "text-[#548281]"} hover:text-white shadow hover:bg-[#2f4858] transition-colors duration-300 ease-in-out focus:outline-none`}
               >
-                LOGIN
+                {t("login")}
               </Link>
             )}
           </div>
@@ -149,7 +154,6 @@ export default function SiteHeader() {
             </p>
           </div>
         </div>
-
         {/* Minimal Navigation */}
         <nav className="py-8">
           <ul className="space-y-1">
@@ -181,10 +185,8 @@ export default function SiteHeader() {
             ))}
           </ul>
         </nav>
-
         {/* Spacer */}
         <div className="flex-1"></div>
-
         {/* Clean User/Auth Section */}
         <div className="p-8 border-t border-gray-100">
           {sessionStatus === "loading" ? (

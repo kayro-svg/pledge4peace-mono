@@ -6,6 +6,8 @@ import {
   HelpCircleIcon,
   LayoutDashboardIcon,
   MessageSquareHeartIcon,
+  FileCodeIcon,
+  ScanEye,
 } from "lucide-react";
 import * as React from "react";
 
@@ -48,6 +50,12 @@ const data = {
       title: "Involvement",
       url: "/dashboard/involvement",
       icon: MessageSquareHeartIcon,
+    },
+    {
+      title: "Campaigns Solutions",
+      url: "/dashboard/moderate-campaigns-solutions",
+      icon: ScanEye,
+      type: "superAdmin" as const, // This is a superAdmin item
     },
   ],
   // navClouds: [

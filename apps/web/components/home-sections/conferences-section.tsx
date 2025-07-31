@@ -1,15 +1,17 @@
+"use client";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import ConferenceCard from "@/components/ui/conference-card";
 import ExtendedEventCard from "@/components/ui/extended-event-card";
 import { SanityConferencesSection } from "@/lib/types";
-import { logger } from "@/lib/utils/logger";
+import { useLocaleContent } from "@/hooks/use-locale-content";
 
 export default function ConferencesSection({
   data,
 }: {
   data: SanityConferencesSection;
 }) {
+  const { getString } = useLocaleContent();
   // Generate 3 placeholder conferences
   const conferences = Array.from({ length: 3 }, (_, i) => ({
     id: i + 1,
@@ -66,12 +68,25 @@ export default function ConferencesSection({
             <ExtendedEventCard
               key={conference._id}
               id={conference._id}
-              title={conference.title}
+              title={
+                getString(conference.title) ||
+                (typeof conference.title === "string" ? conference.title : "")
+              }
               startDateTime={conference.startDateTime}
               endDateTime={conference.endDateTime}
               timezone={conference.timezone}
-              description={conference.description}
-              location={conference.location}
+              description={
+                getString(conference.description) ||
+                (typeof conference.description === "string"
+                  ? conference.description
+                  : "")
+              }
+              location={
+                getString(conference.location) ||
+                (typeof conference.location === "string"
+                  ? conference.location
+                  : "")
+              }
               imageUrl={conference.image?.asset?.url || "/placeholder.svg"}
               slug={conference.slug.current}
             />
@@ -85,8 +100,18 @@ export default function ConferencesSection({
               key={index}
               image={conference.image?.asset?.url ?? "/placeholder.svg"}
               date={conference.startDateTime ?? "No date available"}
-              title={conference.title ?? "No title available"}
-              description={conference.description ?? "No description available"}
+              title={
+                getString(conference.title) ||
+                (typeof conference.title === "string"
+                  ? conference.title
+                  : "No title available")
+              }
+              description={
+                getString(conference.description) ||
+                (typeof conference.description === "string"
+                  ? conference.description
+                  : "No description available")
+              }
               slug={`/events/${conference.slug.current}`}
             />
           ))}

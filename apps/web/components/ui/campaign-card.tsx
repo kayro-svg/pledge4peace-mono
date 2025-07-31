@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { usePledges } from "@/hooks/usePledges";
-import { prefetchCampaign } from "@/lib/prefetch";
+import { prefetchCampaign } from "@/lib/sanity/prefetch";
 import { useCallback } from "react";
 import { logger } from "@/lib/utils/logger";
 
