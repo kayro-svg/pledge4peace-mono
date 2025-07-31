@@ -1,17 +1,17 @@
+"use client";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import ConferenceCard from "@/components/ui/conference-card";
 import ExtendedEventCard from "@/components/ui/extended-event-card";
 import { SanityConferencesSection } from "@/lib/types";
+import { useLocaleContent } from "@/hooks/use-locale-content";
 
 export default function ConferencesSection({
   data,
 }: {
   data: SanityConferencesSection;
 }) {
-  // Get the helper for localized strings in a way that works in server components
-  const { getString } =
-    require("@/hooks/use-locale-content").useLocaleContent();
+  const { getString } = useLocaleContent();
   // Generate 3 placeholder conferences
   const conferences = Array.from({ length: 3 }, (_, i) => ({
     id: i + 1,

@@ -1,8 +1,10 @@
+"use client";
 import CampaignCard from "@/components/ui/campaign-card";
 import { Campaign, SanityCampaignsSection } from "@/lib/types";
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, Grid3X3 } from "lucide-react";
+import { useLocaleContent } from "@/hooks/use-locale-content";
 
 export default function RecentProjects({
   data,
@@ -12,8 +14,7 @@ export default function RecentProjects({
   campaigns: Campaign[];
 }) {
   const router = useRouter();
-  const { getString } =
-    require("@/hooks/use-locale-content").useLocaleContent();
+  const { getString } = useLocaleContent();
 
   const DEFAULT_SECTION_DATA = {
     campaignsHeading: "Recent Campaigns",
