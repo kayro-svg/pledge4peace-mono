@@ -64,9 +64,33 @@ export function getClient(options?: {
   forceFresh?: boolean;
   admin?: boolean;
   preview?: boolean;
+  locale?: string;
 }) {
   if (options?.preview) return previewClient;
   if (options?.admin) return adminClient;
   if (options?.forceFresh || isDevelopment) return devClient;
   return client;
+}
+
+// ===== HELPER PARA CONSULTAS CON LOCALE =====
+export async function fetchLocalizedData<T>(
+  query: string,
+  params: Record<string, any> = {},
+  options?: {
+    forceFresh?: boolean;
+    admin?: boolean;
+    preview?: boolean;
+    locale?: string;
+  }
+): Promise<T> {
+  const client = getClient(options);
+  const locale = options?.locale || "en";
+
+  // Add locale to params
+  const queryParams = {
+    ...params,
+    locale,
+  };
+
+  return client.fetch<T>(query, queryParams);
 }

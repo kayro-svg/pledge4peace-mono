@@ -1,3 +1,5 @@
+import {localeString, localeText} from './_localeTypes'
+
 export default {
   name: 'contactInformation',
   title: 'Contact Information',
@@ -6,7 +8,7 @@ export default {
     {
       name: 'title',
       title: 'Title',
-      type: 'string',
+      type: 'localeString',
       description:
         'A name to identify this contact information (e.g., "Main Office", "General Contact")',
       validation: (rule: {required: () => any}) => rule.required(),
@@ -27,7 +29,7 @@ export default {
     {
       name: 'address',
       title: 'Address',
-      type: 'text',
+      type: 'string',
       description: 'Physical address',
     },
     {

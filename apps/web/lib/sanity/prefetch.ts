@@ -1,5 +1,5 @@
 // Prefetch utility for preloading data on user interactions
-import { getCampaignBySlug } from "./sanity/queries";
+import { getCampaignBySlug } from "./queries";
 import { logger } from "@/lib/utils/logger";
 
 // Track which resources have been prefetched to avoid duplicate calls

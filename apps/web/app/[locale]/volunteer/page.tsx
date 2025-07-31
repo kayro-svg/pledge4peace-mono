@@ -8,30 +8,26 @@ import WaysToVolunteer from "@/components/volunteer/ways-to-volunteer";
 import { Handshake, Megaphone, Users } from "lucide-react";
 import { getVolunteerPageData } from "@/lib/sanity/queries";
 
-export default async function VolunteerPage(): Promise<JSX.Element> {
+export function generateStaticParams() {
+  return [{ locale: "en" }, { locale: "es" }];
+}
+
+export default async function VolunteerPage({
+  params,
+}: {
+  params: { locale: any };
+}) {
+  const { locale } = params;
   // Fetch data from Sanity CMS
-  const volunteerData = await getVolunteerPageData();
+  const volunteerData = await getVolunteerPageData(locale as "en" | "es");
+
+  console.log("volunteerData", volunteerData);
   // Define icons for volunteer ways (assigned by index)
   const volunteerIcons = [
     <Users key="users" className="h-8 w-8 text-[#548281]" />,
     <Megaphone key="megaphone" className="h-8 w-8 text-[#548281]" />,
     <Handshake key="handshake" className="h-8 w-8 text-[#548281]" />,
   ];
-
-  // const impactMetrics = [
-  //   {
-  //     value: "4.5x",
-  //     description: "More peaceful communities through volunteer initiatives",
-  //   },
-  //   {
-  //     value: "1000+",
-  //     description: "Active volunteers worldwide making a difference",
-  //   },
-  //   {
-  //     value: "24/7",
-  //     description: "Support network for our volunteer community",
-  //   },
-  // ];
 
   return (
     <div className="min-h-screen">

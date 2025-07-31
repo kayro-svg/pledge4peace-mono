@@ -220,7 +220,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
             {/* Share Buttons */}
             <div className="mb-8">
               <ShareButtons
-                url={`${process.env.NEXT_PUBLIC_SITE_URL}/articles/${article.slug.current}`}
+                url={`${baseUrl}/articles/${article.slug.current}`}
                 title={article.title}
               />
             </div>

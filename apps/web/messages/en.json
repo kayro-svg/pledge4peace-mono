@@ -1,0 +1,57 @@
+{
+  "Header": {
+    "home": "Home",
+    "about": "About",
+    "campaigns": "Campaigns",
+    "events": "Events",
+    "articles": "Articles",
+    "contact": "Contact",
+    "volunteer": "Volunteer",
+    "login": "LOGIN"
+  },
+  "Home": {
+    "welcome": "Welcome to Pledge4Peace",
+    "howItWorks": "How It Works",
+    "campaigns": "Our Campaigns",
+    "articles": "Articles & Updates",
+    "conferences": "Upcoming Conferences and Events",
+    "waysToSupport": "Ways to Support"
+  },
+  "Navigation": {
+    "home": "Home",
+    "about": "About",
+    "campaigns": "Campaigns",
+    "events": "Events",
+    "articles": "Articles",
+    "contact": "Contact",
+    "volunteer": "Volunteer",
+    "login": "Log In",
+    "signup": "Sign Up",
+    "dashboard": "Dashboard",
+    "logout": "Log Out"
+  },
+  "Actions": {
+    "readMore": "Read More",
+    "viewAll": "View All",
+    "donate": "Donate",
+    "pledge": "Pledge Now",
+    "learnMore": "Learn More",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "Auth": {
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "rememberMe": "Remember Me",
+    "loginTitle": "Log in to your account",
+    "signupTitle": "Create an account",
+    "noAccount": "Don't have an account?",
+    "alreadyAccount": "Already have an account?",
+    "createAccount": "Create Account",
+    "resetPassword": "Reset Password"
+  }
+}

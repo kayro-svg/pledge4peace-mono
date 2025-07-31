@@ -1,4 +1,5 @@
 import {defineField, defineType} from 'sanity'
+import {localeString} from './_localeTypes'
 
 export default defineType({
   name: 'author',
@@ -8,7 +9,7 @@ export default defineType({
     defineField({
       name: 'name',
       title: 'Name',
-      type: 'string',
+      type: 'localeString',
     }),
     defineField({
       name: 'slug',

@@ -68,7 +68,7 @@ export default function MissionPhilosophy({
               <div className="p-8 flex items-center justify-center min-h-[300px]">
                 {hasSanityImage(section.image) ? (
                   <Image
-                    src={getSanityImageUrl(section.image, 450, 300)}
+                    src={section.image}
                     alt={section.heading}
                     width={450}
                     height={300}

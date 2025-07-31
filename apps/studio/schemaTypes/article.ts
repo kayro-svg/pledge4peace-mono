@@ -1,4 +1,6 @@
 // schemaTypes/article.ts
+import {localeString, localeText} from './_localeTypes'
+
 export default {
   name: 'article',
   title: 'Articles',
@@ -7,7 +9,7 @@ export default {
     {
       name: 'title',
       title: 'Article Title',
-      type: 'string',
+      type: 'localeString',
       validation: (Rule: any) => Rule.required(),
     },
     {
@@ -32,7 +34,7 @@ export default {
     {
       name: 'excerpt',
       title: 'Excerpt',
-      type: 'text',
+      type: 'localeText',
       rows: 3,
       validation: (Rule: any) => Rule.max(200),
     },
@@ -58,7 +60,7 @@ export default {
         {
           name: 'metaTitle',
           title: 'Meta Title',
-          type: 'string',
+          type: 'localeString',
           description: 'Title for search engines (50-60 characters recommended)',
           validation: (Rule: any) =>
             Rule.max(60).warning('Keep it under 60 characters for optimal SEO'),
@@ -66,7 +68,7 @@ export default {
         {
           name: 'metaDescription',
           title: 'Meta Description',
-          type: 'text',
+          type: 'localeText',
           rows: 3,
           description: 'Description for search engines (150-160 characters recommended)',
           validation: (Rule: any) =>

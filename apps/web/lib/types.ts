@@ -323,8 +323,8 @@ export interface SanityVolunteerHeroSection {
 }
 
 export interface SanityVolunteerWaysToVolunteerSection {
-  waysToVolunteerHeading: string;
-  waysToVolunteerParagraph: string;
+  heading: string;
+  paragraph: string;
 }
 
 export interface SanityVolunteerConvinceHighProfileChecklistItem {
@@ -332,10 +332,10 @@ export interface SanityVolunteerConvinceHighProfileChecklistItem {
 }
 
 export interface SanityVolunteerConvinceHighProfileSection {
-  convinceHighProfileHeading: string;
-  convinceHighProfileParagraph: string;
-  convinceHighProfileChecklist: SanityVolunteerConvinceHighProfileChecklistItem[];
-  convinceHighProfileImage?: SanityImage;
+  heading: string;
+  paragraph: string;
+  checklist: SanityVolunteerConvinceHighProfileChecklistItem[];
+  image?: SanityImage;
 }
 
 export interface SanityVolunteerSpreadTheWordCard {
@@ -344,16 +344,16 @@ export interface SanityVolunteerSpreadTheWordCard {
 }
 
 export interface SanityVolunteerSpreadTheWordSection {
-  spreadTheWordHeading: string;
-  spreadTheWordParagraph: string;
-  spreadTheWordCards: SanityVolunteerSpreadTheWordCard[];
-  spreadTheWordImage?: SanityImage;
+  heading: string;
+  paragraph: string;
+  cards: SanityVolunteerSpreadTheWordCard[];
+  image?: SanityImage;
 }
 
 export interface SanityVolunteerImpactSection {
-  impactHeading: string;
-  impactParagraph: string;
-  impactButtonText: string;
+  heading: string;
+  paragraph: string;
+  buttonText: string;
 }
 
 export interface SanityVolunteerPage {

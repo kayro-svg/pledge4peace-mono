@@ -43,8 +43,8 @@ export function getSanityImageUrl(
  * @param image - Sanity image object
  * @returns Boolean indicating if image is valid
  */
-export function hasSanityImage(image?: SanityImage): boolean {
-  return Boolean(image?.asset?.url);
+export function hasSanityImage(image?: string | SanityImage): boolean {
+  return Boolean(image);
 }
 
 /**

@@ -1,3 +1,5 @@
+import {localeString, localeText} from './_localeTypes'
+
 export default {
   name: 'campaign',
   title: 'Campaigns',
@@ -65,7 +67,7 @@ export default {
     {
       name: 'title',
       title: 'Campaign Title',
-      type: 'string',
+      type: 'localeString',
       group: 'main',
       description: 'The main title of the campaign.',
       validation: (Rule: any) => Rule.required(),
@@ -100,7 +102,7 @@ export default {
     {
       name: 'description',
       title: 'Short Description',
-      type: 'text',
+      type: 'localeText',
       rows: 3,
       group: 'main',
       description: 'A brief summary of the campaign (max 200 characters).',
@@ -152,7 +154,7 @@ export default {
       group: 'pledge',
       description:
         'Checkbox items for the pledge form. Each item will appear as a checkbox for the user to agree to.',
-      of: [{type: 'string'}],
+      of: [{type: 'localeString'}],
     },
 
     // SOLUTION PROPOSALS
@@ -172,7 +174,7 @@ export default {
             {
               name: 'name',
               title: 'Party Name',
-              type: 'string',
+              type: 'localeString',
               description:
                 'Full display name of the party (e.g., "Israel", "Palestine", "Democrats", "Republicans")',
               validation: (Rule: any) => Rule.required(),
@@ -192,7 +194,7 @@ export default {
             {
               name: 'description',
               title: 'Party Description',
-              type: 'text',
+              type: 'localeText',
               description:
                 'Brief description to who these solutions are for (e.g., "Israeli solutions", "Palestinian solutions", "Democratic solutions", "Republican solutions")',
               validation: (Rule: any) => Rule.required(),
@@ -252,7 +254,7 @@ export default {
         {
           name: 'heading',
           title: 'Section Heading',
-          type: 'string',
+          type: 'localeString',
           description: 'Main heading for the solution proposals section.',
         },
         // {
@@ -268,8 +270,9 @@ export default {
           description: 'Introductory paragraphs for this section.',
           type: 'array',
           of: [
+            {type: 'block'}, // 👈 compatibilidad con contenido antiguo
             {
-              type: 'block',
+              type: 'localeBlockContent',
               // Estilos que permites en el texto
               styles: [
                 {title: 'Normal', value: 'normal'},
@@ -553,8 +556,8 @@ export default {
         {
           name: 'subheading',
           title: 'Subheading',
-          type: 'string',
-          description: 'E.g., “Vote Below on Solutions…”',
+          type: 'localeString',
+          description: 'E.g., "Vote Below on Solutions…"',
         },
       ],
     },

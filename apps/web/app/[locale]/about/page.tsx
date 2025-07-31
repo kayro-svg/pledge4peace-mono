@@ -7,9 +7,46 @@ import NonprofitMission from "@/components/about/nonprofit-mission";
 import ContactInformationAndCommitment from "@/components/about/contact-information";
 import { getAboutPageData } from "@/lib/sanity/queries";
 
-export default async function AboutPage() {
-  // Fetch data from Sanity CMS
-  const aboutData = await getAboutPageData();
+// Define types for the data structure
+// type AboutPageData = {
+//   heroSection: {
+//     heroHeading: { en: string; es: string };
+//     heroSubheading: { en: string; es: string };
+//     heroBgImage?: { asset: { _id: string; url: string } };
+//   };
+//   whoWeAreSection: {
+//     whoWeAreHeading: { en: string; es: string };
+//     whoWeAreFirstParagraph: { en: string; es: string };
+//     whoWeAreSecondParagraph: { en: string; es: string };
+//     whoWeAreThirdParagraph: { en: string; es: string };
+//     whoWeAreImage?: { asset: { _id: string; url: string } };
+//   };
+//   ourMissionSection: {
+//     ourMissionHeading: { en: string; es: string };
+//     ourMissionParagraph: { en: string; es: string };
+//     ourMissionImage?: { asset: { _id: string; url: string } };
+//   };
+//   ourPhilosophySection: {
+//     ourPhilosophyHeading: { en: string; es: string };
+//     ourPhilosophyParagraph: { en: string; es: string };
+//     ourPhilosophyImage?: { asset: { _id: string; url: string } };
+//   };
+// };
+
+// Generate static params for locales
+export function generateStaticParams() {
+  return [{ locale: "en" }, { locale: "es" }];
+}
+
+export default async function AboutPage({
+  params,
+}: {
+  params: { locale: any };
+}) {
+  const { locale } = params;
+
+  // Fetch data with the current locale
+  const aboutData = await getAboutPageData(locale as "en" | "es");
 
   return (
     <main className="min-h-screen bg-[#FDFDF0]">
