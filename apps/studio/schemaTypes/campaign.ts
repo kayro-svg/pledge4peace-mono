@@ -106,7 +106,12 @@ export default {
       rows: 3,
       group: 'main',
       description: 'A brief summary of the campaign (max 200 characters).',
-      validation: (Rule: any) => Rule.required().max(200),
+      // validation: (Rule: any) => Rule.required().max(200),
+      validation: (Rule: any) =>
+        Rule.required().custom((val: any) => {
+          const tooLong = (val?.en?.length ?? 0) > 500 || (val?.es?.length ?? 0) > 500
+          return tooLong ? 'Max 500 characters per language' : true
+        }),
     },
     {
       name: 'goalPledges',
