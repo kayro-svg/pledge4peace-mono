@@ -11,10 +11,12 @@ import MediaGallery from "../gallery-image/media-gallery";
 
 interface CampaignDetailContentProps {
   campaign: SanityCampaign;
+  locale: string;
 }
 
 export default function MainContentSection({
   campaign,
+  locale,
 }: CampaignDetailContentProps) {
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   // Get the campaign ID (use _id as fallback)

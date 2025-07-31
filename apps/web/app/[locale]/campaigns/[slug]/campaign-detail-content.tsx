@@ -22,20 +22,23 @@ import Link from "next/link";
 import { logger } from "@/lib/utils/logger";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { useLocaleContent } from "@/hooks/use-locale-content";
 
 interface CampaignDetailContentProps {
   campaign: SanityCampaign;
+  locale: string;
 }
 
 export function CampaignDetailContent({
   campaign,
+  locale,
 }: CampaignDetailContentProps) {
   // Prefetching de la sesión para evitar múltiples llamadas al abrir el modal
   // Este hook hace que la sesión se cargue una sola vez aquí, y luego
   // estará disponible en caché para los componentes hijos
   useSession();
   const router = useRouter();
-
+  const { getString } = useLocaleContent();
   // Estado para controlar el diálogo de comentarios
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [activeSolutionId, setActiveSolutionId] = useState("");
@@ -78,7 +81,7 @@ export function CampaignDetailContent({
           </div>
 
           <div className="flex flex-col gap-8">
-            <MainContentSection campaign={campaign} />
+            <MainContentSection campaign={campaign} locale={locale} />
             <InteractionProvider>
               <ContentTabs
                 sidebarWidth="30%"
