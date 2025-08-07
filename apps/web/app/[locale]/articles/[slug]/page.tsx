@@ -9,6 +9,8 @@ import { portableTextComponents } from "@/components/ui/portable-text-components
 import { Metadata } from "next";
 import { SEODebug } from "@/components/dev/seo-debug";
 
+export const dynamic = "force-dynamic";
+
 interface ArticlePageProps {
   params: {
     slug: string;

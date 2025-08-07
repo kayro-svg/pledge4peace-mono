@@ -12,7 +12,8 @@
     "login_email_placeholder": "Enter your email",
     "login_password_label": "Password",
     "login_password_placeholder": "Enter your password",
-    "signIn": "Sign In"
+    "signIn": "Sign In",
+    "signingIn": "Signing in..."
   },
   "Register_Page": {
     "goBack": "Go Back",
