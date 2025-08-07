@@ -85,10 +85,10 @@ export async function getHomePageData(
       "articlesDescription":  coalesce(articlesDescription[$lang],articlesDescription.en),
       articles[]-> {
         _id,
-        title,
+        "title": coalesce(title[$lang],title.en),
         slug,
         publishedAt,
-        excerpt,
+        "excerpt": coalesce(excerpt[$lang],excerpt.en),
         image { asset-> { url } }
       },
       
@@ -96,14 +96,14 @@ export async function getHomePageData(
       "conferencesDescription":  coalesce(conferencesDescription[$lang],conferencesDescription.en),
       conferences[]-> {
         _id,
-        title,
+        "title": coalesce(title[$lang],title.en),
         slug,
         startDateTime,
         endDateTime,
         timezone,
         location,
         image { asset-> { url } },
-        description
+        "description": coalesce(description[$lang],description.en)
       }
     }`,
     { lang },
@@ -585,10 +585,9 @@ export async function getArticleBySlug(
           }
         },
         "excerpt": coalesce(excerpt[$lang],excerpt.en),
-        // SEO Fields
         seo {
-          metaTitle,
-          metaDescription,
+          "metaTitle" : coalesce(metaTitle[$lang],metaTitle.en),
+          "metaDescription" : coalesce(metaDescription[$lang],metaDescription.en),
           keywords,
           ogImage { 
             asset-> { 
@@ -661,7 +660,7 @@ export async function getArticleBySlug(
       },
       "relatedArticles": *[_type == "article" && slug.current != $slug && count(categories[@._ref in *[_type == "article" && slug.current == $slug][0].categories[]._ref]) > 0] | order(publishedAt desc)[0...3] {
         _id,
-        title,
+        "title": coalesce(title[$lang],title.en),
         slug { current },
         publishedAt,
         image { 
@@ -669,7 +668,7 @@ export async function getArticleBySlug(
             url
           }
         },
-        excerpt,
+        "excerpt": coalesce(excerpt[$lang],excerpt.en),
         author-> {
           name,
           image { 
