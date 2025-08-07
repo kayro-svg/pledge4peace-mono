@@ -8,21 +8,23 @@ import HeroButtons from "./hero-buttons";
 import { SanityHeroSection } from "@/lib/types";
 import { useStats } from "@/hooks/useStats";
 import { logger } from "@/lib/utils/logger";
+import { useTranslations } from "next-intl";
 
 export default function HeroSection({ data }: { data: SanityHeroSection }) {
   const { stats, isLoading, error } = useStats();
+  const t = useTranslations("Home");
 
   const [displayStats, setDisplayStats] = useState([
     {
       icon: <ChartNoAxesCombined className="text-[#2F4858] h-8 w-8" />,
       value: "0",
-      label: "Pledges Made",
+      label: t("pledgesMade"),
       type: "pledgesMade",
     },
     {
       icon: <HeartHandshake className="text-[#2F4858] h-8 w-8" />,
       value: "0",
-      label: "Peace Activists",
+      label: t("peaceActivists"),
       type: "peaceActivists",
     },
     // {

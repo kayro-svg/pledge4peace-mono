@@ -6,10 +6,11 @@ import { RightPanel } from "@/components/login/right-panel";
 import { Button } from "@/components/ui/button";
 import { ArrowLeftIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 export default function LoginPage() {
   const router = useRouter();
-
+  const t = useTranslations("Login_Page");
   return (
     <main className="flex flex-col p-4 pl-[20px] gap-4">
       <div className="">
@@ -19,7 +20,7 @@ export default function LoginPage() {
           onClick={() => router.back()}
         >
           <ArrowLeftIcon className="w-4 h-4" />
-          Go back
+          {t("goBack")}
         </Button>
       </div>
       <div className="flex flex-col lg:flex-row min-h-full lg:min-h-[calc(100vh-100px)] w-full ">

@@ -17,7 +17,7 @@ import { usePledges } from "@/hooks/usePledges";
 import { prefetchCampaign } from "@/lib/sanity/prefetch";
 import { useCallback } from "react";
 import { logger } from "@/lib/utils/logger";
-
+import { useTranslations } from "next-intl";
 interface CampaignCardProps {
   title: string;
   description: string;
@@ -43,10 +43,9 @@ export default function CampaignCard({
   campaignId,
 }: CampaignCardProps) {
   const { pledgeCount } = usePledges(campaignId);
-
   const progress = Math.round((pledgeCount / goal) * 100);
   const router = useRouter();
-
+  const t = useTranslations("Project_Card");
   // Handle mouse enter to prefetch campaign data - only do this if we have a valid link
   const handleMouseEnter = useCallback(() => {
     if (link) {
@@ -106,10 +105,10 @@ export default function CampaignCard({
             <Progress value={progress} className="h-1.5 sm:h-2 mb-1 sm:mb-2" />
             <div className="flex items-center justify-between">
               <span className="font-medium">
-                +{pledgeCount.toLocaleString()} Peace Pledges
+                +{pledgeCount.toLocaleString()} {t("pledgesRaised")}
               </span>
               <span className="text-slate-500 text-xs">
-                +{goal.toLocaleString()} Peace Pledges
+                +{goal.toLocaleString()} {t("pledgeGoal")}
               </span>
             </div>
           </div>
@@ -223,11 +222,12 @@ export default function CampaignCard({
             <Progress value={progress} className="h-1.5 sm:h-2" />
             <div className="mt-2 flex items-center justify-between text-xs sm:text-sm">
               <span className="font-medium">
-                +{pledgeCount.toLocaleString()} Peace Pledge
+                +{pledgeCount.toLocaleString()} {t("pledgesRaised")}
                 {pledgeCount !== 1 ? "s" : ""}
               </span>
               <span className="text-slate-500 text-xs sm:text-sm">
-                +{goal.toLocaleString()} Peace Pledge{goal !== 1 ? "s" : ""}
+                +{goal.toLocaleString()} {t("pledgeGoal")}
+                {goal !== 1 ? "s" : ""}
               </span>
             </div>
           </CardContent>
@@ -288,10 +288,10 @@ export default function CampaignCard({
         <Progress value={progress} className="h-1.5 sm:h-2" />
         <div className="mt-2 flex items-center justify-between text-xs sm:text-sm">
           <span className="font-medium text-left">
-            +{pledgeCount.toLocaleString()} Peace Pledges
+            +{pledgeCount.toLocaleString()} {t("pledgesRaised")}
           </span>
           <span className="text-slate-500 text-xs sm:text-sm text-right">
-            +{goal.toLocaleString()} Peace Pledges
+            +{goal.toLocaleString()} {t("pledgeGoal")}
           </span>
         </div>
       </CardContent>

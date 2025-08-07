@@ -5,13 +5,14 @@ import ConferenceCard from "@/components/ui/conference-card";
 import ExtendedEventCard from "@/components/ui/extended-event-card";
 import { SanityConferencesSection } from "@/lib/types";
 import { useLocaleContent } from "@/hooks/use-locale-content";
-
+import { useTranslations } from "next-intl";
 export default function ConferencesSection({
   data,
 }: {
   data: SanityConferencesSection;
 }) {
   const { getString } = useLocaleContent();
+  const t = useTranslations("Conferences_Home");
   // Generate 3 placeholder conferences
   const conferences = Array.from({ length: 3 }, (_, i) => ({
     id: i + 1,
@@ -56,7 +57,7 @@ export default function ConferencesSection({
           href="/events"
           className="mt-6 md:mt-0 text-brand-500 font-medium flex items-center justify-center border border-[#548281] text-[#548281] hover:bg-[#2F4858] hover:text-white transition-colors py-2 px-4 rounded-full group/btn w-full md:w-fit"
         >
-          See all events{" "}
+          {t("viewAllEvents")}
           <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
         </Link>
       </div>

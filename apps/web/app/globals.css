@@ -123,4 +123,26 @@
     color: transparent;
     text-shadow: 0 1px 1px rgba(0, 162, 184, 0.1);
   }
+
+  /* Highlight animation for solutions section */
+  .highlight-solutions {
+    animation: highlightPulse 3s ease-in-out;
+    border: 2px solid #548281;
+    border-radius: 1rem;
+  }
+
+  @keyframes highlightPulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(84, 130, 129, 0.7);
+      border-color: #548281;
+    }
+    50% {
+      box-shadow: 0 0 0 10px rgba(84, 130, 129, 0.3);
+      border-color: #3c6665;
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(84, 130, 129, 0);
+      border-color: #548281;
+    }
+  }
 }

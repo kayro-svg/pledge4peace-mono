@@ -5,6 +5,7 @@ import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Eye, Grid3X3 } from "lucide-react";
 import { useLocaleContent } from "@/hooks/use-locale-content";
+import { useTranslations } from "next-intl";
 
 export default function RecentProjects({
   data,
@@ -15,15 +16,14 @@ export default function RecentProjects({
 }) {
   const router = useRouter();
   const { getString } = useLocaleContent();
-
+  const t = useTranslations("Projects_Home");
+  const tProjectCard = useTranslations("Project_Card");
   const DEFAULT_SECTION_DATA = {
-    campaignsHeading: "Recent Campaigns",
+    campaignsHeading: t("projects_label"),
     campaignsDescription:
       "Here's how you can take action today, by voting and pledging in our recent campaigns.",
     campaigns: campaigns,
   };
-
-  console.log("data campaigns", data?.campaigns);
 
   // Merge the provided data with default values, using nullish coalescing
   const sectionData = {
@@ -44,7 +44,7 @@ export default function RecentProjects({
       <div className="w-full">
         <div className="text-center mb-12">
           <h2 className="text-[#2F4858] uppercase text-sm font-medium tracking-wider mb-4 border-b-2 w-fit mx-auto border-[#2F4858]">
-            RECENT CAMPAIGNS
+            {t("projects_label")}
           </h2>
           <h1 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
             {/* <span className="text-[#548281]">Take action</span> today */}
@@ -75,7 +75,7 @@ export default function RecentProjects({
                 description={getString(campaign.description)}
                 link={campaign.slug.current}
                 category={campaign.category || ""}
-                action="Pledge Now"
+                action={tProjectCard("pledgeNow")}
                 goal={campaign.goalPledges}
                 variant={moreThanOneCampaign ? "default" : "horizontal-large"}
               />
@@ -90,7 +90,7 @@ export default function RecentProjects({
             <div className="bg-[#fdfdf0] px-8">
               <div className="flex items-center space-x-2 text-sm text-gray-500 mb-4">
                 <Eye className="h-4 w-4" />
-                <span>Want to see more campaigns?</span>
+                <span>{t("wantToSeeMoreCampaigns")}</span>
               </div>
             </div>
           </div>
@@ -102,7 +102,7 @@ export default function RecentProjects({
             onClick={() => router.push("/campaigns")}
           >
             <Grid3X3 className="mr-3 h-5 w-5" />
-            View All Campaigns
+            {t("browseCampaigns")}
             <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-all duration-300" />
           </Button>
         </div>

@@ -28,7 +28,7 @@
     },
   ],
   "vars": {
-    "FROM_EMAIL": "info@weversity.org",
+    "FROM_EMAIL": "info@pledge4peace.org",
     "NODE_ENV": "production",
     "FRONTEND_URL": "https://pledge4peace.vercel.app",
   },

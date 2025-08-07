@@ -22,6 +22,7 @@ import { useState, useEffect } from "react";
 import { logger } from "@/lib/utils/logger";
 import { toast } from "sonner";
 import React from "react";
+import { useTranslations } from "next-intl";
 
 export interface ShareData {
   title: string;
@@ -171,7 +172,7 @@ export function ShareSocialButton({
   const [isLinkCopied, setIsLinkCopied] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [webShareSupported, setWebShareSupported] = useState(false);
-
+  const t = useTranslations("WaysToSupport_Home");
   const socialPlatforms = getSocialPlatforms(
     shareData,
     isLinkCopied,
@@ -246,7 +247,7 @@ export function ShareSocialButton({
           onClick={handleNativeShare}
         >
           <Share2 className="h-3 w-3 mr-1" />
-          Share
+          {t("share_LinkText")}
         </Button>
       </div>
     );
@@ -262,7 +263,7 @@ export function ShareSocialButton({
             className="inline-flex items-center w-full justify-center rounded-full border border-[#548281] px-4 sm:px-6 py-2 sm:py-3 text-xs sm:text-sm font-medium text-[#548281] hover:text-white shadow hover:bg-[#2f4858] transition-colors duration-300 ease-in-out focus:outline-none"
           >
             <ShareIcon className="h-3 w-3 mr-1" />
-            Share
+            {t("share_LinkText")}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
@@ -273,7 +274,7 @@ export function ShareSocialButton({
               className="cursor-pointer hover:bg-muted/50"
             >
               <Share2 className="h-4 w-4 mr-2 text-blue-600" />
-              <span>Share via Apps</span>
+              <span>{t("shareViaApps_LinkText")}</span>
             </DropdownMenuItem>
           )}
           {socialPlatforms.map((platform, index) => (

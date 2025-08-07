@@ -74,8 +74,11 @@ export default {
   ],
   preview: {
     select: {
-      title: 'title',
+      title: 'title.en',
       subtitle: 'email',
+    },
+    prepare({title}: {title: string}) {
+      return {title: title || 'Untitled'}
     },
   },
 }

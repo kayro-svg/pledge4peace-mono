@@ -1,12 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-
-export const tabs = [
-  { id: "solution-proposals", label: "Solution proposals" },
-  // { id: "conference", label: "Upcoming conference" },
-  { id: "ways-to-support", label: "Ways to support" },
-];
+import { useTranslations } from "next-intl";
 
 export interface TabHeaderProps {
   activeTab: string;
@@ -14,6 +9,13 @@ export interface TabHeaderProps {
 }
 
 export default function TabHeader({ activeTab, onTabChange }: TabHeaderProps) {
+  const t = useTranslations("SingleCampaign_Page");
+  const tabs = [
+    { id: "solution-proposals", label: t("solution_proposals_tab_label") },
+    // { id: "conference", label: "Upcoming conference" },
+    { id: "ways-to-support", label: t("ways_to_support_tab_label") },
+  ];
+
   return (
     <div className="flex border-b border-gray-200">
       {tabs.map((tab) => (

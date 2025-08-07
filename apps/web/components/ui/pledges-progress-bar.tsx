@@ -1,5 +1,5 @@
 import { Progress } from "@/components/ui/progress";
-
+import { useTranslations } from "next-intl";
 type PledgesProgressBarProps = {
   currentValue: number;
   goalValue: number;
@@ -11,6 +11,7 @@ export default function PledgesProgressBar({
   goalValue,
   variant = "default",
 }: PledgesProgressBarProps): JSX.Element {
+  const t = useTranslations("SingleCampaign_Page");
   // Calculate progress percentage (0-100)
   const progressPercentage = Math.min(
     100,
@@ -21,10 +22,10 @@ export default function PledgesProgressBar({
     <div>
       <div className="flex justify-between text-sm mb-2">
         <span className={`${variant === "medium" ? "text-xs" : "text-sm"}`}>
-          Raised
+          {t("raised")}
         </span>
         <span className={`${variant === "medium" ? "text-xs" : "text-sm"}`}>
-          Goal
+          {t("goal")}
         </span>
       </div>
       <Progress
@@ -37,10 +38,10 @@ export default function PledgesProgressBar({
         }`}
       >
         <span className={`${variant === "medium" ? "text-xs" : "text-sm"}`}>
-          +{currentValue.toLocaleString()} Peace Pledges
+          +{currentValue.toLocaleString()} {t("peacePledges")}
         </span>
         <span className={`${variant === "medium" ? "text-xs" : "text-sm"}`}>
-          +{goalValue.toLocaleString()} Peace Pledges
+          +{goalValue.toLocaleString()} {t("peacePledges")}
         </span>
       </div>
     </div>

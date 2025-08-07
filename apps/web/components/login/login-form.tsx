@@ -5,13 +5,12 @@ import { Button } from "../ui/button";
 import Link from "next/link";
 import { FormField } from "./form-field";
 import { PasswordInput } from "./password-input";
-import { OrDivider } from "./or-divider";
-import { SocialButton } from "./social-button";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { logger } from "@/lib/utils/logger";
+import { useTranslations } from "next-intl";
 
 interface LoginFormData {
   email: string;
@@ -31,7 +30,7 @@ export default function LoginForm({
   const form = useForm<LoginFormData>();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-
+  const t = useTranslations("Login_Page");
   const handleLoginSuccess = () => {
     if (onLoginSuccess) {
       onLoginSuccess();
@@ -69,28 +68,28 @@ export default function LoginForm({
   return (
     <div className="w-full flex flex-col justify-center mt-0 md:mt-14">
       <h1 className="text-3xl font-semibold tracking-tight text-gray-900 mb-1 text-center">
-        Welcome
+        {t("login_title")}
       </h1>
       <p className="text-sm text-gray-500 mb-6 text-center">
-        Enter your email and password and start making a difference.
+        {t("login_description")}
       </p>
 
       <p className="text-center text-sm text-gray-600 mb-6">
-        Don&apos;t have an account?{" "}
+        {t("dontHaveAccount")}{" "}
         <button
           onClick={onSwitchToRegister}
           className="font-medium text-[#698D8B] hover:text-[#548281]"
         >
-          Sign Up
+          {t("signUp")}
         </button>
       </p>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           id="email"
-          label="Email"
+          label={t("login_email_label")}
           type="email"
-          placeholder="Enter your email"
+          placeholder={t("login_email_placeholder")}
           {...form.register("email", { required: true })}
           required
           autoComplete="email"
@@ -98,8 +97,8 @@ export default function LoginForm({
 
         <PasswordInput
           id="password"
-          label="Password"
-          placeholder="Enter your password"
+          label={t("login_password_label")}
+          placeholder={t("login_password_placeholder")}
           register={form.register}
           fieldName="password"
           required
@@ -118,7 +117,7 @@ export default function LoginForm({
               htmlFor="remember-me"
               className="ml-2 block text-sm text-gray-700"
             >
-              Remember me
+              {t("rememberMe")}
             </label>
           </div>
 
@@ -127,7 +126,7 @@ export default function LoginForm({
               href="/forgot-password"
               className="font-medium text-[#698D8B] hover:text-[#548281]"
             >
-              Forgot Password?
+              {t("forgotPassword")}
             </Link>
           </div>
         </div>
@@ -138,16 +137,10 @@ export default function LoginForm({
             className="w-full bg-[#548281] hover:bg-[#2F4858] text-white font-medium py-2.5"
             disabled={isLoading}
           >
-            {isLoading ? "Signing in..." : "Sign In"}
+            {isLoading ? t("signingIn") : t("signIn")}
           </Button>
         </div>
       </form>
-
-      {/* <OrDivider text="Or continue with" />
-
-      <div className="mt-6">
-        <SocialButton provider="google">Sign in with Google</SocialButton>
-      </div> */}
     </div>
   );
 }

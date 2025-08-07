@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import FeaturedArticle from "@/components/ui/featured-article";
 import SmallArticle from "@/components/ui/small-article";
 import { SanityArticle, SanityArticlesSection } from "@/lib/types";
-
+import { useTranslations } from "next-intl";
 interface DefaultArticle {
   image: string;
   date: string;
@@ -53,6 +53,7 @@ export default function ArticlesSection({
 }: {
   data: SanityArticlesSection;
 }) {
+  const t = useTranslations("Articles_Home");
   const defaultArticles: DefaultArticle[] = [
     {
       image: "/placeholder.svg?height=150&width=150",
@@ -140,7 +141,7 @@ export default function ArticlesSection({
           href="/articles"
           className="mt-6 md:mt-0 text-brand-500 text-lg md:text-xl lg:text-xl font-medium flex items-center justify-center border border-[#548281] text-[#548281] hover:bg-[#2F4858] hover:text-white transition-colors py-2 px-4 rounded-full group/btn w-full md:w-fit"
         >
-          View all updates{" "}
+          {t("viewAllUpdates")}
           <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover/btn:translate-x-1" />
         </Link>
       </div>

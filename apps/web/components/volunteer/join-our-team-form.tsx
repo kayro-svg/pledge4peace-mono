@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { submitVolunteerApplication } from "@/lib/api/volunteer";
 import { logger } from "@/lib/utils/logger";
+import { useTranslations } from "next-intl";
 
 interface VolunteerFormData {
   name: string;
@@ -18,6 +19,7 @@ interface VolunteerFormData {
 }
 
 export default function JoinOurTeamForm() {
+  const t = useTranslations("Volunteering_Page");
   const form = useForm<VolunteerFormData>();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -49,12 +51,9 @@ export default function JoinOurTeamForm() {
         <div className="bg-white p-8 md:p-12 rounded-xl shadow-lg">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold text-[#2F4858] mb-4">
-              Join Our Volunteer Team
+              {t("form_title")}
             </h2>
-            <p className="text-gray-600">
-              Ready to transform your passion into action? Fill out the form
-              below to join our global network of peace advocates.
-            </p>
+            <p className="text-gray-600">{t("form_description")}</p>
           </div>
 
           <form
@@ -66,11 +65,11 @@ export default function JoinOurTeamForm() {
                 htmlFor="name"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Name
+                {t("form_name_label")}
               </label>
               <Input
                 id="name"
-                placeholder="Your full name"
+                placeholder={t("form_name_placeholder")}
                 {...form.register("name", { required: true })}
               />
             </div>
@@ -80,12 +79,12 @@ export default function JoinOurTeamForm() {
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Email
+                {t("form_email_label")}
               </label>
               <Input
                 id="email"
                 type="email"
-                placeholder="Your email address"
+                placeholder={t("form_email_placeholder")}
                 {...form.register("email", { required: true })}
               />
             </div>
@@ -95,12 +94,12 @@ export default function JoinOurTeamForm() {
                 htmlFor="about"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                A Little About Yourself
+                {t("form_about_label")}
               </label>
               <textarea
                 id="about"
                 className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="Tell us about yourself and why you want to volunteer"
+                placeholder={t("form_about_placeholder")}
                 {...form.register("about", { required: true })}
               />
             </div>
@@ -110,12 +109,12 @@ export default function JoinOurTeamForm() {
                 htmlFor="skills"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Your Skills
+                {t("form_skills_label")}
               </label>
               <textarea
                 id="skills"
                 className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="What skills can you offer? (e.g., design, writing, marketing, event planning)"
+                placeholder={t("form_skills_placeholder")}
                 {...form.register("skills", { required: true })}
               />
             </div>
@@ -125,12 +124,12 @@ export default function JoinOurTeamForm() {
                 htmlFor="availability"
                 className="block text-sm font-medium text-gray-700 mb-1"
               >
-                Your Availability
+                {t("form_availability_label")}
               </label>
               <textarea
                 id="availability"
                 className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                placeholder="When are you available? (e.g., weekends, 5 hours/week, evenings)"
+                placeholder={t("form_availability_placeholder")}
                 {...form.register("availability", { required: true })}
               />
             </div>
@@ -144,7 +143,7 @@ export default function JoinOurTeamForm() {
                 {isLoading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  "Submit Application"
+                  t("form_submit_label")
                 )}
               </Button>
             </div>

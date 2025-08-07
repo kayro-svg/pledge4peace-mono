@@ -18,6 +18,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/utils/logger";
 import { useInteractions } from "../shared/interaction-context";
+import { useTranslations } from "next-intl";
 
 interface CommentsSectionProps {
   solutionId?: string;
@@ -33,7 +34,7 @@ export default function CommentsSection({
   const { session, isAuthenticated } = useAuthSession();
   const { getInteractionCount, updateCommentCount } = useInteractions();
   const [showLoginModal, setShowLoginModal] = useState(false);
-
+  const t = useTranslations("toastMessages");
   // Get current comment count from context
   const commentCount = getInteractionCount("comment", solutionId || "");
 
@@ -111,7 +112,7 @@ export default function CommentsSection({
         logger.error("[Comments] Error fetching comments:", error);
         // No mostrar toast en cada error para evitar spam de notificaciones
         if (!comments.length) {
-          toast.error("Failed to load comments");
+          toast.error(t("failedToLoadComments"));
         }
       } finally {
         setLoading(false);
@@ -135,7 +136,7 @@ export default function CommentsSection({
     parentId?: string
   ) => {
     if (!solutionId || !session) {
-      toast.error("You must be logged in to comment");
+      toast.error(t("youMustBeLoggedInToComment"));
       return;
     }
 
@@ -170,10 +171,10 @@ export default function CommentsSection({
       }
 
       toast.success(
-        parentId ? "Reply posted successfully" : "Comment posted successfully"
+        parentId ? t("replyPostedSuccessfully") : t("commentPostedSuccessfully")
       );
     } catch (error) {
-      toast.error("Failed to post comment");
+      toast.error(t("failedToPostComment"));
       logger.error("Error posting comment:", error);
     }
   };

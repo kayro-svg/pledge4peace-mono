@@ -10,7 +10,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import SidebarSection from "@/components/campaign/sidebar/sidebar-section";
-import ContentTabs from "@/components/campaign/content-tabs/content-tabs";
+import ContentTabs, {
+  ContentTabsRef,
+} from "@/components/campaign/content-tabs/content-tabs";
 import { InteractionProvider } from "@/components/campaign/shared/interaction-context";
 import {
   SanityCampaign,
@@ -18,11 +20,9 @@ import {
   SanityWaysToSupportTab,
 } from "@/lib/types";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
-import { logger } from "@/lib/utils/logger";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { useLocaleContent } from "@/hooks/use-locale-content";
+import { useTranslations } from "next-intl";
 
 interface CampaignDetailContentProps {
   campaign: SanityCampaign;
@@ -38,13 +38,14 @@ export function CampaignDetailContent({
   // estará disponible en caché para los componentes hijos
   useSession();
   const router = useRouter();
-  const { getString } = useLocaleContent();
   // Estado para controlar el diálogo de comentarios
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [activeSolutionId, setActiveSolutionId] = useState("");
-
+  const t = useTranslations("SingleCampaign_Page");
   // Referencia para evitar montajes innecesarios del contenido del diálogo
   const isCommentsContentMounted = useRef(false);
+  // Referencia para navegar a las soluciones
+  const contentTabsRef = useRef<ContentTabsRef>(null);
 
   // Precargar el componente SidebarSection solo cuando sea necesario
   useEffect(() => {
@@ -66,6 +67,10 @@ export function CampaignDetailContent({
     }
   };
 
+  const handleNavigateToSolutions = () => {
+    contentTabsRef.current?.navigateToSolutions();
+  };
+
   return (
     <main className="min-h-screen bg-[#fffef5]">
       <div className="container mx-auto px-4 py-8">
@@ -76,14 +81,19 @@ export function CampaignDetailContent({
               className="text-brand-500 hover:underline flex items-center bg-transparent border-none hover:bg-transparent"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Go back
+              {t("goBack")}
             </Button>
           </div>
 
           <div className="flex flex-col gap-8">
-            <MainContentSection campaign={campaign} locale={locale} />
+            <MainContentSection
+              campaign={campaign}
+              locale={locale}
+              onNavigateToSolutions={handleNavigateToSolutions}
+            />
             <InteractionProvider>
               <ContentTabs
+                ref={contentTabsRef}
                 sidebarWidth="30%"
                 solutionsSection={
                   campaign?.solutionsSection as SanitySolutionsSection

@@ -17,7 +17,7 @@ import {
 import { toast } from "sonner";
 import { deleteSolution, deleteComment } from "@/lib/api/solutions";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
-import { logger } from "@/lib/utils/logger";
+import { useTranslations } from "next-intl";
 
 interface AdminActionsProps {
   type: "solution" | "comment";
@@ -40,7 +40,7 @@ export default function AdminActions({
 }: AdminActionsProps) {
   const [isDeleting, setIsDeleting] = useState(false);
   const { canDelete, isSuperAdmin } = useAdminPermissions();
-
+  const t = useTranslations("toastMessages");
   // No mostrar nada si el usuario no tiene permisos
   if (!canDelete(resourceOwnerId)) {
     return null;
@@ -52,17 +52,19 @@ export default function AdminActions({
     try {
       if (type === "solution") {
         await deleteSolution(resourceId);
-        toast.success("Solution deleted successfully");
+        toast.success(t("solutionDeleted"));
       } else {
         const response = await deleteComment(resourceId);
 
         // Mostrar mensaje de éxito con información sobre replies eliminados
         if (response.deletedReplies && response.deletedReplies.length > 0) {
           toast.success(
-            `Comment and ${response.deletedReplies.length} replies deleted successfully`
+            t("commentAndRepliesDeleted", {
+              count: response.deletedReplies.length,
+            })
           );
         } else {
-          toast.success("Comment deleted successfully");
+          toast.success(t("commentDeleted"));
         }
       }
 
@@ -72,7 +74,7 @@ export default function AdminActions({
       }
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Failed to delete";
+        error instanceof Error ? error.message : t("failedToDelete");
       toast.error(message);
     } finally {
       setIsDeleting(false);
@@ -99,16 +101,15 @@ export default function AdminActions({
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-red-600" />
-            Confirm Deletion
+            {t("confirmDeletion")}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Are you sure you want to delete this {type}? This action cannot be
-            undone.
+            {t("confirmDeletionDescription", { type })}
             {isSuperAdmin && resourceOwnerId && (
               <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
                 <p className="text-sm text-yellow-800">
-                  ⚠️ <strong>Admin Action:</strong> You are deleting content
-                  created by another user.
+                  ⚠️ <strong>{t("adminAction")}:</strong>{" "}
+                  {t("adminActionDescription")}
                 </p>
               </div>
             )}
@@ -116,13 +117,15 @@ export default function AdminActions({
         </AlertDialogHeader>
 
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>
+            {t("cancel")}
+          </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleDelete}
             className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
             disabled={isDeleting}
           >
-            {isDeleting ? "Deleting..." : "Delete"}
+            {isDeleting ? t("deleting") : t("delete")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

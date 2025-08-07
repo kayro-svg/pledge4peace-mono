@@ -19,12 +19,14 @@ import { CheckCircle, CircleHelp } from "lucide-react";
 import { logger } from "@/lib/utils/logger";
 import Link from "next/link";
 import { useLocaleContent } from "@/hooks/use-locale-content";
+import { useTranslations } from "next-intl";
 
 interface PledgeFormProps {
   pledgeCommitmentItems: string[];
   campaignId: string;
   campaignTitle: string;
   onPledgeCreated?: (newCount: number) => void;
+  onNavigateToSolutions?: () => void; // NEW PROP: callback to navigate to solutions
   onDonateIntent?: () => void; // NEW PROP: callback to open donation modal
 }
 
@@ -33,6 +35,7 @@ export default function PledgeForm({
   campaignId,
   campaignTitle,
   onPledgeCreated,
+  onNavigateToSolutions,
   onDonateIntent, // NEW PROP
 }: PledgeFormProps) {
   const { session, status, isAuthenticated } = useAuthSession();
@@ -44,7 +47,7 @@ export default function PledgeForm({
   const [showLoginModal, setShowLoginModal] = useState(false);
 
   const { getString } = useLocaleContent();
-
+  const t = useTranslations("SingleCampaign_Page");
   // Check if user has already pledged to this campaign
   useEffect(() => {
     const checkPledgeStatus = async () => {
@@ -118,6 +121,14 @@ export default function PledgeForm({
       if (onPledgeCreated && response.pledgeCount) {
         onPledgeCreated(response.pledgeCount);
       }
+
+      // Navigate to solutions section after successful pledge
+      if (onNavigateToSolutions) {
+        // Add a small delay to allow the success message to show
+        setTimeout(() => {
+          onNavigateToSolutions();
+        }, 1500);
+      }
     } catch (error) {
       logger.error("Error creating pledge:", error);
       toast.error(
@@ -145,25 +156,23 @@ export default function PledgeForm({
           <div className="rounded-full bg-green-100 p-3">
             <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
-          <h3 className="text-lg font-medium">Thank you for your pledge!</h3>
+          <h3 className="text-lg font-medium">{t("thankYouForYourPledge")}</h3>
           <p className="text-sm text-muted-foreground">
-            Your support means a lot to us. You&apos;ve successfully pledged to
-            this campaign.
+            {t("yourSupportMeansALotToUs")}
           </p>
           {/* Donation CTA */}
           <div className="mt-2 flex flex-col items-center gap-2">
             <p className="text-sm font-medium text-gray-700">
-              Would you like to amplify your impact?
+              {t("wouldYouLikeToAmplifyYourImpact")}
             </p>
             <p className="text-sm text-muted-foreground max-w-md">
-              Consider making a donation to help us reach more people and
-              strengthen our peace initiatives.
+              {t("considerMakingADonation")}
             </p>
             <Button
               className="bg-[#548281] hover:bg-[#3c6665] w-full sm:w-auto mt-2"
               onClick={() => onDonateIntent && onDonateIntent()}
             >
-              Support with a donation
+              {t("supportWithADonation")}
             </Button>
           </div>
         </div>
@@ -205,14 +214,14 @@ export default function PledgeForm({
           onClick={handleSubmit}
           disabled={isSubmitting || !agreeToTerms}
         >
-          {isSubmitting ? "Processing..." : "Make my pledge"}{" "}
+          {isSubmitting ? t("processing") : t("makeMyPledge")}{" "}
           <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
         </Button>
         <Link
           href="/pledge-details"
           className="w-full text-xs text-[#548281] hover:text-[#3c6665] flex items-center justify-center"
         >
-          Learn more about my pledge
+          {t("learnMoreAboutMyPledge")}
           <CircleHelp className="ml-2 h-4 w-4" />
         </Link>
       </div>
@@ -223,7 +232,7 @@ export default function PledgeForm({
           <DialogHeader>
             <DialogTitle>
               <p className="text-lg font-semibold mb-4 text-center">
-                To make a pledge you must login
+                {t("toMakeAPledgeYouMustLogin")}
               </p>
             </DialogTitle>
           </DialogHeader>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { SanitySlug } from "@/lib/types";
 import { useRouter } from "next/navigation";
-
+import { useTranslations } from "next-intl";
 interface SmallArticleProps {
   image: string;
   title: string;
@@ -25,7 +25,7 @@ export default function SmallArticle({
     day: "numeric",
     year: "numeric",
   });
-
+  const t = useTranslations("Articles_Home");
   return (
     <div className="flex flex-col md:flex-row rounded-2xl overflow-hidden bg-white shadow-card hover:shadow-soft transition-all duration-300 hover:-translate-y-1 group">
       <div
@@ -59,7 +59,7 @@ export default function SmallArticle({
           href={slug as string}
           className="inline-flex items-center text-[#548281] font-medium text-sm bg-brand-500 border border-[#548281] group-hover:bg-[#2F4858] group-hover:border-transparent group-hover:text-white transition-colors py-2 px-4 rounded-full group/btn w-fit"
         >
-          Read More{" "}
+          {t("featuredArticleReadMore")}
           <ArrowRight className="w-4 h-4 ml-1 transition-transform group-hover:translate-x-1" />
         </Link>
       </div>
