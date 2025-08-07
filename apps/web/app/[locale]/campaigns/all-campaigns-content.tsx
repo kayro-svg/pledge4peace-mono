@@ -35,7 +35,7 @@ export default function AllCampaignsContent({ initialCampaigns = [] }: Props) {
   useEffect(() => {
     if (initialCampaigns.length) return; // ya hidratado desde servidor
     getCampaigns(selectedQty, locale).then(setCampaigns);
-  }, [initialCampaigns, selectedQty, locale]);
+  }, [selectedQty, locale]);
 
   /* ───────── Helpers ───────── */
   const toggleCategory = useCallback(
