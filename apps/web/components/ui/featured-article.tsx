@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Calendar } from "lucide-react";
 import { useRef, useEffect } from "react";
 import { SanitySlug } from "@/lib/types";
+import { useTranslations } from "next-intl";
 
 interface FeaturedArticleProps {
   image: string;
@@ -22,7 +23,7 @@ export default function FeaturedArticle({
   slug,
 }: FeaturedArticleProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-
+  const t = useTranslations("Articles_Home");
   useEffect(() => {
     // Ensure video is paused on component mount
     if (videoRef.current) {
@@ -75,7 +76,7 @@ export default function FeaturedArticle({
               href={slug as string}
               className="bg-[#548281]/30 text-white font-medium text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-full flex items-center hover:bg-white/50 transition-colors"
             >
-              Read more
+              {t("featuredArticleReadMore")}
               <ArrowRight className="ml-1.5 h-3 w-3 sm:h-4 sm:w-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>
@@ -97,7 +98,7 @@ export default function FeaturedArticle({
               href={slug as string}
               className="bg-[#548281]/30 text-white font-medium text-sm sm:text-base px-3 py-1.5 sm:px-4 sm:py-2 rounded-full flex items-center hover:bg-white/50 transition-colors"
             >
-              Read more
+              {t("featuredArticleReadMore")}
               <ArrowRight className="ml-1.5 h-3 w-3 sm:h-4 sm:w-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </div>

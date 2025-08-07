@@ -1,3 +1,5 @@
+import { useTranslations } from "next-intl";
+
 interface ImpactItemProps {
   text: string;
 }
@@ -25,18 +27,19 @@ const ImpactItem = ({ text }: ImpactItemProps) => {
 };
 
 export const ImpactSection = () => {
+  const t = useTranslations("WaysToSupport_Home");
   const impactItems = [
-    "$25 provides educational materials for peace workshops",
-    "$50 helps organize a local peace dialogue session",
-    "$100 supports conflict resolution training for community leaders",
-    "$500 funds a peace-building initiative in a conflict zone",
+    t("impactOfYourSupport_Item1"),
+    t("impactOfYourSupport_Item2"),
+    t("impactOfYourSupport_Item3"),
+    t("impactOfYourSupport_Item4"),
   ];
 
   return (
     <div className="flex justify-center w-full max-w-md">
       <div className="bg-background p-4 sm:p-6 rounded-lg shadow-md w-full">
         <h4 className="text-base sm:text-lg font-bold text-[#2f4858] mb-2 sm:mb-4">
-          Impact of Your Support
+          {t("impactOfYourSupport_Title")}
         </h4>
         <ul className="space-y-2 sm:space-y-3">
           {impactItems.map((item, index) => (

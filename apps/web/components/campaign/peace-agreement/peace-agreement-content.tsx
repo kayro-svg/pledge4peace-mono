@@ -523,7 +523,7 @@ export default function PeaceAgreementContent({
             )}
         </div>
 
-        <div>
+        <div id="solutions-section">
           <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-8 md:gap-0">
             <h2 className="text-2xl font-bold">
               {getString(solutionsSection.subheading as any) ||

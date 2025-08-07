@@ -12,14 +12,22 @@ import { SEODebug } from "@/components/dev/seo-debug";
 interface ArticlePageProps {
   params: {
     slug: string;
+    locale: string;
   };
+}
+
+export async function generateStaticParams() {
+  const locales = ["en", "es"]; // ajusta según i18n
+  return locales.map((locale) => ({ locale }));
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({
   params,
 }: ArticlePageProps): Promise<Metadata> {
-  const { article } = await getArticleBySlug(params.slug);
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const { slug, locale } = resolvedParams;
+  const { article } = await getArticleBySlug(slug, locale as "en" | "es");
 
   if (!article) {
     return {
@@ -106,7 +114,12 @@ export async function generateMetadata({
 }
 
 export default async function ArticlePage({ params }: ArticlePageProps) {
-  const { article, relatedArticles } = await getArticleBySlug(params.slug);
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const { slug, locale } = resolvedParams;
+  const { article, relatedArticles } = await getArticleBySlug(
+    slug,
+    locale as "en" | "es"
+  );
 
   if (!article) {
     notFound();

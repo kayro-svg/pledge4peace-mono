@@ -70,7 +70,7 @@ export default {
         {
           name: 'name',
           title: 'Organizer Name',
-          type: 'localeString',
+          type: 'string',
           validation: (Rule: any) => Rule.required(),
         },
         {
@@ -431,8 +431,8 @@ export default {
   ],
   preview: {
     select: {
-      title: 'title',
-      subtitle: 'date',
+      title: 'title.en',
+      subtitle: 'startDateTime',
       media: 'image',
       organizerName: 'organizer.name',
     },

@@ -37,11 +37,6 @@ export default function HomeSectionsPage({
   return (
     <main className="min-h-screen bg-[#FDFDF0] w-full">
       <HeroSection data={data?.heroSection} />
-      {/* <PayPalDonatePortal
-        hostedButtonId="FLZCUFCT6RYUW"
-        env="production"
-        // className="fixed top-4 right-4 z-50"
-      /> */}
       <HowItWorksSection data={data?.howItWorksSection} />
 
       {/* Esta sección tiene id="projects-section" internamente */}

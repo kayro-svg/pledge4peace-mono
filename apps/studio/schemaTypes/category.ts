@@ -17,4 +17,12 @@ export default defineType({
       type: 'localeText',
     }),
   ],
+  preview: {
+    select: {
+      title: 'title.en',
+    },
+    prepare({title}: {title: string}) {
+      return {title: title || 'Untitled'}
+    },
+  },
 })

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, Clock, MapPin } from "lucide-react";
 import { logger } from "@/lib/utils/logger";
+import { useTranslations } from "next-intl";
 
 import { cleanTimezone } from "@/lib/utils/clean-timezone";
 
@@ -30,7 +31,7 @@ export default function ExtendedEventCard({
 }: ExtendedEventCardProps) {
   // 🧹 Limpiar timezone al recibir los props
   const cleanedTimezone = cleanTimezone(timezone);
-
+  const t = useTranslations("Conferences_Card");
   // Debug del timezone original si está corrupto
   // if (timezone && timezone.length > 50) {
   //   debugTimezone(timezone, "extended-event-card.tsx");
@@ -274,7 +275,7 @@ export default function ExtendedEventCard({
           href={`/events/${slug}`}
           className="inline-flex items-center text-[#548281] hover:text-[#2F4858] transition-colors"
         >
-          View Event Details
+          {t("viewEventDetails")}
           <ArrowRight className="w-4 h-4 ml-1" />
         </Link>
       </div>

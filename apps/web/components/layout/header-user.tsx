@@ -21,10 +21,11 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { clearAllUserInteractions } from "@/lib/utils/interaction-utils";
+import { useTranslations } from "next-intl";
 
 export function HeaderUser({ user }: { user: User | null }) {
   const router = useRouter();
-
+  const t = useTranslations("Header");
   const handleSignOut = () => {
     // Clear all user-specific data from sessionStorage
     clearAllUserInteractions();
@@ -64,7 +65,7 @@ export function HeaderUser({ user }: { user: User | null }) {
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />
-            <span>Log out</span>
+            <span>{t("logOut")}</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

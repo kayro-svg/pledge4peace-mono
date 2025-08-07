@@ -1,13 +1,15 @@
 import HeroBanner from "@/components/about/hero-banner";
 import AllCampaignsContent from "./all-campaigns-content";
+import { useTranslations } from "next-intl";
 
 export default function CampaignsPage() {
+  const t = useTranslations("AllCampaigns_Page");
   return (
     <main className="min-h-screen">
       <HeroBanner
         heroSection={{
-          heroHeading: "Our Campaigns",
-          heroSubheading: "Let's create peace in the world!",
+          heroHeading: t("campaigns_label"),
+          heroSubheading: t("campaigns_description"),
           heroBgImage: undefined,
         }}
         noButton

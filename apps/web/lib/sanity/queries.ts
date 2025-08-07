@@ -44,25 +44,23 @@ export async function getHomePageData(
     `*[_type == "homePage"][0] {
       _id,
       title,
-      // Hero Section
-      "heroHeading": heroHeading[$lang],
-      "heroSubheading": heroSubheading[$lang],
-      "heroPrimaryButtonText": heroPrimaryButtonText[$lang],
-      "heroSecondaryButtonText": heroSecondaryButtonText[$lang],
+
+      "heroHeading":  coalesce(heroHeading[$lang],heroHeading.en),
+      "heroSubheading":  coalesce(heroSubheading[$lang],heroSubheading.en),
+      "heroPrimaryButtonText":  coalesce(heroPrimaryButtonText[$lang],heroPrimaryButtonText.en),
+      "heroSecondaryButtonText":  coalesce(heroSecondaryButtonText[$lang],heroSecondaryButtonText.en),
       heroVideo { asset-> { url } },
       heroImage { asset-> { url } },
       
-      // How It Works Section
-      "howItWorksHeading": howItWorksHeading[$lang],
-      "howItWorksDescription": howItWorksDescription[$lang],
+      "howItWorksHeading":  coalesce(howItWorksHeading[$lang],howItWorksHeading.en),
+      "howItWorksDescription":  coalesce(howItWorksDescription[$lang],howItWorksDescription.en),
       howItWorksSteps[] {
-        "title": title[$lang],
-        "description": description[$lang]
+        "title": coalesce(title[$lang],title.en),
+        "description": coalesce(description[$lang],description.en)
       },
       
-      // Campaigns Section
-      "campaignsHeading": campaignsHeading[$lang],
-      "campaignsDescription": campaignsDescription[$lang],
+      "campaignsHeading":  coalesce(campaignsHeading[$lang],campaignsHeading.en),
+      "campaignsDescription":  coalesce(campaignsDescription[$lang],campaignsDescription.en),
    campaigns[]-> {
   _id,
   title,
@@ -73,9 +71,8 @@ export async function getHomePageData(
   featuredImage { asset-> { url } },
 },
       
-      // Ways to Support Section
-      "waysToSupportHeading": waysToSupportHeading[$lang],
-      "waysToSupportDescription": waysToSupportDescription[$lang],
+      "waysToSupportHeading":  coalesce(waysToSupportHeading[$lang],waysToSupportHeading.en),
+      "waysToSupportDescription":  coalesce(waysToSupportDescription[$lang],waysToSupportDescription.en),
       waysToSupportItems[] {
         "title": title[$lang],
         "description": description[$lang],
@@ -84,9 +81,8 @@ export async function getHomePageData(
         buttonLink
       },
       
-      // Articles Section
-      "articlesHeading": articlesHeading[$lang],
-      "articlesDescription": articlesDescription[$lang],
+      "articlesHeading":  coalesce(articlesHeading[$lang],articlesHeading.en),
+      "articlesDescription":  coalesce(articlesDescription[$lang],articlesDescription.en),
       articles[]-> {
         _id,
         title,
@@ -96,9 +92,8 @@ export async function getHomePageData(
         image { asset-> { url } }
       },
       
-      // Conferences Section
-      "conferencesHeading": conferencesHeading[$lang],
-      "conferencesDescription": conferencesDescription[$lang],
+      "conferencesHeading":  coalesce(conferencesHeading[$lang],conferencesHeading.en),
+      "conferencesDescription":  coalesce(conferencesDescription[$lang],conferencesDescription.en),
       conferences[]-> {
         _id,
         title,
@@ -165,114 +160,6 @@ export async function getHomePageData(
   };
 }
 
-// FUNCIONES AUXILIARES QUE EXTRAEN DATOS DE LA CONSULTA PRINCIPAL
-// Estas funciones mantienen compatibilidad, pero no hacen peticiones adicionales
-
-// export async function getHeroSection(): Promise<SanityHeroSection> {
-//   const data = (await getHomePageData()).heroSection;
-//   return {
-//     heroHeading: data.heroHeading,
-//     heroSubheading: data.heroSubheading,
-//     heroPrimaryButtonText: data.heroPrimaryButtonText,
-//     heroSecondaryButtonText: data.heroSecondaryButtonText,
-//     heroVideo: data.heroVideo,
-//     heroImage: data.heroImage,
-//   };
-// }
-
-// export async function getHowItWorksSection(): Promise<SanityHowItWorksSection> {
-//   const data = (await getHomePageData()).howItWorksSection;
-//   return {
-//     howItWorksHeading: data.howItWorksHeading,
-//     howItWorksDescription: data.howItWorksDescription,
-//     howItWorksSteps: data.howItWorksSteps,
-//   };
-// }
-
-// export async function getCampaignsSection(): Promise<SanityCampaignsSection> {
-//   const data = (await getHomePageData()).campaignsSection;
-//   return {
-//     campaignsHeading: data.campaignsHeading,
-//     campaignsDescription: data.campaignsDescription,
-//     campaigns: data.campaigns,
-//   };
-// }
-
-// export async function getWaysToSupportSection(): Promise<SanityWaysToSupportSection> {
-//   const data = (await getHomePageData()).waysToSupportSection;
-//   return {
-//     waysToSupportHeading: data.waysToSupportHeading,
-//     waysToSupportDescription: data.waysToSupportDescription,
-//     waysToSupportItems: data.waysToSupportItems,
-//   };
-// }
-
-// export async function getArticlesSection(): Promise<SanityArticlesSection> {
-//   const data = (await getHomePageData()).articlesSection;
-//   return {
-//     articlesHeading: data.articlesHeading,
-//     articlesDescription: data.articlesDescription,
-//     articles: data.articles,
-//   };
-// }
-
-// export async function getConferencesSection(): Promise<SanityConferencesSection> {
-//   const data = (await getHomePageData()).conferencesSection;
-//   return {
-//     conferencesHeading: data.conferencesHeading,
-//     conferencesDescription: data.conferencesDescription,
-//     conferences: data.conferences,
-//   };
-// }
-
-// CONSULTAS PARA ELEMENTOS INDEPENDIENTES
-// Estas consultas son para cuando necesitas estos elementos fuera del contexto de la página principal
-
-// export async function getCampaigns(limit?: number): Promise<SanityCampaign[]> {
-//   // 🚀 Usar cliente inteligente por entorno
-//   const sanityClient = getClient({ forceFresh: isDevelopment });
-
-//   return sanityClient.fetch(
-//     `*[_type == "campaign"] | order(publishedAt desc) ${
-//       limit ? `[0..${limit}]` : ""
-//     } {
-//       _id,
-//       title,
-//       slug,
-//       category,
-//       description,
-//       goalPledges,
-//       countriesInvolved[],
-//       pledgeCommitmentItems[],
-//       contentText,
-//       featuredImage { asset-> { url } },
-//       gallery[] {
-//         type,
-//         alt,
-//         image { asset-> { url } },
-//         video { asset-> { url } }
-//       },
-//       parties[] {
-//         name,
-//         slug,
-//         description,
-//         icon { asset-> { url } },
-//         color,
-//         solutionLimit
-//       },
-//       _createdAt
-//     }`,
-//     {},
-//     {
-//       next: {
-//         revalidate: cache.medium, // ⚡ Cache inteligente por entorno
-//         tags: ["campaign"],
-//       },
-//     }
-//   );
-// }
-
-// lib/sanity/queries.ts
 export async function getCampaigns(
   limit?: number,
   lang: "en" | "es" = "en"
@@ -546,7 +433,10 @@ export async function getCampaignSlugs(): Promise<SanitySlug[]> {
   return slugs;
 }
 
-export async function getArticles(limit?: number): Promise<SanityArticle[]> {
+export async function getArticles(
+  limit?: number,
+  lang: "en" | "es" = "en"
+): Promise<SanityArticle[]> {
   // 🚀 Usar cliente inteligente por entorno
   const sanityClient = getClient({ forceFresh: isDevelopment });
 
@@ -555,7 +445,7 @@ export async function getArticles(limit?: number): Promise<SanityArticle[]> {
       limit ? `[0..${limit}]` : ""
     } {
       _id,
-      title,
+      "title"      : coalesce(title[$lang],      title.en),
       slug { current },
       publishedAt,
       image { 
@@ -569,7 +459,7 @@ export async function getArticles(limit?: number): Promise<SanityArticle[]> {
           }
         }
       },
-      excerpt,
+      "excerpt": coalesce(excerpt[$lang],excerpt.en),
       author-> {
         name,
         image { 
@@ -586,10 +476,10 @@ export async function getArticles(limit?: number): Promise<SanityArticle[]> {
       },
       categories[]-> {
         _id,
-        title
+        "title": coalesce(title[$lang],title.en)
       }
     }`,
-    {},
+    { lang },
     {
       next: {
         revalidate: cache.medium, // ⚡ Cache inteligente por entorno
@@ -646,7 +536,7 @@ export async function getConferences(
         startDateTime,
         endDateTime,
         timezone,
-        location,
+        "location": coalesce(location[$lang],location.en),
         image { asset->{ url } }
       }
     `,
@@ -666,7 +556,10 @@ export async function getConferences(
   }));
 }
 
-export async function getArticleBySlug(slug: string): Promise<{
+export async function getArticleBySlug(
+  slug: string,
+  lang: "en" | "es" = "en"
+): Promise<{
   article: SanityArticle;
   relatedArticles: SanityArticle[];
 }> {
@@ -677,7 +570,7 @@ export async function getArticleBySlug(slug: string): Promise<{
     `{
       "article": *[_type == "article" && slug.current == $slug][0] {
         _id,
-        title,
+        "title": coalesce(title[$lang],title.en),
         slug { current },
         publishedAt,
         image { 
@@ -691,7 +584,7 @@ export async function getArticleBySlug(slug: string): Promise<{
             }
           }
         },
-        excerpt,
+        "excerpt": coalesce(excerpt[$lang],excerpt.en),
         // SEO Fields
         seo {
           metaTitle,
@@ -763,7 +656,7 @@ export async function getArticleBySlug(slug: string): Promise<{
         },
         categories[]-> {
           _id,
-          title
+          "title": coalesce(title[$lang],title.en)
         }
       },
       "relatedArticles": *[_type == "article" && slug.current != $slug && count(categories[@._ref in *[_type == "article" && slug.current == $slug][0].categories[]._ref]) > 0] | order(publishedAt desc)[0...3] {
@@ -787,11 +680,11 @@ export async function getArticleBySlug(slug: string): Promise<{
         },
         categories[]-> {
           _id,
-          title
+          "title": coalesce(title[$lang],title.en)
         }
       }
     }`,
-    { slug },
+    { slug, lang },
     {
       next: {
         revalidate: cache.medium, // ⚡ Cache inteligente por entorno
@@ -801,107 +694,6 @@ export async function getArticleBySlug(slug: string): Promise<{
   );
 }
 
-// export async function getConferenceBySlug(slug: string) {
-//   const query = `*[_type == "conference" && slug.current == $slug][0] {
-//     _id,
-//     title,
-//     description,
-//     startDateTime,
-//     endDateTime,
-//     timezone,
-//     location,
-//     category,
-//     price,
-//     "organizer": {
-//       "name": organizer.name,
-//       "logo": organizer.logo.asset->url
-//     },
-//     "slug": slug.current,
-//     "image": {
-//       "asset": {
-//         "url": image.asset->url
-//       }
-//     },
-//     about[] {
-//       ...,
-//       _type == "inlineImage" => {
-//         ...,
-//         asset-> {
-//           url,
-//           metadata {
-//             dimensions {
-//               width,
-//               height
-//             }
-//           }
-//         }
-//       },
-//       _type == "videoEmbed" => {
-//         ...,
-//         url,
-//         title,
-//         caption
-//       },
-//       _type == "callout" => {
-//         ...,
-//         type,
-//         title,
-//         content
-//       },
-//       _type == "divider" => {
-//         ...,
-//         style
-//       },
-//       _type == "columns" => {
-//         ...,
-//         leftColumn,
-//         rightColumn
-//       }
-//     },
-//     speakers[] {
-//       _id,
-//       name,
-//       role,
-//       "image": {
-//         "asset": {
-//           "url": image.asset->url
-//         }
-//       }
-//     },
-//     "gallery": gallery[].asset->{
-//       "url": url
-//     },
-//     "relatedCampaign": relatedCampaign->{
-//       _id,
-//       title,
-//       "slug": slug.current
-//     }
-//   }`;
-
-//   const sanityClient = getClient({ forceFresh: isDevelopment });
-//   const event = await sanityClient.fetch(
-//     query,
-//     { slug },
-//     {
-//       next: {
-//         revalidate: cache.short, // Conferences pueden cambiar frecuentemente
-//         tags: ["conference", `conference-${slug}`],
-//       },
-//     }
-//   );
-
-//   // 🧹 Limpiar timezone corrupto si existe el evento
-//   if (event && event.timezone) {
-//     return {
-//       ...event,
-//       timezone: cleanTimezone(event.timezone),
-//     };
-//   }
-
-//   return event;
-// }
-
-// apps/web/lib/sanity/queries.ts
 export async function getConferenceBySlug(
   slug: string,
   lang: "en" | "es" = "en"

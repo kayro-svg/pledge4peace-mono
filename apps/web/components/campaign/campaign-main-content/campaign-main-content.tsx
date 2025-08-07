@@ -12,16 +12,17 @@ import MediaGallery from "../gallery-image/media-gallery";
 interface CampaignDetailContentProps {
   campaign: SanityCampaign;
   locale: string;
+  onNavigateToSolutions?: () => void;
 }
 
 export default function MainContentSection({
   campaign,
   locale,
+  onNavigateToSolutions,
 }: CampaignDetailContentProps) {
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
   // Get the campaign ID (use _id as fallback)
   const campaignId = campaign._id;
-
   // Use our custom hook to manage pledge counts
   const { pledgeCount, updatePledgeCount } = usePledges(campaignId, 0); // Start with 0 as default
 
@@ -71,6 +72,7 @@ export default function MainContentSection({
                 campaignId={campaignId || ""}
                 campaignTitle={getString(campaign.title) || ""}
                 onPledgeCreated={handlePledgeCreated}
+                onNavigateToSolutions={onNavigateToSolutions}
                 onDonateIntent={handleDonateIntent}
               />
             </div>

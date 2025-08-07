@@ -15,6 +15,7 @@ import { ImpactSection } from "../ui/impact-section";
 import { PayPalDonatePortal } from "@/components/ui/paypal-donate-portal";
 import { useState } from "react";
 import DonationModal from "@/components/donations/DonationModal";
+import { useTranslations } from "next-intl";
 
 export interface ShareData {
   title: string;
@@ -39,56 +40,44 @@ export default function WaysToSupportSection({
   data: SanityWaysToSupportSection | SupportOption;
 }) {
   const [isDonationModalOpen, setIsDonationModalOpen] = useState(false);
-
+  const t = useTranslations("WaysToSupport_Home");
   const supportOptions: SupportOption[] = [
     {
       icon: <Handshake className="w-7 h-7 text-[#86AC9D]" />,
-      title: "Make a Pledge",
-      description:
-        "Join a campaign and pledge your support. Your voice matters in creating meaningful change.",
-      linkText: "Browse Campaigns",
+      title: t("makeAPledge_Title"),
+      description: t("makeAPledge_Description"),
+      linkText: t("makeAPledge_LinkText"),
       linkHref: "/#projects-section",
       type: "make-a-pledge",
     },
     {
       icon: <HandCoins className="w-7 h-7 text-[#86AC9D]" />,
-      title: "Donate",
-      description:
-        "Support our operations with a one-time or recurring donation. Every contribution helps us expand our impact.",
-      linkText: "Donate Now",
-      linkHref: "#", // Changed from "/donate" to "#" since we'll use modal
-      type: "donate", // Add type to identify donate button
+      title: t("donate_Title"),
+      description: t("donate_Description"),
+      linkText: t("donate_LinkText"),
+      linkHref: "#",
+      type: "donate",
     },
     {
       icon: <Users className="w-7 h-7 text-[#86AC9D]" />,
-      title: "Volunteer",
-      description:
-        "Contribute your time and skills to our mission. Join our global network of dedicated volunteers.",
-      linkText: "Join Our Team",
+      title: t("volunteer_Title"),
+      description: t("volunteer_Description"),
+      linkText: t("volunteer_LinkText"),
       linkHref: "/volunteer",
     },
     {
       icon: <CircleFadingPlus className="w-7 h-7 text-[#86AC9D]" />,
-      title: "Spread Awareness",
-      description:
-        "Share our campaigns on social media and help us reach a wider audience. Your voice amplifies our message.",
-      linkText: "Share Our Mission",
+      title: t("spreadAwareness_Title"),
+      description: t("spreadAwareness_Description"),
+      linkText: t("spreadAwareness_LinkText"),
       shareData: {
-        title: "Pledge for Peace",
-        text: "Join me in supporting peace initiatives around the world. Together we can make a difference!",
+        title: t("share_Title"),
+        text: t("share_Description"),
         url: "https://pledge4peace.org",
         hashtags: "PeaceForAll,Pledge4Peace",
       },
       type: "share",
     },
-    // {
-    //   icon: <BriefcaseBusiness className="w-7 h-7 text-[#86AC9D]" />,
-    //   title: "Corporate Partnership",
-    //   description:
-    //     "Align your organization with our mission. We offer various partnership opportunities for businesses.",
-    //   linkText: "Become a Partner",
-    //   linkHref: "/partner",
-    // },
   ];
 
   const DEFAULT_SECTION_DATA = {
@@ -132,7 +121,7 @@ export default function WaysToSupportSection({
       <div className="flex flex-col items-center justify-center max-w-[1400px]">
         <div className="text-center mb-8 sm:mb-12">
           <h2 className="text-[#2F4858] uppercase text-xs sm:text-sm font-medium tracking-wider mb-3 sm:mb-4 border-b-2 w-fit mx-auto border-[#2F4858]">
-            WAYS TO SUPPORT
+            {t("waysToSupport_label")}
           </h2>
           <h1 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
             {sectionData.waysToSupportHeading}
@@ -169,18 +158,16 @@ export default function WaysToSupportSection({
           <div className="flex flex-col md:flex-row gap-6 md:gap-8 items-center justify-between">
             <div className="w-full md:w-1/2">
               <h3 className="text-xl sm:text-2xl md:text-3xl font-bold text-[#2f4858] mb-3 sm:mb-4">
-                Need Help Deciding?
+                {t("needHelpDeciding_Title")}
               </h3>
               <p className="text-sm sm:text-base text-[#2f4858] mb-4 sm:mb-6">
-                Not sure which support option is right for you? Our team is here
-                to help you find the best way to contribute to our peace
-                initiatives.
+                {t("needHelpDeciding_Description")}
               </p>
               <Link
                 href="/contact"
                 className="inline-flex items-center justify-center rounded-full border border-[#2f4858] px-4 sm:px-6 py-2 sm:py-3 text-sm font-medium text-[#2f4858] group-hover:text-white shadow group-hover:bg-[#2f4858] transition-colors duration-300 ease-in-out focus:outline-none"
               >
-                Contact Our Team
+                {t("needHelpDeciding_LinkText")}
               </Link>
             </div>
             <div className="w-full md:w-1/2 flex justify-center md:justify-end">

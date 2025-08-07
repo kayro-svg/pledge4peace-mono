@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Filter, X, Globe, Users } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 interface AllCampaignsFiltersProps {
   selectedCategories: string[];
@@ -33,7 +34,6 @@ interface AllCampaignsFiltersProps {
   onQtyChange: (qty: number) => void;
 }
 
-const ALL_REGIONS_LABEL = "All Countries/Regions";
 const DESKTOP_OFFSET = 80; // px → coincide con `top-[80px]`
 
 const AllCampaignsFilters: FC<AllCampaignsFiltersProps> = ({
@@ -49,6 +49,8 @@ const AllCampaignsFilters: FC<AllCampaignsFiltersProps> = ({
   selectedQty,
   onQtyChange,
 }) => {
+  const t = useTranslations("AllCampaigns_Page");
+  const ALL_REGIONS_LABEL = "All Countries/Regions";
   const activeCount =
     selectedCategories.length + (selectedRegion !== ALL_REGIONS_LABEL ? 1 : 0);
 
@@ -94,7 +96,7 @@ const AllCampaignsFilters: FC<AllCampaignsFiltersProps> = ({
               <Button variant="outline" className="w-full justify-between">
                 <div className="flex items-center space-x-2">
                   <Filter className="h-4 w-4" />
-                  <span>Filters</span>
+                  <span>{t("filters_mobile_label")}</span>
                   {activeCount > 0 && (
                     <Badge variant="secondary" className="ml-2">
                       {activeCount}
@@ -115,7 +117,7 @@ const AllCampaignsFilters: FC<AllCampaignsFiltersProps> = ({
                 <div>
                   <h3 className="font-semibold mb-3 flex items-center">
                     <Users className="h-4 w-4 mr-2" />
-                    Categories
+                    {t("filters_categories_label")}
                   </h3>
                   <div className="grid grid-cols-2 gap-2">
                     {categories.map((cat) => (
@@ -144,7 +146,7 @@ const AllCampaignsFilters: FC<AllCampaignsFiltersProps> = ({
                 <div>
                   <h3 className="font-semibold mb-3 flex items-center">
                     <Globe className="h-4 w-4 mr-2" />
-                    Countries/Regions
+                    {t("filters_countries_label")}
                   </h3>
                   <Select value={selectedRegion} onValueChange={onRegionChange}>
                     <SelectTrigger className="bg-white">
@@ -171,7 +173,7 @@ const AllCampaignsFilters: FC<AllCampaignsFiltersProps> = ({
                     className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
                     <X className="h-4 w-4 mr-2" />
-                    Clear All Filters
+                    {t("filters_clear_all_label")}
                   </Button>
                 )}
               </div>
@@ -186,7 +188,7 @@ const AllCampaignsFilters: FC<AllCampaignsFiltersProps> = ({
             {/* Categorías */}
             <div className="flex flex-wrap gap-2 items-center">
               <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                Categories:
+                {t("filters_categories_label")}:
               </span>
               {categories.map((cat) => (
                 <Button
@@ -208,7 +210,7 @@ const AllCampaignsFilters: FC<AllCampaignsFiltersProps> = ({
             {/* Selector de región */}
             <div className="flex flex-wrap gap-2 items-center">
               <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                Countries/Regions:
+                {t("filters_countries_label")}:
               </span>
               <Select value={selectedRegion} onValueChange={onRegionChange}>
                 <SelectTrigger
@@ -231,7 +233,7 @@ const AllCampaignsFilters: FC<AllCampaignsFiltersProps> = ({
 
             <div className="flex flex-row gap-2 items-center">
               <span className="text-sm font-medium text-gray-700 whitespace-nowrap">
-                Showing:
+                {t("filters_qty_label")}:
               </span>
               <Select
                 value={selectedQty.toString()}
@@ -255,7 +257,9 @@ const AllCampaignsFilters: FC<AllCampaignsFiltersProps> = ({
           {activeCount > 0 && (
             <div className="mt-4 pt-4 border-t flex items-center justify-between">
               <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-600">Active filters:</span>
+                <span className="text-sm text-gray-600">
+                  {t("filters_active_label")}:
+                </span>
                 <div className="flex flex-wrap gap-1">
                   {selectedCategories.map((cat) => (
                     <Badge
@@ -294,7 +298,7 @@ const AllCampaignsFilters: FC<AllCampaignsFiltersProps> = ({
                 onClick={onClearFilters}
                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
               >
-                Clear All
+                {t("filters_clear_all_label")}
               </Button>
             </div>
           )}

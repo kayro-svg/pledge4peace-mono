@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 import { logger } from "@/lib/utils/logger";
 import { submitContactForm } from "@/lib/api/contact";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 interface ContactFormData {
   name: string;
@@ -20,7 +21,7 @@ interface ContactFormData {
 export function ContactForm() {
   const form = useForm<ContactFormData>();
   const [isLoading, setIsLoading] = useState(false);
-
+  const t = useTranslations("Contact_Page");
   const onSubmit = async (data: ContactFormData) => {
     logger.log("Contact form submitted:", data);
     setIsLoading(true);
@@ -46,12 +47,9 @@ export function ContactForm() {
   return (
     <div className="bg-white p-8 rounded-lg shadow-md">
       <h2 className="text-2xl font-bold mb-6 text-gray-900">
-        Send Us a Message
+        {t("form_title")}
       </h2>
-      <p className="text-gray-600 mb-8">
-        Have questions about our initiatives or want to get involved? Send us a
-        message and we&apos;ll get back to you as soon as possible.
-      </p>
+      <p className="text-gray-600 mb-8">{t("form_description")}</p>
 
       <form
         onSubmit={form.handleSubmit(onSubmit)}
@@ -59,30 +57,30 @@ export function ContactForm() {
       >
         <FormField
           id="name"
-          label="Name"
-          placeholder="Your full name"
+          label={t("form_name_label")}
+          placeholder={t("form_name_placeholder")}
           {...form.register("name", { required: true })}
         />
 
         <FormField
           id="email"
-          label="Email"
+          label={t("form_email_label")}
           type="email"
-          placeholder="Your email address"
+          placeholder={t("form_email_placeholder")}
           {...form.register("email", { required: true })}
         />
 
         <FormField
           id="subject"
-          label="Subject"
-          placeholder="Message subject"
+          label={t("form_subject_label")}
+          placeholder={t("form_subject_placeholder")}
           {...form.register("subject", { required: true })}
         />
 
         <TextAreaField
           id="message"
-          label="Message"
-          placeholder="Your message"
+          label={t("form_message_label")}
+          placeholder={t("form_message_placeholder")}
           register={form.register}
           fieldName="message"
           required
@@ -97,7 +95,7 @@ export function ContactForm() {
             {isLoading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
-              "Send Message"
+              t("form_submit_label")
             )}
           </Button>
         </div>

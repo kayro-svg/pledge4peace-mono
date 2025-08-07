@@ -36,7 +36,12 @@ export default {
       title: 'Excerpt',
       type: 'localeText',
       rows: 3,
-      validation: (Rule: any) => Rule.max(200),
+      // validation: (Rule: any) => Rule.max(200),
+      // validation: (Rule: any) =>
+      //   Rule.required().custom((val: any) => {
+      //     const tooLong = (val?.en?.length ?? 0) > 200 || (val?.es?.length ?? 0) > 200
+      //     return tooLong ? 'Max 200 characters per language' : true
+      //   }),
     },
     {
       name: 'author',
@@ -62,8 +67,13 @@ export default {
           title: 'Meta Title',
           type: 'localeString',
           description: 'Title for search engines (50-60 characters recommended)',
-          validation: (Rule: any) =>
-            Rule.max(60).warning('Keep it under 60 characters for optimal SEO'),
+          // validation: (Rule: any) =>
+          //   Rule.max(60).warning('Keep it under 60 characters for optimal SEO'),
+          // validation: (Rule: any) =>
+          //   Rule.custom((val: any) => {
+          //     const tooLong = (val?.en?.length ?? 0) > 60 || (val?.es?.length ?? 0) > 60
+          //     return tooLong ? 'Max 60 characters per language' : true
+          //   }),
         },
         {
           name: 'metaDescription',
@@ -71,8 +81,11 @@ export default {
           type: 'localeText',
           rows: 3,
           description: 'Description for search engines (150-160 characters recommended)',
-          validation: (Rule: any) =>
-            Rule.max(160).warning('Keep it under 160 characters for optimal SEO'),
+          // validation: (Rule: any) =>
+          //   Rule.custom((val: any) => {
+          //     const tooLong = (val?.en?.length ?? 0) > 160 || (val?.es?.length ?? 0) > 160
+          //     return tooLong ? 'Max 160 characters per language' : true
+          //   }),
         },
         {
           name: 'keywords',
@@ -402,8 +415,8 @@ export default {
   ],
   preview: {
     select: {
-      title: 'title',
-      subtitle: 'excerpt',
+      title: 'title.en',
+      subtitle: 'excerpt.en',
       media: 'image',
     },
   },

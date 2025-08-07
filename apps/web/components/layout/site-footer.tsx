@@ -7,8 +7,10 @@ import facebookIcon from "@/public/facebook_icon.svg";
 import { Mail, MapPin, Phone } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 
 export default function SiteFooter() {
+  const t = useTranslations("Footer");
   return (
     <footer className="bg-[#CCD5AE] text-white py-8 sm:py-12 md:py-16">
       <div className="container mx-auto px-4 sm:px-6">
@@ -24,8 +26,7 @@ export default function SiteFooter() {
             />
 
             <p className="text-[#2F4858] mb-2 text-sm sm:text-base">
-              We stand firm in our belief that peace is possible through
-              collective action and commitment.
+              {t("missionStatement")}
             </p>
           </div>
 
@@ -34,26 +35,26 @@ export default function SiteFooter() {
             {/* Links section */}
             <div className="grid grid-cols-2 sm:flex gap-4 sm:gap-6 md:gap-8 justify-evenly w-full">
               <FooterLinks
-                title="Site Links"
+                title={t("siteLinks")}
                 links={[
-                  { href: "/", label: "Home" },
-                  { href: "/about", label: "About Us" },
-                  { href: "/volunteer", label: "Volunteer" },
-                  { href: "/contact", label: "Contact Us" },
+                  { href: "/", label: t("home") },
+                  { href: "/about", label: t("about") },
+                  { href: "/volunteer", label: t("volunteer") },
+                  { href: "/contact", label: t("contact") },
                   {
                     href: "/terms-and-conditions",
-                    label: "Terms and Conditions",
+                    label: t("termsAndConditions"),
                   },
                 ]}
               />
 
               <FooterLinks
-                title="Quick Links"
+                title={t("quickLinks")}
                 links={[
-                  { href: "/#projects-section", label: "Pledge" },
-                  { href: "/volunteer#volunteer-form", label: "Volunteer" },
-                  { href: "/articles", label: "Articles & News" },
-                  { href: "/events", label: "Events" },
+                  { href: "/#projects-section", label: t("pledge") },
+                  { href: "/volunteer#volunteer-form", label: t("volunteer") },
+                  { href: "/articles", label: t("articlesNews") },
+                  { href: "/events", label: t("events") },
                 ]}
               />
             </div>
@@ -61,7 +62,7 @@ export default function SiteFooter() {
             {/* Contact info */}
             <div className="w-full sm:w-auto mt-6 sm:mt-0">
               <h4 className="text-base sm:text-lg font-semibold mb-4 sm:mb-6 text-[#2F4858] flex-0">
-                Get in touch
+                {t("contactUs")}
               </h4>
               <div className="flex flex-col gap-3 sm:gap-4 text-[#2F4858] text-sm sm:text-base">
                 <address className="flex items-center gap-2 not-italic">
@@ -161,21 +162,14 @@ export default function SiteFooter() {
               </Link> */}
             </div>
             <address className="not-italic text-[#2F4858] text-sm sm:text-base">
-              <p className="mb-2">
-                501c3 NonProfit Aiming to Solve World&apos;s Biggest Problems
-                Through Pledge.
-              </p>
-              <p>
-                Our goal is to address the world&apos;s biggest challenges with
-                a new approach where we bring the silent majority from around
-                the world to pledge to visit and invest to create peace.
-              </p>
+              <p className="mb-2">{t("footer_paragraph1")}</p>
+              <p>{t("footer_paragraph2")}</p>
             </address>
           </div>
         </div>
 
         <div className="border-t border-gray-800 pt-6 sm:pt-8 mt-8 sm:mt-12 text-xs sm:text-sm text-gray-500 text-center sm:text-left">
-          <p>&copy; 2025 Pledge4Peace.org. All rights reserved.</p>
+          <p>{t("footer_copyright")}</p>
         </div>
       </div>
     </footer>

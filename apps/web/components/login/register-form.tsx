@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Label } from "../ui/label";
+import { useTranslations } from "next-intl";
 
 interface RegisterFormData {
   name: string;
@@ -48,7 +49,7 @@ export default function RegisterForm({
   const router = useRouter();
   const [userType, setUserType] = useState("");
   const userTypeRef = useRef<HTMLButtonElement>(null);
-
+  const t = useTranslations("Register_Page");
   // Handle form errors and focus
   useEffect(() => {
     if (form.formState.errors.userType) {
@@ -118,19 +119,19 @@ export default function RegisterForm({
   return (
     <div className="w-full">
       <h1 className="text-3xl font-semibold tracking-tight text-gray-900 mb-1 text-center">
-        Create Account
+        {t("register_title")}
       </h1>
       <p className="text-sm text-gray-500 mb-6 text-center">
-        Join us and start making a difference today
+        {t("register_description")}
       </p>
 
       <p className="text-center text-sm text-gray-600 mb-6">
-        Already have an account?{" "}
+        {t("alreadyHaveAccount")}{" "}
         <button
           onClick={onSwitchToLogin}
           className="font-medium text-[#698D8B] hover:text-[#548281]"
         >
-          Sign In
+          {t("signIn")}
         </button>
       </p>
 
@@ -138,8 +139,8 @@ export default function RegisterForm({
         <div className="flex flex-col md:flex-row gap-6 justify-between w-full">
           <FormField
             id="name"
-            label="Full Name"
-            placeholder="Enter your full name"
+            label={t("fullName")}
+            placeholder={t("fullName_placeholder")}
             {...form.register("name", { required: true })}
             required
             className="w-full flex-1  mr-8"
@@ -147,9 +148,9 @@ export default function RegisterForm({
 
           <FormField
             id="email"
-            label="Email"
+            label={t("email")}
             type="email"
-            placeholder="Enter your email"
+            placeholder={t("email_placeholder")}
             {...form.register("email", { required: true })}
             required
             autoComplete="email"
@@ -161,7 +162,7 @@ export default function RegisterForm({
             htmlFor="userType"
             className="block text-sm font-medium text-gray-700"
           >
-            I am a:
+            {t("userType")}:
           </Label>
           <Select
             value={userType}
@@ -176,18 +177,14 @@ export default function RegisterForm({
               ref={userTypeRef}
               className={`${form.formState.errors.userType ? "border-red-500 ring-red-500" : ""}`}
             >
-              <SelectValue placeholder="Select your role" />
+              <SelectValue placeholder={t("userType_placeholder")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="citizen">Citizen/Advocate</SelectItem>
-              <SelectItem value="politician">
-                Politician/Elected Official
-              </SelectItem>
-              <SelectItem value="organization">
-                Organization Representative
-              </SelectItem>
-              <SelectItem value="student">Student</SelectItem>
-              <SelectItem value="other">Other (please specify)</SelectItem>
+              <SelectItem value="citizen">{t("citizen")}</SelectItem>
+              <SelectItem value="politician">{t("politician")}</SelectItem>
+              <SelectItem value="organization">{t("organization")}</SelectItem>
+              <SelectItem value="student">{t("student")}</SelectItem>
+              <SelectItem value="other">{t("other")}</SelectItem>
             </SelectContent>
           </Select>
           <input
@@ -207,8 +204,8 @@ export default function RegisterForm({
         {userType === "politician" && (
           <FormField
             id="office"
-            label="Office/Position"
-            placeholder="e.g., Mayor, City Council, State Representative"
+            label={t("office")}
+            placeholder={t("office_placeholder")}
             {...form.register("office")}
           />
         )}
@@ -216,8 +213,8 @@ export default function RegisterForm({
         {userType === "organization" && (
           <FormField
             id="organization"
-            label="Organization Name"
-            placeholder="e.g., Red Cross, Amnesty International, Local NGO"
+            label={t("organization")}
+            placeholder={t("organization_placeholder")}
             {...form.register("organization")}
           />
         )}
@@ -225,8 +222,8 @@ export default function RegisterForm({
         {userType === "student" && (
           <FormField
             id="institution"
-            label="Educational Institution"
-            placeholder="e.g., Harvard University, Local High School"
+            label={t("institution")}
+            placeholder={t("institution_placeholder")}
             {...form.register("institution")}
           />
         )}
@@ -234,16 +231,16 @@ export default function RegisterForm({
         {userType === "other" && (
           <FormField
             id="otherRole"
-            label="Please specify your role"
-            placeholder="Describe your role or profession"
+            label={t("otherRole")}
+            placeholder={t("otherRole_placeholder")}
             {...form.register("otherRole")}
           />
         )}
 
         <PasswordInput
           id="password"
-          label="Password"
-          placeholder="Create a password"
+          label={t("password")}
+          placeholder={t("password_placeholder")}
           register={form.register}
           fieldName="password"
           required
@@ -251,8 +248,8 @@ export default function RegisterForm({
 
         <PasswordInput
           id="confirmPassword"
-          label="Confirm Password"
-          placeholder="Confirm your password"
+          label={t("confirmPassword")}
+          placeholder={t("confirmPassword_placeholder")}
           register={form.register}
           fieldName="confirmPassword"
           required
@@ -270,16 +267,16 @@ export default function RegisterForm({
             htmlFor="agree-terms"
             className="ml-2 block text-sm text-gray-700"
           >
-            I agree to the{" "}
+            {t("agreeToTerms")}{" "}
             <Link href="/terms" className="text-[#698D8B] hover:text-[#548281]">
-              Terms of Service
+              {t("termsOfService")}
             </Link>{" "}
             and{" "}
             <Link
               href="/privacy"
               className="text-[#698D8B] hover:text-[#548281]"
             >
-              Privacy Policy
+              {t("privacyPolicy")}
             </Link>
           </label>
         </div>
@@ -290,16 +287,10 @@ export default function RegisterForm({
             className="w-full bg-[#548281] hover:bg-[#2F4858] text-white font-medium py-2.5"
             disabled={isLoading}
           >
-            {isLoading ? "Creating account..." : "Sign Up"}
+            {isLoading ? t("creatingAccount") : t("signUp")}
           </Button>
         </div>
       </form>
-
-      {/* <OrDivider text="Or continue with" />
-
-      <div className="mt-6">
-        <SocialButton provider="google">Sign up with Google</SocialButton>
-      </div> */}
     </div>
   );
 }

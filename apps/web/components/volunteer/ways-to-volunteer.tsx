@@ -3,6 +3,7 @@
 import { SanityVolunteerWaysToVolunteerSection } from "@/lib/types";
 import { ArrowRight } from "lucide-react";
 import { Button } from "../ui/button";
+import { useTranslations } from "next-intl";
 
 interface WaysToVolunteerProps {
   waysToVolunteerSection: SanityVolunteerWaysToVolunteerSection;
@@ -13,6 +14,7 @@ export default function WaysToVolunteer({
   waysToVolunteerSection,
   icons,
 }: WaysToVolunteerProps) {
+  const t = useTranslations("Volunteering_Page");
   // Create volunteer ways by combining data with icons
 
   console.log("waysToVolunteerSection", waysToVolunteerSection);
@@ -20,16 +22,14 @@ export default function WaysToVolunteer({
   const volunteerWays = [
     {
       icon: icons[0],
-      title: "High-Profile Outreach",
-      description:
-        "Connect with celebrities, politicians, and influential figures to expand our reach and impact.",
+      title: t("waysToVolunteer_card1_title"),
+      description: t("waysToVolunteer_card1_description"),
       learnMore: "#high-profile",
     },
     {
       icon: icons[1],
-      title: "Community Campaigns",
-      description:
-        "Launch local initiatives that spread our message of peace through neighborhood outreach and engagement.",
+      title: t("waysToVolunteer_card2_title"),
+      description: t("waysToVolunteer_card2_description"),
       learnMore: "#spread-word",
     },
   ];
@@ -71,7 +71,7 @@ export default function WaysToVolunteer({
                 variant="outline"
                 className="inline-flex items-center w-full justify-center rounded-full border border-[#548281] px-6 py-3 text-sm font-medium text-[#548281] group-hover:text-white shadow group-hover:bg-[#2f4858] transition-colors duration-300 ease-in-out focus:outline-none"
               >
-                Learn more{" "}
+                {t("waysToVolunteer_cards_learnMore")}{" "}
                 <ArrowRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>

@@ -1,10 +1,15 @@
-import TabsSection from "../tabs/tabs-section";
+import TabsSection, { TabsSectionRef } from "../tabs/tabs-section";
 import SidebarSection from "../sidebar/sidebar-section";
 import {
   SanityWaysToSupportTab,
   SanitySolutionsSection,
   SanityParty,
 } from "@/lib/types";
+import { forwardRef, useImperativeHandle, useRef } from "react";
+
+export interface ContentTabsRef {
+  navigateToSolutions: () => void;
+}
 
 interface ContentTabsProps {
   mainContentWidth?: string;
@@ -20,66 +25,65 @@ interface ContentTabsProps {
   parties: SanityParty[]; // Nuevo: partidos dinámicos
 }
 
-export default function ContentTabs({
-  solutionsSection,
-  waysToSupportTabs,
-  campaignId,
-  activeSolutionId,
-  onSolutionChange,
-  onCommentClick,
-  campaignSlug,
-  campaignTitle,
-  parties,
-}: ContentTabsProps) {
-  const handleSolutionClick = (solutionId: string) => {
-    onSolutionChange(solutionId);
-  };
+const ContentTabs = forwardRef<ContentTabsRef, ContentTabsProps>(
+  (
+    {
+      solutionsSection,
+      waysToSupportTabs,
+      campaignId,
+      activeSolutionId,
+      onSolutionChange,
+      onCommentClick,
+      campaignSlug,
+      campaignTitle,
+      parties,
+    },
+    ref
+  ) => {
+    const tabsSectionRef = useRef<TabsSectionRef>(null);
 
-  // const handleCommentButtonClick = (
-  //   e: React.MouseEvent,
-  //   solutionId: string
-  // ) => {
-  //   e.stopPropagation();
-  //   if (onCommentClick) {
-  //     onCommentClick(solutionId);
-  //   }
-  // };
+    const handleSolutionClick = (solutionId: string) => {
+      onSolutionChange(solutionId);
+    };
 
-  return (
-    <div className="flex flex-row gap-8" data-tab-value="comments">
-      <div className="flex flex-col w-full lg:w-[70%]">
-        <TabsSection
-          solutionsSection={solutionsSection}
-          waysToSupportTabs={waysToSupportTabs}
-          onSolutionChange={handleSolutionClick}
-          campaignId={campaignId}
-          onCommentClick={onCommentClick}
-          campaignSlug={campaignSlug}
-          campaignTitle={campaignTitle}
-          parties={parties}
-        />
-      </div>
+    // Expose the navigateToSolutions function via ref
+    useImperativeHandle(
+      ref,
+      () => ({
+        navigateToSolutions: () => {
+          tabsSectionRef.current?.navigateToSolutions();
+        },
+      }),
+      []
+    );
 
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:flex flex-col lg:w-[30%]">
-        <div className="sticky top-20">
-          <SidebarSection solutionId={activeSolutionId} />
+    return (
+      <div className="flex flex-row gap-8" data-tab-value="comments">
+        <div className="flex flex-col w-full lg:w-[70%]">
+          <TabsSection
+            ref={tabsSectionRef}
+            solutionsSection={solutionsSection}
+            waysToSupportTabs={waysToSupportTabs}
+            onSolutionChange={handleSolutionClick}
+            campaignId={campaignId}
+            onCommentClick={onCommentClick}
+            campaignSlug={campaignSlug}
+            campaignTitle={campaignTitle}
+            parties={parties}
+          />
+        </div>
+
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:flex flex-col lg:w-[30%]">
+          <div className="sticky top-20">
+            <SidebarSection solutionId={activeSolutionId} />
+          </div>
         </div>
       </div>
+    );
+  }
+);
 
-      {/* Mobile Comment Button - Only show when a solution is selected */}
-      {/* {activeSolutionId && (
-        <div className="fixed bottom-6 right-6 z-50 lg:hidden">
-          <Button 
-            size="lg" 
-            className="rounded-full w-14 h-14 p-0 shadow-lg bg-blue-500 hover:bg-blue-600 text-white"
-            aria-label="View comments"
-            onClick={(e) => handleCommentButtonClick(e, activeSolutionId)}
-          >
-            <MessageSquare className="h-6 w-6" />
-          </Button>
-        </div>
-      )} */}
-    </div>
-  );
-}
+ContentTabs.displayName = "ContentTabs";
+
+export default ContentTabs;

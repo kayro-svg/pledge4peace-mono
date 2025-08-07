@@ -262,13 +262,6 @@ export default {
           type: 'localeString',
           description: 'Main heading for the solution proposals section.',
         },
-        // {
-        //   name: 'paragraphs',
-        //   title: 'Intro Paragraphs',
-        //   type: 'array',
-        //   of: [{type: 'text'}],
-        //   description: 'Introductory paragraphs for this section.',
-        // },
         {
           name: 'introParagraphs',
           title: 'Intro Paragraphs',
@@ -643,9 +636,9 @@ export default {
   ],
   preview: {
     select: {
-      title: 'title',
-      subtitle: 'description',
-      media: 'gallery.0',
+      title: 'title.en',
+      subtitle: 'description.en',
+      media: 'gallery.0.image',
     },
   },
 }
