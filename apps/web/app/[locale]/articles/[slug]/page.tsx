@@ -173,21 +173,21 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
 
       <main className="min-h-screen bg-white">
         {/* Hero Image */}
-        <div className="relative w-full h-[400px] md:h-[500px]">
+        <div className="relative w-full h-[240px] md:h-[500px]">
           <Image
             src={article.image?.asset?.url || "/placeholder.svg"}
             alt={article.title}
             fill
-            className="object-cover"
+            className="object-contain lg:object-cover"
             priority
           />
         </div>
 
-        <div className="container mx-auto px-4 md:px-6 py-12">
+        <div className="container mx-auto px-4 md:px-6 py-6 md:py-12">
           <article className="max-w-3xl mx-auto">
             {/* Title and Meta */}
-            <header className="mb-8">
-              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+            <header className="mb-2 md:mb-8">
+              <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-0 md:mb-4">
                 {article.title}
               </h1>
 
