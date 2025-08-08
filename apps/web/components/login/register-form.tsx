@@ -5,8 +5,8 @@ import { Button } from "../ui/button";
 import Link from "next/link";
 import { FormField } from "./form-field";
 import { PasswordInput } from "./password-input";
-import { OrDivider } from "./or-divider";
-import { SocialButton } from "./social-button";
+// import { OrDivider } from "./or-divider";
+// import { SocialButton } from "./social-button";
 import { useState, useRef, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { toast } from "sonner";
@@ -38,11 +38,13 @@ interface RegisterFormData {
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
   isModal?: boolean;
+  onRegisterSuccess?: () => void;
 }
 
 export default function RegisterForm({
   onSwitchToLogin,
   isModal,
+  onRegisterSuccess,
 }: RegisterFormProps) {
   const form = useForm<RegisterFormData>();
   const [isLoading, setIsLoading] = useState(false);
@@ -104,9 +106,14 @@ export default function RegisterForm({
         toast.error("Failed to sign in after registration");
         return;
       }
-
-      // Redirigir a la ruta deseada tras login exitoso
-      router.push("/"); // Cambia "/" por la ruta que desees
+      // Tras registro + login exitoso: si estamos en modal y tenemos callback, úsalo.
+      if (isModal && typeof onRegisterSuccess === "function") {
+        onRegisterSuccess();
+      } else {
+        // Comportamiento por defecto fuera del modal
+        router.push("/");
+        router.refresh();
+      }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Registration failed"
