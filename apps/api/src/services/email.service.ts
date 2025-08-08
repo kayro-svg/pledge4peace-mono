@@ -381,6 +381,10 @@ export class EmailService {
           email: "info@pledge4peace.org",
           name: "Pledge4Peace Admin",
         },
+        {
+          email: "shelsys@pledge4peace.org",
+          name: "Shelsys Rivera - Marketing Chief",
+        },
       ],
       subject: `New Contact Form Submission: ${contactData.subject}`,
       htmlContent: `

@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ArrowRight } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createPledge, checkExistingPledge } from "@/lib/api/pledges";
 import { toast } from "sonner";
 import { useAuthSession } from "@/hooks/use-auth-session";
@@ -38,7 +38,7 @@ export default function PledgeForm({
   onNavigateToSolutions,
   onDonateIntent, // NEW PROP
 }: PledgeFormProps) {
-  const { session, status, isAuthenticated } = useAuthSession();
+  const { session, isAuthenticated } = useAuthSession();
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [subscribeToUpdates, setSubscribeToUpdates] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -48,6 +48,8 @@ export default function PledgeForm({
 
   const { getString } = useLocaleContent();
   const t = useTranslations("SingleCampaign_Page");
+  const [shouldAttemptPledgeAfterAuth, setShouldAttemptPledgeAfterAuth] =
+    useState(false);
   // Check if user has already pledged to this campaign
   useEffect(() => {
     const checkPledgeStatus = async () => {
@@ -72,14 +74,9 @@ export default function PledgeForm({
   // If we're not loading and user is not authenticated, show the pledge form
   // The login modal will be shown when they try to submit
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // If not authenticated, show login modal
-    if (!isAuthenticated) {
-      setShowLoginModal(true);
-      return;
-    }
+  const performPledge = useCallback(async () => {
+    // Guard against duplicate submissions
+    if (isSubmitting) return;
 
     // Validate form
     if (!agreeToTerms) {
@@ -95,7 +92,6 @@ export default function PledgeForm({
     setIsSubmitting(true);
 
     try {
-      // Submit the pledge
       const response = await createPledge({
         campaignId,
         campaignTitle,
@@ -103,28 +99,22 @@ export default function PledgeForm({
         subscribeToUpdates,
       });
 
-      // Update the UI to show the thank you message
       setHasPledged(true);
 
-      // Show success message with personalized text if user is logged in
       if (isAuthenticated && session?.user?.name) {
         toast.success(`Thank you for your pledge, ${session.user.name}!`);
       } else {
         toast.success("Thank you for your pledge!");
       }
 
-      // Reset form
       setAgreeToTerms(false);
       setSubscribeToUpdates(false);
 
-      // Notify parent component about the new pledge
       if (onPledgeCreated && response.pledgeCount) {
         onPledgeCreated(response.pledgeCount);
       }
 
-      // Navigate to solutions section after successful pledge
       if (onNavigateToSolutions) {
-        // Add a small delay to allow the success message to show
         setTimeout(() => {
           onNavigateToSolutions();
         }, 1500);
@@ -139,7 +129,38 @@ export default function PledgeForm({
     } finally {
       setIsSubmitting(false);
     }
+  }, [
+    agreeToTerms,
+    campaignId,
+    campaignTitle,
+    isAuthenticated,
+    isSubmitting,
+    onNavigateToSolutions,
+    onPledgeCreated,
+    session?.user?.name,
+    subscribeToUpdates,
+  ]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!isAuthenticated) {
+      setShouldAttemptPledgeAfterAuth(true);
+      setShowLoginModal(true);
+      return;
+    }
+
+    await performPledge();
   };
+
+  // After successful login/registration inside modal, attempt pledge and close modal
+  useEffect(() => {
+    if (shouldAttemptPledgeAfterAuth && isAuthenticated) {
+      setShowLoginModal(false);
+      performPledge();
+      setShouldAttemptPledgeAfterAuth(false);
+    }
+  }, [shouldAttemptPledgeAfterAuth, isAuthenticated, performPledge]);
 
   if (isLoading) {
     return (
@@ -203,8 +224,7 @@ export default function PledgeForm({
                 htmlFor="terms"
                 className="text-xs leading-snug text-gray-600"
               >
-                {getString(item as any) ||
-                  (typeof item === "string" ? item : "")}
+                {getString(item) || (typeof item === "string" ? item : "")}
               </label>
             </div>
           </div>
@@ -238,7 +258,10 @@ export default function PledgeForm({
           </DialogHeader>
           <div className="flex flex-col items-center">
             <AuthContainer
-              onLoginSuccess={() => setShowLoginModal(false)}
+              onLoginSuccess={() => {
+                setShowLoginModal(false);
+                setShouldAttemptPledgeAfterAuth(true);
+              }}
               isModal
             />
           </div>

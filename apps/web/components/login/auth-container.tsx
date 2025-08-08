@@ -39,7 +39,11 @@ export default function AuthContainer({
           onLoginSuccess={onLoginSuccess}
         />
       ) : (
-        <RegisterForm onSwitchToLogin={handleSwitchToLogin} isModal={isModal} />
+        <RegisterForm
+          onSwitchToLogin={handleSwitchToLogin}
+          isModal={isModal}
+          onRegisterSuccess={onLoginSuccess}
+        />
       )}
     </div>
   );
