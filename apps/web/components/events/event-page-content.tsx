@@ -215,11 +215,8 @@ export default function EventPageContent({
                 <div className="mt-8">
                   <h2 className="text-xl font-semibold mb-4">Speakers</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {event.speakers.map((speaker) => (
-                      <div
-                        key={speaker._id}
-                        className="flex items-center gap-4"
-                      >
+                    {event.speakers.map((speaker, index) => (
+                      <div key={index} className="flex items-center gap-4">
                         {speaker.image?.asset?.url && (
                           <div className="w-16 h-16 relative rounded-full overflow-hidden">
                             <Image

@@ -48,8 +48,8 @@ export default function MainContentSection({
             {campaign.gallery && (
               <MediaGallery
                 media={campaign.gallery}
-                overlayTitle={getString(campaign.title)}
-                overlaySubtitle={getString(campaign.description)}
+                overlayTitle={campaign.title}
+                overlaySubtitle={campaign.description}
               />
             )}
 
@@ -57,11 +57,9 @@ export default function MainContentSection({
               <div className="flex flex-col gap-4">
                 <div className="text-sm text-gray-500">pledge4peace.org</div>
                 <h1 className="text-3xl md:text-4xl font-bold">
-                  {getString(campaign.title)}
+                  {campaign.title}
                 </h1>
-                <p className="text-gray-700 mt-4">
-                  {getString(campaign.description)}
-                </p>
+                <p className="text-gray-700 mt-4">{campaign.description}</p>
               </div>
               <PledgesProgressBar
                 currentValue={displayValue}
@@ -70,7 +68,7 @@ export default function MainContentSection({
               <PledgeForm
                 pledgeCommitmentItems={campaign.pledgeCommitmentItems || []}
                 campaignId={campaignId || ""}
-                campaignTitle={getString(campaign.title) || ""}
+                campaignTitle={campaign.title || ""}
                 onPledgeCreated={handlePledgeCreated}
                 onNavigateToSolutions={onNavigateToSolutions}
                 onDonateIntent={handleDonateIntent}

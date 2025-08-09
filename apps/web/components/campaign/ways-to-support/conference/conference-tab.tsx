@@ -22,6 +22,7 @@ import {
   getEventRegistrationStatus,
 } from "@/lib/api/brevo";
 import { cleanTimezone } from "@/lib/utils/clean-timezone";
+import { useLocaleContent } from "@/hooks/use-locale-content";
 
 interface ConferenceTabProps {
   conferenceRef:
@@ -102,7 +103,8 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
   const timeInfo = formatConferenceDateTime(conference);
   const [isLoading, setIsLoading] = useState(false);
   const [isRegistered, setIsRegistered] = useState(false);
-  const { session, isAuthenticated } = useAuthSession();
+  const { session } = useAuthSession();
+  const { getString, getText } = useLocaleContent();
 
   useEffect(() => {
     if (!session) return;
@@ -261,7 +263,12 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
                 components={portableTextComponents}
               />
             ) : (
-              <p>{conference.description}</p>
+              <p>
+                {getText(
+                  (conference as unknown as { description?: unknown })
+                    .description
+                )}
+              </p>
             )}
           </div>
         </div>
@@ -272,9 +279,9 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
             <h3 className="text-lg font-semibold mb-4">Speakers</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {conference.speakers.map((speaker) => (
-                <div key={speaker._id} className="flex items-center gap-3">
+                <div key={speaker.name} className="flex items-center gap-4">
                   {speaker.image?.asset?.url && (
-                    <div className="w-12 h-12 relative rounded-full overflow-hidden">
+                    <div className="w-16 h-16 relative rounded-full overflow-hidden">
                       <Image
                         src={speaker.image.asset.url}
                         alt={speaker.name}
@@ -284,7 +291,7 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
                     </div>
                   )}
                   <div>
-                    <h4 className="font-medium">{speaker.name}</h4>
+                    <h3 className="font-semibold">{speaker.name}</h3>
                     {speaker.role && (
                       <p className="text-sm text-gray-600">{speaker.role}</p>
                     )}
