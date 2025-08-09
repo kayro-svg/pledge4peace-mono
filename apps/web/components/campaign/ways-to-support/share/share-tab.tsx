@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ShareSocialButton, ShareData } from "./share-social-button";
 import { logger } from "@/lib/utils/logger";
+import { useTranslations } from "next-intl";
 
 interface ShareTabProps {
   campaignSlug?: string;
+  // After query normalization, title is a plain string
   campaignTitle?: string;
 }
 
@@ -17,6 +19,7 @@ export default function ShareTab({
   campaignTitle,
 }: ShareTabProps) {
   const [isLinkCopied, setIsLinkCopied] = useState(false);
+  const t = useTranslations("SingleCampaign_Page");
 
   // Create campaign-specific URL
   const baseUrl =
@@ -27,10 +30,12 @@ export default function ShareTab({
     ? `${baseUrl}/campaigns/${campaignSlug}`
     : baseUrl;
 
+  const safeTitle: string | undefined = campaignTitle || undefined;
+
   const shareData: ShareData = {
-    title: campaignTitle ? `Support: ${campaignTitle}` : "Pledge for Peace",
-    text: campaignTitle
-      ? `Join me in supporting "${campaignTitle}" and other peace initiatives around the world. Together we can make a difference!`
+    title: safeTitle ? `Support: ${safeTitle}` : "Pledge for Peace",
+    text: safeTitle
+      ? `Join me in supporting "${safeTitle}" and other peace initiatives around the world. Together we can make a difference!`
       : "Join me in supporting peace initiatives around the world. Together we can make a difference!",
     url: campaignUrl,
     hashtags: "PeaceForAll,Pledge4Peace",
@@ -67,10 +72,9 @@ export default function ShareTab({
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h3 className="text-xl font-semibold">Explore other ways to help</h3>
+        <h3 className="text-xl font-semibold">{t("exploreOtherWaysToHelp")}</h3>
         <p className="text-sm text-muted-foreground">
-          Amplify our message of peace by sharing with your network and
-          community.
+          {t("amplifyOurMessageOfPeace")}
         </p>
       </div>
 
@@ -79,13 +83,12 @@ export default function ShareTab({
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Share2 className="h-5 w-5 text-primary" />
-              <h4 className="font-medium">Social Media</h4>
+              <h4 className="font-medium">{t("socialMedia")}</h4>
             </div>
             <p className="text-sm text-muted-foreground">
-              Share our campaign on WhatsApp, Facebook, X (Twitter), and
-              LinkedIn to reach your friends and followers.
+              {t("shareOurCampaignOnWhatsAppFacebookXLinkedIn")}
             </p>
-            <ShareSocialButton shareData={shareData} showNativeShareButton />
+            <ShareSocialButton shareData={shareData} />
           </CardContent>
         </Card>
 
@@ -93,11 +96,10 @@ export default function ShareTab({
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <MessageCircle className="h-5 w-5 text-primary" />
-              <h4 className="font-medium">Word of Mouth</h4>
+              <h4 className="font-medium">{t("wordOfMouth")}</h4>
             </div>
             <p className="text-sm text-muted-foreground">
-              Talk to family, friends, and colleagues about our peace initiative
-              and encourage them to get involved.
+              {t("talkToFamilyFriendsAndColleagues")}
             </p>
           </CardContent>
         </Card>
@@ -106,11 +108,12 @@ export default function ShareTab({
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
-              <h4 className="font-medium">Community Groups</h4>
+              <h4 className="font-medium">{t("communityGroups")}</h4>
             </div>
             <p className="text-sm text-muted-foreground">
-              Present our mission to local organizations, religious groups, and
-              community associations.
+              {t(
+                "presentOurMissionToLocalOrganizationsReligiousGroupsAndCommunityAssociations"
+              )}
             </p>
           </CardContent>
         </Card>
@@ -119,18 +122,17 @@ export default function ShareTab({
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Heart className="h-5 w-5 text-primary" />
-              <h4 className="font-medium">Personal Networks</h4>
+              <h4 className="font-medium">{t("personalNetworks")}</h4>
             </div>
             <p className="text-sm text-muted-foreground">
-              Send personalized messages to your contacts explaining why this
-              cause matters to you.
+              {t("sendPersonalizedMessagesToYourContacts")}
             </p>
           </CardContent>
         </Card>
       </div>
 
       <div className="bg-muted/50 rounded-lg p-4 space-y-3">
-        <h4 className="font-medium text-center">Share Our Campaign Link</h4>
+        <h4 className="font-medium text-center">{t("shareOurCampaignLink")}</h4>
         <div className="flex gap-2">
           <div className="flex-1 bg-background rounded border px-3 py-2 text-sm text-muted-foreground break-all">
             {shareData.url}

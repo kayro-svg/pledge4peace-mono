@@ -9,7 +9,7 @@ const prefetchCache = new Set<string>();
  * Safely prefetch campaign data when user hovers over campaign links
  * to improve perceived performance
  */
-export function prefetchCampaign(slug: string): void {
+export function prefetchCampaign(slug: string, lang: "en" | "es" = "en"): void {
   // Guard against empty or invalid slugs
   if (!slug || typeof slug !== "string") {
     logger.warn("[Prefetch] Invalid campaign slug provided");
@@ -27,7 +27,7 @@ export function prefetchCampaign(slug: string): void {
     // Use setTimeout to ensure this runs in the next event loop cycle
     // and doesn't block the UI thread during interaction
     setTimeout(() => {
-      getCampaignBySlug(slug)
+      getCampaignBySlug(slug, lang)
         .then((campaign) => {
           if (campaign) {
             logger.log(

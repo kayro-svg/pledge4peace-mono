@@ -13,6 +13,7 @@ import ConferenceTab from "./conference/conference-tab";
 import VolunteeringTab from "./volunteering/volunteering-tab";
 import ShareTab from "./share/share-tab";
 import { SanityWaysToSupportTab } from "@/lib/types";
+import { useTranslations } from "next-intl";
 
 interface WaysToSupportProps {
   waysToSupportTabs: SanityWaysToSupportTab[];
@@ -22,33 +23,33 @@ interface WaysToSupportProps {
 
 function DonateTab() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-
+  const t = useTranslations("SingleCampaign_Page");
   return (
     <>
       <div className="flex flex-col items-start gap-6">
         <div className="space-y-4">
           <h3 className="text-xl font-semibold text-[#2F4858]">
-            Support Peace Initiatives
+            {t("supportPeaceInitiatives")}
           </h3>
           <div className="space-y-3">
             <p className="text-sm text-[#2F4858]/80 leading-relaxed">
-              Your donation helps us expand our reach and strengthen
-              peace-building efforts worldwide. Whether one-time or monthly,
-              every contribution makes a difference.
+              {t(
+                "yourDonationHelpsUsExpandOurReachAndStrengthenPeaceBuildingEfforts"
+              )}
             </p>
             <ul className="space-y-2">
               <li className="flex items-start gap-2 text-sm text-[#2F4858]/80">
                 <DollarSign className="w-4 h-4 mt-1 text-[#548281]" />
-                <span>Fund peace-building campaigns and initiatives</span>
+                <span>{t("fundPeaceBuildingCampaignsAndInitiatives")}</span>
               </li>
               <li className="flex items-start gap-2 text-sm text-[#2F4858]/80">
                 <DollarSign className="w-4 h-4 mt-1 text-[#548281]" />
-                <span>Support operational costs and outreach programs</span>
+                <span>{t("supportOperationalCostsAndOutreachPrograms")}</span>
               </li>
               <li className="flex items-start gap-2 text-sm text-[#2F4858]/80">
                 <DollarSign className="w-4 h-4 mt-1 text-[#548281]" />
                 <span>
-                  Enable us to organize more peace conferences and events
+                  {t("enableUsToOrganizeMorePeaceConferencesAndEvents")}
                 </span>
               </li>
             </ul>
@@ -60,10 +61,10 @@ function DonateTab() {
             className="bg-[#548281] hover:bg-[#3c6665] w-full sm:w-auto"
             onClick={() => setIsModalOpen(true)}
           >
-            Make a Donation
+            {t("makeADonation")}
           </Button>
           <p className="text-xs text-[#2F4858]/60 text-center sm:text-left">
-            Secure payments • Tax deductible • Transparent impact
+            {t("securePaymentsTaxDeductibleTransparentImpact")}
           </p>
         </div>
       </div>

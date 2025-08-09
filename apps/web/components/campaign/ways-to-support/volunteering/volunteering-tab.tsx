@@ -2,17 +2,17 @@ import { Users, Megaphone, Mail, PenTool } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 
 export default function VolunteeringTab() {
   const router = useRouter();
-
+  const t = useTranslations("SingleCampaign_Page");
   return (
     <div className="space-y-6">
       <div className="text-center space-y-2">
-        <h3 className="text-xl font-semibold">Offer your time and skills</h3>
+        <h3 className="text-xl font-semibold">{t("offerYourTimeAndSkills")}</h3>
         <p className="text-sm text-muted-foreground">
-          Join our global community of volunteers dedicated to building peace
-          through meaningful action.
+          {t("joinOurGlobalCommunityOfVolunteers")}
         </p>
       </div>
 
@@ -21,11 +21,10 @@ export default function VolunteeringTab() {
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />
-              <h4 className="font-medium">High-Profile Outreach</h4>
+              <h4 className="font-medium">{t("highProfileOutreach")}</h4>
             </div>
             <p className="text-sm text-muted-foreground">
-              Connect with celebrities, politicians, and influential figures to
-              expand our reach and impact.
+              {t("connectWithCelebrities")}
             </p>
           </CardContent>
         </Card>
@@ -34,11 +33,10 @@ export default function VolunteeringTab() {
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Megaphone className="h-5 w-5 text-primary" />
-              <h4 className="font-medium">Community Campaigns</h4>
+              <h4 className="font-medium">{t("communityCampaigns")}</h4>
             </div>
             <p className="text-sm text-muted-foreground">
-              Launch local initiatives that spread our message of peace through
-              neighborhood outreach.
+              {t("launchLocalInitiatives")}
             </p>
           </CardContent>
         </Card>
@@ -47,11 +45,10 @@ export default function VolunteeringTab() {
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Mail className="h-5 w-5 text-primary" />
-              <h4 className="font-medium">Direct Mail Campaigns</h4>
+              <h4 className="font-medium">{t("directMailCampaigns")}</h4>
             </div>
             <p className="text-sm text-muted-foreground">
-              Help distribute peace messages to neighborhoods through Every Door
-              Direct Mail services.
+              {t("helpDistributePeaceMessages")}
             </p>
           </CardContent>
         </Card>
@@ -60,11 +57,10 @@ export default function VolunteeringTab() {
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center gap-2">
               <PenTool className="h-5 w-5 text-primary" />
-              <h4 className="font-medium">Educational Outreach</h4>
+              <h4 className="font-medium">{t("educationalOutreach")}</h4>
             </div>
             <p className="text-sm text-muted-foreground">
-              Encourage kids to write thoughtful messages about peace and share
-              them with neighbors.
+              {t("encourageKidsToWriteThoughtfulMessages")}
             </p>
           </CardContent>
         </Card>
@@ -72,14 +68,13 @@ export default function VolunteeringTab() {
 
       <div className="text-center space-y-3">
         <p className="text-sm text-muted-foreground">
-          Ready to make a difference? Your time and skills can help us create
-          lasting peace.
+          {t("readyToMakeADifference")}
         </p>
         <Button
           className="w-full md:w-auto"
           onClick={() => router.push("/volunteer")}
         >
-          Join Our Volunteer Team
+          {t("joinOurVolunteerTeam")}
         </Button>
       </div>
     </div>

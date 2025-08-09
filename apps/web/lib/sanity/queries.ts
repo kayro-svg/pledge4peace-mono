@@ -191,7 +191,10 @@ export async function getCampaigns(
   );
 }
 
-export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
+export async function getCampaignBySlug(
+  slug: string,
+  lang: "en" | "es" = "en"
+): Promise<SanityCampaign> {
   try {
     logger.log(`[Sanity] Fetching campaign data for: ${slug}`);
 
@@ -202,10 +205,10 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
     const campaignData = await sanityClient.fetch(
       `*[_type == "campaign" && slug.current == $slug][0] {
         _id,
-        title,
+        "title": coalesce(title[$lang], title.en),
         slug,
         category,
-        description,
+        "description": coalesce(description[$lang], description.en),
         goalPledges,
         countriesInvolved[], 
         pledgeCommitmentItems[],
@@ -218,9 +221,9 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
           video { asset-> { url } }
         },
         parties[] {
-          name,
+          "name": coalesce(name[$lang], name.en),
           slug,
-          description,
+          "description": coalesce(description[$lang], description.en),
           icon { asset-> { url } },
           color,
           solutionLimit
@@ -271,14 +274,14 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
           content,
           conferenceRef->{
             _id, 
-            title, 
+            "title": coalesce(title[$lang], title.en), 
             slug, 
             startDateTime,
             endDateTime,
             timezone,
-            location, 
+            "location": coalesce(location[$lang], location.en), 
             image { asset-> { url } }, 
-            description,
+            "description": coalesce(description[$lang], description.en),
             about[] {
               ...,
               _type == "inlineImage" => {
@@ -320,8 +323,8 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
             organizer,
             speakers[] {
               _id,
-              name,
-              role,
+              "name": coalesce(name[$lang], name.en),
+              "role": coalesce(role[$lang], role.en),
               "image": {
                 "asset": {
                   "url": image.asset->url
@@ -337,7 +340,7 @@ export async function getCampaignBySlug(slug: string): Promise<SanityCampaign> {
           }
         }
       }`,
-      { slug },
+      { slug, lang },
       {
         next: {
           revalidate: cache.medium, // ⚡ Cache inteligente por entorno

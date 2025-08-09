@@ -58,7 +58,10 @@ export default async function Page({
   logger.log(`[Campaign Page] Fetching campaign data for slug: ${slug}`);
 
   // Fetch campaign data with caching enabled via revalidate
-  const campaign = await getCampaignBySlug(slug);
+  const campaign = await getCampaignBySlug(
+    slug,
+    (locale as "en" | "es") || "en"
+  );
 
   // If campaign doesn't exist, show 404
   if (!campaign) {

@@ -106,7 +106,7 @@ export function CampaignDetailContent({
                 onSolutionChange={setActiveSolutionId}
                 onCommentClick={handleCommentClick}
                 campaignSlug={campaign?.slug?.current}
-                campaignTitle={campaign?.title}
+                campaignTitle={campaign?.title as unknown as string}
                 parties={campaign?.parties || []}
               />
 
