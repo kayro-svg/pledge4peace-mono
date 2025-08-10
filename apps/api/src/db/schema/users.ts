@@ -9,7 +9,7 @@ export const users = sqliteTable("users", {
   status: text("status", { enum: ["active", "inactive", "banned", "deleted"] })
     .notNull()
     .default("active"),
-  role: text("role", { enum: ["user", "superAdmin"] })
+  role: text("role", { enum: ["user", "moderator", "admin", "superAdmin"] })
     .notNull()
     .default("user"),
   userType: text("user_type", {

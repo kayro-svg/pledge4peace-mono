@@ -15,4 +15,7 @@ users.get(
   usersController.getSubscriptionStatus
 );
 
+// Ruta para actualizar el perfil del usuario autenticado
+users.put("/profile", authMiddleware, (c) => usersController.updateProfile(c));
+
 export { users as usersRoutes };

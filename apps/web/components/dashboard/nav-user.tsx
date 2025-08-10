@@ -53,7 +53,7 @@ export function NavUser({ user }: { user: User | null }) {
             align="start"
             sideOffset={10}
           >
-            <DropdownMenuLabel className="p-0 font-normal">
+            {/* <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
                   <AvatarImage src={user?.image || ""} alt={user?.name} />
@@ -66,8 +66,8 @@ export function NavUser({ user }: { user: User | null }) {
                   </span>
                 </div>
               </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
+            </DropdownMenuLabel> */}
+            {/* <DropdownMenuSeparator /> */}
             <DropdownMenuGroup>
               <DropdownMenuItem
                 onClick={() => router.push("/dashboard/profile")}
@@ -76,7 +76,7 @@ export function NavUser({ user }: { user: User | null }) {
                 Account
               </DropdownMenuItem>
             </DropdownMenuGroup>
-            <DropdownMenuSeparator />
+            {/* <DropdownMenuSeparator /> */}
             <DropdownMenuItem onClick={() => signOut({ callbackUrl: "/" })}>
               <LogOutIcon />
               Log out

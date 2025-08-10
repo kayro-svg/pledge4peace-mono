@@ -9,6 +9,7 @@ import { usersRoutes } from "./routes/users";
 import { volunteerRoutes } from "./routes/volunteer";
 import { contactRoutes } from "./routes/contact";
 import { userInvolvementRoutes } from "./routes/user-involvement";
+import { adminAnalyticsRoutes } from "./routes/admin-analytics";
 import { AuthService } from "./services/auth.service";
 import { BrevoListsService } from "./services/brevo-lists.service";
 import { createDb } from "./db";
@@ -36,7 +37,7 @@ app.use(
       // Add other allowed origins in production
     ],
     credentials: true, // Allow credentials (cookies, authorization headers)
-    allowMethods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
     allowHeaders: ["Content-Type", "Authorization"],
     exposeHeaders: ["Content-Length", "X-Foo", "X-Bar"],
     maxAge: 86400, // 24 hours
@@ -93,5 +94,6 @@ app.route("/api/users", usersRoutes);
 app.route("/api/volunteer", volunteerRoutes);
 app.route("/api/contact", contactRoutes);
 app.route("/api/user-involvement", userInvolvementRoutes);
+app.route("/api/admin-analytics", adminAnalyticsRoutes);
 
 export default app;

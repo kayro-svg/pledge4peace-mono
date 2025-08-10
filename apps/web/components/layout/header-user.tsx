@@ -58,10 +58,10 @@ export function HeaderUser({ user }: { user: User | null }) {
               </p>
             </div>
           </DropdownMenuLabel>
-          {/* <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+          <DropdownMenuItem onClick={() => router.push("/dashboard")}>
             <LayoutDashboardIcon />
             Dashboard
-          </DropdownMenuItem> */}
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut}>
             <LogOut className="mr-2 h-4 w-4" />

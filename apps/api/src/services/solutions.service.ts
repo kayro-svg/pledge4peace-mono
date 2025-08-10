@@ -1,7 +1,8 @@
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and, inArray, desc, sql } from "drizzle-orm";
 import { solutions } from "../db/schema/solutions";
 import { solutionInteractions } from "../db/schema/interactions";
 import { comments } from "../db/schema/comments";
+import { users } from "../db/schema/users";
 import type { DbClient } from "../types";
 
 export interface CreateSolutionDTO {
@@ -13,6 +14,7 @@ export interface CreateSolutionDTO {
   metadata?: Record<string, any>;
   // New: Party limits information from CMS
   partyLimits?: Record<string, number>;
+  status?: "draft" | "published" | "archived";
 }
 
 export interface SolutionStats {
@@ -99,7 +101,7 @@ export class SolutionsService {
         title: data.title,
         description: data.description,
         partyId: data.partyId,
-        status: "published",
+        status: data.status ?? "draft",
         createdAt: new Date(),
         updatedAt: new Date(),
         metadata: data.metadata ? JSON.stringify(data.metadata) : null,
@@ -107,6 +109,93 @@ export class SolutionsService {
       .returning();
 
     return newSolution[0];
+  }
+
+  async getSolutionsForModeration(
+    status: "draft" | "published" | "archived" = "draft",
+    campaignId?: string,
+    page: number = 1,
+    limit: number = 10,
+    q?: string
+  ): Promise<{
+    items: Array<{
+      id: string;
+      title: string;
+      description: string;
+      author: string;
+      submittedAt: Date;
+      status: "draft" | "published" | "archived";
+      campaignId: string;
+      partyId: string;
+    }>;
+    total: number;
+    page: number;
+    limit: number;
+  }> {
+    const whereConditions = [eq(solutions.status, status)] as any[];
+    if (campaignId) {
+      whereConditions.push(eq(solutions.campaignId, campaignId));
+    }
+    if (q && q.trim()) {
+      const term = `%${q.trim()}%`;
+      whereConditions.push(
+        sql`(${solutions.title} LIKE ${term} OR ${solutions.description} LIKE ${term})`
+      );
+    }
+
+    // total count
+    const totalRes = await this.db
+      .select({ count: sql<number>`count(*)`.as("count") })
+      .from(solutions)
+      .where(and(...whereConditions));
+    const total = totalRes[0]?.count || 0;
+
+    // simple join to get author name with pagination
+    const rows = await this.db
+      .select({
+        id: solutions.id,
+        title: solutions.title,
+        description: solutions.description,
+        author: users.name,
+        submittedAt: solutions.createdAt,
+        status: solutions.status,
+        campaignId: solutions.campaignId,
+        partyId: solutions.partyId,
+      })
+      .from(solutions)
+      .leftJoin(users, eq(users.id, solutions.userId))
+      .where(and(...whereConditions))
+      .orderBy(desc(solutions.createdAt))
+      .limit(limit)
+      .offset((page - 1) * limit);
+
+    const items = rows.map((r) => ({
+      ...r,
+      author: r.author || "Unknown",
+    }));
+
+    return { items, total, page, limit };
+  }
+
+  async approveAllDrafts(campaignId?: string) {
+    const whereConditions = [eq(solutions.status, "draft")] as any[];
+    if (campaignId) {
+      whereConditions.push(eq(solutions.campaignId, campaignId));
+    }
+
+    const updated = await this.db
+      .update(solutions)
+      .set({ status: "published", updatedAt: new Date() })
+      .where(and(...whereConditions))
+      .returning({
+        id: solutions.id,
+        userId: solutions.userId,
+        title: solutions.title,
+        campaignId: solutions.campaignId,
+        metadata: solutions.metadata,
+      });
+
+    return updated;
   }
 
   async getSolutionsByCampaign(
@@ -201,6 +290,34 @@ export class SolutionsService {
         status,
         updatedAt: new Date(),
       })
+      .where(eq(solutions.id, id))
+      .returning();
+
+    return updated[0];
+  }
+
+  async updateSolution(
+    id: string,
+    data: Partial<{
+      title: string;
+      description: string;
+      partyId: string;
+      metadata: Record<string, any> | null;
+    }>
+  ) {
+    const updatePayload: any = { updatedAt: new Date() };
+    if (typeof data.title === "string") updatePayload.title = data.title;
+    if (typeof data.description === "string")
+      updatePayload.description = data.description;
+    if (typeof data.partyId === "string") updatePayload.partyId = data.partyId;
+    if (data.metadata !== undefined)
+      updatePayload.metadata = data.metadata
+        ? JSON.stringify(data.metadata)
+        : null;
+
+    const updated = await this.db
+      .update(solutions)
+      .set(updatePayload)
       .where(eq(solutions.id, id))
       .returning();
 

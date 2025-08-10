@@ -20,7 +20,17 @@ export const API_ENDPOINTS = {
     getById: (id: string) => `${API_URL}/solutions/${id}`,
     getByCampaign: (campaignId: string) =>
       `${API_URL}/solutions/campaign/${campaignId}`,
+    update: (id: string) => `${API_URL}/solutions/${id}`,
     updateStatus: (id: string) => `${API_URL}/solutions/${id}/status`,
+    approve: (id: string) => `${API_URL}/solutions/${id}/status`,
+    reject: (id: string) => `${API_URL}/solutions/${id}/status`,
+    moderationList: (params?: { status?: string; campaignId?: string }) => {
+      const qs = new URLSearchParams();
+      if (params?.status) qs.set("status", params.status);
+      if (params?.campaignId) qs.set("campaignId", params.campaignId);
+      const query = qs.toString();
+      return `${API_URL}/solutions/moderation/list${query ? `?${query}` : ""}`;
+    },
     like: (id: string) => `${API_URL}/solutions/${id}/like`,
     share: (id: string) => `${API_URL}/solutions/${id}/share`,
     campaignStats: (campaignId: string) =>
@@ -52,6 +62,7 @@ export const API_ENDPOINTS = {
   users: {
     subscribe: `${API_URL}/users/subscribe`,
     subscriptionStatus: `${API_URL}/users/subscription-status`,
+    updateProfile: `${API_URL}/users/profile`,
   },
   userInvolvement: {
     dashboard: `${API_URL}/user-involvement/dashboard`,

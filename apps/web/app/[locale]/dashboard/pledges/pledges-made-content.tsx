@@ -7,15 +7,17 @@ import { useEffect, useMemo, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getCampaigns } from "@/lib/sanity/queries";
 import { logger } from "@/lib/utils/logger";
+import { useLocale } from "next-intl";
 
 export default function PledgesMadeContent() {
+  const locale = useLocale() as "en" | "es";
   const { activities, isLoading } = useUserActivities(50); // Aumentamos el límite para asegurar obtener todas las actividades relevantes
   const [campaigns, setCampaigns] = useState<SanityCampaign[]>([]);
 
   // Memorizar la promesa de obtención de campañas
   const campaignsToFetch = useMemo(() => {
-    return getCampaigns(50);
-  }, []);
+    return getCampaigns(50, locale);
+  }, [locale]);
 
   // Filtrar solo actividades de tipo "pledge"
   const pledgeActivities = useMemo(() => {

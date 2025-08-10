@@ -11,9 +11,9 @@ import {
   getActivityIcon,
   getActivityColor,
   RecentActivity,
-  formatActivityType,
 } from "@/lib/api/user-involvement";
 import { useRouter } from "next/navigation";
+import { useLocale } from "next-intl";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ActivityHistoryProps {
@@ -34,6 +34,7 @@ export function ActivityHistory({
   const [showAll, setShowAll] = useState(false);
 
   const router = useRouter();
+  const locale = useLocale() as string;
   const {
     activities,
     isActivitiesLoading: isLoading,
@@ -248,9 +249,17 @@ export function ActivityHistory({
                 key={activity.id}
                 className="flex items-start gap-4 p-4 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer"
                 onClick={() => {
-                  router.push(
-                    `/campaigns/${campaignDetails[activity.campaignId]?.slug}`
-                  );
+                  const slug = campaignDetails[activity.campaignId]?.slug;
+                  if (!slug) return;
+                  const params = new URLSearchParams();
+                  if (activity.solutionId)
+                    params.set("solutionId", activity.solutionId);
+                  if (activity.type === "comment")
+                    params.set("commentId", activity.id);
+                  params.set("action", activity.type);
+                  const prefix = locale ? `/${locale}` : "";
+                  const url = `${prefix}/campaigns/${slug}${params.toString() ? `?${params.toString()}` : ""}`;
+                  window.open(url, "_blank");
                 }}
               >
                 {/* Activity Icon */}
@@ -272,7 +281,7 @@ export function ActivityHistory({
 
                       {activity.content && (
                         <p className="text-sm text-slate-600 mt-1 line-clamp-2">
-                          "{activity.content}"
+                          &ldquo;{activity.content}&rdquo;
                         </p>
                       )}
 
@@ -298,11 +307,18 @@ export function ActivityHistory({
                         size="sm"
                         className="p-1 h-6 w-6"
                         onClick={() => {
-                          router.push(
-                            `/campaigns/${
-                              campaignDetails[activity.campaignId]?.slug
-                            }`
-                          );
+                          const slug =
+                            campaignDetails[activity.campaignId]?.slug;
+                          if (!slug) return;
+                          const params = new URLSearchParams();
+                          if (activity.solutionId)
+                            params.set("solutionId", activity.solutionId);
+                          if (activity.type === "comment")
+                            params.set("commentId", activity.id);
+                          params.set("action", activity.type);
+                          const prefix = locale ? `/${locale}` : "";
+                          const url = `${prefix}/campaigns/${slug}${params.toString() ? `?${params.toString()}` : ""}`;
+                          window.open(url, "_blank");
                         }}
                       >
                         <ExternalLink className="h-3 w-3" />

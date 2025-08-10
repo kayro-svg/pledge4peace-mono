@@ -20,7 +20,7 @@ import {
   SanityWaysToSupportTab,
 } from "@/lib/types";
 import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
 
@@ -38,6 +38,7 @@ export function CampaignDetailContent({
   // estará disponible en caché para los componentes hijos
   useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   // Estado para controlar el diálogo de comentarios
   const [isCommentsOpen, setIsCommentsOpen] = useState(false);
   const [activeSolutionId, setActiveSolutionId] = useState("");
@@ -46,6 +47,54 @@ export function CampaignDetailContent({
   const isCommentsContentMounted = useRef(false);
   // Referencia para navegar a las soluciones
   const contentTabsRef = useRef<ContentTabsRef>(null);
+  // Deep-link handler: on mount, if solutionId/commentId/action are present, navigate and focus
+  useEffect(() => {
+    const solutionId = searchParams.get("solutionId");
+    const commentId = searchParams.get("commentId");
+    const action = searchParams.get("action");
+
+    if (solutionId) {
+      setActiveSolutionId(solutionId);
+      // Navigate to solutions tab and scroll
+      setTimeout(() => {
+        contentTabsRef.current?.navigateToSolutions();
+
+        // If commentId provided, open comments sidebar/dialog
+        if (commentId) {
+          // For desktop, ensure comments section is visible by selecting the solution
+          // For mobile (<1024), open dialog
+          if (window.innerWidth < 1024) {
+            setIsCommentsOpen(true);
+          }
+          // Ensure SidebarSection renders the selected solution's comments on desktop
+          // by keeping activeSolutionId set, CommentsSection will mount for that ID
+
+          // Try to highlight the comment element if rendered with data-comment-id
+          setTimeout(() => {
+            const commentEl = document.querySelector(
+              `[data-comment-id="${commentId}"] .comment-item, [data-comment-id="${commentId}"]`
+            );
+            if (commentEl) {
+              (commentEl as HTMLElement).scrollIntoView({
+                behavior: "smooth",
+                block: "center",
+              });
+              (commentEl as HTMLElement).classList.add(
+                "ring-2",
+                "ring-[#2F4858]/40"
+              );
+              setTimeout(() => {
+                (commentEl as HTMLElement).classList.remove(
+                  "ring-2",
+                  "ring-[#2F4858]/40"
+                );
+              }, 2000);
+            }
+          }, 600);
+        }
+      }, 200);
+    }
+  }, [searchParams]);
 
   // Precargar el componente SidebarSection solo cuando sea necesario
   useEffect(() => {

@@ -244,7 +244,7 @@
     "commentDeleted": "Comentario eliminado correctamente",
     "commentAndRepliesDeleted": "Comentario y {count} respuestas eliminadas correctamente",
     "failedToDelete": "Error al eliminar",
-    "confirmDeletion": "¿Estás seguro de querer eliminar este {type}?",
+    "confirmDeletion": "¿Estás seguro de querer eliminarlo?",
     "confirmDeletionDescription": "Esta acción no puede ser deshecha.",
     "adminAction": "Acción de Administrador",
     "adminActionDescription": "Estás eliminando contenido creado por otro usuario.",

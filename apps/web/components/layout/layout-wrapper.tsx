@@ -9,12 +9,23 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const noHeaderFooterRoutes = [
     "/login",
+    "/es/login",
     "/signup",
+    "/es/signup",
     "/reset-password",
+    "/es/reset-password",
     "/dashboard",
+    "/es/dashboard",
     "/dashboard/pledges",
+    "/es/dashboard/pledges",
     "/dashboard/involvement",
+    "/es/dashboard/involvement",
     "/dashboard/profile",
+    "/es/dashboard/profile",
+    "/dashboard/moderate-campaigns-solutions",
+    "/es/dashboard/moderate-campaigns-solutions",
+    "/dashboard/analytics",
+    "/es/dashboard/analytics",
   ];
   const showHeaderFooter = !noHeaderFooterRoutes.includes(pathname);
 

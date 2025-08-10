@@ -1,8 +1,87 @@
 import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { logger } from "../utils/logger";
+import { z } from "zod";
+import { createDb } from "../db";
+import { users } from "../db/schema/users";
+import { eq } from "drizzle-orm";
 
 export class UsersController {
+  async updateProfile(c: Context) {
+    try {
+      const user = c.get("user");
+      if (!user) {
+        return c.json({ message: "Authentication required" }, 401);
+      }
+
+      const body = await c.req.json();
+
+      // Allow updating a safe subset of fields
+      const schema = z
+        .object({
+          name: z.string().min(2).max(100).optional(),
+          image: z.string().url().max(2048).optional(),
+          // userType and extras can be enabled later with business rules
+          // userType: z.enum(["citizen","politician","organization","student","other"]).optional(),
+          // office: z.string().optional(),
+          // organization: z.string().optional(),
+          // institution: z.string().optional(),
+          // otherRole: z.string().optional(),
+        })
+        .strict();
+
+      const validation = schema.safeParse(body);
+      if (!validation.success) {
+        return c.json({ message: "Invalid input data" }, 400);
+      }
+
+      const db = createDb(c.env.DB);
+      const now = new Date();
+
+      // Build update set
+      const updateSet: any = { updatedAt: now };
+      if (typeof validation.data.name !== "undefined") {
+        updateSet.name = validation.data.name.trim();
+      }
+      if (typeof validation.data.image !== "undefined") {
+        updateSet.image = validation.data.image || null;
+      }
+
+      // Persist
+      const updated = await db
+        .update(users)
+        .set(updateSet)
+        .where(eq(users.id, user.id))
+        .returning({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          image: users.image,
+          role: users.role,
+          status: users.status,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+        });
+
+      const result = updated[0];
+      if (!result) {
+        return c.json({ message: "User not found" }, 404);
+      }
+
+      return c.json(
+        {
+          success: true,
+          user: result,
+        },
+        200
+      );
+    } catch (error) {
+      if (error instanceof HTTPException)
+        return c.json((error as any).body, error.status);
+      logger.error("Error updating user profile:", error);
+      return c.json({ message: "Error updating profile" }, 500);
+    }
+  }
   async subscribe(c: Context) {
     try {
       // Verificar que el usuario esté autenticado

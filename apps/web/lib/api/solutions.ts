@@ -74,6 +74,113 @@ export async function getSolutions(campaignId: string): Promise<Solution[]> {
   }
 }
 
+export async function submitSolution(payload: {
+  campaignId: string;
+  title: string;
+  description: string;
+  partyId: string;
+  partyLimits?: Record<string, number>;
+  metadata?: Record<string, any>;
+}): Promise<Solution> {
+  // Always submit as draft (pending moderation)
+  const endpoint = API_ENDPOINTS.solutions.create.replace(
+    process.env.NEXT_PUBLIC_API_URL || "",
+    ""
+  );
+  const data = await apiClient.post<Solution>(endpoint, {
+    ...payload,
+    status: "draft",
+  });
+  // invalidate cache so list refresh reflects moderation state if needed
+  invalidateSolutionsCache(payload.campaignId);
+  return data;
+}
+
+export async function approveSolution(id: string): Promise<any> {
+  const endpoint = API_ENDPOINTS.solutions
+    .updateStatus(id)
+    .replace(process.env.NEXT_PUBLIC_API_URL || "", "");
+  return apiClient.patch(endpoint, { status: "published" });
+}
+
+export async function rejectSolution(
+  id: string,
+  reason?: string
+): Promise<any> {
+  const endpoint = API_ENDPOINTS.solutions
+    .updateStatus(id)
+    .replace(process.env.NEXT_PUBLIC_API_URL || "", "");
+  return apiClient.patch(endpoint, { status: "archived", reason });
+}
+
+export async function updateSolution(
+  id: string,
+  payload: Partial<{
+    title: string;
+    description: string;
+    partyId: string;
+    metadata: Record<string, any> | null;
+  }>
+) {
+  const endpoint = API_ENDPOINTS.solutions
+    .update(id)
+    .replace(process.env.NEXT_PUBLIC_API_URL || "", "");
+  const data = await apiClient.patch(endpoint, payload);
+  // Invalidate caches broadly since content changed
+  invalidateAllSolutionsCache();
+  return data as Solution;
+}
+
+export async function revertSolutionToDraft(
+  id: string,
+  reason?: string
+): Promise<any> {
+  const endpoint = API_ENDPOINTS.solutions
+    .updateStatus(id)
+    .replace(process.env.NEXT_PUBLIC_API_URL || "", "");
+  return apiClient.patch(endpoint, { status: "draft", reason });
+}
+
+export type ModerationRow = {
+  id: string;
+  title: string;
+  description: string;
+  author: string;
+  submittedAt: string;
+  status: "draft" | "published" | "archived";
+  campaignId: string;
+  partyId: string;
+};
+
+export async function getModerationList(params?: {
+  status?: "draft" | "published" | "archived";
+  campaignId?: string;
+  page?: number;
+  limit?: number;
+  q?: string;
+}): Promise<{
+  items: ModerationRow[];
+  total: number;
+  page: number;
+  limit: number;
+}> {
+  const qs = new URLSearchParams();
+  if (params?.status) qs.set("status", params.status);
+  if (params?.campaignId) qs.set("campaignId", params.campaignId);
+  if (params?.page) qs.set("page", String(params.page));
+  if (params?.limit) qs.set("limit", String(params.limit));
+  if (params?.q) qs.set("q", params.q);
+  const path = `/solutions/moderation/list${qs.toString() ? `?${qs.toString()}` : ""}`;
+  return apiClient.get(path);
+}
+
+export async function approveAllDrafts(campaignId?: string) {
+  const qs = new URLSearchParams();
+  if (campaignId) qs.set("campaignId", campaignId);
+  const path = `/solutions/moderation/approve-all${qs.toString() ? `?${qs.toString()}` : ""}`;
+  return apiClient.post(path);
+}
+
 export async function likeSolution(solutionId: string) {
   try {
     return await apiClient.post<{

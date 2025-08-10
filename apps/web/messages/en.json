@@ -243,7 +243,7 @@
     "commentDeleted": "Comment deleted successfully",
     "commentAndRepliesDeleted": "Comment and replies deleted successfully",
     "failedToDelete": "Failed to delete",
-    "confirmDeletion": "Are you sure you want to delete this {type}?",
+    "confirmDeletion": "Are you sure you want to delete it?",
     "confirmDeletionDescription": "This action cannot be undone.",
     "adminAction": "Admin Action",
     "adminActionDescription": "You are deleting content created by another user.",

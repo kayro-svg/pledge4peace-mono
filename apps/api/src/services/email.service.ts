@@ -579,4 +579,116 @@ export class EmailService {
 
     return await response.json();
   }
+
+  /**
+   * Notifica al admin que hay una nueva solución para moderar
+   */
+  async sendNewSolutionModerationNotification(payload: {
+    authorName: string;
+    authorEmail: string;
+    title: string;
+    description?: string;
+    campaignId: string;
+    campaignTitle?: string;
+    campaignSlug?: string;
+  }) {
+    const body = {
+      sender: { name: this.fromName, email: this.fromEmail },
+      to: [
+        // { email: "info@pledge4peace.org", name: "Pledge4Peace Admin" },
+        // { email: "shelsys@pledge4peace.org", name: "Shelsys Rivera" },
+        { email: "kayrov@weversity.org", name: "kayro developer" },
+      ],
+      subject: `New solution submitted for moderation – ${payload.title}`,
+      htmlContent: `
+        <h1>New Solution Submitted</h1>
+        <p><strong>Author:</strong> ${payload.authorName} (${payload.authorEmail})</p>
+        <p><strong>Campaign:</strong> ${payload.campaignTitle || payload.campaignSlug || "(unknown)"}</p>
+        ${payload.campaignSlug ? `<p><a href="https://www.pledge4peace.org/campaigns/${payload.campaignSlug}" target="_blank">Open related campaign</a></p>` : ""}
+        <p><strong>Title:</strong> ${payload.title}</p>
+        ${payload.description ? `<p><strong>Description:</strong> ${payload.description}</p>` : ""}
+        <p>Please review this solution in the <a href="https://pledge4peace.org/dashboard/moderate-campaigns-solutions" target="_blank">moderation dashboard</a>.</p>
+      `,
+    };
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error(
+        "Brevo sendNewSolutionModerationNotification error:",
+        response.status,
+        text
+      );
+      throw new Error("Failed to send moderation notification email");
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Notifica al autor el resultado de la moderación (aprobado/rechazado)
+   */
+  async sendSolutionModerationResult(payload: {
+    to: string;
+    userName?: string;
+    result: "approved" | "rejected";
+    title: string;
+    reason?: string;
+    campaignTitle?: string;
+    campaignId?: string;
+    campaignSlug?: string;
+  }) {
+    const subjectPrefix =
+      payload.result === "approved"
+        ? "Your solution was approved"
+        : "Your solution was rejected";
+    const body = {
+      sender: { name: this.fromName, email: this.fromEmail },
+      to: [
+        {
+          email: payload.to,
+          name: payload.userName || payload.to.split("@")[0],
+        },
+      ],
+      subject: `${subjectPrefix} – ${payload.title}`,
+      htmlContent: `
+        <h1>${subjectPrefix}</h1>
+        <p>Hello ${payload.userName || "there"},</p>
+        <p>Your solution <strong>${payload.title}</strong> has been <strong>${payload.result}</strong> by our moderators.</p>
+        ${payload.campaignTitle || payload.campaignSlug ? `<p><strong>Campaign:</strong> ${payload.campaignTitle || payload.campaignSlug}</p>` : ""}
+        ${payload.campaignSlug ? `<p><a href="https://www.pledge4peace.org/campaigns/${payload.campaignSlug}" target="_blank">Open related campaign</a></p>` : ""}
+        ${payload.result === "rejected" && payload.reason ? `<p><strong>Reason:</strong> ${payload.reason}</p>` : ""}
+        <p>Thank you for contributing to Pledge4Peace.</p>
+      `,
+    };
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error(
+        "Brevo sendSolutionModerationResult error:",
+        response.status,
+        text
+      );
+      throw new Error("Failed to send moderation result email");
+    }
+
+    return await response.json();
+  }
 }

@@ -37,7 +37,7 @@ const handler = NextAuth({
             createdAt: data.user.createdAt,
             accessToken: data.token,
           };
-        } catch (error) {
+        } catch {
           throw new Error("Authentication failed");
         }
       },
@@ -48,7 +48,7 @@ const handler = NextAuth({
     maxAge: 7 * 24 * 60 * 60, // 7 days to match backend token expiration
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         // Guardar todos los datos relevantes del usuario en el token
         token.accessToken = user.accessToken as string;
@@ -56,7 +56,9 @@ const handler = NextAuth({
         token.userId = user.id as string;
         token.userEmail = user.email as string;
         token.userName = user.name as string;
-        token.userRole = (user.role as "user" | "superAdmin") || "user";
+        token.userRole =
+          (user.role as "user" | "moderator" | "admin" | "superAdmin") ||
+          "user";
         token.createdAt = user.createdAt as Date;
 
         // Extract expiration from backend JWT token
@@ -68,6 +70,18 @@ const handler = NextAuth({
           }
         } catch (error) {
           console.error("Error parsing backend token:", error);
+        }
+      }
+
+      // Allow client-side session.update() to update token fields
+      if (trigger === "update" && session && typeof session === "object") {
+        const s = session as { user?: { name?: string; image?: string } };
+        if (s.user?.name) {
+          token.userName = s.user.name;
+        }
+        if (s.user?.image) {
+          (token as unknown as Record<string, unknown>).userImage =
+            s.user.image;
         }
       }
 
@@ -100,9 +114,19 @@ const handler = NextAuth({
         session.user.email = (token.userEmail as string) || session.user.email;
         session.user.name = (token.userName as string) || session.user.name;
         session.user.emailVerified = token.emailVerified as boolean | null;
-        session.user.role = (token.userRole as "user" | "superAdmin") || "user";
+        session.user.role =
+          (token.userRole as "user" | "moderator" | "admin" | "superAdmin") ||
+          "user";
         session.user.accessToken = token.accessToken as string;
         session.user.createdAt = token.createdAt as Date;
+        // sync image when present in token
+        const tokenRecord = token as unknown as Record<
+          string,
+          string | number | boolean | null | undefined
+        >;
+        if (typeof tokenRecord.userImage === "string") {
+          session.user.image = tokenRecord.userImage;
+        }
       }
 
       // También agregar el token a la raíz de la sesión para compatibilidad

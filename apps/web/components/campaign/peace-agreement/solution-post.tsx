@@ -4,11 +4,23 @@ import { ChevronDown, TrendingUp, ChevronUp } from "lucide-react";
 import SolutionActionsBar from "./solution-actions-bar";
 import AdminActions from "@/components/admin/admin-actions";
 import { Solution } from "@/lib/types/index";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useInteractions } from "../shared/interaction-context";
 import { useAdminPermissions } from "@/hooks/use-admin-permissions";
 import { PartyConfig } from "./peace-agreement-content";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { updateSolution } from "@/lib/api/solutions";
 
 interface SolutionPostProps {
   solution: Solution;
@@ -36,12 +48,19 @@ export default function SolutionPost({
   postPartyConfig,
 }: SolutionPostProps) {
   const { getInteractionCount, updateCommentCount } = useInteractions();
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editData, setEditData] = useState({
+    title: solution.title,
+    description: solution.description || "",
+  });
 
   // Get comment count from context
   const commentCount = getInteractionCount("comment", solution.id);
 
   // Hook para verificar permisos de administración
-  const { canDelete } = useAdminPermissions();
+  const { canEdit } = useAdminPermissions();
 
   // Callback to update comment count in the UI when a comment is added
   const handleCommentAdded = () => {
@@ -59,6 +78,19 @@ export default function SolutionPost({
       updateCommentCount(solution.id, solution.stats.comments);
     }
   }, [solution.stats?.comments, commentCount, solution.id, updateCommentCount]);
+
+  // If this solution becomes the active target, ensure it is scrolled into view from inside the card as a fallback
+  useEffect(() => {
+    if (!rootRef.current) return;
+    if (solution.id !== activeSolutionId) return;
+    // Only scroll if the element is not sufficiently in viewport
+    const rect = rootRef.current.getBoundingClientRect();
+    const buffer = 80; // header offset
+    const inView = rect.top >= buffer && rect.bottom <= window.innerHeight;
+    if (!inView) {
+      rootRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [activeSolutionId, solution.id]);
 
   // Handle interaction from action bar (like, dislike, share, comment)
   const handleInteraction = (
@@ -82,11 +114,14 @@ export default function SolutionPost({
 
   return (
     <div
-      className={`group border ${
+      id={`solution-${solution.id}`}
+      data-solution-id={solution.id}
+      className={`solution-card group border ${
         solution.id === activeSolutionId
           ? "border-[#2F4858] ring-2 ring-[#2F4858]/20"
           : "border-gray-200"
       } hover:border-[#2F4858] hover:ring-2 hover:ring-[#2F4858]/20 rounded-2xl overflow-hidden bg-white transition-all`}
+      ref={rootRef}
       onClick={() => {
         if (onSolutionChange && solution.id !== activeSolutionId) {
           onSolutionChange(solution.id);
@@ -102,8 +137,18 @@ export default function SolutionPost({
             </div>
 
             <div className="flex items-center gap-2">
+              {showPartyBadge && (
+                <Badge
+                  className={`${postPartyConfig?.[solution.partyId]?.color || ""} hover:bg-transparent`}
+                >
+                  <span className="mr-1">
+                    {postPartyConfig?.[solution.partyId]?.icon}
+                  </span>
+                  {postPartyConfig?.[solution.partyId]?.label}
+                </Badge>
+              )}
               {/* Botón de administración - Solo visible si el usuario tiene permisos */}
-              {canDelete(solution.userId) && (
+              {canEdit() && (
                 <AdminActions
                   type="solution"
                   resourceId={solution.id}
@@ -117,18 +162,15 @@ export default function SolutionPost({
                       window.location.reload();
                     }
                   }}
-                  className="md:opacity-0 group-hover:opacity-100 transition-opacity"
+                  onEditClick={() => {
+                    setEditData({
+                      title: solution.title,
+                      description: solution.description || "",
+                    });
+                    setIsEditOpen(true);
+                  }}
+                  className="md:opacity-100 group-hover:opacity-100 transition-opacity"
                 />
-              )}
-              {showPartyBadge && (
-                <Badge
-                  className={`${postPartyConfig?.[solution.partyId]?.color || ""} hover:bg-transparent`}
-                >
-                  <span className="mr-1">
-                    {postPartyConfig?.[solution.partyId]?.icon}
-                  </span>
-                  {postPartyConfig?.[solution.partyId]?.label}
-                </Badge>
               )}
             </div>
           </div>
@@ -187,6 +229,68 @@ export default function SolutionPost({
         }}
         solutionToShare={solution.title}
       />
+
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Solution</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="edit-title">Title</Label>
+              <Input
+                id="edit-title"
+                value={editData.title}
+                onChange={(e) =>
+                  setEditData((p) => ({ ...p, title: e.target.value }))
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-description">Description</Label>
+              <Textarea
+                id="edit-description"
+                value={editData.description}
+                onChange={(e) =>
+                  setEditData((p) => ({ ...p, description: e.target.value }))
+                }
+                className="min-h-[150px]"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setIsEditOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    setIsSaving(true);
+                    await updateSolution(solution.id, {
+                      title: editData.title,
+                      description: editData.description,
+                    });
+                    toast.success("Solution updated");
+                    setIsEditOpen(false);
+                    // Best-effort UI refresh via provided callback
+                    if (onRefresh) await onRefresh();
+                  } catch {
+                    toast.error("Failed to update solution");
+                  } finally {
+                    setIsSaving(false);
+                  }
+                }}
+                disabled={
+                  isSaving ||
+                  !editData.title.trim() ||
+                  !editData.description.trim()
+                }
+              >
+                {isSaving ? "Saving..." : "Save"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
