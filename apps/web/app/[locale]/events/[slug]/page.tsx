@@ -2,6 +2,7 @@
 import EventPageContent from "@/components/events/event-page-content";
 import { getConferenceBySlug } from "@/lib/sanity/queries";
 import { SanityConference } from "@/lib/types";
+import { logger } from "@/lib/utils/logger";
 
 interface Props {
   params: { locale: "en" | "es"; slug: string };
@@ -16,6 +17,8 @@ export default async function EventPage({ params }: Props) {
     slug,
     locale
   );
+
+  logger.log("Event page", { event });
 
   if (!event) {
     return (

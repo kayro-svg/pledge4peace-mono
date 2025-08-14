@@ -5,5 +5,6 @@ export default createMiddleware(routing);
 
 // Configure the matcher to exclude static files, API routes, etc.
 export const config = {
-  matcher: ["/((?!api|_next|.*\\..*).*)"],
+  // Exclude api, next internals, static files, and custom embed routes
+  matcher: ["/((?!api|_next|embeds|.*\\..*).*)"],
 };

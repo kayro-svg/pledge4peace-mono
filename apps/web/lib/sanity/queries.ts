@@ -723,7 +723,23 @@ export async function getConferenceBySlug(
 
       image{ asset->{ url } },
 
-      about[],
+      about[]{
+        ...,
+        _type == "reference" => @->{
+          _type,
+          _id,
+          "slug": slug.current,
+          html,
+          height
+        },
+        _type == "brevoFormRef" => @->{
+          _type,
+          _id,
+          "slug": slug.current,
+          html,
+          height
+        }
+      },
 
       speakers[]{
         _id,

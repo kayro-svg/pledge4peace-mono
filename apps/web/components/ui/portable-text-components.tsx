@@ -1,6 +1,15 @@
 import Image from "next/image";
 import { PortableTextComponents } from "@portabletext/react";
 import { PortableText } from "@portabletext/react";
+import BrevoFormIframe from "@/components/ui/brevo-form-iframe";
+
+// Iframe para formularios de Brevo servidos desde /embeds/brevo/[id]
+const BrevoFormBlock = ({ value }: any) => {
+  const id = value?.slug || value?._id || value?._ref;
+  if (!id) return null;
+  const height = value?.height || 1100;
+  return <BrevoFormIframe id={id} height={height} />;
+};
 
 // Componente para renderizar imágenes inline con opciones avanzadas
 const InlineImageComponent = ({ value }: any) => {
@@ -182,6 +191,8 @@ export const portableTextComponents: PortableTextComponents = {
     callout: CalloutComponent,
     divider: DividerComponent,
     columns: ColumnsComponent,
+    brevoForm: BrevoFormBlock,
+    brevoFormRef: BrevoFormBlock,
   },
   block: {
     // Estilos personalizados para los diferentes tipos de bloque
