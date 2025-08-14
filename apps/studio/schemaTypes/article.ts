@@ -410,6 +410,13 @@ export default {
             },
           ],
         },
+        // Referencia a formulario de Brevo (reutilizable)
+        {
+          type: 'reference',
+          name: 'brevoFormRef',
+          title: 'Brevo Form',
+          to: [{type: 'brevoForm'}],
+        },
       ],
     },
   ],
