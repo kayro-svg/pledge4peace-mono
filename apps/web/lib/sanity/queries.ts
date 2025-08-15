@@ -232,6 +232,20 @@ export async function getCampaignBySlug(
           heading,
           introParagraphs[] {
               ...,
+              _type == "reference" => @->{
+                _type,
+                _id,
+                "slug": slug.current,
+                html,
+                height
+              },
+              _type == "brevoFormRef" => @->{
+                _type,
+                _id,
+                "slug": slug.current,
+                html,
+                height
+              },
               _type == "inlineImage" => {
                 ...,
                 asset-> {
@@ -284,6 +298,20 @@ export async function getCampaignBySlug(
             "description": coalesce(description[$lang], description.en),
             about[] {
               ...,
+              _type == "reference" => @->{
+                _type,
+                _id,
+                "slug": slug.current,
+                html,
+                height
+              },
+              _type == "brevoFormRef" => @->{
+                _type,
+                _id,
+                "slug": slug.current,
+                html,
+                height
+              },
               _type == "inlineImage" => {
                 ...,
                 asset-> {
@@ -611,6 +639,20 @@ export async function getArticleBySlug(
         },
         content[] {
           ...,
+          _type == "reference" => @->{
+            _type,
+            _id,
+            "slug": slug.current,
+            html,
+            height
+          },
+          _type == "brevoFormRef" => @->{
+            _type,
+            _id,
+            "slug": slug.current,
+            html,
+            height
+          },
           _type == "inlineImage" => {
             ...,
             asset-> {
@@ -726,7 +768,23 @@ export async function getConferenceBySlug(
 
       image{ asset->{ url } },
 
-      about[],
+      about[]{
+        ...,
+        _type == "reference" => @->{
+          _type,
+          _id,
+          "slug": slug.current,
+          html,
+          height
+        },
+        _type == "brevoFormRef" => @->{
+          _type,
+          _id,
+          "slug": slug.current,
+          html,
+          height
+        }
+      },
 
       speakers[]{
         _id,
