@@ -14,8 +14,8 @@
     "cf-typegen": "wrangler types",
     "generate": "drizzle-kit generate:sqlite",
     "migrate": "wrangler d1 migrations apply pledge4peace-db",
-    "migrate:preview": "wrangler d1 migrations apply preview-pledge4peace-db --env preview",
-    "migrate:prod": "wrangler d1 migrations apply pledge4peace-db --env production",
+    "migrate:preview": "wrangler d1 migrations apply preview-pledge4peace-db --env preview --remote",
+    "migrate:prod": "wrangler d1 migrations apply pledge4peace-db --env production --remote",
     "studio": "drizzle-kit studio"
   },
   "dependencies": {

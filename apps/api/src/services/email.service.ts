@@ -317,7 +317,8 @@ export class EmailService {
       },
       to: [
         {
-          email: "info@pledge4peace.org",
+          // email: "info@pledge4peace.org",
+          email: "kayrov@weversity.org",
           name: "Pledge4Peace Admin",
         },
       ],
@@ -530,13 +531,17 @@ export class EmailService {
         email: this.fromEmail,
       },
       to: [
+        // {
+        //   email: "info@pledge4peace.org",
+        //   name: "Pledge4Peace Admin",
+        // },
+        // {
+        //   email: "shelsys@pledge4peace.org",
+        //   name: "Shelsys Rivera - Marketing Chief",
+        // },
         {
-          email: "info@pledge4peace.org",
-          name: "Pledge4Peace Admin",
-        },
-        {
-          email: "shelsys@pledge4peace.org",
-          name: "Shelsys Rivera - Marketing Chief",
+          email: "kayrov@weversity.org",
+          name: "kayro developer",
         },
       ],
       subject: `New Pledge from ${pledgeData.userName}`,

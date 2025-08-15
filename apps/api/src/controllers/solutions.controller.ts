@@ -13,6 +13,9 @@ import { solutions } from "../db/schema/solutions";
 import { users } from "../db/schema/users";
 import { and, eq } from "drizzle-orm";
 import { logger } from "../utils/logger";
+import { NotificationsService } from "../services/notifications.service";
+import { users as usersTable } from "../db/schema/users";
+import { inArray } from "drizzle-orm";
 
 // Validación de entrada para crear una solución
 const createSolutionSchema = z.object({
@@ -166,6 +169,42 @@ export class SolutionsController {
             // Optional: include slug if needed later in email templates
             // campaignSlug: (validation.data.metadata as any)?.campaignSlug,
           });
+          // Also notify moderators/admins/superAdmin in-app (best-effort)
+          try {
+            const moderators = await db
+              .select({ id: usersTable.id })
+              .from(usersTable)
+              .where(
+                inArray(usersTable.role as any, [
+                  "moderator",
+                  "admin",
+                  "superAdmin",
+                ])
+              );
+            const notif = new NotificationsService(db, c.env.KV as KVNamespace);
+            await Promise.all(
+              moderators.map((m) =>
+                notif.create({
+                  userId: m.id,
+                  type: "moderation_new_draft",
+                  title: "New solution pending review",
+                  body: `${user.name} submitted "${validation.data.title}"`,
+                  href: `/dashboard/moderate-campaigns-solutions`,
+                  meta: {
+                    campaignId: validation.data.campaignId,
+                    solutionId: solution.id,
+                    campaignSlug:
+                      (validation.data.metadata &&
+                        (validation.data.metadata as any).campaignSlug) ||
+                      undefined,
+                  },
+                  actorId: user.id,
+                  resourceType: "solution",
+                  resourceId: solution.id,
+                })
+              )
+            );
+          } catch {}
         } catch (e) {
           // non-blocking
         }

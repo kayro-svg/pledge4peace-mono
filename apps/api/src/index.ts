@@ -10,6 +10,7 @@ import { volunteerRoutes } from "./routes/volunteer";
 import { contactRoutes } from "./routes/contact";
 import { userInvolvementRoutes } from "./routes/user-involvement";
 import { adminAnalyticsRoutes } from "./routes/admin-analytics";
+import { notificationsRoutes } from "./routes/notifications";
 import { AuthService } from "./services/auth.service";
 import { BrevoListsService } from "./services/brevo-lists.service";
 import { createDb } from "./db";
@@ -95,5 +96,6 @@ app.route("/api/volunteer", volunteerRoutes);
 app.route("/api/contact", contactRoutes);
 app.route("/api/user-involvement", userInvolvementRoutes);
 app.route("/api/admin-analytics", adminAnalyticsRoutes);
+app.route("/api/notifications", notificationsRoutes);
 
 export default app;

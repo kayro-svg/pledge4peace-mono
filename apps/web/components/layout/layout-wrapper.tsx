@@ -26,6 +26,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     "/es/dashboard/moderate-campaigns-solutions",
     "/dashboard/analytics",
     "/es/dashboard/analytics",
+    "/dashboard/notifications",
+    "/es/dashboard/notifications",
   ];
   const showHeaderFooter = !noHeaderFooterRoutes.includes(pathname);
 
