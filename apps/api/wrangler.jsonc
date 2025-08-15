@@ -19,11 +19,14 @@
       "preview_id": "725495fb08f642848f85463d9cf65240",
     },
   ],
-  "vars": {
-    "FROM_EMAIL": "info@pledge4peace.org",
-    "NODE_ENV": "production",
-    "FRONTEND_URL": "https://pledge4peace.vercel.app",
-  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pledge4peace-db",
+      "database_id": "19ad10db-15a2-4791-97f1-e9cbc5eb64ed",
+      "migrations_dir": "./src/db/migrations",
+    },
+  ],
   "env": {
     "preview": {
       "name": "pledge4peace-api-preview",

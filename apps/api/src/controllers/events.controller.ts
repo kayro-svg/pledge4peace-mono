@@ -41,8 +41,7 @@ export class EventsController {
 
         let brevoResult;
         if (
-          existingContact &&
-          existingContact.listIds &&
+          Array.isArray(existingContact?.listIds) &&
           existingContact.listIds.includes(25)
         ) {
           // El usuario ya está en la lista de subscribers, agregarlo también a conference attendees
@@ -164,8 +163,9 @@ export class EventsController {
         // Verificar si el usuario está en la lista de conference attendees
         const contact = await brevoListsService.getContact(user.email);
 
-        const isRegistered =
-          contact && contact.listIds && contact.listIds.includes(23); // Conference Attendees list ID
+        const isRegistered = Array.isArray(contact?.listIds)
+          ? contact.listIds.includes(23)
+          : false; // Conference Attendees list ID
 
         return c.json(
           {
@@ -176,7 +176,7 @@ export class EventsController {
               name: user.name,
             },
             isRegistered: !!isRegistered,
-            registrationDate: contact?.createdAt || null,
+            registrationDate: (contact as any)?.createdAt || null,
           },
           200
         );

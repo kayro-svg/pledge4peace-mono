@@ -227,7 +227,7 @@ export class BrevoListsService {
         // Si el contacto ya existe (código 400), intentamos actualizarlo
         if (
           response.status === 400 &&
-          errorText.includes("Contact already exist")
+          (errorText || "").includes("Contact already exist")
         ) {
           return this.updateExistingContact(contact);
         }

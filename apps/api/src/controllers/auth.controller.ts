@@ -186,7 +186,7 @@ export class AuthController {
       if (error instanceof HTTPException) {
         return c.json((error as any).body, error.status);
       }
-      logger.error("Error logging in:", error);
+      logger.error("Error logging in:", error, (error as any)?.stack);
       return c.json({ message: "Error logging in" }, 500);
     }
   }

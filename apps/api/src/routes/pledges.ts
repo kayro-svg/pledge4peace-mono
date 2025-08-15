@@ -81,21 +81,22 @@ pledgesRoutes.get("/campaign/:campaignId/count", async (c) => {
 
     // If no record exists, count directly from pledges table
     const result = await db
-      .select({ count: sql`count(*)` })
+      .select({ count: sql<number>`count(*)` })
       .from(pledges)
       .where(
         and(eq(pledges.campaignId, campaignId), eq(pledges.status, "active"))
       )
       .then((rows) => rows[0]);
 
-    const count = result[0]?.count || 0;
+    const count = result?.count ?? 0;
 
     // Create a record in the campaign_pledge_counts table for future use
-    await db.insert(campaignPledgeCounts).values({
+    const newCountRow: typeof campaignPledgeCounts.$inferInsert = {
       campaignId,
       count,
       lastUpdated: new Date(),
-    });
+    };
+    await db.insert(campaignPledgeCounts).values(newCountRow);
 
     return c.json({ count });
   } catch (error) {

@@ -101,8 +101,7 @@ export class UsersController {
         const existingContact = await brevoListsService.getContact(user.email);
 
         if (
-          existingContact &&
-          existingContact.listIds &&
+          Array.isArray(existingContact?.listIds) &&
           existingContact.listIds.includes(25)
         ) {
           return c.json(
@@ -189,11 +188,13 @@ export class UsersController {
         // Verificar si el usuario está en la lista de subscribers
         const contact = await brevoListsService.getContact(user.email);
 
-        const isSubscribed =
-          contact && contact.listIds && contact.listIds.includes(25); // Subscribers list ID
+        const isSubscribed = Array.isArray(contact?.listIds)
+          ? contact.listIds.includes(25)
+          : false; // Subscribers list ID
 
-        const isConferenceAttendee =
-          contact && contact.listIds && contact.listIds.includes(23); // Conference Attendees list ID
+        const isConferenceAttendee = Array.isArray(contact?.listIds)
+          ? contact.listIds.includes(23)
+          : false; // Conference Attendees list ID
 
         return c.json(
           {
@@ -204,7 +205,7 @@ export class UsersController {
             },
             isSubscribed: !!isSubscribed,
             isConferenceAttendee: !!isConferenceAttendee,
-            subscriptionDate: contact?.createdAt || null,
+            subscriptionDate: (contact as any)?.createdAt || null,
             brevoContactData: contact || null,
           },
           200
@@ -237,28 +238,28 @@ export class UsersController {
   //     if (!user) {
   //       return c.json({ message: "Authentication required" }, 401);
   //     }
-
+  //
   //     const brevoListsService = c.get("brevoListsService");
-
+  //
   //     const { campaignId, campaignTitle } = await c.req.json();
-
+  //
   //     if (!campaignId || !campaignTitle) {
   //       return c.json({ message: "Campaign ID and title are required" }, 400);
   //     }
-
+  //
   //     try {
   //       const contact = await brevoListsService.getContact(user.email);
-
+  //
   //       if (!contact) {
   //         return c.json({ message: "User not found" }, 404);
   //       }
-
+  //
   //       await brevoListsService.addToCampaignsList(
   //         contact,
   //         campaignId,
   //         campaignTitle
   //       );
-
+  //
   //       return c.json({
   //         message: "User pledged to campaign",
   //         user: {
