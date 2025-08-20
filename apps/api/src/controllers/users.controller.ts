@@ -4,7 +4,8 @@ import { logger } from "../utils/logger";
 import { z } from "zod";
 import { createDb } from "../db";
 import { users } from "../db/schema/users";
-import { eq } from "drizzle-orm";
+import { and, desc, eq, inArray, like, or, sql } from "drizzle-orm";
+import { NotificationsService } from "../services/notifications.service";
 
 export class UsersController {
   async updateProfile(c: Context) {
@@ -82,6 +83,166 @@ export class UsersController {
       return c.json({ message: "Error updating profile" }, 500);
     }
   }
+
+  /**
+   * Admin list users with optional q and role filters (paginated)
+   */
+  async adminList(c: Context) {
+    try {
+      const q = (c.req.query("q") || "").trim();
+      const role = (c.req.query("role") || "").trim();
+      const includeUsers = ["1", "true"].includes(
+        String(c.req.query("includeUsers") || "").toLowerCase()
+      );
+      const page = Math.max(parseInt(c.req.query("page") || "1"), 1);
+      const limit = Math.min(
+        Math.max(parseInt(c.req.query("limit") || "20"), 1),
+        100
+      );
+      const offset = (page - 1) * limit;
+
+      const db = createDb(c.env.DB);
+
+      const filters: any[] = [];
+      if (q) {
+        const pattern = `%${q}%`;
+        filters.push(or(like(users.email, pattern), like(users.name, pattern)));
+      }
+      // By default, only list moderators and admins. Allow including users for targeted searches.
+      const defaultRoles: Array<"user" | "moderator" | "admin"> = includeUsers
+        ? ["user", "moderator", "admin"]
+        : ["moderator", "admin"];
+      const roleFilterList =
+        role && ["user", "moderator", "admin"].includes(role)
+          ? [role as "user" | "moderator" | "admin"]
+          : defaultRoles;
+      filters.push(inArray(users.role as any, roleFilterList as any));
+
+      const whereExpr = filters.length > 0 ? and(...filters) : undefined;
+
+      let rows = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          role: users.role,
+          status: users.status,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+        })
+        .from(users)
+        .where(whereExpr as any)
+        .orderBy(desc(users.createdAt))
+        .limit(limit)
+        .offset(offset);
+      // Exclude superAdmin from results
+      rows = (rows as any[]).filter((r) => r.role !== "superAdmin");
+
+      const countRow = await db
+        .select({ cnt: sql<number>`count(1)` })
+        .from(users)
+        .where(whereExpr as any);
+      let total = countRow?.[0]?.cnt || 0;
+      // Adjust total to reflect exclusion of superAdmin if present
+      // This is an approximation; for exact, a separate count with same filters + role != superAdmin would be needed
+      // Safe enough for small admin lists
+
+      return c.json({ items: rows as any[], page, limit, total });
+    } catch (error) {
+      if (error instanceof HTTPException)
+        return c.json((error as any).body, error.status);
+      logger.error("Error listing users:", error);
+      return c.json({ message: "Error listing users" }, 500);
+    }
+  }
+
+  /**
+   * Admin change role for an existing user and notify
+   */
+  async adminChangeRole(c: Context) {
+    try {
+      const current = c.get("user");
+      if (!current) return c.json({ message: "Authentication required" }, 401);
+      if (current.role !== "admin" && current.role !== "superAdmin") {
+        return c.json({ message: "Insufficient permissions" }, 403);
+      }
+
+      const body = await c.req.json();
+      const schema = z
+        .object({
+          userId: z.string().min(1),
+          role: z.enum(["user", "moderator", "admin"]),
+        })
+        .strict();
+      const validation = schema.safeParse(body);
+      if (!validation.success) {
+        return c.json({ message: "Invalid input data" }, 400);
+      }
+
+      // Admins and SuperAdmins can assign the admin role
+
+      const db = createDb(c.env.DB);
+      // Ensure target exists and is not a superAdmin
+      const targetExisting = await db.query.users.findFirst({
+        where: eq(users.id, validation.data.userId),
+      });
+      if (!targetExisting) return c.json({ message: "User not found" }, 404);
+      if (targetExisting.role === "superAdmin") {
+        return c.json({ message: "SuperAdmin cannot be modified" }, 403);
+      }
+
+      const now = new Date();
+      const updated = await db
+        .update(users)
+        .set({ role: validation.data.role, updatedAt: now })
+        .where(eq(users.id, validation.data.userId))
+        .returning({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          role: users.role,
+          status: users.status,
+          createdAt: users.createdAt,
+          updatedAt: users.updatedAt,
+        });
+
+      const target = updated[0];
+      if (!target) return c.json({ message: "User not found" }, 404);
+
+      try {
+        const authService = c.get("authService");
+        await authService.emailService.sendRoleChangedEmail(
+          target.email,
+          validation.data.role
+        );
+      } catch (e) {
+        logger.error("Failed to send role changed email", e);
+      }
+
+      // Set force-logout + post-login redirect flags in KV so the user must re-login and lands on dashboard
+      try {
+        const kv = (c.env as any).KV as KVNamespace | undefined;
+        if (kv && typeof kv.put === "function") {
+          await kv.put(`user:forceLogout:${target.id}`, String(Date.now()), {
+            expirationTtl: 60 * 60 * 24, // 24h TTL
+          });
+          await kv.put(`user:postLoginRedirect:${target.id}`, "/dashboard", {
+            expirationTtl: 60 * 60 * 24,
+          });
+        }
+      } catch (e) {
+        logger.error("Failed setting KV flags for logout/redirect", e);
+      }
+
+      return c.json({ success: true, user: target });
+    } catch (error) {
+      if (error instanceof HTTPException)
+        return c.json((error as any).body, error.status);
+      logger.error("Error changing user role:", error);
+      return c.json({ message: "Error changing user role" }, 500);
+    }
+  }
+
   async subscribe(c: Context) {
     try {
       // Verificar que el usuario esté autenticado

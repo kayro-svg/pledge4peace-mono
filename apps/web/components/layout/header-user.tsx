@@ -20,12 +20,18 @@ import {
   User as UserIcon,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useAuthSession } from "@/hooks/use-auth-session";
+import { useNotificationsStream } from "@/hooks/use-notifications-stream";
 import { clearAllUserInteractions } from "@/lib/utils/interaction-utils";
 import { useTranslations } from "next-intl";
 
 export function HeaderUser({ user }: { user: User | null }) {
   const router = useRouter();
   const t = useTranslations("Header");
+  const { session } = useAuthSession();
+  const { unread } = useNotificationsStream(
+    (session?.accessToken as string | undefined) || null
+  );
   const handleSignOut = () => {
     // Clear all user-specific data from sessionStorage
     clearAllUserInteractions();
@@ -47,6 +53,11 @@ export function HeaderUser({ user }: { user: User | null }) {
                 )}
               </AvatarFallback>
             </Avatar>
+            {unread > 0 && (
+              <span className="absolute -top-2 right-[-9px] text-[10px] bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center">
+                {unread}
+              </span>
+            )}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end" forceMount>

@@ -21,6 +21,7 @@ import { Button } from "../ui/button";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LanguageSwitcher } from "./language-switcher";
+import { NotificationSound } from "@/components/notifications/notification-sound";
 
 export default function SiteHeader() {
   const router = useRouter();
@@ -44,6 +45,7 @@ export default function SiteHeader() {
 
   return (
     <>
+      <NotificationSound />
       <header className="w-full py-4 px-4 sm:px-6 flex justify-between items-center border-b sticky top-0 bg-background backdrop-blur-sm z-50 shadow-sm">
         {/* Logo */}
         <div className="flex items-center cursor-pointer">

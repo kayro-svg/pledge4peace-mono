@@ -19,6 +19,58 @@ export class EmailService {
   }
 
   /**
+   * Notifica al usuario que su rol ha cambiado
+   */
+  async sendRoleChangedEmail(
+    to: string,
+    newRole: "user" | "moderator" | "admin" | "superAdmin"
+  ) {
+    const roleLabel =
+      newRole === "superAdmin"
+        ? "Super Admin"
+        : newRole.charAt(0).toUpperCase() + newRole.slice(1);
+    const body = {
+      sender: {
+        name: this.fromName,
+        email: this.fromEmail,
+      },
+      to: [
+        {
+          email: to,
+          name: to.split("@")[0],
+        },
+      ],
+      subject: `Your role has been updated to ${roleLabel} – Pledge4Peace`,
+      htmlContent: `
+        <h1>Role Updated</h1>
+        <p>Hello,</p>
+        <p>Your account role on <strong>Pledge4Peace</strong> has been updated to <strong>${roleLabel}</strong>.</p>
+        <p>This grants you new permissions within the platform. If you did not expect this change, please contact support.</p>
+        <p>Thank you for supporting our mission.</p>
+        <br>
+        <p>Best regards,<br>The Pledge4Peace Team</p>
+      `,
+    };
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error("Brevo sendRoleChangedEmail error:", response.status, text);
+      throw new Error("Failed to send role changed email");
+    }
+
+    return await response.json();
+  }
+
+  /**
    * Envía un correo de verificación de cuenta usando fetch hacia Brevo.
    */
   async sendVerificationEmail(to: string, token: string, baseUrl: string) {
@@ -317,9 +369,13 @@ export class EmailService {
       },
       to: [
         {
-          // email: "info@pledge4peace.org",
-          email: "kayrov@weversity.org",
+          email: "info@pledge4peace.org",
+          // email: "kayrov@weversity.org",
           name: "Pledge4Peace Admin",
+        },
+        {
+          email: "shelsys@pledge4peace.org",
+          name: "Shelsys Rivera - Marketing Chief",
         },
       ],
       subject: "New User Registration - Pledge4Peace",
@@ -531,18 +587,18 @@ export class EmailService {
         email: this.fromEmail,
       },
       to: [
-        // {
-        //   email: "info@pledge4peace.org",
-        //   name: "Pledge4Peace Admin",
-        // },
-        // {
-        //   email: "shelsys@pledge4peace.org",
-        //   name: "Shelsys Rivera - Marketing Chief",
-        // },
         {
-          email: "kayrov@weversity.org",
-          name: "kayro developer",
+          email: "info@pledge4peace.org",
+          name: "Pledge4Peace Admin",
         },
+        {
+          email: "shelsys@pledge4peace.org",
+          name: "Shelsys Rivera - Marketing Chief",
+        },
+        // {
+        //   email: "kayrov@weversity.org",
+        //   name: "kayro developer",
+        // },
       ],
       subject: `New Pledge from ${pledgeData.userName}`,
       htmlContent: `
@@ -600,9 +656,9 @@ export class EmailService {
     const body = {
       sender: { name: this.fromName, email: this.fromEmail },
       to: [
-        // { email: "info@pledge4peace.org", name: "Pledge4Peace Admin" },
-        // { email: "shelsys@pledge4peace.org", name: "Shelsys Rivera" },
-        { email: "kayrov@weversity.org", name: "kayro developer" },
+        { email: "info@pledge4peace.org", name: "Pledge4Peace Admin" },
+        { email: "shelsys@pledge4peace.org", name: "Shelsys Rivera" },
+        // { email: "kayrov@weversity.org", name: "kayro developer" },
       ],
       subject: `New solution submitted for moderation – ${payload.title}`,
       htmlContent: `

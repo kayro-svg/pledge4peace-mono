@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { useNotificationsStream } from "@/hooks/use-notifications-stream";
 import Link from "next/link";
@@ -11,15 +11,21 @@ import {
 } from "@/lib/api/notifications";
 import { getCampaigns } from "@/lib/sanity/queries";
 import { useLocale } from "next-intl";
+import { apiClient } from "@/lib/api-client";
+import { API_ENDPOINTS } from "@/lib/config";
+import { useSession } from "next-auth/react";
+import { Link as I18nLink } from "@/i18n/navigation";
 
 export function NotificationsBell() {
   const { session } = useAuthSession();
   const { items, unread, setUnread } = useNotificationsStream(
     session?.accessToken as string | undefined
   );
+  const { update } = useSession();
   const [open, setOpen] = useState(false);
   const locale = useLocale() as "en" | "es";
   const slugMapRef = useRef<Record<string, string>>({});
+  const bcRef = useRef<BroadcastChannel | null>(null);
 
   const onToggle = async () => {
     const willOpen = !open;
@@ -121,6 +127,8 @@ export function NotificationsBell() {
     }
   }, [items, groupableTypes]);
 
+  // Role-change refresh removed; logout flow now handles re-login
+
   type NotificationMeta = {
     campaignId?: string;
     slug?: string;
@@ -173,6 +181,13 @@ export function NotificationsBell() {
     if (meta?.commentId) params.set("commentId", String(meta.commentId));
     return `/campaigns/${slug}${params.toString() ? `?${params.toString()}` : ""}`;
   };
+
+  useEffect(() => {
+    bcRef.current = new BroadcastChannel("notif");
+    return () => {
+      bcRef.current?.close();
+    };
+  }, []);
 
   if (!session) return null;
 
@@ -227,6 +242,10 @@ export function NotificationsBell() {
                           grp.unreadIds.map((id) => markRead(id))
                         );
                         setUnread((u) => Math.max(0, u - grp.unreadIds.length));
+                        bcRef.current?.postMessage({
+                          type: "unread-delta",
+                          delta: -grp.unreadIds.length,
+                        });
                       }
                     } catch {
                       /* ignore */
@@ -246,6 +265,10 @@ export function NotificationsBell() {
                       if (!single.readAt) {
                         await markRead(single.id);
                         setUnread((u) => Math.max(0, u - 1));
+                        bcRef.current?.postMessage({
+                          type: "unread-delta",
+                          delta: -1,
+                        });
                       }
                     } catch {
                       /* ignore */
@@ -285,17 +308,26 @@ export function NotificationsBell() {
           )}
           <div className="p-2 text-right">
             <div className="flex items-center justify-between">
-              <Link
-                href="/dashboard/notifications"
-                className="text-xs underline text-blue-500"
-              >
-                View all
-              </Link>
+              <div className="flex items-center gap-2">
+                <I18nLink
+                  href="/dashboard/notifications"
+                  className="text-xs underline text-blue-500"
+                >
+                  View all
+                </I18nLink>
+                <I18nLink
+                  href="/dashboard/notifications#prefs"
+                  className="text-xs text-gray-600 hover:text-gray-900 underline"
+                >
+                  Settings
+                </I18nLink>
+              </div>
               <button
                 onClick={async () => {
                   try {
                     await markAllRead();
                     setUnread(0);
+                    bcRef.current?.postMessage({ type: "unread-reset" });
                   } catch {
                     /* ignore */
                   }

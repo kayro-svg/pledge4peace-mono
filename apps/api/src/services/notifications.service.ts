@@ -1,6 +1,8 @@
 import { ulid } from "ulid";
 import { and, eq, gt, lt, isNull } from "drizzle-orm";
 import { notifications } from "../db/schema/notifications";
+import { users } from "../db/schema/users";
+import { eq as dEq } from "drizzle-orm";
 
 type Database = ReturnType<typeof import("../db").createDb>;
 
@@ -31,6 +33,18 @@ export class NotificationsService {
     resourceId?: string;
     priority?: "low" | "normal" | "high";
   }) {
+    // Respect user in-app preference (best-effort)
+    try {
+      const pref = await this.db
+        .select({ inapp: users.notifyInapp })
+        .from(users)
+        .where(dEq(users.id, input.userId))
+        .then((r) => r[0]);
+      if (pref && Number(pref.inapp) === 0) {
+        return { id: undefined, createdAt: new Date() } as any;
+      }
+    } catch {}
+
     const id = ulid();
     const createdAt = new Date();
 

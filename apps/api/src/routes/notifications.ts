@@ -5,6 +5,7 @@ import { NotificationsService } from "../services/notifications.service";
 import { and, eq, gt, asc, inArray, isNull } from "drizzle-orm";
 import { notifications } from "../db/schema/notifications";
 import { users } from "../db/schema/users";
+import { z } from "zod";
 import { verify } from "hono/jwt";
 
 type Bindings = {
@@ -230,4 +231,40 @@ notificationsRoutes.get("/stream", async (c) => {
       Connection: "keep-alive",
     },
   });
+});
+
+// Preferences: get
+notificationsRoutes.get("/preferences", authMiddleware, async (c) => {
+  const user = getAuthUser(c);
+  const db = createDb(c.env.DB);
+  const row = await db
+    .select({ inapp: users.notifyInapp, email: users.notifyEmail })
+    .from(users)
+    .where(eq(users.id, user.id))
+    .then((r) => r[0]);
+  return c.json({
+    inappEnabled: row ? Number(row.inapp) !== 0 : true,
+    emailEnabled: row ? Number(row.email) !== 0 : true,
+  });
+});
+
+// Preferences: update
+notificationsRoutes.post("/preferences", authMiddleware, async (c) => {
+  const user = getAuthUser(c);
+  const db = createDb(c.env.DB);
+  const body = await c.req.json().catch(() => ({}));
+  const schema = z.object({
+    inappEnabled: z.boolean().optional(),
+    emailEnabled: z.boolean().optional(),
+  });
+  const parse = schema.safeParse(body);
+  if (!parse.success) return c.json({ error: "Invalid body" }, 400);
+  const payload: any = {};
+  if (parse.data.inappEnabled !== undefined)
+    payload.notifyInapp = parse.data.inappEnabled ? 1 : 0;
+  if (parse.data.emailEnabled !== undefined)
+    payload.notifyEmail = parse.data.emailEnabled ? 1 : 0;
+  if (Object.keys(payload).length === 0) return c.json({});
+  await db.update(users).set(payload).where(eq(users.id, user.id));
+  return c.json({ success: true });
 });

@@ -32,4 +32,6 @@ export const users = sqliteTable("users", {
   lastSeenNotificationsAt: integer("last_seen_notifications_at", {
     mode: "timestamp",
   }),
+  notifyInapp: integer("notify_inapp").notNull().default(1),
+  notifyEmail: integer("notify_email").notNull().default(1),
 });

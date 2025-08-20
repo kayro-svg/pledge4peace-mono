@@ -47,3 +47,18 @@ export async function getUnreadCount() {
   const endpoint = `${API_URL}/notifications/unread-count`.replace(API_URL, "");
   return apiClient.get<{ count: number }>(endpoint);
 }
+
+export async function getPreferences() {
+  const endpoint = `${API_URL}/notifications/preferences`.replace(API_URL, "");
+  return apiClient.get<{ inappEnabled: boolean; emailEnabled: boolean }>(
+    endpoint
+  );
+}
+
+export async function updatePreferences(prefs: {
+  inappEnabled?: boolean;
+  emailEnabled?: boolean;
+}) {
+  const endpoint = `${API_URL}/notifications/preferences`.replace(API_URL, "");
+  return apiClient.post<{ success: boolean }>(endpoint, prefs);
+}

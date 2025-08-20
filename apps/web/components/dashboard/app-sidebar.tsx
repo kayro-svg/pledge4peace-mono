@@ -63,6 +63,12 @@ const data = {
       icon: FileCodeIcon,
       type: "privileged" as const,
     },
+    {
+      title: "Manage Roles",
+      url: "/dashboard/roles",
+      icon: LayoutDashboardIcon,
+      type: "adminOnly" as const,
+    },
   ],
   // navClouds: [
   //   {

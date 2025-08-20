@@ -8,6 +8,9 @@ import {
 } from "@/lib/api/notifications";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { getPreferences, updatePreferences } from "@/lib/api/notifications";
 import { getCampaigns } from "@/lib/sanity/queries";
 import { useLocale } from "next-intl";
 
@@ -36,6 +39,10 @@ export default function Page() {
   const [hasMore, setHasMore] = useState(true);
   const locale = useLocale() as "en" | "es";
   const [slugMap, setSlugMap] = useState<Record<string, string>>({});
+  const [prefs, setPrefs] = useState<{
+    inappEnabled: boolean;
+    emailEnabled: boolean;
+  } | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -54,6 +61,17 @@ export default function Page() {
       }
     })();
   }, [locale]);
+
+  // Load notification preferences
+  useEffect(() => {
+    (async () => {
+      if (!session) return;
+      try {
+        const p = await getPreferences();
+        setPrefs(p);
+      } catch {}
+    })();
+  }, [session]);
 
   const enrichHref = useCallback(
     (n: NotificationItem) => {
@@ -122,6 +140,42 @@ export default function Page() {
 
   return (
     <div className="flex flex-col gap-4 p-4">
+      <div id="prefs" />
+      {prefs && (
+        <div className="border rounded p-3">
+          <h3 className="text-sm font-semibold mb-2">
+            Notification preferences
+          </h3>
+          <div className="flex items-center gap-3 mb-2">
+            <Switch
+              id="inapp"
+              checked={prefs.inappEnabled}
+              onCheckedChange={async (val) => {
+                const next = { ...prefs, inappEnabled: Boolean(val) };
+                setPrefs(next);
+                try {
+                  await updatePreferences({ inappEnabled: Boolean(val) });
+                } catch {}
+              }}
+            />
+            <Label htmlFor="inapp">In-app notifications</Label>
+          </div>
+          <div className="flex items-center gap-3">
+            <Switch
+              id="email"
+              checked={prefs.emailEnabled}
+              onCheckedChange={async (val) => {
+                const next = { ...prefs, emailEnabled: Boolean(val) };
+                setPrefs(next);
+                try {
+                  await updatePreferences({ emailEnabled: Boolean(val) });
+                } catch {}
+              }}
+            />
+            <Label htmlFor="email">Email notifications</Label>
+          </div>
+        </div>
+      )}
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Notifications</h2>
         <Button

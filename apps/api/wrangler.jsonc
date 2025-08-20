@@ -60,12 +60,13 @@
           "migrations_dir": "./src/db/migrations",
         },
       ],
-      // "kv_namespaces": [
-      //   {
-      //     "binding": "KV",
-      //     "id": "c6bf24de3ea846f9b69772819581163a",
-      //   },
-      // ],
+      "kv_namespaces": [
+        {
+          "binding": "KV",
+          // Usar el namespace de PRODUCCIÓN explícitamente en este entorno
+          "id": "c6bf24de3ea846f9b69772819581163a",
+        },
+      ],
       "vars": {
         "NODE_ENV": "production",
         "FROM_EMAIL": "info@pledge4peace.org",

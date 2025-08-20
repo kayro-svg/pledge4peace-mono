@@ -28,6 +28,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     "/es/dashboard/analytics",
     "/dashboard/notifications",
     "/es/dashboard/notifications",
+    "/dashboard/roles",
+    "/es/dashboard/roles",
   ];
   const showHeaderFooter = !noHeaderFooterRoutes.includes(pathname);
 

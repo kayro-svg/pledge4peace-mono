@@ -257,46 +257,76 @@ export class SolutionsController {
       }
 
       // Email notify author about result (best-effort)
-      // Only notify when moving to published (approved) or archived (rejected). Skip when reverting to draft.
-      if (status !== "draft") {
+      // Only notify when moving to published (approved). Skip when reverting to draft or rejecting (archived).
+      if (status === "published") {
         try {
           const authService = c.get("authService");
           const author = await db.query.users.findFirst({
             where: eq(users.id, solution.userId),
-            columns: { email: true, name: true },
+            columns: { email: true, name: true, notifyEmail: true },
           });
           if (author?.email) {
             try {
-              await authService.emailService.sendSolutionModerationResult({
-                to: author.email,
-                userName: author.name || undefined,
-                result: status === "published" ? "approved" : "rejected",
-                title: solution.title,
-                reason,
-                campaignTitle: (() => {
-                  try {
-                    return solution.metadata
-                      ? JSON.parse(solution.metadata as any).campaignTitle
-                      : undefined;
-                  } catch (e) {
-                    return undefined;
-                  }
-                })(),
-                campaignId: solution.campaignId,
-                campaignSlug: (() => {
-                  try {
-                    return solution.metadata
-                      ? JSON.parse(solution.metadata as any).campaignSlug
-                      : undefined;
-                  } catch (e) {
-                    return undefined;
-                  }
-                })(),
-              });
+              if (Number((author as any).notifyEmail ?? 1) !== 0)
+                await authService.emailService.sendSolutionModerationResult({
+                  to: author.email,
+                  userName: author.name || undefined,
+                  result: "approved",
+                  title: solution.title,
+                  reason,
+                  campaignTitle: (() => {
+                    try {
+                      return solution.metadata
+                        ? JSON.parse(solution.metadata as any).campaignTitle
+                        : undefined;
+                    } catch (e) {
+                      return undefined;
+                    }
+                  })(),
+                  campaignId: solution.campaignId,
+                  campaignSlug: (() => {
+                    try {
+                      return solution.metadata
+                        ? JSON.parse(solution.metadata as any).campaignSlug
+                        : undefined;
+                    } catch (e) {
+                      return undefined;
+                    }
+                  })(),
+                });
             } catch (e) {
               logger.error("Error sending solution moderation result:", e);
             }
           }
+          // In-app notification to the author (best-effort)
+          try {
+            const notif = new NotificationsService(db, c.env.KV as KVNamespace);
+            const metaParsed = (() => {
+              try {
+                return solution.metadata
+                  ? JSON.parse(solution.metadata as any)
+                  : undefined;
+              } catch (e) {
+                return undefined;
+              }
+            })();
+            await notif.create({
+              userId: solution.userId,
+              type: "solution_approved",
+              title: "Your solution was approved",
+              body: solution.title,
+              href: undefined,
+              meta: {
+                solutionId: solution.id,
+                campaignId: solution.campaignId,
+                campaignSlug: metaParsed?.campaignSlug,
+                campaignTitle: metaParsed?.campaignTitle,
+              },
+              actorId: user.id,
+              resourceType: "solution",
+              resourceId: solution.id,
+            });
+          } catch {}
         } catch (e) {
           // non-blocking
         }
@@ -409,6 +439,35 @@ export class SolutionsController {
             });
           } catch {}
         }
+        // In-app notification to each author (best-effort)
+        try {
+          const notif = new NotificationsService(db, c.env.KV as KVNamespace);
+          const metaParsed = (() => {
+            try {
+              return item.metadata
+                ? JSON.parse(item.metadata as any)
+                : undefined;
+            } catch (e) {
+              return undefined;
+            }
+          })();
+          await notif.create({
+            userId: item.userId,
+            type: "solution_approved",
+            title: "Your solution was approved",
+            body: item.title,
+            href: undefined,
+            meta: {
+              solutionId: item.id,
+              campaignId: item.campaignId,
+              campaignSlug: metaParsed?.campaignSlug,
+              campaignTitle: metaParsed?.campaignTitle,
+            },
+            actorId: user.id,
+            resourceType: "solution",
+            resourceId: item.id,
+          });
+        } catch {}
       }
 
       return c.json({

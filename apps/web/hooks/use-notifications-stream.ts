@@ -123,6 +123,13 @@ export function useNotificationsStream(accessToken?: string | null) {
         idsRef.current.add(n.id);
         setItems((prev) => [n, ...prev].slice(0, 100));
         if (!e.data?.hydrating) setUnread((n) => n + 1);
+        try {
+          window.dispatchEvent(
+            new CustomEvent("p2p:new-notification", {
+              detail: { id: n.id, hydrating: !!e.data?.hydrating },
+            })
+          );
+        } catch {}
       }
     };
 
@@ -165,6 +172,13 @@ export function useNotificationsStream(accessToken?: string | null) {
           });
           setItems((prev) => [data, ...prev].slice(0, 100));
           if (!hydratingRef.current) setUnread((n) => n + 1);
+          try {
+            window.dispatchEvent(
+              new CustomEvent("p2p:new-notification", {
+                detail: { id: data.id, hydrating: hydratingRef.current },
+              })
+            );
+          } catch {}
         } catch {
           /* ignore */
         }

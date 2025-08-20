@@ -33,3 +33,42 @@ export async function updateUserProfile(
   );
   return response.user;
 }
+
+export type UserListItem = {
+  id: string;
+  email: string;
+  name: string;
+  role: "user" | "moderator" | "admin" | "superAdmin";
+  status: string;
+  createdAt: number | string | Date;
+  updatedAt: number | string | Date;
+};
+
+export async function adminListUsers(params?: {
+  q?: string;
+  role?: "user" | "moderator" | "admin" | "superAdmin";
+  page?: number;
+  limit?: number;
+  includeUsers?: boolean;
+}): Promise<{
+  items: UserListItem[];
+  page: number;
+  limit: number;
+  total: number;
+}> {
+  const endpoint = API_ENDPOINTS.users
+    .adminList(params)
+    .replace(process.env.NEXT_PUBLIC_API_URL || "", "");
+  return apiClient.get(endpoint);
+}
+
+export async function adminChangeUserRole(payload: {
+  userId: string;
+  role: "user" | "moderator" | "admin";
+}): Promise<{ success: boolean; user: UserListItem }> {
+  const endpoint = API_ENDPOINTS.users.changeRole.replace(
+    process.env.NEXT_PUBLIC_API_URL || "",
+    ""
+  );
+  return apiClient.post(endpoint, payload);
+}

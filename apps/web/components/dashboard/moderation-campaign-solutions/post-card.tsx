@@ -8,7 +8,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -79,12 +78,8 @@ export function PostCard({ post, onStatusChange }: PostCardProps) {
   };
 
   const handleReject = async () => {
-    if (!rejectionReason.trim()) {
-      toast.error("Please provide a reason for rejection");
-      return;
-    }
     try {
-      await rejectSolution(String(post.id), rejectionReason);
+      await rejectSolution(String(post.id));
       toast.success(`Post "${post.title.slice(0, 30)}..." rejected`);
       onStatusChange?.(post.id, "rejected");
     } catch {
@@ -266,18 +261,10 @@ export function PostCard({ post, onStatusChange }: PostCardProps) {
               <AlertDialogHeader>
                 <AlertDialogTitle>Reject Post</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Please provide a reason for rejecting this post. This will be
-                  visible to the author.
+                  Are you sure you want to reject this post?
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <div className="py-4">
-                <Textarea
-                  placeholder="Enter rejection reason..."
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                  className="min-h-[100px]"
-                />
-              </div>
+              <div className="py-1" />
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction

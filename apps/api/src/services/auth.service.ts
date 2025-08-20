@@ -283,6 +283,30 @@ export class AuthService {
     );
   }
 
+  /**
+   * Mint a fresh JWT for the given user id using current DB role/state
+   */
+  async refreshTokenForUser(userId: string) {
+    const user = await this.db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+    if (!user) {
+      throw new HTTPException(404, { message: "User not found" });
+    }
+    const token = await this.generateToken(user);
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        emailVerified: user.emailVerified === 1,
+        role: user.role || "user",
+        createdAt: user.createdAt,
+      },
+      token,
+    };
+  }
+
   async getUserById(id: string) {
     const user = await this.db.query.users.findFirst({
       where: eq(users.id, id),

@@ -103,14 +103,11 @@ export async function approveSolution(id: string): Promise<any> {
   return apiClient.patch(endpoint, { status: "published" });
 }
 
-export async function rejectSolution(
-  id: string,
-  reason?: string
-): Promise<any> {
+export async function rejectSolution(id: string): Promise<any> {
   const endpoint = API_ENDPOINTS.solutions
     .updateStatus(id)
     .replace(process.env.NEXT_PUBLIC_API_URL || "", "");
-  return apiClient.patch(endpoint, { status: "archived", reason });
+  return apiClient.patch(endpoint, { status: "archived" });
 }
 
 export async function updateSolution(

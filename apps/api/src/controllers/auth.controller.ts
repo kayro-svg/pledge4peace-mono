@@ -181,6 +181,22 @@ export class AuthController {
 
       const authService = c.get("authService");
       const result = await authService.login(validation.data);
+
+      // Check flags and clear them
+      try {
+        const kv = (c.env as any).KV as KVNamespace | undefined;
+        if (kv && typeof kv.get === "function") {
+          const userId = result.user.id;
+          const redirect = await kv.get(`user:postLoginRedirect:${userId}`);
+          // Always clear forceLogout on successful login to avoid repeated logouts
+          await kv.delete(`user:forceLogout:${userId}`).catch(() => {});
+          if (redirect) {
+            await kv.delete(`user:postLoginRedirect:${userId}`).catch(() => {});
+            return c.json({ ...result, postLoginRedirect: redirect }, 200);
+          }
+        }
+      } catch {}
+
       return c.json(result, 200);
     } catch (error) {
       if (error instanceof HTTPException) {

@@ -13,7 +13,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 // Define roles posibles para navegación
-type NavItemType = "superAdmin" | "user" | "privileged";
+type NavItemType = "superAdmin" | "user" | "privileged" | "adminOnly";
 
 // Tipado de cada ítem del menú
 type NavItem = {
@@ -46,6 +46,8 @@ export function NavMain({ items }: { items: NavItem[] }) {
     if (!item.type) return true; // Mostrar a todos si no tiene tipo
     if (item.type === "superAdmin") return isAdmin; // Solo superAdmin
     if (item.type === "privileged") return isPrivileged; // Moderators/Admins/SuperAdmins
+    if (item.type === "adminOnly")
+      return role === "admin" || role === "superAdmin";
     if (item.type === "user") return true; // Mostrar a todos
     return false; // Ocultar si no se cumple nada
   });
