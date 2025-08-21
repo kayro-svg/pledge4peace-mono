@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import CommentItem from "./comment-item";
 import CommentForm from "./comment-form";
 import Image from "next/image";
@@ -29,6 +30,7 @@ export default function CommentsSection({
   solutionId,
   onCommentAdded,
 }: CommentsSectionProps) {
+  const searchParams = useSearchParams();
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
   const { session, isAuthenticated } = useAuthSession();
@@ -129,6 +131,37 @@ export default function CommentsSection({
       setComments([]);
     }
   }, [solutionId, fetchComments]);
+
+  // After comments load, if commentId is present, scroll and highlight it
+  useEffect(() => {
+    const commentId = searchParams.get("commentId");
+    if (!commentId) return;
+
+    const tryFocus = () => {
+      const el = document.querySelector(
+        `[data-comment-id="${commentId}"] .comment-item, [data-comment-id="${commentId}"]`
+      ) as HTMLElement | null;
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.classList.add("ring-2", "ring-[#2F4858]/40");
+        setTimeout(() => {
+          el.classList.remove("ring-2", "ring-[#2F4858]/40");
+        }, 2000);
+        return true;
+      }
+      return false;
+    };
+
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      if (tryFocus() || tries > 15) {
+        clearInterval(iv);
+      }
+    }, 150);
+
+    return () => clearInterval(iv);
+  }, [comments, searchParams]);
 
   const handleCommentSubmit = async (
     content: string,

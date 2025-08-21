@@ -147,6 +147,35 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // 8. Notificaciones: Nueva campaña publicada → notificar (MVP: moderadores)
+    if (documentType === "campaign" && slug) {
+      try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        if (apiUrl) {
+          const res = await fetch(`${apiUrl}/notifications`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${process.env.NOTIFICATIONS_BOT_TOKEN || ""}`,
+            },
+            body: JSON.stringify({
+              broadcastRole: "moderator", // MVP: a moderadores/admins/superAdmins
+              type: "campaign_new",
+              title: "New campaign published",
+              body: payload?.title ? String(payload.title) : slug,
+              href: `/campaigns/${slug}`,
+              meta: { campaignId: documentId, slug },
+            }),
+          });
+          if (!res.ok) {
+            logger.warn("[Revalidate] campaign notify failed", res.status);
+          }
+        }
+      } catch (e) {
+        logger.warn("[Revalidate] campaign notify error", e);
+      }
+    }
+
     // 🚀 MODO DESARROLLO: Revalidación extra agresiva
     if (isDevelopment) {
       logger.log("🔥 [Revalidate] Modo desarrollo: revalidación agresiva");

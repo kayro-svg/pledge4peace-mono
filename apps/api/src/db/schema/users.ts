@@ -9,7 +9,7 @@ export const users = sqliteTable("users", {
   status: text("status", { enum: ["active", "inactive", "banned", "deleted"] })
     .notNull()
     .default("active"),
-  role: text("role", { enum: ["user", "superAdmin"] })
+  role: text("role", { enum: ["user", "moderator", "admin", "superAdmin"] })
     .notNull()
     .default("user"),
   userType: text("user_type", {
@@ -28,4 +28,10 @@ export const users = sqliteTable("users", {
   resetTokenExpiresAt: integer("reset_token_expires_at", { mode: "timestamp" }),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  // Optional badge helper for notifications
+  lastSeenNotificationsAt: integer("last_seen_notifications_at", {
+    mode: "timestamp",
+  }),
+  notifyInapp: integer("notify_inapp").notNull().default(1),
+  notifyEmail: integer("notify_email").notNull().default(1),
 });

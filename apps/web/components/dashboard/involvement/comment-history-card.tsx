@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { RecentComment } from "@/lib/api/user-involvement";
 import { Clock } from "lucide-react";
+import { useLocale } from "next-intl";
 
 interface CommentCardProps {
   comment: RecentComment;
@@ -19,6 +20,7 @@ export function CommentHistoryCard({
   comment,
   campaignSlug,
 }: CommentCardProps) {
+  const locale = useLocale() as string;
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
@@ -73,10 +75,14 @@ export function CommentHistoryCard({
           size="sm"
           className="w-full rounded-full border-[#2f4858] text-[#2f4858]"
           onClick={() => {
-            window.open(
-              `/campaigns/${campaignSlug || comment.campaignId}#solution-${comment.solutionId}`,
-              "_blank"
-            );
+            const prefix = locale ? `/${locale}` : "";
+            const params = new URLSearchParams();
+            params.set("solutionId", comment.solutionId);
+            params.set("commentId", comment.id);
+            params.set("action", "comment");
+            const slugOrId = campaignSlug || "";
+            const path = `${prefix}/campaigns/${slugOrId}${params.toString() ? `?${params.toString()}` : ""}`;
+            window.open(path, "_blank");
           }}
         >
           View Full Discussion

@@ -5,7 +5,6 @@ import { InteractionsController } from "../controllers/interactions.controller";
 import {
   authMiddleware,
   optionalAuthMiddleware,
-  superAdminMiddleware,
 } from "../middleware/auth.middleware";
 
 const solutionsRoutes = new Hono();
@@ -59,6 +58,19 @@ solutionsRoutes.use("*", authMiddleware); // Aplicar autenticación a todas las 
 
 solutionsRoutes.post("/", solutionsController.createSolution);
 solutionsRoutes.patch("/:id/status", solutionsController.updateSolutionStatus);
+solutionsRoutes.patch("/:id", solutionsController.updateSolution);
+
+// Moderation list (requires moderator/admin/superAdmin via controller guard)
+solutionsRoutes.get(
+  "/moderation/list",
+  solutionsController.getSolutionsForModeration
+);
+
+// Approve all drafts (optional campaign filter)
+solutionsRoutes.post(
+  "/moderation/approve-all",
+  solutionsController.approveAllDrafts
+);
 
 // Endpoint para eliminar solution - requiere autenticación (propietario o superAdmin)
 solutionsRoutes.delete("/:id", solutionsController.deleteSolution);

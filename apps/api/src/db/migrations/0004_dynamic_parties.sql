@@ -2,6 +2,9 @@
 -- This allows campaigns to define their own party slugs
 -- ⚠️ SAFE MIGRATION: Preserves ALL existing data
 
+-- Disable foreign key checks during table swap to avoid drop/rename errors
+PRAGMA foreign_keys=OFF;
+
 -- Check if party_id column exists and handle accordingly
 -- SQLite doesn't support ALTER COLUMN directly, so we need to:
 -- 1. Create a new table with the updated schema  
@@ -10,6 +13,7 @@
 -- 4. Rename the new table
 
 -- Create new table with updated schema
+DROP TABLE IF EXISTS solutions_new;
 CREATE TABLE solutions_new (
     id TEXT PRIMARY KEY,
     campaign_id TEXT NOT NULL,
@@ -35,8 +39,9 @@ SELECT
     status, created_at, updated_at, metadata
 FROM solutions;
 
--- Drop old table
-DROP TABLE solutions;
+-- Swap tables safely to preserve foreign key references during rename
+ALTER TABLE solutions RENAME TO solutions_old;
+ALTER TABLE solutions_new RENAME TO solutions;
 
--- Rename new table to original name
-ALTER TABLE solutions_new RENAME TO solutions; 
+-- Re-enable foreign key checks
+PRAGMA foreign_keys=ON;

@@ -69,6 +69,7 @@ const ContentTabs = forwardRef<ContentTabsRef, ContentTabsProps>(
             onCommentClick={onCommentClick}
             campaignSlug={campaignSlug}
             campaignTitle={campaignTitle}
+            activeSolutionId={activeSolutionId}
             parties={parties}
           />
         </div>

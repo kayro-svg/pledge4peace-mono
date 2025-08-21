@@ -14,8 +14,12 @@ import { Label } from "@/components/ui/label";
 import { portableTextComponents } from "@/components/ui/portable-text-components";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { getSolutions, getUserInteractions } from "@/lib/api/solutions";
-import { API_ENDPOINTS, API_URL } from "@/lib/config";
+import {
+  getSolutions,
+  getUserInteractions,
+  submitSolution,
+} from "@/lib/api/solutions";
+import { API_URL } from "@/lib/config";
 import { SanitySolutionsSection, SanityParty, Solution } from "@/lib/types";
 import { logger } from "@/lib/utils/logger";
 import { useLocaleContent } from "@/hooks/use-locale-content";
@@ -27,11 +31,13 @@ import { toast } from "sonner";
 import { useInteractions } from "../shared/interaction-context";
 import SolutionPost from "./solution-post";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 
 interface PeaceAgreementContentProps {
   campaignId: string;
   solutionsSection: SanitySolutionsSection;
   campaignSlug?: string;
+  campaignTitle?: string;
   onSolutionChange?: (solutionId: string) => void;
   onCommentClick?: (solutionId: string | React.MouseEvent) => void;
   activeSolutionId?: string;
@@ -52,12 +58,15 @@ type ViewMode = "mixed" | "grouped";
 
 export default function PeaceAgreementContent({
   campaignId,
+  campaignTitle,
+  campaignSlug,
   onSolutionChange,
   onCommentClick,
   activeSolutionId,
   solutionsSection,
   parties,
 }: PeaceAgreementContentProps) {
+  const searchParams = useSearchParams();
   const [solutions, setSolutions] = useState<Solution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreateSolutionOpen, setIsCreateSolutionOpen] = useState(false);
@@ -90,11 +99,7 @@ export default function PeaceAgreementContent({
   const [partyCounts, setPartyCounts] = useState<Record<string, number>>({
     total: 0,
   });
-  const [newlyCreatedSolutionId, setNewlyCreatedSolutionId] = useState<
-    string | null
-  >(null);
-  const { getInteractionCount, initializeSolution, forceInitializeSolution } =
-    useInteractions();
+  const { getInteractionCount, forceInitializeSolution } = useInteractions();
 
   // Helper function to get the most up-to-date stats for a solution
   const getUpdatedStats = useCallback(
@@ -243,6 +248,53 @@ export default function PeaceAgreementContent({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [campaignId, session?.accessToken]);
 
+  // Ensure target solution is expanded and scrolled into view when activeSolutionId changes
+  useEffect(() => {
+    if (!activeSolutionId) return;
+
+    // Expand the target solution in local state
+    setSolutions((prev) =>
+      prev.map((s) =>
+        s.id === activeSolutionId
+          ? ({ ...(s as any), expanded: true } as any)
+          : s
+      )
+    );
+
+    const targetSelector = `[data-solution-id="${activeSolutionId}"] .solution-card, [data-solution-id="${activeSolutionId}"]`;
+    const performScroll = (node: HTMLElement) => {
+      const headerOffset = 100;
+      const elementPosition =
+        node.getBoundingClientRect().top + window.pageYOffset;
+      const offsetPosition = elementPosition - headerOffset;
+      window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+      node.classList.add("ring-2", "ring-[#2F4858]/20");
+      setTimeout(() => {
+        node.classList.remove("ring-2", "ring-[#2F4858]/20");
+      }, 1200);
+    };
+
+    // If already in DOM, scroll immediately
+    const existing = document.querySelector(
+      targetSelector
+    ) as HTMLElement | null;
+    if (existing) {
+      performScroll(existing);
+      return;
+    }
+
+    // Otherwise, observe DOM mutations until the element appears
+    const observer = new MutationObserver(() => {
+      const el = document.querySelector(targetSelector) as HTMLElement | null;
+      if (el) {
+        performScroll(el);
+        observer.disconnect();
+      }
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [activeSolutionId]);
+
   const toggleExpand = (solutionId: string) => {
     setSolutions((prevSolutions) =>
       prevSolutions.map((solution) =>
@@ -272,64 +324,30 @@ export default function PeaceAgreementContent({
           {} as Record<string, number>
         ) || {};
 
-      const response = await fetch(API_ENDPOINTS.solutions.create, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session?.accessToken}`,
+      logger.log("campaignSlug", campaignSlug);
+      logger.log("campaignTitle", campaignTitle);
+
+      await submitSolution({
+        campaignId,
+        title: newSolution.title,
+        description: newSolution.description,
+        partyId: newSolution.partyId,
+        partyLimits,
+        metadata: {
+          campaignTitle: campaignTitle || "",
+          campaignSlug: campaignSlug || "",
         },
-        body: JSON.stringify({
-          campaignId,
-          title: newSolution.title,
-          description: newSolution.description,
-          partyId: newSolution.partyId,
-          partyLimits: partyLimits,
-        }),
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to create solution");
-      }
-
-      const createdSolution = await response.json();
-
       // Ensure the created solution has all necessary properties
-      const completeSolution = {
-        ...createdSolution,
-        partyId: createdSolution.partyId || newSolution.partyId,
-        likes: 0,
-        comments: 0,
-        expanded: false,
-      };
+      // Do NOT add to public list immediately; it awaits moderation
 
-      // Add to the end of the list (new solutions go at bottom since they have no likes)
-      setSolutions((prev) => [...prev, completeSolution]);
+      // Do not change counts until approved
 
-      // Update party counts immediately
-      setPartyCounts((prev) => ({
-        ...prev,
-        [newSolution.partyId]: (prev[newSolution.partyId] || 0) + 1,
-        total: prev.total + 1,
-      }));
+      // No stats update needed until approval
 
-      // Update stats for the new solution
-      setSolutionStats((prev) => ({
-        ...prev,
-        [createdSolution.id]: {
-          likes: 0,
-          dislikes: 0,
-          shares: 0,
-          comments: 0,
-        },
-      }));
-
-      // Mark as newly created for visual feedback
-      setNewlyCreatedSolutionId(createdSolution.id);
-
-      // Remove the "newly created" highlight after 3 seconds
-      setTimeout(() => {
-        setNewlyCreatedSolutionId(null);
-      }, 3000);
+      // Show success
+      toast.success("Your solution has been submitted for moderation.");
 
       setIsCreateSolutionOpen(false);
       setNewSolution({
@@ -337,9 +355,7 @@ export default function PeaceAgreementContent({
         description: "",
         partyId: getDefaultPartySlug(),
       });
-      toast.success(
-        `Solution created successfully! Directed to ${partyConfig[newSolution.partyId].label}`
-      );
+      // No extra toast
     } catch (error) {
       logger.error("Error creating solution:", error);
       toast.error("Failed to create solution");
@@ -620,13 +636,6 @@ export default function PeaceAgreementContent({
             <div className="space-y-6">
               {sortedSolutions.map((solution, index) => (
                 <div key={solution.id} className="relative">
-                  {newlyCreatedSolutionId === solution.id && (
-                    <div className="absolute top-2 right-2 z-20">
-                      <Badge className="bg-green-500 text-white animate-pulse">
-                        New!
-                      </Badge>
-                    </div>
-                  )}
                   <SolutionPost
                     rank={index + 1}
                     solution={{
@@ -672,13 +681,7 @@ export default function PeaceAgreementContent({
                     <div className="space-y-4">
                       {solutionList.map((solution, index) => (
                         <div key={solution.id} className="relative">
-                          {newlyCreatedSolutionId === solution.id && (
-                            <div className="absolute top-2 right-2 z-20">
-                              <Badge className="bg-green-500 text-white animate-pulse">
-                                New!
-                              </Badge>
-                            </div>
-                          )}
+                          {/* No highlight for newly created (pending moderation) */}
                           <SolutionPost
                             rank={
                               sortedSolutions.findIndex(

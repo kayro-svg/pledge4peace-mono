@@ -78,3 +78,34 @@ authRoutes.delete("/users/:id", authMiddleware, async (c) => {
 });
 
 export { authRoutes };
+
+// Lightweight session-status endpoint used by the web app to detect forced logout
+authRoutes.get("/session-status", authMiddleware, async (c) => {
+  try {
+    const current = getAuthUser(c);
+    const kv = (c.env as any).KV as KVNamespace | undefined;
+    let forceLogout = false;
+    if (kv && typeof kv.get === "function") {
+      const flag = await kv.get(`user:forceLogout:${current.id}`);
+      forceLogout = !!flag;
+    }
+    return c.json({ forceLogout });
+  } catch (e) {
+    return c.json({ forceLogout: false });
+  }
+});
+
+// Add token refresh endpoint (protected)
+authRoutes.post("/refresh", authMiddleware, async (c) => {
+  try {
+    const current = getAuthUser(c);
+    const authService = c.var.authService;
+    const result = await authService.refreshTokenForUser(current.id);
+    return c.json(result, 200);
+  } catch (error) {
+    if (error instanceof HTTPException) {
+      return c.json((error as any).body, error.status);
+    }
+    return c.json({ message: "Failed to refresh token" }, 500);
+  }
+});

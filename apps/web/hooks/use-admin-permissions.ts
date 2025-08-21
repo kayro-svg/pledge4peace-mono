@@ -4,6 +4,7 @@ import {
   isSuperAdmin,
   canDeleteResource,
   showAdminControls,
+  isModeratorOrAbove,
 } from "@/lib/utils";
 
 /**
@@ -22,12 +23,18 @@ export function useAdminPermissions() {
       // Verificar si el usuario es superAdmin
       isSuperAdmin: isSuperAdmin(userRole),
 
+      // Verificar si el usuario es moderador o superior
+      isModeratorOrAbove: isModeratorOrAbove(userRole),
+
       // Verificar si se deben mostrar controles de administración
       showAdminControls: showAdminControls(userRole),
 
       // Función para verificar si puede eliminar un recurso específico
       canDelete: (resourceOwnerId?: string) =>
         canDeleteResource(userId, resourceOwnerId, userRole),
+
+      // Función para verificar si puede editar: solo moderador o superior
+      canEdit: () => isModeratorOrAbove(userRole),
 
       // Información del usuario actual
       currentUserId: userId,

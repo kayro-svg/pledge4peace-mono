@@ -6,6 +6,7 @@ import {
   SanityParty,
 } from "@/lib/types";
 import { useEffect, useState, useImperativeHandle, forwardRef } from "react";
+import { useSearchParams } from "next/navigation";
 import PeaceAgreementContent from "../peace-agreement/peace-agreement-content";
 import WaysToSupport from "../ways-to-support/ways-to-support";
 import TabHeader from "./tab-header";
@@ -22,6 +23,7 @@ interface TabsSectionProps {
   campaignId: string;
   campaignSlug?: string;
   campaignTitle?: string;
+  activeSolutionId?: string; // allow parent to control initial/target solution
   parties: SanityParty[]; // Nuevo: partidos dinámicos
 }
 
@@ -35,12 +37,14 @@ const TabsSection = forwardRef<TabsSectionRef, TabsSectionProps>(
       campaignId,
       campaignSlug,
       campaignTitle,
+      activeSolutionId: externalActiveSolutionId,
       parties,
     },
     ref
   ) => {
     const [activeTab, setActiveTab] = useState("solution-proposals");
     const [activeSolutionId, setActiveSolutionId] = useState("");
+    const searchParams = useSearchParams();
 
     // When active solution changes, notify parent component
     useEffect(() => {
@@ -52,6 +56,17 @@ const TabsSection = forwardRef<TabsSectionRef, TabsSectionProps>(
     const handleSolutionChange = (solutionId: string) => {
       setActiveSolutionId(solutionId);
     };
+
+    // Sync internal activeSolutionId with external prop (from deep links)
+    useEffect(() => {
+      if (
+        externalActiveSolutionId &&
+        externalActiveSolutionId !== activeSolutionId
+      ) {
+        setActiveSolutionId(externalActiveSolutionId);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [externalActiveSolutionId]);
 
     // Function to navigate to solutions tab (exposed for external use)
     const navigateToSolutions = () => {
@@ -79,11 +94,49 @@ const TabsSection = forwardRef<TabsSectionRef, TabsSectionProps>(
             behavior: "smooth",
           });
 
-          // Add a highlight effect
-          solutionsElement.classList.add("highlight-solutions");
-          setTimeout(() => {
-            solutionsElement.classList.remove("highlight-solutions");
-          }, 3000);
+          // Add a section highlight ONLY when there is no deep-link to a specific item
+          const hasDeepLink = Boolean(
+            searchParams.get("solutionId") || searchParams.get("commentId")
+          );
+          if (!hasDeepLink) {
+            solutionsElement.classList.add("highlight-solutions");
+            setTimeout(() => {
+              solutionsElement.classList.remove("highlight-solutions");
+            }, 1500);
+          }
+
+          // If there is a target solution deep-link, try to scroll directly to it
+          const targetSolutionId = searchParams.get("solutionId");
+          if (targetSolutionId) {
+            // Give a moment for the list to render
+            const tryScrollToSolution = () => {
+              const selector = `[data-solution-id="${targetSolutionId}"] .solution-card, [data-solution-id="${targetSolutionId}"]`;
+              const node = document.querySelector(
+                selector
+              ) as HTMLElement | null;
+              if (node) {
+                const headerOffset = 100;
+                const elementPosition =
+                  node.getBoundingClientRect().top + window.pageYOffset;
+                const offsetPosition = elementPosition - headerOffset;
+                window.scrollTo({ top: offsetPosition, behavior: "smooth" });
+                node.classList.add("ring-2", "ring-[#2F4858]/20");
+                setTimeout(() => {
+                  node.classList.remove("ring-2", "ring-[#2F4858]/20");
+                }, 1200);
+                return true;
+              }
+              return false;
+            };
+
+            let attempts = 0;
+            const iv = setInterval(() => {
+              attempts++;
+              if (tryScrollToSolution() || attempts > 15) {
+                clearInterval(iv);
+              }
+            }, 150);
+          }
         }
       }, 200); // Increased timeout to ensure tab content is rendered
     };
@@ -110,6 +163,8 @@ const TabsSection = forwardRef<TabsSectionRef, TabsSectionProps>(
               onCommentClick={onCommentClick}
               activeSolutionId={activeSolutionId}
               campaignId={campaignId}
+              campaignSlug={campaignSlug}
+              campaignTitle={campaignTitle}
               parties={parties}
             />
           )}

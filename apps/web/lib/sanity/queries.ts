@@ -414,7 +414,10 @@ export async function getCampaignBySlug(
   }
 }
 
-export async function getCampaignForDashboard(id: string): Promise<{
+export async function getCampaignForDashboard(
+  id: string,
+  lang: "en" | "es" = "en"
+): Promise<{
   title: string;
   id: string;
   slug: string;
@@ -423,10 +426,10 @@ export async function getCampaignForDashboard(id: string): Promise<{
   const campaignTitle = await sanityClient.fetch(
     `*[_type == "campaign" && _id == $id][0] {
       _id,
-      title,
+      "title": coalesce(title[$lang],title.en),
       slug { current }
     }`,
-    { id },
+    { id, lang },
     {
       // ⚡ Cache inteligente por entorno para evitar que se haga la consulta cada vez que se renderiza el componente
       next: {

@@ -8,7 +8,7 @@ export interface AuthUser {
   email: string;
   name: string;
   image?: string;
-  role: "user" | "superAdmin";
+  role: "user" | "moderator" | "admin" | "superAdmin";
 }
 
 declare module "hono" {
@@ -125,6 +125,19 @@ export function isSuperAdmin(c: Context): boolean {
   try {
     const user = getAuthUser(c);
     return user.role === "superAdmin";
+  } catch {
+    return false;
+  }
+}
+
+export function isModeratorOrAbove(c: Context): boolean {
+  try {
+    const user = getAuthUser(c);
+    return (
+      user.role === "moderator" ||
+      user.role === "admin" ||
+      user.role === "superAdmin"
+    );
   } catch {
     return false;
   }

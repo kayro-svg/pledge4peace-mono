@@ -4,13 +4,18 @@
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
+    "deploy:preview": "wrangler deploy --env preview",
+    "deploy:prod": "wrangler deploy --env production",
     "dev": "wrangler dev",
-    "start": "wrangler dev",
     "dev:remote-bindings": "wrangler dev --remote",
+    "dev:preview": "wrangler dev --env preview",
+    "dev:prod": "wrangler dev --env production",
     "test": "vitest",
     "cf-typegen": "wrangler types",
     "generate": "drizzle-kit generate:sqlite",
     "migrate": "wrangler d1 migrations apply pledge4peace-db",
+    "migrate:preview": "wrangler d1 migrations apply preview-pledge4peace-db --env preview --remote",
+    "migrate:prod": "wrangler d1 migrations apply pledge4peace-db --env production --remote",
     "studio": "drizzle-kit studio"
   },
   "dependencies": {

@@ -12,14 +12,6 @@
   "observability": {
     "enabled": true,
   },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "pledge4peace-db",
-      "database_id": "98d32d18-205e-49ef-8e8e-342df08868da",
-      "migrations_dir": "./src/db/migrations",
-    },
-  ],
   "kv_namespaces": [
     {
       "binding": "KV",
@@ -27,9 +19,59 @@
       "preview_id": "725495fb08f642848f85463d9cf65240",
     },
   ],
-  "vars": {
-    "FROM_EMAIL": "info@pledge4peace.org",
-    "NODE_ENV": "production",
-    "FRONTEND_URL": "https://pledge4peace.vercel.app",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "pledge4peace-db",
+      "database_id": "19ad10db-15a2-4791-97f1-e9cbc5eb64ed",
+      "migrations_dir": "./src/db/migrations",
+    },
+  ],
+  "env": {
+    "preview": {
+      "name": "pledge4peace-api-preview",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "preview-pledge4peace-db",
+          "database_id": "19ad10db-15a2-4791-97f1-e9cbc5eb64ed",
+          "migrations_dir": "./src/db/migrations",
+        },
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "KV",
+          "id": "725495fb08f642848f85463d9cf65240",
+        },
+      ],
+      "vars": {
+        "NODE_ENV": "preview",
+        "FROM_EMAIL": "info@pledge4peace.org",
+        "FRONTEND_URL": "https://pledge4peace.vercel.app",
+      },
+    },
+    "production": {
+      "name": "pledge4peace-api",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "pledge4peace-db",
+          "database_id": "98d32d18-205e-49ef-8e8e-342df08868da",
+          "migrations_dir": "./src/db/migrations",
+        },
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "KV",
+          // Usar el namespace de PRODUCCIÓN explícitamente en este entorno
+          "id": "c6bf24de3ea846f9b69772819581163a",
+        },
+      ],
+      "vars": {
+        "NODE_ENV": "production",
+        "FROM_EMAIL": "info@pledge4peace.org",
+        "FRONTEND_URL": "https://pledge4peace.org",
+      },
+    },
   },
 }

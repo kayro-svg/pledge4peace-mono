@@ -5,6 +5,8 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { NavUser } from "@/components/dashboard/nav-user";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import { User } from "next-auth";
+import { NotificationsBell } from "./NotificationsBell";
+import { NotificationSound } from "@/components/notifications/notification-sound";
 
 export function SiteHeader() {
   const { session } = useAuthSession();
@@ -21,7 +23,9 @@ export function SiteHeader() {
             Welcome back, {session?.user?.name?.split(" ")[0]}!
           </h1>
         </div>
-        <div className="hidden md:flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-3">
+          <NotificationSound />
+          <NotificationsBell />
           <NavUser user={session?.user as User} />
         </div>
       </div>

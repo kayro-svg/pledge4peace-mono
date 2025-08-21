@@ -14,13 +14,25 @@ export const API_ENDPOINTS = {
     forgotPassword: `${API_URL}/auth/forgot-password`,
     resetPassword: `${API_URL}/auth/reset-password`,
     profile: `${API_URL}/auth/profile`,
+    refresh: `${API_URL}/auth/refresh`,
+    sessionStatus: `${API_URL}/auth/session-status`,
   },
   solutions: {
     create: `${API_URL}/solutions`,
     getById: (id: string) => `${API_URL}/solutions/${id}`,
     getByCampaign: (campaignId: string) =>
       `${API_URL}/solutions/campaign/${campaignId}`,
+    update: (id: string) => `${API_URL}/solutions/${id}`,
     updateStatus: (id: string) => `${API_URL}/solutions/${id}/status`,
+    approve: (id: string) => `${API_URL}/solutions/${id}/status`,
+    reject: (id: string) => `${API_URL}/solutions/${id}/status`,
+    moderationList: (params?: { status?: string; campaignId?: string }) => {
+      const qs = new URLSearchParams();
+      if (params?.status) qs.set("status", params.status);
+      if (params?.campaignId) qs.set("campaignId", params.campaignId);
+      const query = qs.toString();
+      return `${API_URL}/solutions/moderation/list${query ? `?${query}` : ""}`;
+    },
     like: (id: string) => `${API_URL}/solutions/${id}/like`,
     share: (id: string) => `${API_URL}/solutions/${id}/share`,
     campaignStats: (campaignId: string) =>
@@ -52,6 +64,24 @@ export const API_ENDPOINTS = {
   users: {
     subscribe: `${API_URL}/users/subscribe`,
     subscriptionStatus: `${API_URL}/users/subscription-status`,
+    updateProfile: `${API_URL}/users/profile`,
+    adminList: (params?: {
+      q?: string;
+      role?: string;
+      page?: number;
+      limit?: number;
+      includeUsers?: boolean;
+    }) => {
+      const qs = new URLSearchParams();
+      if (params?.q) qs.set("q", params.q);
+      if (params?.role) qs.set("role", params.role);
+      if (params?.page) qs.set("page", String(params.page));
+      if (params?.limit) qs.set("limit", String(params.limit));
+      if (params?.includeUsers) qs.set("includeUsers", "1");
+      const query = qs.toString();
+      return `${API_URL}/users/admin/list${query ? `?${query}` : ""}`;
+    },
+    changeRole: `${API_URL}/users/admin/change-role`,
   },
   userInvolvement: {
     dashboard: `${API_URL}/user-involvement/dashboard`,

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useLocale } from "next-intl";
 import {
   getDashboard,
   getStats,
@@ -176,25 +177,25 @@ export function useUserInvolvement(
     if (fetchDashboard) {
       refetchDashboard();
     }
-  }, [refetchDashboard]);
+  }, [refetchDashboard, fetchDashboard]);
 
   useEffect(() => {
     if (fetchStats) {
       refetchStats();
     }
-  }, [refetchStats]);
+  }, [refetchStats, fetchStats]);
 
   useEffect(() => {
     if (fetchActivity) {
       refetchActivities();
     }
-  }, [refetchActivities]);
+  }, [refetchActivities, fetchActivity]);
 
   useEffect(() => {
     if (fetchComments) {
       refetchComments();
     }
-  }, [refetchComments]);
+  }, [refetchComments, fetchComments]);
 
   return {
     // Data
@@ -240,8 +241,12 @@ export function useUserProfileDashboard(
   });
 }
 
-// Cache para los datos de campañas
-const campaignsCache: Record<string, { data: any; timestamp: number }> = {};
+// Cache para los datos de campañas (por locale)
+type CampaignDashboardData = { title: string; id: string; slug: string };
+const campaignsCache: Record<
+  string,
+  { data: CampaignDashboardData; timestamp: number }
+> = {};
 const CAMPAIGNS_CACHE_TTL = 30 * 60 * 1000; // 30 minutos de vida para el caché
 
 // Función para limpiar la caché de campañas
@@ -254,39 +259,51 @@ export function invalidateCampaignsCache(): void {
 
 // Función de utilidad para obtener detalles de campaña con caché
 const useCampaignDetailsLoader = (items: { campaignId: string }[]) => {
+  const locale = useLocale() as "en" | "es";
   const [campaignDetails, setCampaignDetails] = useState<
     Record<string, { title: string; id: string; slug: string }>
   >({});
   const [isCampaignsLoading, setIsCampaignsLoading] = useState(false);
   const [campaignsError, setCampaignsError] = useState<string | null>(null);
 
+  const buildCacheKey = useCallback(
+    (campaignId: string) => `${campaignId}:${locale}`,
+    [locale]
+  );
+
   // Función para obtener detalles de campaña con caché
-  const getCampaignDetails = useCallback(async (campaignId: string) => {
-    try {
-      // Verificar si existe en caché y no ha expirado
-      if (
-        campaignsCache[campaignId] &&
-        Date.now() - campaignsCache[campaignId].timestamp < CAMPAIGNS_CACHE_TTL
-      ) {
-        return campaignsCache[campaignId].data;
+  const getCampaignDetails = useCallback(
+    async (campaignId: string) => {
+      try {
+        const cacheKey = buildCacheKey(campaignId);
+        // Verificar si existe en caché y no ha expirado
+        if (
+          campaignsCache[cacheKey] &&
+          Date.now() - campaignsCache[cacheKey].timestamp < CAMPAIGNS_CACHE_TTL
+        ) {
+          return campaignsCache[cacheKey].data;
+        }
+
+        // Si no está en caché o expiró, hacer la petición
+        const { getCampaignForDashboard } = await import(
+          "@/lib/sanity/queries"
+        );
+        const campaignData = await getCampaignForDashboard(campaignId, locale);
+
+        // Guardar en caché (por locale)
+        campaignsCache[cacheKey] = {
+          data: campaignData,
+          timestamp: Date.now(),
+        };
+
+        return campaignData;
+      } catch (error) {
+        console.error("Error fetching campaign details:", error);
+        throw error;
       }
-
-      // Si no está en caché o expiró, hacer la petición
-      const { getCampaignForDashboard } = await import("@/lib/sanity/queries");
-      const campaignData = await getCampaignForDashboard(campaignId);
-
-      // Guardar en caché
-      campaignsCache[campaignId] = {
-        data: campaignData,
-        timestamp: Date.now(),
-      };
-
-      return campaignData;
-    } catch (error) {
-      console.error("Error fetching campaign details:", error);
-      throw error;
-    }
-  }, []);
+    },
+    [buildCacheKey, locale]
+  );
 
   // Función para cargar detalles de todas las campañas
   const loadCampaignDetails = useCallback(async () => {
@@ -312,7 +329,11 @@ const useCampaignDetailsLoader = (items: { campaignId: string }[]) => {
       }
 
       // Cargar detalles de campañas en paralelo
-      const results = await Promise.all(
+      const results: Array<{
+        id: string;
+        data?: CampaignDashboardData;
+        error?: unknown;
+      }> = await Promise.all(
         campaignsToLoad.map(async (id) => {
           try {
             const data = await getCampaignDetails(id);
@@ -328,7 +349,7 @@ const useCampaignDetailsLoader = (items: { campaignId: string }[]) => {
       setCampaignDetails((prev) => {
         const newDetails = { ...prev };
         results.forEach((result) => {
-          if (!result.error) {
+          if (result.data && !result.error) {
             newDetails[result.id] = result.data;
           }
         });
@@ -341,6 +362,11 @@ const useCampaignDetailsLoader = (items: { campaignId: string }[]) => {
       setIsCampaignsLoading(false);
     }
   }, [items, campaignDetails, getCampaignDetails]);
+
+  // Si el locale cambia, reiniciar detalles para recargar en el nuevo idioma
+  useEffect(() => {
+    setCampaignDetails({});
+  }, [locale]);
 
   return {
     campaignDetails,

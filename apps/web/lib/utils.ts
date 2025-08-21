@@ -42,6 +42,14 @@ export function isSuperAdmin(userRole?: string): boolean {
   return userRole === "superAdmin";
 }
 
+export function isModeratorOrAbove(userRole?: string): boolean {
+  return (
+    userRole === "moderator" ||
+    userRole === "admin" ||
+    userRole === "superAdmin"
+  );
+}
+
 /**
  * Verifica si un usuario puede eliminar un recurso específico
  * @param currentUserId - ID del usuario actual

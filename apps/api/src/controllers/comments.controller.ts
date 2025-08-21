@@ -9,6 +9,9 @@ import {
   isSuperAdmin,
 } from "../middleware/auth.middleware";
 import { logger } from "../utils/logger";
+import { solutions } from "../db/schema/solutions";
+import { eq } from "drizzle-orm";
+import { NotificationsService } from "../services/notifications.service";
 
 // Validación de entrada para crear un comentario
 const createCommentSchema = z.object({
@@ -58,6 +61,62 @@ export class CommentsController {
         userName: user.name,
         userAvatar: user.image,
       });
+
+      // Best-effort notifications
+      try {
+        const notif = new NotificationsService(db, c.env.KV as KVNamespace);
+        // Notify solution owner on any new comment
+        const sol = await db.query.solutions.findFirst({
+          where: eq(solutions.id, validation.data.solutionId),
+          columns: { userId: true, title: true, campaignId: true },
+        });
+        if (sol?.userId && sol.userId !== user.id) {
+          await notif.create({
+            userId: sol.userId,
+            type: "solution_comment",
+            title: "New comment on your solution",
+            body: `${user.name}: "${validation.data.content.slice(0, 80)}"`,
+            href: undefined,
+            meta: {
+              solutionId: validation.data.solutionId,
+              commentId: comment.id,
+              campaignId: sol.campaignId,
+              campaignSlug: (sol as any)?.campaignSlug,
+            },
+            actorId: user.id,
+            resourceType: "solution",
+            resourceId: validation.data.solutionId,
+          });
+        }
+        // If reply, notify parent comment owner (avoid duplicate if same as solution owner)
+        if (validation.data.parentId) {
+          const parent = await service.getCommentById(validation.data.parentId);
+          if (
+            parent?.userId &&
+            parent.userId !== user.id &&
+            parent.userId !== sol?.userId
+          ) {
+            await notif.create({
+              userId: parent.userId,
+              type: "comment_reply",
+              title: "Someone replied to your comment",
+              body: `${user.name}: "${validation.data.content.slice(0, 80)}"`,
+              href: undefined,
+              meta: {
+                solutionId: validation.data.solutionId,
+                commentId: comment.id,
+                campaignId: sol?.campaignId,
+                campaignSlug: (sol as any)?.campaignSlug,
+              },
+              actorId: user.id,
+              resourceType: "comment",
+              resourceId: comment.id,
+            });
+          }
+        }
+      } catch (e) {
+        logger.warn("[notifications] createComment best-effort failed", e);
+      }
 
       return c.json(comment, 201);
     } catch (error) {

@@ -98,13 +98,23 @@ export class AuthService {
 
     const user = newUser[0];
 
-    // 6) Intentar enviar email de verificación (no bloqueante)
+    // 6) Intentar enviar email de verificación + welcome prefs (no bloqueante)
     try {
       await this.emailService.sendVerificationEmail(
         user.email,
         verificationToken,
         baseUrl
       );
+      // Welcome + preferences info (best-effort)
+      try {
+        await this.emailService.sendWelcomeNotificationsPrefsEmail(
+          user.email,
+          baseUrl,
+          user.name
+        );
+      } catch (e) {
+        logger.warn("Welcome prefs email failed:", e as any);
+      }
     } catch (error) {
       logger.error("Error sending verification email:", error);
       // No interrumpimos el registro por culpa del email
@@ -281,6 +291,30 @@ export class AuthService {
       this.jwtSecret,
       "HS256"
     );
+  }
+
+  /**
+   * Mint a fresh JWT for the given user id using current DB role/state
+   */
+  async refreshTokenForUser(userId: string) {
+    const user = await this.db.query.users.findFirst({
+      where: eq(users.id, userId),
+    });
+    if (!user) {
+      throw new HTTPException(404, { message: "User not found" });
+    }
+    const token = await this.generateToken(user);
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        emailVerified: user.emailVerified === 1,
+        role: user.role || "user",
+        createdAt: user.createdAt,
+      },
+      token,
+    };
   }
 
   async getUserById(id: string) {

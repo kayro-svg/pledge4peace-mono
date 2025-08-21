@@ -4,6 +4,9 @@ import { createDb } from "../db";
 import { HTTPException } from "hono/http-exception";
 import { getAuthUser } from "../middleware/auth.middleware";
 import { logger } from "../utils/logger";
+import { solutions } from "../db/schema/solutions";
+import { eq } from "drizzle-orm";
+import { NotificationsService } from "../services/notifications.service";
 
 export class InteractionsController {
   async toggleLike(c: Context) {
@@ -25,6 +28,37 @@ export class InteractionsController {
         service.getInteractionStats(solutionId),
         service.getUserInteraction(solutionId, user.id),
       ]);
+
+      // Best-effort notify solution owner if now liked
+      try {
+        if (isLiked) {
+          const sol = await db.query.solutions.findFirst({
+            where: eq(solutions.id, solutionId),
+            columns: { userId: true, title: true, campaignId: true },
+          });
+          if (sol?.userId && sol.userId !== user.id) {
+            const notif = new NotificationsService(db, c.env.KV as KVNamespace);
+            await notif.create({
+              userId: sol.userId,
+              type: "solution_like",
+              title: "Your solution got a new like",
+              body: `${user.name} liked "${sol.title}"`,
+              // slug enrichment will occur in service if meta contains campaignSlug
+              href: undefined,
+              meta: {
+                solutionId,
+                campaignSlug: (sol as any).campaignSlug,
+                campaignId: sol.campaignId,
+              },
+              actorId: user.id,
+              resourceType: "solution",
+              resourceId: solutionId,
+            });
+          }
+        }
+      } catch (e) {
+        logger.warn("[notifications] toggleLike best-effort failed", e);
+      }
 
       return c.json({
         liked: isLiked,
@@ -55,6 +89,37 @@ export class InteractionsController {
       const service = new InteractionsService(db);
 
       const isDisliked = await service.toggleDislike(solutionId, user.id);
+
+      // Best-effort notify solution owner if now disliked
+      try {
+        if (isDisliked) {
+          const sol = await db.query.solutions.findFirst({
+            where: eq(solutions.id, solutionId),
+            columns: { userId: true, title: true, campaignId: true },
+          });
+          if (sol?.userId && sol.userId !== user.id) {
+            const notif = new NotificationsService(db, c.env.KV as KVNamespace);
+            await notif.create({
+              userId: sol.userId,
+              type: "solution_dislike",
+              title: "Your solution got a new dislike",
+              body: `${user.name} disliked "${sol.title}"`,
+              // slug enrichment will occur in service if meta contains campaignSlug
+              href: undefined,
+              meta: {
+                solutionId,
+                campaignSlug: (sol as any).campaignSlug,
+                campaignId: sol.campaignId,
+              },
+              actorId: user.id,
+              resourceType: "solution",
+              resourceId: solutionId,
+            });
+          }
+        }
+      } catch (e) {
+        logger.warn("[notifications] toggleDislike best-effort failed", e);
+      }
 
       // Get updated stats and user interactions
       const [stats, userInteractions] = await Promise.all([

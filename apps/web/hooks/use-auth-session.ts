@@ -1,6 +1,8 @@
 import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
+import { apiClient } from "@/lib/api-client";
+import { API_ENDPOINTS } from "@/lib/config";
 
 interface AuthSessionReturn {
   session: any;
@@ -78,16 +80,38 @@ export function useAuthSession(): AuthSessionReturn {
   // Set up periodic token validation
   useEffect(() => {
     if (status === "authenticated") {
-      const interval = setInterval(
-        () => {
-          const isValid = checkTokenValidity();
-          if (!isValid) {
-            handleAuthError();
+      const interval = setInterval(() => {
+        const isValid = checkTokenValidity();
+        if (!isValid) {
+          handleAuthError();
+          return;
+        }
+        // Check forced-logout flag
+        (async () => {
+          try {
+            const endpoint = API_ENDPOINTS.auth.profile.replace(
+              process.env.NEXT_PUBLIC_API_URL || "",
+              ""
+            );
+            // lightweight ping to ensure token is still authorized
+            // then check server-side forceLogout flag
+            const statusEndpoint = (API_ENDPOINTS.auth as any).sessionStatus
+              ? (API_ENDPOINTS.auth as any).sessionStatus.replace(
+                  process.env.NEXT_PUBLIC_API_URL || "",
+                  ""
+                )
+              : "/auth/session-status";
+            const res = await apiClient.get<{ forceLogout: boolean }>(
+              statusEndpoint
+            );
+            if (res?.forceLogout) {
+              await handleAuthError();
+            }
+          } catch {
+            // ignore
           }
-        },
-        // 🧪 TESTING: Change to 10 * 1000 for 10-second testing
-        5 * 60 * 1000
-      ); // Check every 5 minutes
+        })();
+      }, 60 * 1000); // every 1 minute
 
       return () => clearInterval(interval);
     }

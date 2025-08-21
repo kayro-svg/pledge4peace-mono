@@ -55,7 +55,19 @@ const data = {
       title: "Campaigns Solutions",
       url: "/dashboard/moderate-campaigns-solutions",
       icon: ScanEye,
-      type: "superAdmin" as const, // This is a superAdmin item
+      type: "privileged" as const, // Moderators/Admins/SuperAdmin
+    },
+    {
+      title: "Analytics",
+      url: "/dashboard/analytics",
+      icon: FileCodeIcon,
+      type: "privileged" as const,
+    },
+    {
+      title: "Manage Roles",
+      url: "/dashboard/roles",
+      icon: LayoutDashboardIcon,
+      type: "adminOnly" as const,
     },
   ],
   // navClouds: [

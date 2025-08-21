@@ -19,6 +19,58 @@ export class EmailService {
   }
 
   /**
+   * Notifica al usuario que su rol ha cambiado
+   */
+  async sendRoleChangedEmail(
+    to: string,
+    newRole: "user" | "moderator" | "admin" | "superAdmin"
+  ) {
+    const roleLabel =
+      newRole === "superAdmin"
+        ? "Super Admin"
+        : newRole.charAt(0).toUpperCase() + newRole.slice(1);
+    const body = {
+      sender: {
+        name: this.fromName,
+        email: this.fromEmail,
+      },
+      to: [
+        {
+          email: to,
+          name: to.split("@")[0],
+        },
+      ],
+      subject: `Your role has been updated to ${roleLabel} – Pledge4Peace`,
+      htmlContent: `
+        <h1>Role Updated</h1>
+        <p>Hello,</p>
+        <p>Your account role on <strong>Pledge4Peace</strong> has been updated to <strong>${roleLabel}</strong>.</p>
+        <p>This grants you new permissions within the platform. If you did not expect this change, please contact support.</p>
+        <p>Thank you for supporting our mission.</p>
+        <br>
+        <p>Best regards,<br>The Pledge4Peace Team</p>
+      `,
+    };
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error("Brevo sendRoleChangedEmail error:", response.status, text);
+      throw new Error("Failed to send role changed email");
+    }
+
+    return await response.json();
+  }
+
+  /**
    * Envía un correo de verificación de cuenta usando fetch hacia Brevo.
    */
   async sendVerificationEmail(to: string, token: string, baseUrl: string) {
@@ -74,6 +126,74 @@ export class EmailService {
       const text = await response.text();
       logger.error("Brevo sendVerificationEmail error:", response.status, text);
       throw new Error("Failed to send verification email");
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Welcome + Notification Preferences Email on registration
+   * Explains defaults (enabled) and links to settings so user can change them.
+   */
+  async sendWelcomeNotificationsPrefsEmail(
+    to: string,
+    baseUrl: string,
+    userName?: string
+  ) {
+    const prefsLink = `${baseUrl}/dashboard/notifications#prefs`;
+    const body = {
+      sender: {
+        name: this.fromName,
+        email: this.fromEmail,
+      },
+      to: [
+        {
+          email: to,
+          name: userName || to.split("@")[0],
+        },
+      ],
+      subject: "Welcome! Manage your notification preferences – Pledge4Peace",
+      htmlContent: `
+        <h1>Welcome to Pledge4Peace!</h1>
+        <p>Hello ${userName || "there"},</p>
+        <p>By default, <strong>email notifications</strong> and <strong>in‑app notifications</strong> are <strong>enabled</strong> so you don't miss important updates.</p>
+        <p>If you prefer, you can adjust your preferences at any time here:</p>
+        <p>
+          <a href="${prefsLink}"
+             style="
+               background-color: #548281;
+               color: white;
+               padding: 10px 20px;
+               text-decoration: none;
+               border-radius: 5px;
+             "
+             target="_blank"
+          >
+            Open Notification Settings
+          </a>
+        </p>
+        <p>You can toggle email or in‑app notifications according to your preferences.</p>
+        <p>Thank you for joining us!</p>
+      `,
+    } as const;
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error(
+        "Brevo sendWelcomeNotificationsPrefsEmail error:",
+        response.status,
+        text
+      );
+      throw new Error("Failed to send welcome preferences email");
     }
 
     return await response.json();
@@ -318,7 +438,12 @@ export class EmailService {
       to: [
         {
           email: "info@pledge4peace.org",
+          // email: "kayrov@weversity.org",
           name: "Pledge4Peace Admin",
+        },
+        {
+          email: "shelsys@pledge4peace.org",
+          name: "Shelsys Rivera - Marketing Chief",
         },
       ],
       subject: "New User Registration - Pledge4Peace",
@@ -538,6 +663,10 @@ export class EmailService {
           email: "shelsys@pledge4peace.org",
           name: "Shelsys Rivera - Marketing Chief",
         },
+        // {
+        //   email: "kayrov@weversity.org",
+        //   name: "kayro developer",
+        // },
       ],
       subject: `New Pledge from ${pledgeData.userName}`,
       htmlContent: `
@@ -575,6 +704,118 @@ export class EmailService {
         text
       );
       throw new Error("Failed to send pledge notification email");
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Notifica al admin que hay una nueva solución para moderar
+   */
+  async sendNewSolutionModerationNotification(payload: {
+    authorName: string;
+    authorEmail: string;
+    title: string;
+    description?: string;
+    campaignId: string;
+    campaignTitle?: string;
+    campaignSlug?: string;
+  }) {
+    const body = {
+      sender: { name: this.fromName, email: this.fromEmail },
+      to: [
+        { email: "info@pledge4peace.org", name: "Pledge4Peace Admin" },
+        { email: "shelsys@pledge4peace.org", name: "Shelsys Rivera" },
+        // { email: "kayrov@weversity.org", name: "kayro developer" },
+      ],
+      subject: `New solution submitted for moderation – ${payload.title}`,
+      htmlContent: `
+        <h1>New Solution Submitted</h1>
+        <p><strong>Author:</strong> ${payload.authorName} (${payload.authorEmail})</p>
+        <p><strong>Campaign:</strong> ${payload.campaignTitle || payload.campaignSlug || "(unknown)"}</p>
+        ${payload.campaignSlug ? `<p><a href="https://www.pledge4peace.org/campaigns/${payload.campaignSlug}" target="_blank">Open related campaign</a></p>` : ""}
+        <p><strong>Title:</strong> ${payload.title}</p>
+        ${payload.description ? `<p><strong>Description:</strong> ${payload.description}</p>` : ""}
+        <p>Please review this solution in the <a href="https://pledge4peace.org/dashboard/moderate-campaigns-solutions" target="_blank">moderation dashboard</a>.</p>
+      `,
+    };
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error(
+        "Brevo sendNewSolutionModerationNotification error:",
+        response.status,
+        text
+      );
+      throw new Error("Failed to send moderation notification email");
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Notifica al autor el resultado de la moderación (aprobado/rechazado)
+   */
+  async sendSolutionModerationResult(payload: {
+    to: string;
+    userName?: string;
+    result: "approved" | "rejected";
+    title: string;
+    reason?: string;
+    campaignTitle?: string;
+    campaignId?: string;
+    campaignSlug?: string;
+  }) {
+    const subjectPrefix =
+      payload.result === "approved"
+        ? "Your solution was approved"
+        : "Your solution was rejected";
+    const body = {
+      sender: { name: this.fromName, email: this.fromEmail },
+      to: [
+        {
+          email: payload.to,
+          name: payload.userName || payload.to.split("@")[0],
+        },
+      ],
+      subject: `${subjectPrefix} – ${payload.title}`,
+      htmlContent: `
+        <h1>${subjectPrefix}</h1>
+        <p>Hello ${payload.userName || "there"},</p>
+        <p>Your solution <strong>${payload.title}</strong> has been <strong>${payload.result}</strong> by our moderators.</p>
+        ${payload.campaignTitle || payload.campaignSlug ? `<p><strong>Campaign:</strong> ${payload.campaignTitle || payload.campaignSlug}</p>` : ""}
+        ${payload.campaignSlug ? `<p><a href="https://www.pledge4peace.org/campaigns/${payload.campaignSlug}" target="_blank">Open related campaign</a></p>` : ""}
+        ${payload.result === "rejected" && payload.reason ? `<p><strong>Reason:</strong> ${payload.reason}</p>` : ""}
+        <p>Thank you for contributing to Pledge4Peace.</p>
+      `,
+    };
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error(
+        "Brevo sendSolutionModerationResult error:",
+        response.status,
+        text
+      );
+      throw new Error("Failed to send moderation result email");
     }
 
     return await response.json();

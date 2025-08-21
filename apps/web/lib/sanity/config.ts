@@ -46,8 +46,8 @@ export const SANITY_CONFIG = {
     // URL base para producción (actualizar con tu dominio real)
     baseUrl:
       process.env.NODE_ENV === "production"
-        ? process.env.NEXT_PUBLIC_SITE_URL || "https://tu-dominio.com"
-        : "https://5a08b44a2da0.ngrok-free.app/",
+        ? process.env.NEXT_PUBLIC_SITE_URL || "https://pledge4peace.org"
+        : "http://localhost:3000",
   },
 
   // ===== CONFIGURACIÓN DE LOGS =====

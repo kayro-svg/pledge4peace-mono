@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "braintree": "^3.32.0",
-    "braintree-web-drop-in": "^1.45.1"
+    "braintree-web-drop-in": "^1.45.1",
+    "ulid": "^3.0.1"
   }
 }

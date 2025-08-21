@@ -56,7 +56,8 @@ export default function CommentItem({
 
   return (
     <div
-      className={`${isNested ? "ml-8 border-l-2 border-gray-100 pl-4" : ""}`}
+      data-comment-id={comment.id}
+      className={`comment-item ${isNested ? "ml-8 border-l-2 border-gray-100 pl-4" : ""}`}
     >
       <div className="group flex gap-3 py-3 hover:bg-gray-50 rounded-lg px-2">
         <Avatar className={`${isNested ? "h-6 w-6" : "h-8 w-8"}`}>
