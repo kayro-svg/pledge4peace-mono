@@ -39,11 +39,9 @@ SELECT
     status, created_at, updated_at, metadata
 FROM solutions;
 
--- Drop old table
-DROP TABLE solutions;
-
--- Rename new table to original name
-ALTER TABLE solutions_new RENAME TO solutions; 
+-- Swap tables safely to preserve foreign key references during rename
+ALTER TABLE solutions RENAME TO solutions_old;
+ALTER TABLE solutions_new RENAME TO solutions;
 
 -- Re-enable foreign key checks
 PRAGMA foreign_keys=ON;
