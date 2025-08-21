@@ -3,3 +3,4 @@ node_modules/
 .wrangler
 *.sqlite
 .wrangler/state/v3/d1/miniflare-D1DatabaseObject/bfee569d6c0ef95c39926f8951042744027ccd41bdf82a2572cd13470460d61f.sqlite
+backups/
