@@ -132,6 +132,74 @@ export class EmailService {
   }
 
   /**
+   * Welcome + Notification Preferences Email on registration
+   * Explains defaults (enabled) and links to settings so user can change them.
+   */
+  async sendWelcomeNotificationsPrefsEmail(
+    to: string,
+    baseUrl: string,
+    userName?: string
+  ) {
+    const prefsLink = `${baseUrl}/dashboard/notifications#prefs`;
+    const body = {
+      sender: {
+        name: this.fromName,
+        email: this.fromEmail,
+      },
+      to: [
+        {
+          email: to,
+          name: userName || to.split("@")[0],
+        },
+      ],
+      subject: "Welcome! Manage your notification preferences – Pledge4Peace",
+      htmlContent: `
+        <h1>Welcome to Pledge4Peace!</h1>
+        <p>Hello ${userName || "there"},</p>
+        <p>By default, <strong>email notifications</strong> and <strong>in‑app notifications</strong> are <strong>enabled</strong> so you don't miss important updates.</p>
+        <p>If you prefer, you can adjust your preferences at any time here:</p>
+        <p>
+          <a href="${prefsLink}"
+             style="
+               background-color: #548281;
+               color: white;
+               padding: 10px 20px;
+               text-decoration: none;
+               border-radius: 5px;
+             "
+             target="_blank"
+          >
+            Open Notification Settings
+          </a>
+        </p>
+        <p>You can toggle email or in‑app notifications according to your preferences.</p>
+        <p>Thank you for joining us!</p>
+      `,
+    } as const;
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error(
+        "Brevo sendWelcomeNotificationsPrefsEmail error:",
+        response.status,
+        text
+      );
+      throw new Error("Failed to send welcome preferences email");
+    }
+
+    return await response.json();
+  }
+
+  /**
    * Envía un correo para restablecer la contraseña usando fetch hacia Brevo.
    */
   async sendPasswordResetEmail(to: string, token: string, baseUrl: string) {

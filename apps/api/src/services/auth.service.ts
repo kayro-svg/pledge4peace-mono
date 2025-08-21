@@ -98,13 +98,23 @@ export class AuthService {
 
     const user = newUser[0];
 
-    // 6) Intentar enviar email de verificación (no bloqueante)
+    // 6) Intentar enviar email de verificación + welcome prefs (no bloqueante)
     try {
       await this.emailService.sendVerificationEmail(
         user.email,
         verificationToken,
         baseUrl
       );
+      // Welcome + preferences info (best-effort)
+      try {
+        await this.emailService.sendWelcomeNotificationsPrefsEmail(
+          user.email,
+          baseUrl,
+          user.name
+        );
+      } catch (e) {
+        logger.warn("Welcome prefs email failed:", e as any);
+      }
     } catch (error) {
       logger.error("Error sending verification email:", error);
       // No interrumpimos el registro por culpa del email
