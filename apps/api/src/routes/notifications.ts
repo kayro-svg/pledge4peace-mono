@@ -165,6 +165,8 @@ notificationsRoutes.get("/stream", async (c) => {
       const encoder = new TextEncoder();
       let cancelled = false;
       let lastHeartbeat = Date.now();
+      let intervalMs = 3000; // adaptive polling interval
+      let subReqs = 0; // approximate subrequest counter to avoid per-invocation limits
 
       (c.req.raw as any).signal?.addEventListener("abort", () => {
         cancelled = true;
@@ -201,6 +203,7 @@ notificationsRoutes.get("/stream", async (c) => {
 
       while (!cancelled) {
         const latest = kv ? await kv.get(`notif:latest:${userId}`) : null;
+        if (kv) subReqs++;
         if (latest && Number(latest) > lastSent) {
           const fresh = await db.query.notifications.findMany({
             where: and(
@@ -210,16 +213,29 @@ notificationsRoutes.get("/stream", async (c) => {
             orderBy: (t: any, { asc }: any) => [asc(t.createdAt)],
             limit: 50,
           });
+          subReqs++;
           for (const it of fresh) send(it);
+          // activity detected → reset interval tighter
+          intervalMs = 3000;
         } else {
           if (Date.now() - lastHeartbeat > 25000) {
             heartbeat();
             lastHeartbeat = Date.now();
           }
+          // no activity → back off up to 60s
+          intervalMs = Math.min(Math.floor(intervalMs * 1.6), 60000);
         }
-        const base = 3000;
-        const jitter = Math.floor(Math.random() * 700);
-        await sleep(base + jitter);
+        // Guard: avoid hitting per-invocation subrequest quotas (KV/D1)
+        if (subReqs > 900) {
+          try {
+            controller.close();
+          } catch {}
+          break;
+        }
+        const jitter = Math.floor(
+          Math.random() * Math.min(1000, Math.max(200, intervalMs * 0.2))
+        );
+        await sleep(intervalMs + jitter);
       }
     },
   });
