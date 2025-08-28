@@ -151,9 +151,6 @@ export default function SiteHeader() {
               height={32}
               className="h-8 w-auto mb-2"
             />
-            <p className="text-sm text-[#698D8B] font-light">
-              Creating peace in the world
-            </p>
           </div>
         </div>
         {/* Minimal Navigation */}

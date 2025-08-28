@@ -9,7 +9,7 @@ import {
   markAllRead,
   type NotificationItem,
 } from "@/lib/api/notifications";
-import { getCampaigns } from "@/lib/sanity/queries";
+// import { getCampaigns } from "@/lib/sanity/queries";
 import { useLocale } from "next-intl";
 import { apiClient } from "@/lib/api-client";
 import { API_ENDPOINTS } from "@/lib/config";
@@ -160,16 +160,14 @@ export function NotificationsBell() {
       slug = slugMapRef.current[campaignId];
       if (!slug) {
         try {
-          type Campaign = { _id: string; slug: string | { current: string } };
-          const campaigns: Campaign[] = await getCampaigns(200, locale);
-          const map: Record<string, string> = {};
-          for (const c of campaigns) {
-            const id = c._id;
-            const s = typeof c.slug === "string" ? c.slug : c.slug?.current;
-            if (id && s) map[id] = s;
+          const resp = await fetch(`/api/campaign-slugs`, {
+            next: { revalidate: 3600 },
+          });
+          if (resp.ok) {
+            const map = (await resp.json()) as Record<string, string>;
+            slugMapRef.current = { ...slugMapRef.current, ...map };
+            slug = slugMapRef.current[campaignId];
           }
-          slugMapRef.current = { ...slugMapRef.current, ...map };
-          slug = slugMapRef.current[campaignId];
         } catch {
           /* ignore */
         }

@@ -20,6 +20,7 @@ import { portableTextComponents } from "@/components/ui/portable-text-components
 import { useRouter } from "next/navigation";
 import { logger } from "@/lib/utils/logger";
 import { cleanTimezone } from "@/lib/utils/clean-timezone";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 
 // Helper function to format conference time with timezone - FIXED VERSION
 const formatConferenceDateTime = (event: SanityConference) => {
@@ -138,11 +139,12 @@ export default function EventPageContent({
       <div className="relative w-full h-[300px] bg-gray-900">
         {event.image?.asset?.url && (
           <Image
-            src={event.image.asset.url}
+            src={getSanityImageUrl(event.image.asset.url, 1920, 600, 80)}
             alt={event.title}
             fill
             className="object-cover opacity-70"
             priority
+            sizes="100vw"
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/20" />
@@ -220,10 +222,16 @@ export default function EventPageContent({
                         {speaker.image?.asset?.url && (
                           <div className="w-16 h-16 relative rounded-full overflow-hidden">
                             <Image
-                              src={speaker.image.asset.url}
+                              src={getSanityImageUrl(
+                                speaker.image.asset.url,
+                                128,
+                                128,
+                                80
+                              )}
                               alt={speaker.name}
                               fill
                               className="object-cover"
+                              sizes="64px"
                             />
                           </div>
                         )}
@@ -248,10 +256,11 @@ export default function EventPageContent({
                     {event.gallery.map((image, index) => (
                       <div key={index} className="relative aspect-video">
                         <Image
-                          src={image.url}
+                          src={getSanityImageUrl(image.url, 800, 450, 80)}
                           alt={`Event image ${index + 1}`}
                           fill
                           className="object-cover rounded-lg"
+                          sizes="(max-width: 768px) 100vw, 33vw"
                         />
                       </div>
                     ))}
@@ -306,10 +315,16 @@ export default function EventPageContent({
                   <div className="w-12 h-12 bg-transparent rounded-full overflow-hidden relative flex items-center justify-center">
                     {event.organizer.logo ? (
                       <Image
-                        src={event.organizer.logo}
+                        src={getSanityImageUrl(
+                          event.organizer.logo,
+                          128,
+                          128,
+                          80
+                        )}
                         alt={event.organizer.name}
                         fill
                         className="object-cover"
+                        sizes="48px"
                       />
                     ) : (
                       <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-lg font-medium">

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { API_URL } from "@/lib/config";
 import { getUnreadCount, type NotificationItem } from "@/lib/api/notifications";
-import { getCampaigns } from "@/lib/sanity/queries";
+// import { getCampaigns } from "@/lib/sanity/queries";
 import { useLocale } from "next-intl";
 
 export function useNotificationsStream(accessToken?: string | null) {
@@ -30,15 +30,13 @@ export function useNotificationsStream(accessToken?: string | null) {
   useEffect(() => {
     (async () => {
       try {
-        type Campaign = { _id: string; slug: string | { current: string } };
-        const campaigns: Campaign[] = await getCampaigns(40, locale);
-        const map: Record<string, string> = {};
-        for (const c of campaigns) {
-          const id = c._id;
-          const slug = typeof c.slug === "string" ? c.slug : c.slug?.current;
-          if (id && slug) map[id] = slug;
+        const resp = await fetch(`/${locale}/api/campaign-slugs`, {
+          next: { revalidate: 3600 },
+        });
+        if (resp.ok) {
+          const map = (await resp.json()) as Record<string, string>;
+          setSlugMap(map);
         }
-        setSlugMap(map);
       } catch {
         /* ignore */
       }
@@ -69,19 +67,18 @@ export function useNotificationsStream(accessToken?: string | null) {
           fetchingSlugRef.current.add(campaignId);
           (async () => {
             try {
-              type Campaign = {
-                _id: string;
-                slug: string | { current: string };
-              };
-              const campaigns: Campaign[] = await getCampaigns(200, locale);
-              const map: Record<string, string> = {};
-              for (const c of campaigns) {
-                const id = c._id;
-                const s = typeof c.slug === "string" ? c.slug : c.slug?.current;
-                if (id && s) map[id] = s;
+              const resp = await fetch(`/${locale}/api/campaign-slugs`, {
+                next: { revalidate: 3600 },
+              });
+              let newSlug: string | undefined;
+              if (resp.ok) {
+                const slugMapResp = (await resp.json()) as Record<
+                  string,
+                  string
+                >;
+                setSlugMap((prev) => ({ ...prev, ...slugMapResp }));
+                newSlug = slugMapResp[campaignId];
               }
-              setSlugMap((prev) => ({ ...prev, ...map }));
-              const newSlug = map[campaignId];
               if (newSlug) {
                 const params = new URLSearchParams();
                 if (meta?.solutionId)

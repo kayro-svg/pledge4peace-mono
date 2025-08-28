@@ -2,6 +2,7 @@ import Image from "next/image";
 import { PortableTextComponents } from "@portabletext/react";
 import { PortableText } from "@portabletext/react";
 import BrevoFormIframe from "@/components/ui/brevo-form-iframe";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 
 // Iframe para formularios de Brevo servidos desde /embeds/brevo/[id]
 const BrevoFormBlock = ({ value }: any) => {
@@ -42,12 +43,13 @@ const InlineImageComponent = ({ value }: any) => {
     <figure className={figureClasses}>
       <div className="relative w-full h-auto">
         <Image
-          src={value.asset.url}
+          src={getSanityImageUrl(value.asset.url, 800)}
           alt={value.alt || "Article image"}
           width={800}
           height={600}
           className="w-full h-auto rounded-lg shadow-lg"
           style={{ objectFit: "cover" }}
+          sizes="(max-width: 768px) 90vw, 800px"
         />
       </div>
       {value.caption && (

@@ -2,6 +2,7 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SanityAboutHeroSection } from "@/lib/types";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 
 interface HeroBannerProps {
   heroSection: SanityAboutHeroSection;
@@ -32,12 +33,13 @@ export default function HeroBanner({
         {bgImage && (
           <div className="absolute inset-0 z-0 opacity-10">
             <Image
-              src={bgImage}
+              src={getSanityImageUrl(bgImage, 1920, 1080, 70)}
               alt="About Us Hero Background"
               fill
               style={{ objectFit: "cover", objectPosition: "center" }}
               className="object-cover"
               priority
+              sizes="100vw"
             />
           </div>
         )}

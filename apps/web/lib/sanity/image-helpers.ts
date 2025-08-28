@@ -9,33 +9,37 @@ import { SanityImage } from "../types";
  * @returns Optimized image URL or empty string if no image
  */
 export function getSanityImageUrl(
-  image?: SanityImage,
+  image?: string | SanityImage,
   width?: number,
   height?: number,
   quality: number = 80
 ): string {
-  if (!image?.asset?.url) {
-    return "";
+  const baseUrl =
+    typeof image === "string"
+      ? image
+      : image?.asset?.url
+        ? image.asset.url
+        : "";
+
+  if (!baseUrl) return "";
+
+  // Preserve any pre-existing params while enforcing optimization params
+  let url: URL;
+  try {
+    url = new URL(baseUrl);
+  } catch {
+    // Fallback for malformed URLs
+    return baseUrl;
   }
 
-  let url = image.asset.url;
+  if (width) url.searchParams.set("w", String(width));
+  if (height) url.searchParams.set("h", String(height));
+  if (quality !== 80) url.searchParams.set("q", String(quality));
+  // Sensible defaults
+  if (!url.searchParams.has("fit")) url.searchParams.set("fit", "crop");
+  if (!url.searchParams.has("auto")) url.searchParams.set("auto", "format");
 
-  // Add optimization parameters if provided
-  const params: string[] = [];
-
-  if (width) params.push(`w=${width}`);
-  if (height) params.push(`h=${height}`);
-  if (quality !== 80) params.push(`q=${quality}`);
-
-  // Add default optimization for better performance
-  params.push("fit=crop");
-  params.push("auto=format");
-
-  if (params.length > 0) {
-    url += `?${params.join("&")}`;
-  }
-
-  return url;
+  return url.toString();
 }
 
 /**

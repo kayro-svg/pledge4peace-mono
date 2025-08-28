@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 
 interface ArticleCardProps {
   image: string;
@@ -28,7 +29,7 @@ export default function ArticleCard({
       <Link href={`/articles/${slug}`} className="flex flex-col h-full">
         <div className="relative h-48 w-full">
           <Image
-            src={image}
+            src={getSanityImageUrl(image, 800, 400)}
             alt={title}
             fill
             className="object-cover"

@@ -6,6 +6,7 @@ import { ArrowRight, Calendar } from "lucide-react";
 import { useRef, useEffect } from "react";
 import { SanitySlug } from "@/lib/types";
 import { useTranslations } from "next-intl";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 
 interface FeaturedArticleProps {
   image: string;
@@ -56,11 +57,12 @@ export default function FeaturedArticle({
       onMouseLeave={handleMouseLeave}
     >
       <Image
-        src={image}
+        src={getSanityImageUrl(image, 1200, 800)}
         alt={title}
         fill
         className="w-full h-full object-cover"
         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+        priority
       />
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent opacity-100 group-hover:from-black/60 group-hover:via-black/30 group-hover:to-transparent transition-all duration-300"></div>

@@ -50,7 +50,7 @@ export default function SpreadWordSection({
           <div className="md:w-1/2 md:order-1 relative h-[300px] w-full">
             {hasSanityImage(spreadTheWordSection?.image) ? (
               <Image
-                src={spreadTheWordSection?.image}
+                src={getSanityImageUrl(spreadTheWordSection?.image, 1200, 800)}
                 alt="Spreading the message of peace"
                 className="rounded-lg object-cover"
                 fill

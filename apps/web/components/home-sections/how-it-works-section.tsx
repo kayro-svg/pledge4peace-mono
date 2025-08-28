@@ -77,12 +77,27 @@ export default function HowItWorksSection({
   };
 
   return (
-    <section className="py-20 px-4 sm:px-6 md:px-8 lg:px-12">
+    <section className="py-20 px-4 sm:px-6 md:px-8 lg:px-12 ">
       <div className="text-center mb-12">
         {headingText()}
         <p className="section-subtitle text-[#2F4858] text-lg md:text-xl lg:text-xl">
           {sectionData.howItWorksDescription}
         </p>
+      </div>
+      <div className="mb-12">
+        <div className="relative w-full mx-auto overflow-hidden rounded-xl shadow-md bg-black aspect-video lg:h-[600px] lg:max-w-[1100px]">
+          <video
+            controls
+            playsInline
+            preload="metadata"
+            poster="/hero/hero-poster.jpg"
+            className="absolute inset-0 w-full h-full object-cover"
+          >
+            <source src="/hero/hero-720p.webm" type="video/webm" />
+            <source src="/hero/hero-720p.mp4" type="video/mp4" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
       </div>
       <StepsDisplay steps={steps} />
     </section>

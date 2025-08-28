@@ -32,6 +32,7 @@ import { useInteractions } from "../shared/interaction-context";
 import SolutionPost from "./solution-post";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 
 interface PeaceAgreementContentProps {
   campaignId: string;
@@ -148,7 +149,7 @@ export default function PeaceAgreementContent({
           (typeof party.name === "string" ? party.name : ""),
         icon: (
           <Image
-            src={party.icon.asset.url}
+            src={getSanityImageUrl(party.icon.asset.url, 40, 32, 80)}
             alt={`${party.name} icon`}
             width={20}
             height={16}
