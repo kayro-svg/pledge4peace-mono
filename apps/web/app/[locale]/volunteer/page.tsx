@@ -21,7 +21,6 @@ export default async function VolunteerPage({
   // Fetch data from Sanity CMS
   const volunteerData = await getVolunteerPageData(locale as "en" | "es");
 
-  console.log("volunteerData", volunteerData);
   // Define icons for volunteer ways (assigned by index)
   const volunteerIcons = [
     <Users key="users" className="h-8 w-8 text-[#548281]" />,

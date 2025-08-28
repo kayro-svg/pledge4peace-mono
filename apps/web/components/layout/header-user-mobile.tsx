@@ -56,7 +56,7 @@ export function HeaderUserMobile({ user }: HeaderUserProps) {
           </p>
         </div>
       </div>
-      {/* 
+
       <Button
         variant="ghost"
         size="sm"
@@ -65,7 +65,7 @@ export function HeaderUserMobile({ user }: HeaderUserProps) {
       >
         <LayoutDashboardIcon className="h-4 w-4 mr-2" />
         <span className="inline"> Dashboard</span>
-      </Button> */}
+      </Button>
       <Button
         variant="ghost"
         size="sm"

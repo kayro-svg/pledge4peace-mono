@@ -1,9 +1,12 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { SanitySlug } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 interface SmallArticleProps {
   image: string;
   title: string;
@@ -33,10 +36,11 @@ export default function SmallArticle({
         onClick={() => router.push(slug as string)}
       >
         <Image
-          src={image || "/placeholder.svg"}
+          src={getSanityImageUrl(image || "/placeholder.svg", 600, 400)}
           alt={title}
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-105"
+          sizes="(max-width: 768px) 100vw, 33vw"
         />
       </div>
 

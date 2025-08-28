@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Calendar } from "lucide-react";
 import { SanitySlug } from "@/lib/types";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 
 interface ConferenceCardProps {
   image: string;
@@ -22,10 +23,11 @@ export default function ConferenceCard({
     <div className="rounded-2xl overflow-hidden bg-white shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 group">
       <div className="relative h-56 overflow-hidden">
         <Image
-          src={image || "/placeholder.svg"}
+          src={getSanityImageUrl(image || "/placeholder.svg", 600, 320)}
           alt={title}
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-105"
+          sizes="(max-width: 768px) 100vw, 33vw"
         />
       </div>
       <div className="flex flex-col p-5 gap-5">

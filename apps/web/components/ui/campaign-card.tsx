@@ -18,6 +18,7 @@ import { prefetchCampaign } from "@/lib/sanity/prefetch";
 import { useCallback } from "react";
 import { logger } from "@/lib/utils/logger";
 import { useTranslations } from "next-intl";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 interface CampaignCardProps {
   title: string;
   description: string;
@@ -74,10 +75,15 @@ export default function CampaignCard({
           onClick={navigateToCampaign}
         >
           <Image
-            src={featuredImage || "/placeholder.svg"}
+            src={getSanityImageUrl(
+              featuredImage || "/placeholder.svg",
+              800,
+              450
+            )}
             alt={title}
             fill
             className="h-full w-full object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 40vw"
           />
         </div>
         <div className="flex flex-col p-3 sm:p-4 w-full md:w-[60%] h-full justify-between">
@@ -134,11 +140,16 @@ export default function CampaignCard({
           onClick={navigateToCampaign}
         >
           <Image
-            src={featuredImage || "/placeholder.svg"}
+            src={getSanityImageUrl(
+              featuredImage || "/placeholder.svg",
+              400,
+              300
+            )}
             alt={title}
             width={400}
             height={300}
             className="h-full w-full object-cover transition-transform hover:scale-105"
+            sizes="(max-width: 768px) 100vw, 400px"
           />
         </div>
         <CardHeader className="p-2 sm:p-3">
@@ -188,11 +199,16 @@ export default function CampaignCard({
           onClick={navigateToCampaign}
         >
           <Image
-            src={featuredImage || "/placeholder.svg"}
+            src={getSanityImageUrl(
+              featuredImage || "/placeholder.svg",
+              800,
+              400
+            )}
             alt={title}
-            width={400}
-            height={200}
+            width={800}
+            height={400}
             className="h-full w-full object-cover transition-transform hover:scale-105"
+            sizes="(max-width: 1024px) 100vw, 50vw"
           />
         </div>
         <div className="flex flex-col p-3 sm:p-4 w-full md:w-[50%] h-full justify-between">
@@ -255,11 +271,12 @@ export default function CampaignCard({
         onClick={navigateToCampaign}
       >
         <Image
-          src={featuredImage || "/placeholder.svg"}
+          src={getSanityImageUrl(featuredImage || "/placeholder.svg", 800, 400)}
           alt={title}
-          width={400}
-          height={200}
+          width={800}
+          height={400}
           className="h-full w-full object-cover transition-transform hover:scale-105"
+          sizes="(max-width: 1024px) 100vw, 50vw"
         />
       </div>
       <CardHeader className="p-3 sm:p-4 md:p-4 pb-4 sm:pb-6 md:pb-4">

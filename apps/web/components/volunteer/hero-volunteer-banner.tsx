@@ -59,7 +59,7 @@ export default function HeroVolunteerBanner({
           <div className="md:w-1/2 relative h-[300px] md:h-[400px] w-full shadow-[0_0_10px_0_rgba(0,0,0,0.2)] rounded-2xl overflow-hidden">
             {hasSanityImage(heroSection.heroBgImage) ? (
               <Image
-                src={heroSection.heroBgImage}
+                src={getSanityImageUrl(heroSection.heroBgImage, 1200, 800)}
                 alt="Volunteers making a difference"
                 className="object-cover w-full h-full"
                 fill

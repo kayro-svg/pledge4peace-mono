@@ -2,6 +2,7 @@
 
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 import { Button } from "../ui/button";
 import {
   Card,
@@ -93,7 +94,7 @@ function ImpactStoryCard({
     <Card className="overflow-hidden rounded-xl bg-white border-none shadow-sm transition-all hover:shadow-md">
       <div className="aspect-video w-full overflow-hidden">
         <Image
-          src={image || "/placeholder.svg"}
+          src={getSanityImageUrl(image || "/placeholder.svg", 800, 450, 80)}
           alt={title}
           width={400}
           height={200}

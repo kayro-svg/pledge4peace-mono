@@ -1,6 +1,9 @@
+"use client";
+
 import { MediaItem } from "@/lib/types";
 import { useState } from "react";
 import Image from "next/image";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 
 export default function MediaGallery({
   media,
@@ -26,10 +29,15 @@ export default function MediaGallery({
         {/* Media display */}
         {currentMedia.type === "image" ? (
           <Image
-            src={currentMedia.image?.asset?.url as string}
+            src={getSanityImageUrl(
+              currentMedia.image?.asset?.url as string,
+              1200,
+              900
+            )}
             alt={currentMedia.alt as string}
             fill
             className="object-cover"
+            sizes="100vw"
           />
         ) : (
           <video
@@ -55,10 +63,15 @@ export default function MediaGallery({
           >
             {item.type === "image" ? (
               <Image
-                src={item.image?.asset?.url as string}
+                src={getSanityImageUrl(
+                  item.image?.asset?.url as string,
+                  384,
+                  256
+                )}
                 alt={item.alt as string}
                 fill
                 className="object-cover"
+                sizes="(max-width: 768px) 40vw, 15vw"
               />
             ) : (
               <div className="relative w-full h-full bg-gray-200">

@@ -8,6 +8,7 @@ import ShareButtons from "@/components/ui/share-buttons";
 import { portableTextComponents } from "@/components/ui/portable-text-components";
 import { Metadata } from "next";
 import { SEODebug } from "@/components/dev/seo-debug";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 
 export const dynamic = "force-dynamic";
 
@@ -137,7 +138,9 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     "@type": "Article",
     headline: article.title,
     description: article.excerpt || "",
-    image: article.image?.asset?.url ? [article.image.asset.url] : [],
+    image: article.image?.asset?.url
+      ? [getSanityImageUrl(article.image.asset.url, 1200, 630, 80)]
+      : [],
     datePublished: article.publishedAt,
     dateModified: article.publishedAt,
     author: {
@@ -175,11 +178,17 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         {/* Hero Image */}
         <div className="relative w-full h-[240px] md:h-[500px]">
           <Image
-            src={article.image?.asset?.url || "/placeholder.svg"}
+            src={getSanityImageUrl(
+              article.image?.asset?.url || "/placeholder.svg",
+              1920,
+              1080,
+              80
+            )}
             alt={article.title}
             fill
             className="object-contain lg:object-cover"
             priority
+            sizes="100vw"
           />
         </div>
 
@@ -197,13 +206,17 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                   <div className="flex items-center gap-3">
                     <div className="relative w-10 h-10 rounded-full overflow-hidden">
                       <Image
-                        src={
+                        src={getSanityImageUrl(
                           article.author?.image?.asset?.url ||
-                          "/p4p_rounded_logo.png"
-                        }
+                            "/p4p_rounded_logo.png",
+                          64,
+                          64,
+                          80
+                        )}
                         alt={article.author?.name || "Author"}
                         fill
                         className="object-cover"
+                        sizes="40px"
                       />
                     </div>
                     <span className="font-medium">{article.author?.name}</span>
@@ -264,13 +277,17 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                       <article className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
                         <div className="relative h-48 w-full">
                           <Image
-                            src={
+                            src={getSanityImageUrl(
                               relatedArticle.image?.asset?.url ||
-                              "/placeholder.svg"
-                            }
+                                "/placeholder.svg",
+                              800,
+                              450,
+                              80
+                            )}
                             alt={relatedArticle.title}
                             fill
                             className="object-cover"
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
                           />
                         </div>
                         <div className="p-6">
@@ -303,13 +320,17 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                           <div className="flex items-center gap-3">
                             <div className="relative w-8 h-8 rounded-full overflow-hidden">
                               <Image
-                                src={
+                                src={getSanityImageUrl(
                                   relatedArticle.author?.image?.asset?.url ||
-                                  "/p4p_rounded_logo.png"
-                                }
+                                    "/p4p_rounded_logo.png",
+                                  64,
+                                  64,
+                                  80
+                                )}
                                 alt={relatedArticle.author?.name || "Author"}
                                 fill
                                 className="object-cover"
+                                sizes="32px"
                               />
                             </div>
                             <div>

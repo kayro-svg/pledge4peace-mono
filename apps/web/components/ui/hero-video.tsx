@@ -13,6 +13,7 @@ export default function HeroVideo({ videoUrl }: HeroVideoProps) {
               muted
               loop
               playsInline
+              preload="metadata"
               className="w-full h-full object-cover"
             >
               <source src={videoUrl} type="video/mp4" />

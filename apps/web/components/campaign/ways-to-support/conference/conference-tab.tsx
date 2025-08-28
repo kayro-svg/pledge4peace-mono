@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import {
@@ -156,11 +157,12 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
       <div className="relative w-full h-[200px] rounded-xl overflow-hidden">
         {conference.image?.asset?.url && (
           <Image
-            src={conference.image.asset.url}
+            src={getSanityImageUrl(conference.image.asset.url, 1920, 400, 80)}
             alt={conference.title}
             fill
             className="object-cover"
             priority
+            sizes="100vw"
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/20" />
@@ -283,10 +285,16 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
                   {speaker.image?.asset?.url && (
                     <div className="w-16 h-16 relative rounded-full overflow-hidden">
                       <Image
-                        src={speaker.image.asset.url}
+                        src={getSanityImageUrl(
+                          speaker.image.asset.url,
+                          128,
+                          128,
+                          80
+                        )}
                         alt={speaker.name}
                         fill
                         className="object-cover"
+                        sizes="64px"
                       />
                     </div>
                   )}
@@ -311,10 +319,11 @@ export default function ConferenceTab({ conferenceRef }: ConferenceTabProps) {
                 className="relative aspect-video rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all"
               >
                 <Image
-                  src={image.url}
+                  src={getSanityImageUrl(image.url, 800, 450, 80)}
                   alt={`Event image ${index + 1}`}
                   fill
                   className="object-cover"
+                  sizes="(max-width: 768px) 100vw, 33vw"
                 />
               </div>
             ))}

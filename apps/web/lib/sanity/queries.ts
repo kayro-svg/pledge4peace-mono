@@ -467,6 +467,33 @@ export async function getCampaignSlugs(): Promise<SanitySlug[]> {
   return slugs;
 }
 
+// Slim slug map for client consumers that only need id->slug
+export async function getCampaignIdSlugMap(
+  lang: "en" | "es" = "en"
+): Promise<Record<string, string>> {
+  const sanityClient = getClient({ forceFresh: isDevelopment });
+  const rows = await sanityClient.fetch(
+    /* groq */ `
+      *[_type == "campaign" && defined(slug.current)]{
+        _id,
+        "slug": slug.current
+      }
+    `,
+    { lang },
+    {
+      next: {
+        revalidate: cache.long,
+        tags: ["campaign", "campaign-slug-map"],
+      },
+    }
+  );
+  const map: Record<string, string> = {};
+  for (const r of rows as Array<{ _id: string; slug: string }>) {
+    if (r?._id && r?.slug) map[r._id] = r.slug;
+  }
+  return map;
+}
+
 export async function getArticles(
   limit?: number,
   lang: "en" | "es" = "en"

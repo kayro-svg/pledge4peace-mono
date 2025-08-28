@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 
 interface SanityIconProps {
   iconUrl: string;
@@ -7,7 +8,7 @@ interface SanityIconProps {
 export const SanityIcon = ({ iconUrl }: SanityIconProps) => {
   return (
     <Image
-      src={iconUrl}
+      src={getSanityImageUrl(iconUrl, 56, 56)}
       alt="Support icon"
       width={28}
       height={28}

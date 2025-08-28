@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, Clock, MapPin } from "lucide-react";
 import { logger } from "@/lib/utils/logger";
 import { useTranslations } from "next-intl";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 
 import { cleanTimezone } from "@/lib/utils/clean-timezone";
 
@@ -234,10 +235,11 @@ export default function ExtendedEventCard({
       {/* Image Column */}
       <div className="relative w-full md:w-72 lg:w-96 h-48 flex-shrink-0">
         <Image
-          src={imageUrl || "/placeholder.svg"}
+          src={getSanityImageUrl(imageUrl || "/placeholder.svg", 800, 400)}
           alt={title}
           fill
           className="object-cover rounded-lg"
+          sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
         />
       </div>
 

@@ -35,7 +35,11 @@ export default function HighProfileOutreach({
           <div className="md:w-1/2 relative h-[300px] w-full">
             {hasSanityImage(convinceHighProfileSection?.image) ? (
               <Image
-                src={convinceHighProfileSection?.image}
+                src={getSanityImageUrl(
+                  convinceHighProfileSection?.image,
+                  1200,
+                  800
+                )}
                 alt="Influential figures supporting peace"
                 className="rounded-lg object-cover"
                 fill
