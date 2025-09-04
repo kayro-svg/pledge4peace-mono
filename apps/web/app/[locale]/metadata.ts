@@ -3,8 +3,10 @@ import { Metadata } from "next";
 // Define metadata for each locale
 const metadata: Record<string, Metadata> = {
   en: {
-    title: "Pledge4Peace",
-    description: "No Hate, No Divide - Just Peace Worldwide",
+    title:
+      "Pledge4Peace | Global Campaigns for Peace, Democracy & Human Rights",
+    description:
+      "Join Pledge4Peace: the only platform with people-powered solutions on global conflicts. Vote to strengthen peace and democracy. Take action today.",
     icons: {
       icon: [
         { url: "/favicon/favicon.ico?v=2" },
@@ -36,8 +38,10 @@ const metadata: Record<string, Metadata> = {
     manifest: "/site.webmanifest",
   },
   es: {
-    title: "Pledge4Peace",
-    description: "Sin Odio, Sin División - Solo Paz Mundial",
+    title:
+      "Pledge4Peace | Campañas Globales para la Paz, Democracia & Derechos Humanos",
+    description:
+      "Únete a Pledge4Peace: la única plataforma con soluciones impulsadas por la gente en conflictos globales. Vota para fortalecer la paz y la democracia. ¡Toma acción hoy!",
     icons: {
       icon: [
         { url: "/favicon/favicon.ico?v=2" },
