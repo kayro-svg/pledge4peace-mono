@@ -23,6 +23,7 @@ import { ArrowLeft } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 
 interface CampaignDetailContentProps {
   campaign: SanityCampaign;
@@ -120,8 +121,87 @@ export function CampaignDetailContent({
     contentTabsRef.current?.navigateToSolutions();
   };
 
+  // Generate structured data for the campaign
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://pledge4peace.org";
+  const campaignUrl = `${baseUrl}/${locale}/campaigns/${campaign.slug.current}`;
+  const campaignImage = campaign.featuredImage?.asset?.url
+    ? getSanityImageUrl(campaign.featuredImage.asset.url, 1200, 630, 80)
+    : `${baseUrl}/p4p_logo_renewed.png`;
+
+  const campaignStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "Event", // Campaigns are events/initiatives
+    name: campaign.title,
+    description: campaign.description || `Join our campaign: ${campaign.title}. Take action for peace and democracy.`,
+    image: campaignImage,
+    url: campaignUrl,
+    
+    // Organization details
+    organizer: {
+      "@type": "Organization",
+      name: "Pledge4Peace",
+      url: baseUrl,
+      logo: `${baseUrl}/p4p_logo_renewed.png`,
+      sameAs: [
+        "https://www.youtube.com/@Pledge4Peace",
+        "https://www.linkedin.com/groups/14488545/",
+        "https://www.facebook.com/share/1F8FxiQ6Hh/",
+        "https://x.com/pledge4peaceorg",
+        "https://www.instagram.com/pledge4peaceorg",
+        "https://www.tiktok.com/@pledge4peace5"
+      ]
+    },
+
+    // Event details
+    eventStatus: "https://schema.org/EventScheduled",
+    eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
+    
+    // Location (virtual/online)
+    location: {
+      "@type": "VirtualLocation",
+      url: campaignUrl,
+      name: "Pledge4Peace Platform"
+    },
+
+    // Timing
+    startDate: campaign._createdAt,
+    // endDate: undefined, // No endDate property in SanityCampaign
+
+    // Additional properties
+    about: [
+      "Peace building",
+      "Democracy",
+      "Human rights",
+      "Social justice",
+      "Global campaigns"
+    ],
+
+    // Participation details
+    isAccessibleForFree: true,
+    inLanguage: [locale === "es" ? "es" : "en"],
+    
+    // Keywords
+    keywords: `peace campaign, ${campaign.title}, democracy, human rights, social justice, global action`,
+    
+    // Publisher
+    publisher: {
+      "@type": "Organization",
+      name: "Pledge4Peace",
+      url: baseUrl
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-[#fffef5]">
+    <>
+      {/* Campaign Structured Data for SEO */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(campaignStructuredData, null, 2),
+        }}
+      />
+      
+      <main className="min-h-screen bg-[#fffef5]">
       <div className="container mx-auto px-4 py-8">
         <div className="w-full mx-auto">
           <div className="mb-8">
@@ -190,5 +270,6 @@ export function CampaignDetailContent({
         </div>
       </div>
     </main>
+    </>
   );
 }
