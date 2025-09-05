@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
+import { getCategoryClassName } from "@/lib/utils/category-styles";
 
 interface ArticleCardProps {
   image: string;
@@ -41,11 +42,7 @@ export default function ArticleCard({
           {/* Category Tag */}
           <div>
             <span
-              className="inline-block px-3 py-1 text-sm font-medium rounded-full mb-4"
-              style={{
-                backgroundColor: getCategoryColor(category),
-                color: "white",
-              }}
+              className={`inline-block px-3 py-1 text-sm font-medium rounded-full mb-4 ${getCategoryClassName(category)}`}
             >
               {category}
             </span>
@@ -80,16 +77,7 @@ export default function ArticleCard({
   );
 }
 
-function getCategoryColor(category: string): string {
-  const colors: { [key: string]: string } = {
-    "Peace Initiatives": "#548281",
-    Community: "#FF6B6B",
-    Events: "#4ECDC4",
-    General: "#95A5A6",
-  };
-
-  return colors[category] || colors["General"];
-}
+// Removed getCategoryColor function - now using CSS classes via getCategoryClassName
 
 function formatDate(dateString: string): string {
   try {

@@ -1,9 +1,12 @@
 import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { users } from "./users";
 
 export const pledges = sqliteTable("pledges", {
   id: text("id").primaryKey(),
   campaignId: text("campaign_id").notNull(),
-  userId: text("user_id").notNull(),  // Now required - user must be authenticated
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id),  // Foreign key to users table
   agreeToTerms: integer("agree_to_terms", { mode: "boolean" }).notNull(),
   subscribeToUpdates: integer("subscribe_to_updates", { mode: "boolean" }).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),

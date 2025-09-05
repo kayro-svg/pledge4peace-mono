@@ -3,45 +3,123 @@ import { getCampaignBySlug, getCampaignSlugs } from "@/lib/sanity/queries";
 import { routing } from "@/i18n/routing";
 import { notFound } from "next/navigation";
 import { logger } from "@/lib/utils/logger";
+import { Metadata } from "next";
+import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 
-// Enable Incremental Static Regeneration with a revalidation period of 60 seconds
-// export const revalidate = 60;
 export const dynamic = "force-dynamic";
 
-// Esta función genera estáticamente las rutas en tiempo de compilación
-// export async function generateStaticParams() {
-//   const campaigns = await getCampaignSlugs();
-//   return campaigns
-//     .filter(
-//       (slug) => typeof slug?.current === "string" && slug.current.length > 0
-//     )
-//     .map((slug) => ({ slug: slug.current }));
-// }
-
-// export async function generateStaticParams() {
-//   const campaigns = await getCampaignSlugs();
-
-//   // Ensure we include the locale segment so that
-//   // /en/... y /es/... se pre-generen y tengan su JSON
-//   const locales = routing.locales ?? ["en"];
-
-//   const validSlugs = campaigns.filter(
-//     (s) => typeof s?.current === "string" && s.current.length > 0
-//   );
-
-//   return locales.flatMap((locale) =>
-//     validSlugs.map((slug) => ({ locale, slug: slug.current }))
-//   );
-// }
-
 export async function generateStaticParams() {
-  const slugs = await getCampaignSlugs(); // [{slug:{current:'create-...'}}]
-  const locales = ["en", "es"]; // ajusta según i18n
+  const slugs = await getCampaignSlugs();
+  const locales = ["en", "es"]; 
   return locales.flatMap((locale) =>
     slugs
       .filter((s) => s?.slug?.current)
       .map((s) => ({ locale, slug: s.slug.current }))
   );
+}
+
+// Generate metadata for campaigns with Twitter Cards and Open Graph
+export async function generateMetadata({
+  params,
+}: {
+  params:
+    | { locale: string; slug: string }
+    | Promise<{ locale: string; slug: string }>;
+}): Promise<Metadata> {
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const { locale, slug } = resolvedParams;
+
+  const campaign = await getCampaignBySlug(
+    slug,
+    (locale as "en" | "es") || "en"
+  );
+
+  if (!campaign) {
+    return {
+      title: "Campaign Not Found",
+      description: "The requested campaign could not be found.",
+    };
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://pledge4peace.org";
+  const campaignUrl = `${baseUrl}/${locale}/campaigns/${campaign.slug.current}`;
+  
+  // Get campaign image
+  const campaignImage = campaign.featuredImage?.asset?.url
+    ? getSanityImageUrl(campaign.featuredImage.asset.url, 1200, 630, 80)
+    : `${baseUrl}/p4p_logo_renewed.png`;
+
+  // Create title and description
+  const title = `${campaign.title} | Pledge4Peace Campaign`;
+  const description = campaign.description || 
+    `Join our campaign: ${campaign.title}. Take action for peace and democracy.`;
+
+  return {
+    title,
+    description,
+    keywords: `peace campaign, ${campaign.title}, democracy, human rights, social justice, global action`,
+    authors: [{ name: "Pledge4Peace" }],
+    creator: "Pledge4Peace",
+    publisher: "Pledge4Peace",
+
+    // Open Graph metadata for Facebook and other social platforms
+    openGraph: {
+      title,
+      description,
+      url: campaignUrl,
+      siteName: "Pledge4Peace",
+      images: [
+        {
+          url: campaignImage,
+          width: 1200,
+          height: 630,
+          alt: campaign.title,
+        },
+      ],
+      locale: locale === "es" ? "es_ES" : "en_US",
+      type: "article", // Using article for campaigns as they're content pieces
+    },
+
+    // Twitter Card metadata
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [campaignImage],
+      creator: "@Pledge4Peace",
+      site: "@Pledge4Peace",
+    },
+
+    // Additional SEO
+    alternates: {
+      canonical: campaignUrl,
+    },
+
+    // Control indexing
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+      },
+    },
+
+    // Campaign specific metadata
+    other: {
+      "article:published_time": campaign._createdAt,
+      "article:author": "Pledge4Peace Team",
+      "article:section": "Peace Campaigns",
+      "og:see_also": [
+        "https://www.youtube.com/@Pledge4Peace",
+        "https://www.linkedin.com/groups/14488545/",
+        "https://www.facebook.com/share/1F8FxiQ6Hh/",
+        "https://x.com/pledge4peaceorg",
+        "https://www.instagram.com/pledge4peaceorg",
+        "https://www.tiktok.com/@pledge4peace5"
+      ].join(","),
+    },
+  };
 }
 
 export default async function Page({

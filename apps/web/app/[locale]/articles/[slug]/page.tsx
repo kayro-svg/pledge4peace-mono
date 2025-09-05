@@ -9,6 +9,7 @@ import { portableTextComponents } from "@/components/ui/portable-text-components
 import { Metadata } from "next";
 import { SEODebug } from "@/components/dev/seo-debug";
 import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
+import { getCategoryClassName } from "@/lib/utils/category-styles";
 
 export const dynamic = "force-dynamic";
 
@@ -150,10 +151,19 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     publisher: {
       "@type": "Organization",
       name: "Pledge4Peace",
+      url: baseUrl,
       logo: {
         "@type": "ImageObject",
         url: `${baseUrl}/p4p_logo_renewed.png`,
       },
+      sameAs: [
+        "https://www.youtube.com/@Pledge4Peace",
+        "https://www.linkedin.com/groups/14488545/",
+        "https://www.facebook.com/share/1F8FxiQ6Hh/",
+        "https://x.com/pledge4peaceorg",
+        "https://www.instagram.com/pledge4peaceorg",
+        "https://www.tiktok.com/@pledge4peace5"
+      ]
     },
     mainEntityOfPage: {
       "@type": "WebPage",
@@ -162,6 +172,23 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     url: articleUrl,
     articleSection: article.categories?.[0]?.title || "General",
     keywords: article.seo?.keywords?.join(", ") || "",
+    
+    // Additional article properties
+    wordCount: article.content?.length || 0,
+    inLanguage: locale === "es" ? "es" : "en",
+    isAccessibleForFree: true,
+    
+    // About topics
+    about: [
+      "Peace building",
+      "Democracy", 
+      "Human rights",
+      "Social justice",
+      ...(article.categories?.map(cat => cat.title) || [])
+    ],
+    
+    // Article body (first 200 chars as snippet)
+    articleBody: article.content?.slice(0, 200) + "..." || "",
   };
 
   return (
@@ -232,11 +259,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                   {article.categories?.map((category) => (
                     <span
                       key={category._id}
-                      className="px-3 py-1 text-sm font-medium rounded-full"
-                      style={{
-                        backgroundColor: getCategoryColor(category.title),
-                        color: "white",
-                      }}
+                      className={`px-3 py-1 text-sm font-medium rounded-full ${getCategoryClassName(category.title)}`}
                     >
                       {category.title}
                     </span>
@@ -287,20 +310,14 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
                             alt={relatedArticle.title}
                             fill
                             className="object-cover"
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
+                            sizes="(max-width: 768px) 100%, (max-width: 1200px) 50vw, 50vw"
                           />
                         </div>
                         <div className="p-6">
                           {/* Categories */}
                           {relatedArticle.categories?.[0] && (
                             <span
-                              className="inline-block px-3 py-1 text-sm font-medium rounded-full mb-4"
-                              style={{
-                                backgroundColor: getCategoryColor(
-                                  relatedArticle.categories[0].title
-                                ),
-                                color: "white",
-                              }}
+                              className={`inline-block px-3 py-1 text-sm font-medium rounded-full mb-4 ${getCategoryClassName(relatedArticle.categories[0].title)}`}
                             >
                               {relatedArticle.categories[0].title}
                             </span>
@@ -359,13 +376,4 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
   );
 }
 
-function getCategoryColor(category: string): string {
-  const colors: { [key: string]: string } = {
-    "Peace Initiatives": "#548281",
-    Community: "#FF6B6B",
-    Events: "#4ECDC4",
-    General: "#95A5A6",
-  };
-
-  return colors[category] || colors["General"];
-}
+// Removed getCategoryColor function - now using CSS classes via getCategoryClassName

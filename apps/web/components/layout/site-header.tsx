@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import Image from "next/image";
+import OptimizedImage from "@/components/ui/optimized-image";
 // import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { HeaderUser } from "./header-user";
@@ -49,13 +49,14 @@ export default function SiteHeader() {
       <header className="w-full py-4 px-4 sm:px-6 flex justify-between items-center border-b sticky top-0 bg-background backdrop-blur-sm z-50 shadow-sm">
         {/* Logo */}
         <div className="flex items-center cursor-pointer">
-          <Image
+          <OptimizedImage
             src="/p2p_footer_logo.png"
             alt="Pledge4Peace.org"
             width={200}
             height={40}
-            className="h-8 sm:h-10 w-auto"
+            className="h-8 sm:h-10 w-auto image-auto-size"
             onClick={() => router.push("/")}
+            priority={true} // Logo es crítico
           />
         </div>
 
@@ -144,12 +145,13 @@ export default function SiteHeader() {
           </button>
 
           <div className="space-y-1 pr-12">
-            <Image
+            <OptimizedImage
               src="/p2p_footer_logo.png"
               alt="Pledge4Peace.org"
               width={160}
               height={32}
-              className="h-8 w-auto mb-2"
+              className="h-8 w-auto mb-2 image-auto-size"
+              priority={true} // Logo móvil también es crítico
             />
           </div>
         </div>

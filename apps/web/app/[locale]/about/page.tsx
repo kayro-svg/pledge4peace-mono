@@ -6,36 +6,79 @@ import MissionPhilosophy from "@/components/about/mission-philosophy";
 import NonprofitMission from "@/components/about/nonprofit-mission";
 import ContactInformationAndCommitment from "@/components/about/contact-information";
 import { getAboutPageData } from "@/lib/sanity/queries";
+import { Metadata } from "next";
 
-// Define types for the data structure
-// type AboutPageData = {
-//   heroSection: {
-//     heroHeading: { en: string; es: string };
-//     heroSubheading: { en: string; es: string };
-//     heroBgImage?: { asset: { _id: string; url: string } };
-//   };
-//   whoWeAreSection: {
-//     whoWeAreHeading: { en: string; es: string };
-//     whoWeAreFirstParagraph: { en: string; es: string };
-//     whoWeAreSecondParagraph: { en: string; es: string };
-//     whoWeAreThirdParagraph: { en: string; es: string };
-//     whoWeAreImage?: { asset: { _id: string; url: string } };
-//   };
-//   ourMissionSection: {
-//     ourMissionHeading: { en: string; es: string };
-//     ourMissionParagraph: { en: string; es: string };
-//     ourMissionImage?: { asset: { _id: string; url: string } };
-//   };
-//   ourPhilosophySection: {
-//     ourPhilosophyHeading: { en: string; es: string };
-//     ourPhilosophyParagraph: { en: string; es: string };
-//     ourPhilosophyImage?: { asset: { _id: string; url: string } };
-//   };
-// };
 
 // Generate static params for locales
 export function generateStaticParams() {
   return [{ locale: "en" }, { locale: "es" }];
+}
+
+// Generate metadata for About page
+export async function generateMetadata({
+  params,
+}: {
+  params: { locale: any };
+}): Promise<Metadata> {
+  const locale = await params.locale;
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://pledge4peace.org";
+  const aboutUrl = locale === "en" ? `${baseUrl}/about` : `${baseUrl}/${locale}/about`;
+
+  const title = locale === "es" 
+    ? "Acerca de Nosotros | Pledge4Peace - Campañas Globales por la Paz"
+    : "About Us | Pledge4Peace - Global Campaigns for Peace";
+  
+  const description = locale === "es"
+    ? "Conoce nuestra misión de promover la paz, democracia y derechos humanos a través de campañas globales impulsadas por la comunidad."
+    : "Learn about our mission to promote peace, democracy, and human rights through community-driven global campaigns.";
+
+  return {
+    metadataBase: new URL(baseUrl),
+    title,
+    description,
+    keywords: locale === "es" 
+      ? "acerca de, misión, paz, democracia, derechos humanos, organización"
+      : "about us, mission, peace, democracy, human rights, organization",
+    
+    alternates: {
+      canonical: aboutUrl,
+    },
+
+    openGraph: {
+      title,
+      description,
+      url: aboutUrl,
+      siteName: "Pledge4Peace",
+      type: "website",
+      locale: locale === "es" ? "es_ES" : "en_US",
+      images: [
+        {
+          url: "/p4p_logo_renewed.png",
+          width: 1200,
+          height: 630,
+          alt: "Pledge4Peace - About Us",
+        },
+      ],
+    },
+
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["/p4p_logo_renewed.png"],
+      creator: "@Pledge4Peace",
+      site: "@Pledge4Peace",
+    },
+
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+      },
+    },
+  };
 }
 
 export default async function AboutPage({

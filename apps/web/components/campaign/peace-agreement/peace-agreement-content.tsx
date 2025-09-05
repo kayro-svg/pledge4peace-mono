@@ -153,7 +153,8 @@ export default function PeaceAgreementContent({
             alt={`${party.name} icon`}
             width={20}
             height={16}
-            className="inline-block"
+            style={{ width: "auto", height: "auto" }}
+            className="w-4 h-4 object-cover !w-4 !h-4"
           />
         ),
         color: colorMap[party.color] || colorMap.blue,

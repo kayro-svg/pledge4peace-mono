@@ -1,0 +1,58 @@
+# Robots.txt for Pledge4Peace
+# https://pledge4peace.org/robots.txt
+
+User-agent: *
+Allow: /
+
+# Sitemap location
+Sitemap: https://pledge4peace.org/sitemap.xml
+
+# Allow crawling of main content areas
+Allow: /en/
+Allow: /es/
+Allow: /campaigns/
+Allow: /articles/
+Allow: /about
+Allow: /volunteer
+Allow: /contact
+Allow: /events
+
+# Disallow crawling of admin and private areas
+Disallow: /admin/
+Disallow: /api/
+Disallow: /_next/
+Disallow: /dashboard/
+Disallow: /login
+Disallow: /register
+Disallow: /reset-password
+Disallow: /verify-email
+Disallow: /forgot-password
+
+# Disallow crawling of dynamic form endpoints
+Disallow: /embeds/brevo/
+
+# Allow social media bots
+User-agent: facebookexternalhit/1.1
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+# Crawl-delay for general bots (1 second)
+Crawl-delay: 1
+
+# No crawl-delay for major search engines
+User-agent: Googlebot
+Crawl-delay: 0
+
+User-agent: Bingbot  
+Crawl-delay: 0
+
+User-agent: Slurp
+Crawl-delay: 0

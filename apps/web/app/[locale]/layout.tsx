@@ -7,6 +7,8 @@ import { SessionExpiryWarning } from "@/components/auth/session-expiry-warning";
 import { Toaster } from "sonner";
 import { CookieBanner } from "@/components/cookies/cookie-banner";
 import { LayoutWrapper } from "@/components/layout/layout-wrapper";
+import { StructuredData } from "@/components/seo/structured-data";
+import { CriticalResourceHints, ResourceOptimizer } from "@/components/performance/resource-optimizer";
 import { Providers } from "../providers";
 import "../globals.css";
 import { routing } from "@/i18n/routing";
@@ -55,11 +57,23 @@ export default async function RootLayout({
 
   return (
     <html lang={locale}>
+      <head>
+        <CriticalResourceHints />
+        <StructuredData locale={locale} />
+        {/* Social media authority links for SEO */}
+        <link rel="me" href="https://www.youtube.com/@Pledge4Peace" />
+        <link rel="me" href="https://www.linkedin.com/groups/14488545/" />
+        <link rel="me" href="https://www.facebook.com/share/1F8FxiQ6Hh/" />
+        <link rel="me" href="https://x.com/pledge4peaceorg" />
+        <link rel="me" href="https://www.instagram.com/pledge4peaceorg" />
+        <link rel="me" href="https://www.tiktok.com/@pledge4peace5" />
+      </head>
       <body className={`${inter.className} h-full w-[100%]`}>
         <GoogleAnalytics />
         <FacebookPixel />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
+            <ResourceOptimizer />
             <LayoutWrapper>{children}</LayoutWrapper>
             <SessionExpiryWarning />
             <Toaster />

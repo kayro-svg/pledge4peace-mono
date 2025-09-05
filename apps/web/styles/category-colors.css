@@ -1,0 +1,47 @@
+/* Category color utilities to replace inline styles */
+
+.category-peace-initiatives {
+  background-color: #548281;
+  color: white;
+}
+
+.category-community {
+  background-color: #ff6b6b;
+  color: white;
+}
+
+.category-events {
+  background-color: #4ecdc4;
+  color: white;
+}
+
+.category-general {
+  background-color: #95a5a6;
+  color: white;
+}
+
+/* Image optimization utilities */
+.image-auto-size {
+  width: auto;
+  height: auto;
+}
+
+.image-loading {
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.image-loaded {
+  opacity: 1;
+}
+
+/* Performance optimizations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}

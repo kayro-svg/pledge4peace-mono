@@ -2,7 +2,7 @@
 
 import { MediaItem } from "@/lib/types";
 import { useState } from "react";
-import Image from "next/image";
+import OptimizedImage from "@/components/ui/optimized-image";
 import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 
 export default function MediaGallery({
@@ -28,16 +28,15 @@ export default function MediaGallery({
       <div className="relative rounded-xl overflow-hidden mb-4 aspect-[4/3] bg-gray-100">
         {/* Media display */}
         {currentMedia.type === "image" ? (
-          <Image
-            src={getSanityImageUrl(
-              currentMedia.image?.asset?.url as string,
-              1200,
-              900
-            )}
-            alt={currentMedia.alt as string}
+          <OptimizedImage
+            src={currentMedia.image?.asset?.url as string}
+            alt={currentMedia.alt as string || "Pledge4Peace campaign image"}
             fill
             className="object-cover"
-            sizes="100vw"
+            sizes="(max-width: 768px) 90vw, (max-width: 1200px) 70vw, 60vw"
+            sanityWidth={1200}
+            sanityHeight={900}
+            priority={currentIndex === 0} // Solo la primera imagen es priority
           />
         ) : (
           <video
@@ -62,15 +61,13 @@ export default function MediaGallery({
             }`}
           >
             {item.type === "image" ? (
-              <Image
-                src={getSanityImageUrl(
-                  item.image?.asset?.url as string,
-                  384,
-                  256
-                )}
-                alt={item.alt as string}
+              <OptimizedImage
+                src={item.image?.asset?.url as string}
+                alt={item.alt as string || "Pledge4Peace campaign image"}
                 fill
                 className="object-cover"
+                sanityWidth={384}
+                sanityHeight={256}
                 sizes="(max-width: 768px) 40vw, 15vw"
               />
             ) : (

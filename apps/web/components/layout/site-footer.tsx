@@ -22,6 +22,7 @@ export default function SiteFooter() {
               alt="Pledge4Peace.org"
               width={200}
               height={40}
+                style={{ width: "auto", height: "auto" }}
               className="h-8 sm:h-10 w-auto transition-all duration-300 hover:opacity-80 mb-2"
             />
 
@@ -87,79 +88,95 @@ export default function SiteFooter() {
           <div className="w-full lg:w-auto lg:max-w-[300px] mt-6 lg:mt-0">
             <div className="flex space-x-4 mb-4 sm:mb-6 items-center">
               <Link
-                href="https://www.instagram.com/pledge4peaceorg?igsh=MWxuNXFqZzhnd2g5NA=="
+                href="https://www.instagram.com/pledge4peaceorg"
                 target="_blank"
+                rel="noopener noreferrer me"
                 className="hover:opacity-80 transition-opacity"
+                aria-label="Follow us on Instagram"
               >
                 <Image
                   src={instagramIcon}
-                  alt="Instagram"
+                  alt="Pledge4Peace Instagram"
                   width={26}
                   height={26}
                   className="w-9 h-9 md:w-8 md:h-8"
                 />
               </Link>
               <Link
-                href="https://www.tiktok.com/@pledge4peace5?_t=ZT-8xMmpO4sL9x&_r=1"
+                href="https://www.tiktok.com/@pledge4peace5"
                 target="_blank"
+                rel="noopener noreferrer me"
                 className="hover:opacity-80 transition-opacity"
+                aria-label="Follow us on TikTok"
               >
                 <Image
                   src={tiktokIcon}
-                  alt="Tiktok"
+                  alt="Pledge4Peace TikTok"
                   width={26}
                   height={26}
                   className="w-9 h-9 md:w-8 md:h-8"
                 />
               </Link>
               <Link
-                href="https://x.com/pledge4peaceorg?s=21&t=F5cL8vzgEmm7vjgbe1oAiw"
+                href="https://x.com/pledge4peaceorg"
                 target="_blank"
+                rel="noopener noreferrer me"
                 className="hover:opacity-80 transition-opacity"
+                aria-label="Follow us on X (Twitter)"
               >
                 <Image
                   src={xIcon}
-                  alt="X"
+                  alt="Pledge4Peace X (Twitter)"
                   width={25}
                   height={25}
                   className="w-8 h-8 md:w-7 md:h-7"
                 />
               </Link>
               <Link
-                href="https://www.facebook.com/share/1F8FxiQ6Hh/?mibextid=wwXIfr"
+                href="https://www.facebook.com/share/1F8FxiQ6Hh/"
                 target="_blank"
+                rel="noopener noreferrer me"
                 className="hover:opacity-80 transition-opacity"
+                aria-label="Follow us on Facebook"
               >
                 <Image
                   src={facebookIcon}
-                  alt="Facebook"
+                  alt="Pledge4Peace Facebook"
                   width={26}
                   height={26}
                   className="w-8 h-8 md:w-7 md:h-7"
                 />
               </Link>
               <Link
-                href="https://youtube.com/@pledge4peace?si=d47VEbPcEoU_y-kL"
+                href="https://www.youtube.com/@Pledge4Peace"
                 target="_blank"
+                rel="noopener noreferrer me"
                 className="hover:opacity-80 transition-opacity"
+                aria-label="Visit our YouTube channel"
               >
                 <Image
                   src={youtubeIcon}
-                  alt="Youtube"
+                  alt="Pledge4Peace YouTube Channel"
                   width={26}
                   height={26}
                   className="w-9 h-9 md:w-8 md:h-8"
                 />
               </Link>
-              {/* <Link href="#" className="hover:opacity-80 transition-opacity">
+              <Link 
+                href="https://www.linkedin.com/groups/14488545/"
+                target="_blank"
+                rel="noopener noreferrer me"
+                className="hover:opacity-80 transition-opacity"
+                aria-label="Join our LinkedIn group"
+              >
                 <Image
                   src={linkedinIcon}
-                  alt="Linkedin"
+                  alt="Pledge4Peace LinkedIn Group"
                   width={22}
                   height={22}
                   className="w-8 h-8 md:w-7 md:h-7"
                 />
-              </Link> */}
+              </Link>
             </div>
             <address className="not-italic text-[#2F4858] text-sm sm:text-base">
               <p className="mb-2">{t("footer_paragraph1")}</p>
