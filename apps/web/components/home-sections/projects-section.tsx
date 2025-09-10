@@ -43,13 +43,13 @@ export default function RecentProjects({
     >
       <div className="w-full">
         <div className="text-center mb-12">
-          <h2 className="text-[#2F4858] uppercase text-sm font-medium tracking-wider mb-4 border-b-2 w-fit mx-auto border-[#2F4858]">
+          <p className="text-[#2F4858] uppercase text-sm font-medium tracking-wider mb-4 border-b-2 w-fit mx-auto border-[#2F4858]">
             {t("projects_label")}
-          </h2>
-          <h1 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
+          </p>
+          <h2 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
             {/* <span className="text-[#548281]">Take action</span> today */}
             {sectionData.campaignsHeading}
-          </h1>
+          </h2>
           <p className="section-subtitle text-[#2F4858] text-lg md:text-xl lg:text-xl">
             {/* Here's how you can take action today, by voting and pledging in our
             recent campaigns. */}

@@ -153,9 +153,9 @@ export default function RequestVerificationPage() {
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
                   <CheckCircle className="w-8 h-8 text-green-600" />
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
-                  Verification email sent!
-                </h1>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                    Verification email sent!
+                  </h2>
                 <p className="text-gray-600 mb-4 leading-relaxed">{message}</p>
                 <p className="text-gray-600 mb-8 leading-relaxed">
                   Please check your email inbox and click the verification link
@@ -190,9 +190,9 @@ export default function RequestVerificationPage() {
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-6">
                   <XCircle className="w-8 h-8 text-red-600" />
                 </div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
                   Something went wrong
-                </h1>
+                </h2>
                 <p className="text-red-600 mb-4 leading-relaxed font-medium">
                   {message}
                 </p>

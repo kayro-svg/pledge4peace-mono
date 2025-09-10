@@ -19,7 +19,7 @@ export function RecentActivity({
     <div className="flex flex-col gap-16">
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold ">Your activity</h1>
+          <h2 className="text-2xl font-bold ">Your activity</h2>
           <p className="text-sm text-gray-500">
             Here are the latest campaigns based on your pledge history. Check
             their progress and explore more ways to support them.
@@ -84,7 +84,7 @@ export function RecentActivity({
       </div>
       <div className="flex flex-col gap-8">
         <div className="flex flex-col gap-2">
-          <h1 className="text-2xl font-bold ">Recommended for you</h1>
+          <h2 className="text-2xl font-bold ">Recommended for you</h2>
         </div>
         <div className="flex flex-col gap-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

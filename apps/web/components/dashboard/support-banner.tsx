@@ -44,9 +44,9 @@ export default function SupportBanner() {
           <Badge className="mb-4 bg-emerald-500 text-white hover:bg-emerald-600">
             Impact Report
           </Badge>
-          <h1 className="mb-2 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
+          <h2 className="mb-2 text-3xl font-bold text-white sm:text-4xl md:text-5xl">
             Impact of your support
-          </h1>
+          </h2>
           <p className="mb-6 max-w-lg text-lg text-emerald-50">
             Your support has helped us achieve great things. Together,
             we&apos;re making a real difference in communities around the world.
