@@ -23,11 +23,11 @@ export function LeftPanel() {
       </div>
 
       <div className="z-10">
-        <h1 className="text-6xl font-bold leading-tight mb-6">
+        <h2 className="text-6xl font-bold leading-tight mb-6">
           One <br />
           Pledge <br />
           At A Time
-        </h1>
+        </h2>
         <p className="text-sm text-white/90 max-w-md">
           Pledge4Peace is a global movement that empowers individuals to make a
           difference. Join our community of peace advocates and pledge to make a

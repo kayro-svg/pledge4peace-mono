@@ -69,9 +69,9 @@ export default function UserMetaCard({ user }: { user: User }) {
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h2 className="text-3xl font-bold text-gray-900">
                   {displayName}
-                </h1>
+                </h2>
                 <p className="text-gray-600">{user?.email}</p>
                 <div className="flex items-center gap-4 mt-2">
                   <span className="text-sm text-gray-500">

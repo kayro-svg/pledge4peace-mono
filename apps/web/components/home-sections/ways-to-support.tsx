@@ -120,12 +120,12 @@ export default function WaysToSupportSection({
     <section className="bg-[#fdfdf0] w-full flex justify-center py-8 sm:py-12 md:py-16 lg:py-20 px-4 sm:px-6 md:px-8 lg:px-12">
       <div className="flex flex-col items-center justify-center max-w-[1400px]">
         <div className="text-center mb-8 sm:mb-12">
-          <h2 className="text-[#2F4858] uppercase text-xs sm:text-sm font-medium tracking-wider mb-3 sm:mb-4 border-b-2 w-fit mx-auto border-[#2F4858]">
+          <p className="text-[#2F4858] uppercase text-xs sm:text-sm font-medium tracking-wider mb-3 sm:mb-4 border-b-2 w-fit mx-auto border-[#2F4858]">
             {t("waysToSupport_label")}
-          </h2>
-          <h1 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
+          </p>
+          <h2 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
             {sectionData.waysToSupportHeading}
-          </h1>
+          </h2>
           <p className="section-subtitle text-[#2F4858] text-lg md:text-xl lg:text-xl">
             {sectionData.waysToSupportDescription}
           </p>

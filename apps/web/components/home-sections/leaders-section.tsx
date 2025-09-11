@@ -16,12 +16,12 @@ export default function LeadersSection() {
     <section className="py-20">
       <div className="container mx-auto px-6">
         <div className="text-center mb-12">
-          <h2 className="text-[#252a34] uppercase text-sm font-medium tracking-wider mb-4 border-b-2 w-fit mx-auto border-[#2F4858]">
+          <p className="text-[#252a34] uppercase text-sm font-medium tracking-wider mb-4 border-b-2 w-fit mx-auto border-[#2F4858]">
             DECIDE WITH FACTS
-          </h2>
-          <h1 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
+          </p>
+          <h2 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
             Discover the Pro-Peace and Anti-Peace Leaders
-          </h1>
+          </h2>
           <p className="text-[#2F4858] text-lg max-w-3xl mx-auto">
             Learn about the political leaders who are making a difference in the
             peace movement around the world.

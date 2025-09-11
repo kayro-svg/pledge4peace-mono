@@ -19,9 +19,9 @@ export function SiteHeader() {
             orientation="vertical"
             className="mx-2 data-[orientation=vertical]:h-4"
           />
-          <h1 className="text-base font-medium text-slate-800">
+          <p className="text-base font-medium text-slate-800">
             Welcome back, {session?.user?.name?.split(" ")[0]}!
-          </h1>
+          </p>
         </div>
         <div className="hidden md:flex items-center gap-3">
           <NotificationSound />

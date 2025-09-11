@@ -60,19 +60,19 @@ export default function HowItWorksSection({
       sectionData.howItWorksHeading.includes("Pledge4Peace");
     if (pledge4peaceTextExist) {
       return (
-        <div className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
+        <h2 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
           {firstPart}
           <span className="text-[#86AC9D] text-4xl md:text-5xl">
             Pledge4Peace
           </span>
           {secondPart}
-        </div>
+        </h2>
       );
     }
     return (
-      <h1 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
+      <h2 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
         {sectionData.howItWorksHeading}
-      </h1>
+      </h2>
     );
   };
 

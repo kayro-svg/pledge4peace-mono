@@ -46,9 +46,9 @@ export default function ConferencesSection({
     <section className="py-20 px-4 sm:px-6 md:px-8 lg:px-12">
       <div className="flex flex-col md:flex-row justify-between items-start mb-16">
         <div className="w-full md:w-2/3">
-          <h1 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-  4">
+          <h2 className="text-[#2F4858] text-4xl md:text-5xl font-bold mb-4">
             {sectionData.conferencesHeading}
-          </h1>
+          </h2>
           <p className="text-[#2F4858] text-lg md:text-xl lg:text-xl">
             {sectionData.conferencesDescription}
           </p>

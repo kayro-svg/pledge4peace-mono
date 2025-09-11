@@ -145,9 +145,9 @@ export default function VerifyEmailPage() {
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-6 shadow-lg">
                   <CheckCircle className="w-12 h-12 text-green-500" />
                 </div>
-                <h1 className="text-3xl font-bold text-white mb-2">
+                <h2 className="text-3xl font-bold text-white mb-2">
                   Email Verified!
-                </h1>
+                </h2>
                 <p className="text-teal-50 text-lg">
                   Welcome to Pledge4Peace 🎉
                 </p>
@@ -211,9 +211,9 @@ export default function VerifyEmailPage() {
                 <div className="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full mb-6 shadow-lg">
                   <XCircle className="w-12 h-12 text-red-500" />
                 </div>
-                <h1 className="text-3xl font-bold text-white mb-2">
+                <h2 className="text-3xl font-bold text-white mb-2">
                   Verification Failed
-                </h1>
+                </h2>
                 <p className="text-red-50 text-lg">Something went wrong</p>
               </div>
 

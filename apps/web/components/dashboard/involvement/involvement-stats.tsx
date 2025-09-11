@@ -133,9 +133,9 @@ export function InvolvementStats({
   if (error) {
     return (
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900 mb-2">
+        <h2 className="text-3xl font-bold text-slate-900 mb-2">
           Your Involvement Summary
-        </h1>
+        </h2>
         <p className="text-slate-500 mb-4">
           Summary of your votes, comments and involvement in solutions per
           campaign
@@ -158,9 +158,9 @@ export function InvolvementStats({
   return (
     <>
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-900">
+        <h2 className="text-3xl font-bold text-slate-900">
           Your Involvement Summary
-        </h1>
+        </h2>
         <p className="text-slate-500">
           Summary of your votes, comments and involvement in solutions per
           campaign
