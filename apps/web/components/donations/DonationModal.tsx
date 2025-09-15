@@ -24,6 +24,7 @@ import ACHPayment from "./ACHPayment";
 import DropInPayment from "./DropInPayment";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuthSession } from "@/hooks/use-auth-session";
+import { logger } from "@/lib/utils/logger";
 
 type DonationType = "one-time" | "recurring";
 type PaymentMethod = "ach" | "card-paypal";
@@ -87,7 +88,7 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
           const data = await response.json();
           setClientToken(data.clientToken);
         } catch (error) {
-          console.error("Error fetching client token:", error);
+          logger.error("Error fetching client token:", error);
         } finally {
           setLoading(false);
         }
@@ -154,7 +155,7 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
   };
 
   const handlePaymentError = (error: string) => {
-    console.error("Payment error:", error);
+    logger.error("Payment error:", error);
     setPaymentError(error);
   };
 

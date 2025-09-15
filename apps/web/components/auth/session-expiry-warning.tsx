@@ -1,19 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useAuthSession } from "@/hooks/use-auth-session";
+import { useSession, signOut } from "next-auth/react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Clock, RefreshCw } from "lucide-react";
-import { signOut } from "next-auth/react";
 
 export function SessionExpiryWarning() {
-  const { session, isAuthenticated, checkTokenValidity } = useAuthSession();
+  const { data: session, status } = useSession();
   const [showWarning, setShowWarning] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
 
   useEffect(() => {
-    if (!isAuthenticated || !session?.backendTokenExpires) return;
+    if (status !== "authenticated" || !session?.backendTokenExpires) return;
 
     const checkExpiry = () => {
       const currentTime = Math.floor(Date.now() / 1000);
@@ -43,7 +42,7 @@ export function SessionExpiryWarning() {
     const interval = setInterval(checkExpiry, 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [isAuthenticated, session?.backendTokenExpires]);
+  }, [status, session?.backendTokenExpires]);
 
   const formatTimeRemaining = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);

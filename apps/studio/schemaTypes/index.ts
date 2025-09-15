@@ -10,6 +10,7 @@ import aboutPage from './aboutPage'
 import volunteerPage from './volunteerPage'
 import {localeString, localeText, localeBlockContent} from './_localeTypes'
 import brevoForm from './brevoForm'
+import peaceSealHomePage from './peaceSealHomePage'
 
 export const schemaTypes = [
   author,
@@ -22,6 +23,7 @@ export const schemaTypes = [
   contactInformation,
   aboutPage,
   volunteerPage,
+  peaceSealHomePage,
   localeString,
   localeText,
   localeBlockContent,

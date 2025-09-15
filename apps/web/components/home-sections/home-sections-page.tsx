@@ -1,7 +1,7 @@
 "use client";
 
 import { Campaign, SanityHomePage } from "@/lib/types";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import ArticlesSection from "./articles-section";
 import ConferencesSection from "./conferences-section";
@@ -9,7 +9,6 @@ import HeroSection from "./hero/hero-section";
 import HowItWorksSection from "./how-it-works-section";
 import ProjectsSection from "./projects-section";
 import WaysToSupportSection from "./ways-to-support";
-// import { PayPalDonatePortal } from "@/components/ui/paypal-donate-portal";
 
 interface HomeSectionsPageProps {
   data: SanityHomePage;
@@ -21,7 +20,6 @@ export default function HomeSectionsPage({
   campaigns,
 }: HomeSectionsPageProps) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
 
   useEffect(() => {
     // Solo hacemos scroll cuando estamos en la ruta "/" y el hash es "#projects-section"
@@ -32,7 +30,7 @@ export default function HomeSectionsPage({
         el.scrollIntoView({ behavior: "smooth" });
       }
     }
-  }, [pathname, searchParams]);
+  }, []);
 
   return (
     <main className="min-h-screen bg-[#FDFDF0] w-full">

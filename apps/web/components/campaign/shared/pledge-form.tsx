@@ -6,7 +6,7 @@ import { ArrowRight } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { createPledge, checkExistingPledge } from "@/lib/api/pledges";
 import { toast } from "sonner";
-import { useAuthSession } from "@/hooks/use-auth-session";
+import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import {
   Dialog,
   DialogContent,
@@ -38,7 +38,7 @@ export default function PledgeForm({
   onNavigateToSolutions,
   onDonateIntent, // NEW PROP
 }: PledgeFormProps) {
-  const { session, isAuthenticated } = useAuthSession();
+  const { session, isAuthenticated } = useSimpleAuth();
   const [agreeToTerms, setAgreeToTerms] = useState(false);
   const [subscribeToUpdates, setSubscribeToUpdates] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -89,6 +89,12 @@ export default function PledgeForm({
       return;
     }
 
+    // CRITICAL: Only attempt to create pledge if user is authenticated
+    if (!isAuthenticated) {
+      toast.error("You must be logged in to make a pledge");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -101,7 +107,7 @@ export default function PledgeForm({
 
       setHasPledged(true);
 
-      if (isAuthenticated && session?.user?.name) {
+      if (session?.user?.name) {
         toast.success(`Thank you for your pledge, ${session.user.name}!`);
       } else {
         toast.success("Thank you for your pledge!");
@@ -144,6 +150,14 @@ export default function PledgeForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (process.env.NODE_ENV === "development") {
+      logger.log("[PledgeForm] handleSubmit called:", {
+        isAuthenticated,
+        agreeToTerms,
+        campaignId,
+      });
+    }
+
     if (!isAuthenticated) {
       setShouldAttemptPledgeAfterAuth(true);
       setShowLoginModal(true);
@@ -157,10 +171,13 @@ export default function PledgeForm({
   useEffect(() => {
     if (shouldAttemptPledgeAfterAuth && isAuthenticated) {
       setShowLoginModal(false);
-      performPledge();
+      // Small delay to ensure the session is fully loaded
+      setTimeout(() => {
+        performPledge();
+      }, 100);
       setShouldAttemptPledgeAfterAuth(false);
     }
-  }, [shouldAttemptPledgeAfterAuth, isAuthenticated, performPledge]);
+  }, [shouldAttemptPledgeAfterAuth, isAuthenticated, performPledge, session]);
 
   if (isLoading) {
     return (
@@ -259,7 +276,8 @@ export default function PledgeForm({
           <div className="flex flex-col items-center">
             <AuthContainer
               onLoginSuccess={() => {
-                setShowLoginModal(false);
+                // Don't close modal immediately - let the useEffect handle it
+                // This ensures the session is fully loaded before attempting pledge
                 setShouldAttemptPledgeAfterAuth(true);
               }}
               isModal

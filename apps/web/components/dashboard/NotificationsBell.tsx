@@ -13,7 +13,7 @@ import {
 import { useLocale } from "next-intl";
 import { apiClient } from "@/lib/api-client";
 import { API_ENDPOINTS } from "@/lib/config";
-import { useSession } from "next-auth/react";
+import { useOptimizedSession } from "@/hooks/use-optimized-session";
 import { Link as I18nLink } from "@/i18n/navigation";
 
 export function NotificationsBell() {
@@ -21,7 +21,7 @@ export function NotificationsBell() {
   const { items, unread, setUnread } = useNotificationsStream(
     session?.accessToken as string | undefined
   );
-  const { update } = useSession();
+  const { update } = useOptimizedSession();
   const [open, setOpen] = useState(false);
   const locale = useLocale() as "en" | "es";
   const slugMapRef = useRef<Record<string, string>>({});

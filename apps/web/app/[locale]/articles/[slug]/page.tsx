@@ -10,9 +10,18 @@ import { Metadata } from "next";
 import { SEODebug } from "@/components/dev/seo-debug";
 import { getSanityImageUrl } from "@/lib/sanity/image-helpers";
 import { getCategoryClassName } from "@/lib/utils/category-styles";
+import { unstable_cache } from "next/cache";
 
-export const dynamic = "force-dynamic";
+// export const dynamic = "force-dynamic";
+export const dynamic = "force-static";
+export const revalidate = 1800; // 30 min
+export const dynamicParams = true;
 
+const getArticleCached = unstable_cache(
+  async (slug: string, locale: "en" | "es") => getArticleBySlug(slug, locale),
+  (slug, locale) => [`article:${locale}:${slug}`],
+  { revalidate: 1800 }
+);
 interface ArticlePageProps {
   params: {
     slug: string;
@@ -120,7 +129,7 @@ export async function generateMetadata({
 export default async function ArticlePage({ params }: ArticlePageProps) {
   const resolvedParams = params instanceof Promise ? await params : params;
   const { slug, locale } = resolvedParams;
-  const { article, relatedArticles } = await getArticleBySlug(
+  const { article, relatedArticles } = await getArticleCached(
     slug,
     locale as "en" | "es"
   );
@@ -162,8 +171,8 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
         "https://www.facebook.com/share/1F8FxiQ6Hh/",
         "https://x.com/pledge4peaceorg",
         "https://www.instagram.com/pledge4peaceorg",
-        "https://www.tiktok.com/@pledge4peace5"
-      ]
+        "https://www.tiktok.com/@pledge4peace5",
+      ],
     },
     mainEntityOfPage: {
       "@type": "WebPage",
@@ -172,21 +181,21 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
     url: articleUrl,
     articleSection: article.categories?.[0]?.title || "General",
     keywords: article.seo?.keywords?.join(", ") || "",
-    
+
     // Additional article properties
     wordCount: article.content?.length || 0,
     inLanguage: locale === "es" ? "es" : "en",
     isAccessibleForFree: true,
-    
+
     // About topics
     about: [
       "Peace building",
-      "Democracy", 
+      "Democracy",
       "Human rights",
       "Social justice",
-      ...(article.categories?.map(cat => cat.title) || [])
+      ...(article.categories?.map((cat) => cat.title) || []),
     ],
-    
+
     // Article body (first 200 chars as snippet)
     articleBody: article.content?.slice(0, 200) + "..." || "",
   };
