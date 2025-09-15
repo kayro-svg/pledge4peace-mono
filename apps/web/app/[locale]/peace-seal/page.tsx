@@ -472,7 +472,7 @@ export default async function PeaceSealPage(params: { locale: "en" | "es" }) {
                 <div className="mt-5 sm:mt-6">
                   <Link
                     className="rounded-full inline-flex items-center bg-white hover:bg-[#2F4858] text-[#548281] hover:text-white font-bold px-6 sm:px-8 py-3 text-base transition-all duration-300"
-                    href="/peace-seal/apply"
+                    href="/login"
                   >
                     {data.finalCtaButtonText}
                   </Link>
