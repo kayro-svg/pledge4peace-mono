@@ -10,7 +10,7 @@ import {
 } from "@/lib/api/solutions";
 import { useInteractions } from "../shared/interaction-context";
 import { Heart, MessageCircle, Share2, ThumbsDownIcon } from "lucide-react";
-import { useAuthSession } from "@/hooks/use-auth-session";
+import { useSimpleAuth } from "@/hooks/use-simple-auth";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -45,7 +45,7 @@ export default function SolutionActionsBar({
   onInteraction,
   solutionToShare,
 }: SolutionActionsBarProps) {
-  const { session, isAuthenticated } = useAuthSession();
+  const { session, isAuthenticated } = useSimpleAuth();
   const router = useRouter();
   const {
     getUserInteraction,

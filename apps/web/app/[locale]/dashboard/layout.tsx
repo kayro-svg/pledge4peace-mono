@@ -3,17 +3,16 @@
 import { AppSidebar } from "@/components/dashboard/app-sidebar";
 import { SiteHeader } from "@/components/dashboard/site-header";
 import { SidebarInset } from "@/components/ui/sidebar";
-import { useAuthSession } from "@/hooks/use-auth-session";
+import {
+  DashboardSessionProvider,
+  useDashboardSession,
+} from "@/contexts/dashboard-session-context";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { redirect } from "next/navigation";
 import { useEffect } from "react";
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { session, status, isAuthenticated } = useAuthSession();
+function DashboardContent({ children }: { children: React.ReactNode }) {
+  const { status } = useDashboardSession();
 
   // Redirect to home if user is not authenticated
   useEffect(() => {
@@ -44,5 +43,17 @@ export default function DashboardLayout({
         {children}
       </SidebarInset>
     </SidebarProvider>
+  );
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <DashboardSessionProvider>
+      <DashboardContent>{children}</DashboardContent>
+    </DashboardSessionProvider>
   );
 }

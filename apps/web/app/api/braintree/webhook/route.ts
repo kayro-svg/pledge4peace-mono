@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import gateway from "@/lib/braintree";
+import { logger } from "@/lib/utils/logger";
 
 const Kind = {
   TransactionSettled: "transaction_settled",
@@ -35,7 +36,7 @@ async function sendEmail({
   const fromName = process.env.BREVO_FROM_NAME || "Pledge4Peace";
 
   if (!apiKey) {
-    console.error("[Webhook] Missing BREVO_API_KEY env var – e-mail not sent");
+    logger.error("[Webhook] Missing BREVO_API_KEY env var – e-mail not sent");
     return;
   }
 
@@ -54,7 +55,7 @@ async function sendEmail({
       }),
     });
   } catch (err) {
-    console.error("[Webhook] Error sending email via Brevo", err);
+    logger.error("[Webhook] Error sending email via Brevo", err);
   }
 }
 
@@ -165,7 +166,7 @@ export async function POST(req: NextRequest) {
       btPayload
     );
 
-    console.log("notification 🔥 brought to you by braintree: ", notification);
+    logger.log("notification 🔥 brought to you by braintree: ", notification);
 
     // Construir mensajes
     const { donorEmail, donorSubject, donorHtml, adminSubject, adminHtml } =
@@ -189,7 +190,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ received: true });
   } catch (err: any) {
-    console.error("[Webhook] Error processing notification", err);
+    logger.error("[Webhook] Error processing notification", err);
     return NextResponse.json(
       { error: "Webhook processing failed" },
       { status: 500 }

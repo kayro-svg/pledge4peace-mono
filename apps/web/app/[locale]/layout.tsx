@@ -8,12 +8,18 @@ import { Toaster } from "sonner";
 import { CookieBanner } from "@/components/cookies/cookie-banner";
 import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import { StructuredData } from "@/components/seo/structured-data";
-import { CriticalResourceHints, ResourceOptimizer } from "@/components/performance/resource-optimizer";
+import {
+  CriticalResourceHints,
+  ResourceOptimizer,
+} from "@/components/performance/resource-optimizer";
 import { Providers } from "../providers";
 import "../globals.css";
 import { routing } from "@/i18n/routing";
 import { getMetadata } from "./metadata";
 import { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -26,7 +32,7 @@ export function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: { locale: any };
+  params: { locale: string };
 }): Promise<Metadata> {
   const { locale } = await params;
   return getMetadata(locale);
@@ -37,12 +43,12 @@ export default async function RootLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { locale: any };
+  params: { locale: string };
 }) {
   const { locale } = await params;
 
   // Validate that the incoming `locale` parameter is valid
-  const isValidLocale = routing.locales.includes(locale as any);
+  const isValidLocale = routing.locales.includes(locale as "en" | "es");
   if (!isValidLocale) {
     notFound();
   }
@@ -51,9 +57,12 @@ export default async function RootLayout({
   let messages;
   try {
     messages = (await import(`@/messages/${locale}.json`)).default;
-  } catch (error) {
+  } catch {
     notFound();
   }
+
+  // Get server-side session to hydrate the client
+  const session = await getServerSession(authOptions);
 
   return (
     <html lang={locale}>
@@ -72,9 +81,10 @@ export default async function RootLayout({
         <GoogleAnalytics />
         <FacebookPixel />
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <Providers>
+          <Providers session={session}>
             <ResourceOptimizer />
             <LayoutWrapper>{children}</LayoutWrapper>
+            <Analytics />
             <SessionExpiryWarning />
             <Toaster />
             <CookieBanner position="bottom" />

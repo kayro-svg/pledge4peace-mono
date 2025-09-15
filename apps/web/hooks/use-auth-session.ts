@@ -77,7 +77,7 @@ export function useAuthSession(): AuthSessionReturn {
     }
   }, [session, status, checkTokenValidity, handleAuthError]);
 
-  // Set up periodic token validation
+  // Set up periodic token validation (reduced frequency)
   useEffect(() => {
     if (status === "authenticated") {
       const interval = setInterval(() => {
@@ -86,32 +86,9 @@ export function useAuthSession(): AuthSessionReturn {
           handleAuthError();
           return;
         }
-        // Check forced-logout flag
-        (async () => {
-          try {
-            const endpoint = API_ENDPOINTS.auth.profile.replace(
-              process.env.NEXT_PUBLIC_API_URL || "",
-              ""
-            );
-            // lightweight ping to ensure token is still authorized
-            // then check server-side forceLogout flag
-            const statusEndpoint = (API_ENDPOINTS.auth as any).sessionStatus
-              ? (API_ENDPOINTS.auth as any).sessionStatus.replace(
-                  process.env.NEXT_PUBLIC_API_URL || "",
-                  ""
-                )
-              : "/auth/session-status";
-            const res = await apiClient.get<{ forceLogout: boolean }>(
-              statusEndpoint
-            );
-            if (res?.forceLogout) {
-              await handleAuthError();
-            }
-          } catch {
-            // ignore
-          }
-        })();
-      }, 60 * 1000); // every 1 minute
+        // Removed frequent API calls to session-status endpoint
+        // Token validity is checked locally, reducing server load
+      }, 5 * 60 * 1000); // every 5 minutes instead of 1 minute
 
       return () => clearInterval(interval);
     }

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { useSession } from "next-auth/react";
 import MainContentSection from "@/components/campaign/campaign-main-content/campaign-main-content";
 import {
   Dialog,
@@ -34,10 +33,7 @@ export function CampaignDetailContent({
   campaign,
   locale,
 }: CampaignDetailContentProps) {
-  // Prefetching de la sesión para evitar múltiples llamadas al abrir el modal
-  // Este hook hace que la sesión se cargue una sola vez aquí, y luego
-  // estará disponible en caché para los componentes hijos
-  useSession();
+  // Session is now hydrated server-side, no need for prefetching
   const router = useRouter();
   const searchParams = useSearchParams();
   // Estado para controlar el diálogo de comentarios
@@ -122,7 +118,8 @@ export function CampaignDetailContent({
   };
 
   // Generate structured data for the campaign
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://pledge4peace.org";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://pledge4peace.org";
   const campaignUrl = `${baseUrl}/${locale}/campaigns/${campaign.slug.current}`;
   const campaignImage = campaign.featuredImage?.asset?.url
     ? getSanityImageUrl(campaign.featuredImage.asset.url, 1200, 630, 80)
@@ -132,10 +129,12 @@ export function CampaignDetailContent({
     "@context": "https://schema.org",
     "@type": "Event", // Campaigns are events/initiatives
     name: campaign.title,
-    description: campaign.description || `Join our campaign: ${campaign.title}. Take action for peace and democracy.`,
+    description:
+      campaign.description ||
+      `Join our campaign: ${campaign.title}. Take action for peace and democracy.`,
     image: campaignImage,
     url: campaignUrl,
-    
+
     // Organization details
     organizer: {
       "@type": "Organization",
@@ -148,19 +147,19 @@ export function CampaignDetailContent({
         "https://www.facebook.com/share/1F8FxiQ6Hh/",
         "https://x.com/pledge4peaceorg",
         "https://www.instagram.com/pledge4peaceorg",
-        "https://www.tiktok.com/@pledge4peace5"
-      ]
+        "https://www.tiktok.com/@pledge4peace5",
+      ],
     },
 
     // Event details
     eventStatus: "https://schema.org/EventScheduled",
     eventAttendanceMode: "https://schema.org/OnlineEventAttendanceMode",
-    
+
     // Location (virtual/online)
     location: {
       "@type": "VirtualLocation",
       url: campaignUrl,
-      name: "Pledge4Peace Platform"
+      name: "Pledge4Peace Platform",
     },
 
     // Timing
@@ -173,22 +172,22 @@ export function CampaignDetailContent({
       "Democracy",
       "Human rights",
       "Social justice",
-      "Global campaigns"
+      "Global campaigns",
     ],
 
     // Participation details
     isAccessibleForFree: true,
     inLanguage: [locale === "es" ? "es" : "en"],
-    
+
     // Keywords
     keywords: `peace campaign, ${campaign.title}, democracy, human rights, social justice, global action`,
-    
+
     // Publisher
     publisher: {
       "@type": "Organization",
       name: "Pledge4Peace",
-      url: baseUrl
-    }
+      url: baseUrl,
+    },
   };
 
   return (
@@ -200,76 +199,79 @@ export function CampaignDetailContent({
           __html: JSON.stringify(campaignStructuredData, null, 2),
         }}
       />
-      
+
       <main className="min-h-screen bg-[#fffef5]">
-      <div className="container mx-auto px-4 py-8">
-        <div className="w-full mx-auto">
-          <div className="mb-8">
-            <Button
-              onClick={() => router.back()}
-              className="text-brand-500 hover:underline flex items-center bg-transparent border-none hover:bg-transparent"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              {t("goBack")}
-            </Button>
-          </div>
+        <div className="container mx-auto px-4 py-8">
+          <div className="w-full mx-auto">
+            <div className="mb-8">
+              <Button
+                onClick={() => router.back()}
+                className="text-brand-500 hover:underline flex items-center bg-transparent border-none hover:bg-transparent"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                {t("goBack")}
+              </Button>
+            </div>
 
-          <div className="flex flex-col gap-8">
-            <MainContentSection
-              campaign={campaign}
-              locale={locale}
-              onNavigateToSolutions={handleNavigateToSolutions}
-            />
-            <InteractionProvider>
-              <ContentTabs
-                ref={contentTabsRef}
-                sidebarWidth="30%"
-                solutionsSection={
-                  campaign?.solutionsSection as SanitySolutionsSection
-                }
-                waysToSupportTabs={
-                  campaign?.waysToSupportTabs as SanityWaysToSupportTab[]
-                }
-                campaignId={campaign?._id}
-                activeSolutionId={activeSolutionId}
-                onSolutionChange={setActiveSolutionId}
-                onCommentClick={handleCommentClick}
-                campaignSlug={campaign?.slug?.current}
-                campaignTitle={campaign?.title as unknown as string}
-                parties={campaign?.parties || []}
+            <div className="flex flex-col gap-8">
+              <MainContentSection
+                campaign={campaign}
+                locale={locale}
+                onNavigateToSolutions={handleNavigateToSolutions}
               />
+              <InteractionProvider>
+                <ContentTabs
+                  ref={contentTabsRef}
+                  sidebarWidth="30%"
+                  solutionsSection={
+                    campaign?.solutionsSection as SanitySolutionsSection
+                  }
+                  waysToSupportTabs={
+                    campaign?.waysToSupportTabs as SanityWaysToSupportTab[]
+                  }
+                  campaignId={campaign?._id}
+                  activeSolutionId={activeSolutionId}
+                  onSolutionChange={setActiveSolutionId}
+                  onCommentClick={handleCommentClick}
+                  campaignSlug={campaign?.slug?.current}
+                  campaignTitle={campaign?.title as unknown as string}
+                  parties={campaign?.parties || []}
+                />
 
-              {/* Mobile Comments Modal - Only visible on mobile/tablet */}
-              <div className="lg:hidden">
-                <Dialog open={isCommentsOpen} onOpenChange={setIsCommentsOpen}>
-                  <DialogContent className="lg:hidden max-h-[80vh] lg:max-h-[100vh] md:max-w-[500px] h-[80vh] md:h-[fit-content] p-0 overflow-hidden flex flex-col gap-0">
-                    <DialogHeader className="p-4 h-fit w-full justify-center items-center flex">
-                      <DialogTitle>Comments</DialogTitle>
-                    </DialogHeader>
-                    <div className="flex-1 overflow-y-auto">
-                      {/* Renderizamos el contenido solo cuando realmente se necesite */}
-                      {isCommentsOpen && activeSolutionId ? (
-                        <div className="p-2 h-full">
-                          {/* Pasamos la sesión ya cargada para evitar que vuelva a fetchear */}
-                          <SidebarSection
-                            solutionId={activeSolutionId}
-                            key={`sidebar-${activeSolutionId}`}
-                          />
-                        </div>
-                      ) : (
-                        <div className="p-6 text-center h-full flex items-center justify-center">
-                          <p>Select a solution to view comments</p>
-                        </div>
-                      )}
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </InteractionProvider>
+                {/* Mobile Comments Modal - Only visible on mobile/tablet */}
+                <div className="lg:hidden">
+                  <Dialog
+                    open={isCommentsOpen}
+                    onOpenChange={setIsCommentsOpen}
+                  >
+                    <DialogContent className="lg:hidden max-h-[80vh] lg:max-h-[100vh] md:max-w-[500px] h-[80vh] md:h-[fit-content] p-0 overflow-hidden flex flex-col gap-0">
+                      <DialogHeader className="p-4 h-fit w-full justify-center items-center flex">
+                        <DialogTitle>Comments</DialogTitle>
+                      </DialogHeader>
+                      <div className="flex-1 overflow-y-auto">
+                        {/* Renderizamos el contenido solo cuando realmente se necesite */}
+                        {isCommentsOpen && activeSolutionId ? (
+                          <div className="p-2 h-full">
+                            {/* Pasamos la sesión ya cargada para evitar que vuelva a fetchear */}
+                            <SidebarSection
+                              solutionId={activeSolutionId}
+                              key={`sidebar-${activeSolutionId}`}
+                            />
+                          </div>
+                        ) : (
+                          <div className="p-6 text-center h-full flex items-center justify-center">
+                            <p>Select a solution to view comments</p>
+                          </div>
+                        )}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </InteractionProvider>
+            </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
     </>
   );
 }

@@ -1,19 +1,21 @@
-import { getSession, signOut } from "next-auth/react";
+import { signOut } from "next-auth/react";
 import { toast } from "@/hooks/use-toast";
 
 class ApiClient {
   private baseURL: string;
   private isRefreshing = false;
   private failedQueue: Array<{
-    resolve: (value?: any) => void;
-    reject: (error?: any) => void;
+    resolve: (value?: unknown) => void;
+    reject: (error?: unknown) => void;
   }> = [];
+  private cachedToken: string | null = null;
+  private tokenExpiry: number = 0;
 
   constructor(baseURL: string) {
     this.baseURL = baseURL;
   }
 
-  private async processQueue(error: any, token: string | null = null) {
+  private async processQueue(error: unknown, token: string | null = null) {
     this.failedQueue.forEach(({ resolve, reject }) => {
       if (error) {
         reject(error);
@@ -25,9 +27,28 @@ class ApiClient {
     this.failedQueue = [];
   }
 
+  // Set token from session context (called by components with session)
+  setToken(token: string | null) {
+    this.cachedToken = token;
+    if (token) {
+      // Set expiry time for cache invalidation (30 minutes for valid tokens)
+      this.tokenExpiry = Date.now() + 30 * 60 * 1000;
+    } else {
+      // Clear expiry when token is null
+      this.tokenExpiry = 0;
+    }
+  }
+
   private async getValidToken(): Promise<string | null> {
-    const session = await getSession();
-    return session?.accessToken || session?.user?.accessToken || null;
+    // Use cached token if available and not expired
+    if (this.cachedToken && Date.now() < this.tokenExpiry) {
+      return this.cachedToken;
+    }
+
+    // Clear expired token
+    this.cachedToken = null;
+    this.tokenExpiry = 0;
+    return null;
   }
 
   private async handleAuthError() {
@@ -46,6 +67,17 @@ class ApiClient {
 
   async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const token = await this.getValidToken();
+
+    // Debug logging for token issues
+    if (process.env.NODE_ENV === "development") {
+      console.log(`[ApiClient] Request to ${endpoint}:`, {
+        hasToken: !!token,
+        tokenLength: token?.length || 0,
+        tokenExpiry: this.tokenExpiry,
+        currentTime: Date.now(),
+        isExpired: this.tokenExpiry > 0 && Date.now() >= this.tokenExpiry,
+      });
+    }
 
     const config: RequestInit = {
       ...options,
@@ -114,21 +146,21 @@ class ApiClient {
     return this.request<T>(endpoint);
   }
 
-  async post<T>(endpoint: string, data?: any): Promise<T> {
+  async post<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: "POST",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  async put<T>(endpoint: string, data?: any): Promise<T> {
+  async put<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: "PUT",
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  async patch<T>(endpoint: string, data?: any): Promise<T> {
+  async patch<T>(endpoint: string, data?: unknown): Promise<T> {
     return this.request<T>(endpoint, {
       method: "PATCH",
       body: data ? JSON.stringify(data) : undefined,

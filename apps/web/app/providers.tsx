@@ -1,15 +1,30 @@
 "use client";
 
 import { SessionProvider } from "next-auth/react";
+import { Session } from "next-auth";
+import { useGlobalApiClientSync } from "@/hooks/use-api-client";
 
-export function Providers({ children }: { children: React.ReactNode }) {
+function ApiClientSyncProvider({ children }: { children: React.ReactNode }) {
+  // Keep apiClient synchronized globally
+  useGlobalApiClientSync();
+  return <>{children}</>;
+}
+
+export function Providers({
+  children,
+  session,
+}: {
+  children: React.ReactNode;
+  session: Session | null;
+}) {
   return (
     <SessionProvider
-      refetchInterval={5 * 60} // Check every 5 minutes instead of 30
-      refetchOnWindowFocus={true} // Enable refetch on window focus for better UX
+      session={session}
+      refetchInterval={0} // Disable automatic refetching
+      refetchOnWindowFocus={false} // Disable refetch on window focus
       refetchWhenOffline={false}
     >
-      {children}
+      <ApiClientSyncProvider>{children}</ApiClientSyncProvider>
     </SessionProvider>
   );
 }
