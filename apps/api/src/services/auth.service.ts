@@ -19,6 +19,7 @@ export interface RegisterUserDTO {
   userType: string;
   office?: string;
   organization?: string;
+  nonprofit?: string;
   institution?: string;
   otherRole?: string;
 }
@@ -82,10 +83,12 @@ export class AuthService {
           | "citizen"
           | "politician"
           | "organization"
+          | "nonprofit"
           | "student"
           | "other",
         office: data.office || null,
         organization: data.organization || null,
+        nonprofit: data.nonprofit || null,
         institution: data.institution || null,
         otherRole: data.otherRole || null,
         createdAt: now,

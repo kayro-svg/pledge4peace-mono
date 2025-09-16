@@ -7,6 +7,7 @@ interface RegisterFormData {
   userType: string;
   office?: string;
   organization?: string;
+  nonprofit?: string;
   institution?: string;
   otherRole?: string;
 }

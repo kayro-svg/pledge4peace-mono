@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
-import { UseFormRegister } from "react-hook-form";
+import { FieldErrors, UseFormRegister } from "react-hook-form";
 
 interface PasswordInputProps {
   id: string;
@@ -14,6 +14,7 @@ interface PasswordInputProps {
   validation?: object;
   required?: boolean;
   autoComplete?: string;
+  errors?: FieldErrors<any>;
 }
 
 export function PasswordInput({
@@ -25,6 +26,7 @@ export function PasswordInput({
   validation = {},
   required = false,
   autoComplete,
+  errors,
 }: PasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
 
@@ -52,6 +54,13 @@ export function PasswordInput({
           {showPassword ? <EyeOffIcon size={18} /> : <EyeIcon size={18} />}
         </button>
       </div>
+      {errors &&
+        errors[fieldName] &&
+        typeof errors[fieldName]?.message === "string" && (
+          <p className="text-red-500 text-sm mt-1">
+            {errors[fieldName]?.message as string}
+          </p>
+        )}
     </div>
   );
 }

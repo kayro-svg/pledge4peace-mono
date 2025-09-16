@@ -20,6 +20,7 @@ import { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -85,6 +86,7 @@ export default async function RootLayout({
             <ResourceOptimizer />
             <LayoutWrapper>{children}</LayoutWrapper>
             <Analytics />
+            <SpeedInsights />
             <SessionExpiryWarning />
             <Toaster />
             <CookieBanner position="bottom" />

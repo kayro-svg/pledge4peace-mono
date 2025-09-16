@@ -11,6 +11,7 @@ const registerSchema = z.object({
   userType: z.string().min(1),
   office: z.string().optional(),
   organization: z.string().optional(),
+  nonprofit: z.string().optional(),
   institution: z.string().optional(),
   otherRole: z.string().optional(),
 });
@@ -95,6 +96,12 @@ export class AuthController {
             validation.data.organization
           ) {
             userAttributes.ORGANIZATION_NAME = validation.data.organization;
+          }
+          if (
+            validation.data.userType === "nonprofit" &&
+            validation.data.nonprofit
+          ) {
+            userAttributes.NONPROFIT_NAME = validation.data.nonprofit;
           }
           if (
             validation.data.userType === "student" &&
