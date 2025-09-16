@@ -28,6 +28,7 @@ export interface BrevoListsConfig {
   citizensListId: number;
   politiciansListId: number;
   organizationsListId: number;
+  nonprofitsListId: number;
   studentsListId: number;
   othersListId: number;
   campaignsListId: number;
@@ -42,6 +43,7 @@ export class BrevoListsService {
   private citizensListId: number;
   private politiciansListId: number;
   private organizationsListId: number;
+  private nonprofitsListId: number;
   private studentsListId: number;
   private othersListId: number;
   private campaignsListId: number;
@@ -56,6 +58,7 @@ export class BrevoListsService {
     this.citizensListId = config.citizensListId;
     this.politiciansListId = config.politiciansListId;
     this.organizationsListId = config.organizationsListId;
+    this.nonprofitsListId = config.nonprofitsListId;
     this.studentsListId = config.studentsListId;
     this.othersListId = config.othersListId;
     this.campaignsListId = config.campaignsListId;
@@ -170,6 +173,8 @@ export class BrevoListsService {
         return this.politiciansListId;
       case "organization":
         return this.organizationsListId;
+      case "nonprofit":
+        return this.nonprofitsListId;
       case "student":
         return this.studentsListId;
       case "other":
@@ -193,6 +198,8 @@ export class BrevoListsService {
         return "P4P - Politicians";
       case "organization":
         return "P4P - Organizations";
+      case "nonprofit":
+        return "P4P - Nonprofits";
       case "student":
         return "P4P - Students";
       case "other":

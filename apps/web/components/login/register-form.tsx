@@ -31,6 +31,7 @@ interface RegisterFormData {
   userType: string;
   office?: string;
   organization?: string;
+  nonprofit?: string;
   institution?: string;
   otherRole?: string;
 }
@@ -81,6 +82,7 @@ export default function RegisterForm({
         userType: data.userType,
         office: data.office,
         organization: data.organization,
+        nonprofit: data.nonprofit,
         institution: data.institution,
         otherRole: data.otherRole,
       });
@@ -190,6 +192,7 @@ export default function RegisterForm({
               <SelectItem value="citizen">{t("citizen")}</SelectItem>
               <SelectItem value="politician">{t("politician")}</SelectItem>
               <SelectItem value="organization">{t("organization")}</SelectItem>
+              <SelectItem value="nonprofit">{t("nonprofit")}</SelectItem>
               <SelectItem value="student">{t("student")}</SelectItem>
               <SelectItem value="other">{t("other")}</SelectItem>
             </SelectContent>
@@ -226,6 +229,15 @@ export default function RegisterForm({
           />
         )}
 
+        {userType === "nonprofit" && (
+          <FormField
+            id="nonprofit"
+            label={t("nonprofit")}
+            placeholder={t("nonprofit_placeholder")}
+            {...form.register("nonprofit")}
+          />
+        )}
+
         {userType === "student" && (
           <FormField
             id="institution"
@@ -251,6 +263,13 @@ export default function RegisterForm({
           register={form.register}
           fieldName="password"
           required
+          validation={{
+            minLength: {
+              value: 8,
+              message: "Password must be at least 8 characters long",
+            },
+          }}
+          errors={form.formState.errors}
         />
 
         <PasswordInput
@@ -260,6 +279,15 @@ export default function RegisterForm({
           register={form.register}
           fieldName="confirmPassword"
           required
+          validation={{
+            minLength: {
+              value: 8,
+              message: "Password must be at least 8 characters long",
+            },
+            validate: (v: string) =>
+              v === form.getValues("password") || "Passwords do not match",
+          }}
+          errors={form.formState.errors}
         />
 
         <div className="flex items-center">
