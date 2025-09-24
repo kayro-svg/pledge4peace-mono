@@ -2,7 +2,6 @@ import { Context } from "hono";
 import { SolutionsService } from "../services/solutions.service";
 import { createDb } from "../db";
 import { HTTPException } from "hono/http-exception";
-import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import {
   getAuthUser,

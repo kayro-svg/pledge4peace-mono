@@ -24,7 +24,6 @@
     "@sanity/client": "^7.6.0",
     "@types/bcryptjs": "^3.0.0",
     "bcryptjs": "^3.0.2",
-    "drizzle-orm": "^0.29.5",
     "hono": "^4.0.0",
     "resend": "^4.5.1",
     "zod": "^3.25.67"
@@ -32,9 +31,11 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.8.19",
     "@cloudflare/workers-types": "^4.20250525.0",
-    "drizzle-kit": "^0.20.0",
+    "better-sqlite3": "^12.2.0",
+    "drizzle-kit": "^0.31.4",
+    "drizzle-orm": "^0.44.5",
     "typescript": "^5.5.2",
     "vitest": "~3.0.7",
-    "wrangler": "^4.16.0"
+    "wrangler": "^4.38.0"
   }
 }

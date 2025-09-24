@@ -1,9 +1,10 @@
 "use client";
-import { useEffect, useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { CreditCard, CircleDollarSign } from "lucide-react";
-import dropin, { type Dropin } from "braintree-web-drop-in";
+import { logger } from "@/lib/utils/logger";
 import { injectDropinOverrides } from "@/utils/injectDropinOverrides";
+import dropin, { type Dropin } from "braintree-web-drop-in";
+import { CircleDollarSign, CreditCard } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Props {
   amount: string;
@@ -11,6 +12,11 @@ interface Props {
   onError: (err: string) => void;
   clientToken: string;
   isRecurring?: boolean;
+  peaceSealPayment?: {
+    companyName: string;
+    companyId: string;
+    createSubscription: boolean;
+  };
 }
 
 export default function DropInPayment({
@@ -19,6 +25,7 @@ export default function DropInPayment({
   onError,
   clientToken,
   isRecurring = false,
+  peaceSealPayment,
 }: Props) {
   const enable3DS = process.env.NEXT_PUBLIC_ENABLE_3DS === "false"; // TODO: Change to TRUE when 3d secure is ready to be used
   const hostRef = useRef<HTMLDivElement>(null);
@@ -37,6 +44,9 @@ export default function DropInPayment({
 
       // Asegura contenedor vacío
       hostRef.current.innerHTML = "";
+
+      const isRecurringForUi =
+        isRecurring || peaceSealPayment?.createSubscription === true;
 
       try {
         dropinInstance = (await dropin.create({
@@ -86,7 +96,7 @@ export default function DropInPayment({
             },
           },
           paypal: {
-            flow: isRecurring ? "vault" : "checkout",
+            flow: isRecurringForUi ? "vault" : "checkout",
             amount,
             currency: "USD",
             buttonStyle: {
@@ -135,22 +145,56 @@ export default function DropInPayment({
     setProcessing(true);
     try {
       const { nonce } = await dropinRef.current.requestPaymentMethod();
-      const endpoint = isRecurring
-        ? "/api/donations/recurring"
-        : "/api/donations/one-time";
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nonce,
-          amount,
-          paymentMethod: "card_or_paypal",
-        }),
-      });
-      const json = await res.json();
-      json.success
-        ? onSuccess(json)
-        : onError(json.message || "Payment failed");
+      if (peaceSealPayment) {
+        const endpoint = "/api/peace-seal/charge";
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nonce,
+            amount,
+            paymentMethod: "card_or_paypal",
+            companyName: peaceSealPayment.companyName,
+            companyId: peaceSealPayment.companyId,
+            createSubscription: peaceSealPayment.createSubscription,
+          }),
+        });
+        logger.log("Peace Seal payment response:", res);
+        const json = await res.json();
+
+        if (json.success) {
+          onSuccess(json);
+        } else {
+          onError(json.message || "Payment failed");
+        }
+        // json.success
+        //   ? onSuccess(json)
+        //   : onError(json.message || "Payment failed");
+      } else {
+        const endpoint = isRecurring
+          ? "/api/donations/recurring"
+          : "/api/donations/one-time";
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nonce,
+            amount,
+            paymentMethod: "card_or_paypal",
+          }),
+        });
+        logger.log("Donation payment response:", res);
+        const json = await res.json();
+
+        if (json.success) {
+          onSuccess(json);
+        } else {
+          onError(json.message || "Payment failed");
+        }
+        // json.success
+        //     ? onSuccess(json)
+        //     : onError(json.message || "Payment failed");
+      }
     } catch (err: any) {
       onError(err.message || "Payment processing failed");
     } finally {
@@ -226,9 +270,15 @@ export default function DropInPayment({
         ) : (
           <div className="flex items-center gap-2">
             <CreditCard className="w-5 h-5" />
-            {isRecurring
-              ? `Start Monthly Donation – $${amount}/month`
-              : `Donate $${amount} Now`}
+            {peaceSealPayment ? (
+              <p className="text-sm">Pay ${amount} & Setup Annual Renewal</p>
+            ) : (
+              <p className="text-sm">
+                {isRecurring
+                  ? `Start Monthly Donation – $${amount}/month`
+                  : `Donate $${amount} Now`}
+              </p>
+            )}
           </div>
         )}
       </Button>

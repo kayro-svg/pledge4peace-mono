@@ -7,7 +7,7 @@ declare module "next-auth" {
     name: string;
     emailVerified: boolean | Date | null;
     accessToken: string;
-    role: "user" | "moderator" | "admin" | "superAdmin";
+    role: "user" | "moderator" | "advisor" | "admin" | "superAdmin";
     createdAt: Date;
   }
 
@@ -25,7 +25,7 @@ declare module "next-auth/jwt" {
     userId: string;
     userEmail: string;
     userName: string;
-    userRole: "user" | "moderator" | "admin" | "superAdmin";
+    userRole: "user" | "moderator" | "advisor" | "admin" | "superAdmin";
     createdAt: Date;
     backendTokenExpires?: number;
   }

@@ -60,58 +60,158 @@ async function sendEmail({
 }
 
 /**
+ * Helper to identify Peace Seal payments
+ */
+function isPeaceSealPayment(notification: unknown): boolean {
+  const notif = notification as Record<string, any>;
+  const customFields =
+    notif.transaction?.customFields ||
+    notif.subscription?.transactions?.[0]?.customFields;
+  return customFields?.payment_type?.includes("peace_seal") || false;
+}
+
+/**
+ * Helper to get company info from Peace Seal payments
+ */
+function getPeaceSealCompanyInfo(notification: unknown) {
+  const notif = notification as Record<string, any>;
+  const customFields =
+    notif.transaction?.customFields ||
+    notif.subscription?.transactions?.[0]?.customFields;
+  return {
+    companyId: customFields?.company_id,
+    companyName: customFields?.company_name,
+    paymentType: customFields?.payment_type,
+  };
+}
+
+/**
+ * Process Peace Seal payment confirmation with backend
+ */
+async function processPeaceSealPayment(notification: unknown) {
+  try {
+    const { companyId, companyName } = getPeaceSealCompanyInfo(notification);
+
+    if (!companyId) {
+      logger.error(
+        "Peace Seal payment webhook missing company_id:",
+        notification
+      );
+      return;
+    }
+
+    const notif = notification as Record<string, any>;
+    const transaction =
+      notif.transaction || notif.subscription?.transactions?.[0];
+    if (!transaction) {
+      logger.error(
+        "Peace Seal payment webhook missing transaction:",
+        notification
+      );
+      return;
+    }
+
+    // Call backend to confirm payment and assign advisor
+    const backendApiUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787/api";
+    const backendResponse = await fetch(
+      `${backendApiUrl}/peace-seal/webhooks/applications/${companyId}/confirm-payment`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.WEBHOOK_AUTH_TOKEN || ""}`, // Use service token for webhook calls
+        },
+        body: JSON.stringify({
+          transactionId: transaction.id,
+          amountCents: Math.round(parseFloat(transaction.amount) * 100),
+          subscriptionId: notif.subscription?.id,
+        }),
+      }
+    );
+
+    if (backendResponse.ok) {
+      logger.log("Peace Seal payment confirmed with backend:", {
+        companyId,
+        transactionId: transaction.id,
+        companyName,
+        status: backendResponse.status,
+      });
+    } else {
+      const error = await backendResponse.text();
+      logger.error("Failed to confirm Peace Seal payment with backend:", {
+        error,
+        status: backendResponse.status,
+        companyId,
+        transactionId: transaction.id,
+      });
+    }
+  } catch (error) {
+    logger.error("Error processing Peace Seal payment webhook:", error);
+  }
+}
+
+/**
  * Mapea kinds de webhook → mensajes personalizados.
  * Devuelve el correo del donante si está disponible en el objeto notificación.
  */
-function buildNotificationMessages(notification: any) {
+function buildNotificationMessages(notification: unknown) {
+  const notif = notification as Record<string, any>;
   let donorEmail: string | undefined;
   let donorSubject = "";
   let donorHtml = "";
 
-  let adminSubject = `Braintree webhook: ${notification.kind}`;
-  let adminHtml = `<pre>${JSON.stringify(notification, null, 2)}</pre>`;
+  let adminSubject = `Braintree webhook: ${notif.kind}`;
+  const adminHtml = `<pre>${JSON.stringify(notification, null, 2)}</pre>`;
 
-  switch (notification.kind) {
+  // Check if this is a Peace Seal payment
+  const isPeaceSeal = isPeaceSealPayment(notification);
+  if (isPeaceSeal) {
+    const { companyName } = getPeaceSealCompanyInfo(notification);
+    adminSubject = `Peace Seal Payment: ${notif.kind} - ${companyName}`;
+  }
+
+  switch (notif.kind) {
     case Kind.TransactionSettled:
       donorEmail =
-        notification.transaction?.customer?.email ??
-        notification.transaction?.customerDetails?.email;
+        notif.transaction?.customer?.email ??
+        notif.transaction?.customerDetails?.email;
       donorSubject = "¡Tu donación se ha liquidado con éxito!";
-      donorHtml = `<p>Queremos confirmarte que tu donación de <strong>$${notification.transaction?.amount}</strong> se ha liquidado correctamente.</p><p>¡Gracias por apoyar nuestra misión por la paz!</p>`;
+      donorHtml = `<p>Queremos confirmarte que tu donación de <strong>$${notif.transaction?.amount}</strong> se ha liquidado correctamente.</p><p>¡Gracias por apoyar nuestra misión por la paz!</p>`;
       break;
     case Kind.TransactionSettlementDeclined:
       donorEmail =
-        notification.transaction?.customer?.email ??
-        notification.transaction?.customerDetails?.email;
+        notif.transaction?.customer?.email ??
+        notif.transaction?.customerDetails?.email;
       donorSubject = "Hubo un problema al liquidar tu donación";
-      donorHtml = `<p>Intentamos liquidar tu donación de <strong>$${notification.transaction?.amount}</strong> pero fue rechazada durante el proceso de liquidación.</p><p>Por favor, contacta a tu banco o intenta nuevamente con otro método de pago.</p>`;
+      donorHtml = `<p>Intentamos liquidar tu donación de <strong>$${notif.transaction?.amount}</strong> pero fue rechazada durante el proceso de liquidación.</p><p>Por favor, contacta a tu banco o intenta nuevamente con otro método de pago.</p>`;
       break;
     case Kind.TransactionDisbursed:
       donorEmail =
-        notification.transaction?.customer?.email ??
-        notification.transaction?.customerDetails?.email;
+        notif.transaction?.customer?.email ??
+        notif.transaction?.customerDetails?.email;
       donorSubject = "Tu donación se ha procesado completamente";
-      donorHtml = `<p>Tu donación de <strong>$${notification.transaction?.amount}</strong> ya fue desembolsada a nuestra cuenta bancaria. ¡Gracias de nuevo!</p>`;
+      donorHtml = `<p>Tu donación de <strong>$${notif.transaction?.amount}</strong> ya fue desembolsada a nuestra cuenta bancaria. ¡Gracias de nuevo!</p>`;
       break;
     case Kind.SubscriptionChargedSuccessfully:
       donorEmail =
-        notification.subscription?.transactions?.[0]?.customer?.email ??
-        notification.subscription?.transactions?.[0]?.customerDetails?.email;
+        notif.subscription?.transactions?.[0]?.customer?.email ??
+        notif.subscription?.transactions?.[0]?.customerDetails?.email;
       donorSubject = "¡Gracias! Se procesó tu donación mensual";
-      donorHtml = `<p>Cobramos con éxito tu donación mensual de <strong>$${notification.subscription?.price}</strong>.</p><p>Tu apoyo constante es invaluable.</p>`;
+      donorHtml = `<p>Cobramos con éxito tu donación mensual de <strong>$${notif.subscription?.price}</strong>.</p><p>Tu apoyo constante es invaluable.</p>`;
       break;
     case Kind.SubscriptionChargedUnsuccessfully:
       donorEmail =
-        notification.subscription?.transactions?.[0]?.customer?.email ??
-        notification.subscription?.transactions?.[0]?.customerDetails?.email;
+        notif.subscription?.transactions?.[0]?.customer?.email ??
+        notif.subscription?.transactions?.[0]?.customerDetails?.email;
       donorSubject = "No pudimos procesar tu donación mensual";
-      donorHtml = `<p>Intentamos cobrar tu donación mensual de <strong>$${notification.subscription?.price}</strong>, pero falló.</p><p>Por favor, actualiza tu método de pago para que podamos seguir contando con tu apoyo.</p>`;
+      donorHtml = `<p>Intentamos cobrar tu donación mensual de <strong>$${notif.subscription?.price}</strong>, pero falló.</p><p>Por favor, actualiza tu método de pago para que podamos seguir contando con tu apoyo.</p>`;
       break;
     case Kind.SubscriptionCanceled:
       donorEmail = undefined; // no need to mail donor (probablemente ya lo sabe)
       break;
     case Kind.PaymentMethodRevokedByCustomer:
-      donorEmail = notification.revokedPaymentMethodMetadata?.email;
+      donorEmail = notif.revokedPaymentMethodMetadata?.email;
       donorSubject = "Tu método de pago fue eliminado";
       donorHtml = `<p>Confirmamos que eliminaste tu método de pago de tu cuenta. Si esto fue un error o quieres seguir apoyándonos, añade un nuevo método en tu próximo ingreso.</p>`;
       break;
@@ -141,7 +241,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  // @ts-ignore – el SDK no define los tipos de verify con promesa pero funciona
+  // @ts-expect-error - el SDK no define los tipos de verify con promesa pero funciona
   const verification = await gateway.webhookNotification.verify(challenge);
   return new NextResponse(verification, {
     status: 200,
@@ -168,6 +268,12 @@ export async function POST(req: NextRequest) {
 
     logger.log("notification 🔥 brought to you by braintree: ", notification);
 
+    // Check if this is a Peace Seal payment and process accordingly
+    if (isPeaceSealPayment(notification)) {
+      // Process Peace Seal payment confirmation with backend
+      await processPeaceSealPayment(notification);
+    }
+
     // Construir mensajes
     const { donorEmail, donorSubject, donorHtml, adminSubject, adminHtml } =
       buildNotificationMessages(notification);
@@ -189,7 +295,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ received: true });
-  } catch (err: any) {
+  } catch (err: unknown) {
     logger.error("[Webhook] Error processing notification", err);
     return NextResponse.json(
       { error: "Webhook processing failed" },

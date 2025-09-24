@@ -11,6 +11,8 @@ import { contactRoutes } from "./routes/contact";
 import { userInvolvementRoutes } from "./routes/user-involvement";
 import { adminAnalyticsRoutes } from "./routes/admin-analytics";
 import { notificationsRoutes } from "./routes/notifications";
+import { peaceSealRoutes } from "./routes/peace-seal";
+import { documents } from "./routes/documents";
 import { AuthService } from "./services/auth.service";
 import { BrevoListsService } from "./services/brevo-lists.service";
 import { createDb } from "./db";
@@ -34,7 +36,7 @@ app.use(
       "http://localhost:3001",
       "https://pledge4peace.vercel.app",
       "https://www.pledge4peace.org",
-      "https://5a08b44a2da0.ngrok-free.app",
+      "https://15eeaa93ea6c.ngrok-free.app",
       // Add other allowed origins in production
     ],
     credentials: true, // Allow credentials (cookies, authorization headers)
@@ -98,5 +100,7 @@ app.route("/api/contact", contactRoutes);
 app.route("/api/user-involvement", userInvolvementRoutes);
 app.route("/api/admin-analytics", adminAnalyticsRoutes);
 app.route("/api/notifications", notificationsRoutes);
+app.route("/api/peace-seal", peaceSealRoutes);
+app.route("/api/documents", documents);
 
 export default app;

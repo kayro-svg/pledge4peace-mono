@@ -6,3 +6,4 @@ export * from "./interactions";
 export * from "./pledges";
 export * from "./relations";
 export * from "./notifications";
+export * from "./peace-seal";

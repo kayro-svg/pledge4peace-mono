@@ -22,6 +22,23 @@ export const authOptions: NextAuthOptions = {
             }),
           });
 
+          // Check if the response is JSON before parsing
+          const contentType = res.headers.get("content-type");
+          const isJson =
+            contentType && contentType.includes("application/json");
+
+          if (!isJson) {
+            // If we get HTML or other content type, it's likely an error page
+            const textResponse = await res.text();
+            logger.error("Auth API returned non-JSON response:", {
+              status: res.status,
+              statusText: res.statusText,
+              contentType,
+              response: textResponse.substring(0, 200) + "...", // Log first 200 chars
+            });
+            throw new Error("Authentication service unavailable");
+          }
+
           const data = await res.json();
 
           if (!res.ok) {
@@ -38,7 +55,22 @@ export const authOptions: NextAuthOptions = {
             createdAt: data.user.createdAt,
             accessToken: data.token,
           };
-        } catch {
+        } catch (error) {
+          logger.error("Authentication error:", error);
+
+          // Provide more specific error messages
+          if (error instanceof Error) {
+            if (error.message.includes("fetch")) {
+              throw new Error("Unable to connect to authentication service");
+            }
+            if (error.message.includes("Authentication service unavailable")) {
+              throw new Error(
+                "Authentication service is currently unavailable"
+              );
+            }
+            throw new Error(error.message);
+          }
+
           throw new Error("Authentication failed");
         }
       },
@@ -97,7 +129,11 @@ export const authOptions: NextAuthOptions = {
               const payload = JSON.parse(atob(parts[1]));
               token.backendTokenExpires = payload.exp;
               if (typeof payload.role === "string") {
-                token.userRole = payload.role as "user" | "moderator" | "admin" | "superAdmin";
+                token.userRole = payload.role as
+                  | "user"
+                  | "moderator"
+                  | "admin"
+                  | "superAdmin";
               }
               if (typeof payload.email === "string")
                 token.userEmail = payload.email;
@@ -110,10 +146,18 @@ export const authOptions: NextAuthOptions = {
           }
         }
         if (typeof s.userRole === "string") {
-          token.userRole = s.userRole as "user" | "moderator" | "admin" | "superAdmin";
+          token.userRole = s.userRole as
+            | "user"
+            | "moderator"
+            | "admin"
+            | "superAdmin";
         }
         if (typeof s.user?.role === "string") {
-          token.userRole = s.user.role as "user" | "moderator" | "admin" | "superAdmin";
+          token.userRole = s.user.role as
+            | "user"
+            | "moderator"
+            | "admin"
+            | "superAdmin";
         }
       }
 
@@ -162,7 +206,8 @@ export const authOptions: NextAuthOptions = {
         // Post-login redirect passthrough (if backend login returned it, surface on session for the first client navigation)
         const tokenAny = token as Record<string, unknown>;
         if (typeof tokenAny.postLoginRedirect === "string") {
-          (session as unknown as Record<string, unknown>).postLoginRedirect = tokenAny.postLoginRedirect;
+          (session as unknown as Record<string, unknown>).postLoginRedirect =
+            tokenAny.postLoginRedirect;
           delete tokenAny.postLoginRedirect;
         }
       }

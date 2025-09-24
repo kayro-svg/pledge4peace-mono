@@ -30,6 +30,10 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     "/es/dashboard/notifications",
     "/dashboard/roles",
     "/es/dashboard/roles",
+    "/dashboard/peace-seal",
+    "/es/dashboard/peace-seal",
+    "/dashboard/company-peace-seal",
+    "/es/dashboard/company-peace-seal",
   ];
   const showHeaderFooter = !noHeaderFooterRoutes.includes(pathname);
 

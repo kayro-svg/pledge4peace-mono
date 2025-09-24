@@ -22,11 +22,24 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "pledge4peace-db",
+      "database_name": "preview-pledge4peace-db",
       "database_id": "19ad10db-15a2-4791-97f1-e9cbc5eb64ed",
-      "migrations_dir": "./src/db/migrations",
+      "migrations_dir": "./migrations",
     },
   ],
+  "r2_buckets": [
+    {
+      "bucket_name": "dev-p4p-cdn",
+      "binding": "BUCKET",
+      "preview_bucket_name": "dev-p4p-cdn",
+    },
+  ],
+  "vars": {
+    "NODE_ENV": "development",
+    "FROM_EMAIL": "info@pledge4peace.org",
+    "FRONTEND_URL": "http://localhost:3000",
+    "BUCKET_DOMAIN": "https://pub-316825d26d3340318682365567a5b814.r2.dev",
+  },
   "env": {
     "preview": {
       "name": "pledge4peace-api-preview",
@@ -51,7 +64,15 @@
         "NODE_ENV": "preview",
         "FROM_EMAIL": "info@pledge4peace.org",
         "FRONTEND_URL": "https://pledge4peace.vercel.app",
+        "BUCKET_DOMAIN": "https://pub-316825d26d3340318682365567a5b814.r2.dev",
       },
+      "r2_buckets": [
+        {
+          "bucket_name": "dev-p4p-cdn",
+          "binding": "BUCKET",
+          "preview_bucket_name": "dev-p4p-cdn",
+        },
+      ],
     },
     "production": {
       "name": "pledge4peace-api",
@@ -73,7 +94,15 @@
         "NODE_ENV": "production",
         "FROM_EMAIL": "info@pledge4peace.org",
         "FRONTEND_URL": "https://pledge4peace.org",
+        "BUCKET_DOMAIN": "https://pub-ff516e7260bf478f96e6870a3f4079a5.r2.dev",
       },
+      "r2_buckets": [
+        {
+          "bucket_name": "prod-p4p-cdn",
+          "binding": "BUCKET",
+          "preview_bucket_name": "dev-p4p-cdn",
+        },
+      ],
     },
   },
 }

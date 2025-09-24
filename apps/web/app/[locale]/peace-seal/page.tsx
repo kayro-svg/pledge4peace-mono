@@ -66,7 +66,8 @@ export default async function PeaceSealPage(params: { locale: "en" | "es" }) {
           <div className="mt-5 sm:mt-6">
             <Link
               className="inline-flex items-center rounded-full bg-[#548281] hover:bg-[#2F4858] text-white px-5 sm:px-6 py-3 text-sm sm:text-base"
-              href={data.heroPrimaryButtonLink}
+              // href={data.heroPrimaryButtonLink}
+              href="/peace-seal/apply"
             >
               {data.heroPrimaryButtonText}
               <ChevronRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
@@ -472,7 +473,7 @@ export default async function PeaceSealPage(params: { locale: "en" | "es" }) {
                 <div className="mt-5 sm:mt-6">
                   <Link
                     className="rounded-full inline-flex items-center bg-white hover:bg-[#2F4858] text-[#548281] hover:text-white font-bold px-6 sm:px-8 py-3 text-base transition-all duration-300"
-                    href="/login"
+                    href="/peace-seal/apply"
                   >
                     {data.finalCtaButtonText}
                   </Link>

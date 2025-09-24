@@ -38,7 +38,7 @@ export type UserListItem = {
   id: string;
   email: string;
   name: string;
-  role: "user" | "moderator" | "admin" | "superAdmin";
+  role: "user" | "moderator" | "advisor" | "admin" | "superAdmin";
   status: string;
   createdAt: number | string | Date;
   updatedAt: number | string | Date;
@@ -64,7 +64,7 @@ export async function adminListUsers(params?: {
 
 export async function adminChangeUserRole(payload: {
   userId: string;
-  role: "user" | "moderator" | "admin";
+  role: "user" | "moderator" | "advisor" | "admin";
 }): Promise<{ success: boolean; user: UserListItem }> {
   const endpoint = API_ENDPOINTS.users.changeRole.replace(
     process.env.NEXT_PUBLIC_API_URL || "",
