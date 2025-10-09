@@ -17,6 +17,7 @@ import "../globals.css";
 import { routing } from "@/i18n/routing";
 import { getMetadata } from "./metadata";
 import { Metadata } from "next";
+import { MicrosoftClarity } from "@/components/analytics/microsoft-clarity";
 import { Analytics } from "@vercel/analytics/next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -81,6 +82,7 @@ export default async function RootLayout({
       <body className={`${inter.className} h-full w-[100%]`}>
         <GoogleAnalytics />
         <FacebookPixel />
+        <MicrosoftClarity />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers session={session}>
             <ResourceOptimizer />
