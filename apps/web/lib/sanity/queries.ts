@@ -439,9 +439,9 @@ export async function getCampaignForDashboard(
     }
   );
   return {
-    title: campaignTitle.title,
-    id: campaignTitle._id,
-    slug: campaignTitle.slug.current,
+    title: campaignTitle?.title,
+    id: campaignTitle?._id,
+    slug: campaignTitle?.slug.current,
   };
 }
 
@@ -1035,351 +1035,87 @@ export async function getVolunteerPageData(
   }
 }
 
-// /**
-//  * Sanity queries for localized content
-//  */
+/** Peace Seal Home Page */
+export async function getPeaceSealHomePage(
+  lang: "en" | "es" = "en"
+): Promise<any> {
+  const sanityClient = getClient({ forceFresh: isDevelopment });
 
-// // Get home page content with localized fields
-// export const homePageQuery = `
-//   *[_type == "homePage"][0] {
-//     heroHeading,
-//     heroSubheading,
-//     heroPrimaryButtonText,
-//     heroSecondaryButtonText,
-//     heroImage {
-//       asset->{
-//         _id,
-//         url
-//       }
-//     },
-//     howItWorksHeading,
-//     howItWorksDescription,
-//     howItWorksSteps[] {
-//       title,
-//       description
-//     },
-//     campaignsHeading,
-//     campaignsDescription,
-//     campaigns[]->
-//   }
-// `;
+  return sanityClient.fetch(
+    /* groq */ `
+*[_type == "peaceSealHomePage"][0]{
+  _id,
 
-// // Get about page content with localized fields
-// export const aboutPageQuery = `
-//   *[_type == "aboutPage"][0] {
-//     heroSection {
-//       heroHeading,
-//       heroSubheading,
-//       heroBgImage {
-//         asset->{
-//           _id,
-//           url
-//         }
-//       }
-//     },
-//     whoWeAreSection {
-//       whoWeAreHeading,
-//       whoWeAreFirstParagraph,
-//       whoWeAreSecondParagraph,
-//       whoWeAreThirdParagraph,
-//       whoWeAreImage {
-//         asset->{
-//           _id,
-//           url
-//         }
-//       }
-//     },
-//     ourMissionSection {
-//       ourMissionHeading,
-//       ourMissionParagraph,
-//       ourMissionImage {
-//         asset->{
-//           _id,
-//           url
-//         }
-//       }
-//     },
-//     ourPhilosophySection {
-//       ourPhilosophyHeading,
-//       ourPhilosophyParagraph,
-//       ourPhilosophyImage {
-//         asset->{
-//           _id,
-//           url
-//         }
-//       }
-//     }
-//   }
-// `;
+  "heroTagline":            coalesce(heroTagline[$lang],            heroTagline.en),
+  "heroHeading":            coalesce(heroHeading[$lang],            heroHeading.en),
+  "heroSubheading":         coalesce(heroSubheading[$lang],         heroSubheading.en),
+  "heroDescription":        coalesce(heroDescription[$lang],        heroDescription.en),
+  "heroPrimaryButtonText":  coalesce(heroPrimaryButtonText[$lang],  heroPrimaryButtonText.en),
+  heroPrimaryButtonLink,
+  heroVideo{asset->{url}},
+  heroImage{asset->{url}},
 
-// // Get article by slug with localized fields
-// export const articleBySlugQuery = `
-//   *[_type == "article" && slug.current == $slug][0] {
-//     title,
-//     slug,
-//     publishedAt,
-//     excerpt,
-//     image {
-//       asset->{
-//         _id,
-//         url
-//       }
-//     },
-//     content,
-//     author->,
-//     categories[]->,
-//     seo
-//   }
-// `;
+  
+  "valueHeadingLines": valueHeadingLines[]{
+    "text": coalesce(@[$lang], @.en)
+  },
+  "valueParagraph": coalesce(valueParagraph[$lang], valueParagraph.en),
+  valueImage{asset->{url}},
 
-// // Get all articles with localized fields
-// export const allArticlesQuery = `
-//   *[_type == "article"] | order(publishedAt desc) {
-//     title,
-//     slug,
-//     publishedAt,
-//     excerpt,
-//     image {
-//       asset->{
-//         _id,
-//         url
-//       }
-//     },
-//     author->,
-//     categories[]->
-//   }
-// `;
+  
+  "whatIsHeadingTop":  coalesce(whatIsHeadingTop[$lang],  whatIsHeadingTop.en),
+  "whatIsHeadingMain": coalesce(whatIsHeadingMain[$lang], whatIsHeadingMain.en),
+  "whatIsDescription": coalesce(whatIsDescription[$lang], whatIsDescription.en),
+  whatIsVideoId,
+  whatIsVideoPoster{asset->{url}},
 
-// //-------------------------------------------------------------------
-// // Helper functions that wrap the GROQ above and inject the $lang param
-// //-------------------------------------------------------------------
+  
+  "whyNeedsTitle": coalesce(whyNeedsTitle[$lang], whyNeedsTitle.en),
+  "whyNeedsFeatures": whyNeedsFeatures[]{
+    icon{asset->{url}},
+    "title": coalesce(title[$lang], title.en),
+    "text":  coalesce(text[$lang],  text.en)
+  },
 
-// import { getClient } from "./client";
-// import { cleanTimezone } from "@/lib/utils/clean-timezone";
+  
+  "howItWorksHeading": coalesce(howItWorksHeading[$lang], howItWorksHeading.en),
+  "howItWorksSteps": howItWorksSteps[]{
+    index,
+    icon{asset->{url}},
+    "title": coalesce(title[$lang], title.en),
+    "text":  coalesce(text[$lang],  text.en)
+  },
 
-// /**
-//  * Fetches all sections of the Home Page already filtered by language.
-//  * It keeps the original shape expected by the components (heroSection, campaignsSection, …).
-//  */
-// export async function getHomePageData(lang: "en" | "es" = "en") {
-//   const sanity = getClient();
+  
+  "rewardsTitle":       coalesce(rewardsTitle[$lang],       rewardsTitle.en),
+  "rewardsDescription": coalesce(rewardsDescription[$lang], rewardsDescription.en),
+  rewardsVideoId,
+  rewardsVideoPoster{asset->{url}},
+  "perks": perks[]{
+    icon{asset->{url}},
+    "label": coalesce(label[$lang], label.en)
+  },
+  "startFreeAssessmentTitle":       coalesce(startFreeAssessmentTitle[$lang],       startFreeAssessmentTitle.en),
+  "startFreeAssessmentDescription": coalesce(startFreeAssessmentDescription[$lang], startFreeAssessmentDescription.en),
+  "startFreeAssessmentPros": startFreeAssessmentPros[]{"text": coalesce(@[$lang], @.en)},
+  "startFreeAssessmentButtonText":  coalesce(startFreeAssessmentButtonText[$lang],  startFreeAssessmentButtonText.en),
 
-//   // Full query with language projections
-//   const query = /* groq */ `
-//     *[_type=="homePage"][0]{
-//       // HERO SECTION ---------------------------------
-//       "heroSection": {
-//         "heroHeading": heroHeading[$lang],
-//         "heroSubheading": heroSubheading[$lang],
-//         "heroPrimaryButtonText": heroPrimaryButtonText[$lang],
-//         "heroSecondaryButtonText": heroSecondaryButtonText[$lang],
-//         heroVideo,
-//         heroImage{asset->{url}}
-//       },
 
-//       // HOW-IT-WORKS ---------------------------------
-//       "howItWorksSection": {
-//         "howItWorksHeading": howItWorksHeading[$lang],
-//         "howItWorksDescription": howItWorksDescription[$lang],
-//         "howItWorksSteps": howItWorksSteps[]{
-//           "title": title[$lang],
-//           "description": description[$lang],
-//           icon
-//         }
-//       },
+  "advantageTitle":       coalesce(advantageTitle[$lang],       advantageTitle.en),
+  "advantageDescription": coalesce(advantageDescription[$lang], advantageDescription.en),
+  "withoutTitle":         coalesce(withoutTitle[$lang],         withoutTitle.en),
+  "withoutItems":         withoutItems[]{"text": coalesce(@[$lang], @.en)},
+  "withTitle":            coalesce(withTitle[$lang],            withTitle.en),
+  "withItems":            withItems[]{"text": coalesce(@[$lang], @.en)},
 
-//       // CAMPAIGNS ------------------------------------
-//       "campaignsSection": {
-//         "campaignsHeading": campaignsHeading[$lang],
-//         "campaignsDescription": campaignsDescription[$lang],
-//         "campaigns": campaigns[]->{
-//           _id,
-//           slug,
-//           category,
-//           goalPledges,
-//           "title": title[$lang],
-//           "description": description[$lang],
-//           featuredImage{asset->{url}}
-//         }
-//       },
-
-//       // WAYS TO SUPPORT ------------------------------
-//       "waysToSupportSection": {
-//         "waysToSupportHeading": waysToSupportHeading[$lang],
-//         "waysToSupportDescription": waysToSupportDescription[$lang],
-//         secondCardHeading[$lang],
-//         secondCardDescription[$lang],
-//         secondCardButtonText[$lang],
-//         secondCardSecondHeading[$lang],
-//         secondCardListOfSupportImpact,
-//         "waysToSupportItems": waysToSupportItems[]{
-//           icon{asset->{url}},
-//           "title": title[$lang],
-//           "description": description[$lang],
-//           buttonText[$lang],
-//           buttonLink
-//         }
-//       },
-
-//       // ARTICLES -------------------------------------
-//       "articlesSection": {
-//         "articlesHeading": articlesHeading[$lang],
-//         "articlesDescription": articlesDescription[$lang],
-//         "articles": articles[]->{
-//           _id,
-//           slug,
-//           publishedAt,
-//           "title": title[$lang],
-//           "excerpt": excerpt[$lang],
-//           image{asset->{url}}
-//         }
-//       },
-
-//       // CONFERENCES ----------------------------------
-//       "conferencesSection": {
-//         "conferencesHeading": conferencesHeading[$lang],
-//         "conferencesDescription": conferencesDescription[$lang],
-//         "conferences": conferences[]->{
-//           _id,
-//           slug,
-//           startDateTime,
-//           endDateTime,
-//           timezone,
-//           location,
-//           image{asset->{url}},
-//           "title": title[$lang],
-//           "description": description[$lang]
-//         }
-//       }
-//     }`;
-
-//   const data = await sanity.fetch(query, { lang });
-
-//   // Normalise timezone values
-//   if (data?.conferencesSection?.conferences) {
-//     data.conferencesSection.conferences =
-//       data.conferencesSection.conferences.map((c: any) => ({
-//         ...c,
-//         timezone: cleanTimezone(c.timezone),
-//       }));
-//   }
-
-//   return data;
-// }
-
-// /**
-//  * Fetches the About Page with localized fields.
-//  */
-// export async function getAboutPageData(lang: "en" | "es" = "en") {
-//   const sanity = getClient();
-
-//   const query = /* groq */ `
-//     *[_type=="aboutPage"][0]{
-//       "heroSection": {
-//         "heroHeading": heroSection.heroHeading[$lang],
-//         "heroSubheading": heroSection.heroSubheading[$lang],
-//         heroSection.heroBgImage{asset->{url}}
-//       },
-//       "whoWeAreSection": {
-//         "whoWeAreHeading": whoWeAreSection.whoWeAreHeading[$lang],
-//         "whoWeAreFirstParagraph": whoWeAreSection.whoWeAreFirstParagraph[$lang],
-//         "whoWeAreSecondParagraph": whoWeAreSection.whoWeAreSecondParagraph[$lang],
-//         "whoWeAreThirdParagraph": whoWeAreSection.whoWeAreThirdParagraph[$lang],
-//         whoWeAreSection.whoWeAreImage{asset->{url}}
-//       },
-//       "ourMissionSection": {
-//         "ourMissionHeading": ourMissionSection.ourMissionHeading[$lang],
-//         "ourMissionParagraph": ourMissionSection.ourMissionParagraph[$lang],
-//         ourMissionSection.ourMissionImage{asset->{url}}
-//       },
-//       "ourPhilosophySection": {
-//         "ourPhilosophyHeading": ourPhilosophySection.ourPhilosophyHeading[$lang],
-//         "ourPhilosophyParagraph": ourPhilosophySection.ourPhilosophyParagraph[$lang],
-//         ourPhilosophySection.ourPhilosophyImage{asset->{url}}
-//       },
-//       "ourCharterSection": {
-//         ourCharterHeading[$lang],
-//         ourCharterParagraph[$lang],
-//         charterPrinciples[]{
-//           "title": title[$lang]
-//         }
-//       }
-//     }`;
-
-//   return sanity.fetch(query, { lang });
-// }
-
-// /**
-//  * Fetches Volunteer Page with localized fields.
-//  */
-// export async function getVolunteerPageData(lang: "en" | "es" = "en") {
-//   const sanity = getClient();
-
-//   const query = /* groq */ `
-//     *[_type=="volunteerPage"][0]{
-//       "heroSection": {
-//         "heroHeading": heroSection.heroHeading[$lang],
-//         "heroSubheading": heroSection.heroSubheading[$lang],
-//         heroSection.heroButtonText[$lang],
-//         heroSection.heroBgImage{asset->{url}}
-//       },
-//       "waysToVolunteerSection": {
-//         "waysToVolunteerHeading": waysToVolunteerSection.waysToVolunteerHeading[$lang],
-//         "waysToVolunteerParagraph": waysToVolunteerSection.waysToVolunteerParagraph[$lang]
-//       },
-//       "convinceHighProfileSection": {
-//         "convinceHighProfileHeading": convinceHighProfileSection.convinceHighProfileHeading[$lang],
-//         "convinceHighProfileParagraph": convinceHighProfileSection.convinceHighProfileParagraph[$lang],
-//         convinceHighProfileSection.convinceHighProfileChecklist[]{"title": title[$lang]},
-//         convinceHighProfileSection.convinceHighProfileImage{asset->{url}}
-//       },
-//       "spreadTheWordSection": {
-//         "spreadTheWordHeading": spreadTheWordSection.spreadTheWordHeading[$lang],
-//         "spreadTheWordParagraph": spreadTheWordSection.spreadTheWordParagraph[$lang],
-//         spreadTheWordSection.spreadTheWordCards[]{
-//           "title": title[$lang],
-//           "description": description[$lang]
-//         },
-//         spreadTheWordSection.spreadTheWordImage{asset->{url}}
-//       },
-//       "impactSection": {
-//         impactHeading[$lang],
-//         impactParagraph[$lang],
-//         impactButtonText[$lang]
-//       }
-//     }`;
-
-//   return sanity.fetch(query, { lang });
-// }
-
-// /**
-//  * Fetches a campaign by slug with localized title/description (other fields unchanged).
-//  */
-// export async function getCampaignBySlug(
-//   slug: string,
-//   lang: "en" | "es" = "en"
-// ) {
-//   if (!slug) return null;
-//   const sanity = getClient();
-
-//   const query = /* groq */ `
-//     *[_type=="campaign" && slug.current==$slug][0]{
-//       _id,
-//       slug,
-//       category,
-//       goalPledges,
-//       "title": title[$lang],
-//       "description": description[$lang],
-//       featuredImage{asset->{url}},
-//       parties[]{
-//         _key,
-//         slug,
-//         color,
-//         solutionLimit,
-//         "name": name[$lang],
-//         "description": description[$lang]
-//       }
-//     }`;
-
-//   return sanity.fetch(query, { slug, lang });
-// }
+  "finalCtaTitle":       coalesce(finalCtaTitle[$lang],       finalCtaTitle.en),
+  "finalCtaDescription": coalesce(finalCtaDescription[$lang], finalCtaDescription.en),
+  "finalCtaButtonText":  coalesce(finalCtaButtonText[$lang],  finalCtaButtonText.en)
+}
+    `,
+    { lang },
+    {
+      next: { revalidate: cache.long, tags: ["peaceSealHomePage"] },
+    }
+  );
+}

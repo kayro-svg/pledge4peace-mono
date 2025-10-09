@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { useAuthSession } from "@/hooks/use-auth-session";
+import { useSimpleAuth } from "@/hooks/use-simple-auth";
 
 type InteractionType = "like" | "dislike" | "comment" | "share";
 
@@ -84,7 +84,7 @@ export function InteractionProvider({
   children: React.ReactNode;
 }) {
   const [interactions, setInteractions] = useState<InteractionState>({});
-  const { session } = useAuthSession();
+  const { session } = useSimpleAuth();
 
   // Get interaction count for a specific type
   const getInteractionCount = useCallback(

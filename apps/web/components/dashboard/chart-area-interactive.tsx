@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
+import { logger } from "@/lib/utils/logger";
 
 // Chart configuration
 const chartConfig = {
@@ -75,7 +76,7 @@ function transformActivitiesToChartData(
     return activityDate >= startDate;
   });
 
-  console.log("filteredActivities in chart", filteredActivities);
+  logger.log("filteredActivities in chart", filteredActivities);
 
   // Group activities by week
   const groupedByWeek: Record<
@@ -145,7 +146,7 @@ function transformActivitiesToChartData(
 
     const weekKey = weekStart.toISOString().split("T")[0];
 
-    console.log(
+    logger.log(
       `Activity ${activity.id} (${activity.type}) on ${activity.createdAt} -> week ${weekKey}`
     );
 
@@ -168,7 +169,7 @@ function transformActivitiesToChartData(
     }
   });
 
-  console.log("groupedByWeek in chart", groupedByWeek);
+  logger.log("groupedByWeek in chart", groupedByWeek);
 
   // Convert to array and sort by date
   const chartData = Object.entries(groupedByWeek)
@@ -178,7 +179,7 @@ function transformActivitiesToChartData(
     }))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  console.log("chartData in chart", chartData);
+  logger.log("chartData in chart", chartData);
 
   return chartData;
 }

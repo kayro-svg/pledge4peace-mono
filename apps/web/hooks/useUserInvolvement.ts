@@ -10,6 +10,7 @@ import {
   RecentActivity,
   RecentComment,
 } from "@/lib/api/user-involvement";
+import { logger } from "@/lib/utils/logger";
 
 interface UseUserInvolvementOptions {
   fetchDashboard?: boolean;
@@ -103,7 +104,7 @@ export function useUserInvolvement(
       const errorMessage =
         err instanceof Error ? err.message : "Failed to fetch dashboard data";
       setDashboardError(errorMessage);
-      console.error("Error fetching dashboard data:", err);
+      logger.error("Error fetching dashboard data:", err);
     } finally {
       setIsDashboardLoading(false);
     }
@@ -121,7 +122,7 @@ export function useUserInvolvement(
       const errorMessage =
         err instanceof Error ? err.message : "Failed to fetch stats";
       setStatsError(errorMessage);
-      console.error("Error fetching stats:", err);
+      logger.error("Error fetching stats:", err);
     } finally {
       setIsStatsLoading(false);
     }
@@ -139,7 +140,7 @@ export function useUserInvolvement(
       const errorMessage =
         err instanceof Error ? err.message : "Failed to fetch activities";
       setActivitiesError(errorMessage);
-      console.error("Error fetching activities:", err);
+      logger.error("Error fetching activities:", err);
     } finally {
       setIsActivitiesLoading(false);
     }
@@ -157,7 +158,7 @@ export function useUserInvolvement(
       const errorMessage =
         err instanceof Error ? err.message : "Failed to fetch comments";
       setCommentsError(errorMessage);
-      console.error("Error fetching comments:", err);
+      logger.error("Error fetching comments:", err);
     } finally {
       setIsCommentsLoading(false);
     }
@@ -254,7 +255,7 @@ export function invalidateCampaignsCache(): void {
   Object.keys(campaignsCache).forEach((key) => {
     delete campaignsCache[key];
   });
-  console.log("[Cache] Invalidated campaigns cache");
+  logger.log("[Cache] Invalidated campaigns cache");
 }
 
 // Función de utilidad para obtener detalles de campaña con caché
@@ -298,7 +299,7 @@ const useCampaignDetailsLoader = (items: { campaignId: string }[]) => {
 
         return campaignData;
       } catch (error) {
-        console.error("Error fetching campaign details:", error);
+        logger.error("Error fetching campaign details:", error);
         throw error;
       }
     },
@@ -357,7 +358,7 @@ const useCampaignDetailsLoader = (items: { campaignId: string }[]) => {
       });
     } catch (error) {
       setCampaignsError("Failed to load campaign details");
-      console.error("Error loading campaign details:", error);
+      logger.error("Error loading campaign details:", error);
     } finally {
       setIsCampaignsLoading(false);
     }

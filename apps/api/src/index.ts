@@ -75,7 +75,8 @@ app.use("*", async (c, next) => {
     // User type specific lists
     citizensListId: 61, // P4P - citizens/Advocates #61
     politiciansListId: 60, // P4P - Politicians #60
-    organizationsListId: 62, // P4P - Organizations #62
+    organizationsListId: 85, // P4P - Peace Seal #85
+    nonprofitsListId: 62, // P4P - Nonprofits #62
     studentsListId: 63, // P4P - Students #63
     othersListId: 64, // P4P - Others #64
     campaignsListId: 69, // P4P - Campaigns #69

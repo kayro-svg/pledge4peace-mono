@@ -13,10 +13,13 @@ export const users = sqliteTable("users", {
     .notNull()
     .default("user"),
   userType: text("user_type", {
-    enum: ["citizen", "politician", "organization", "student", "other"],
+    enum: ["citizen", "politician", "organization", "nonprofit", "student", "other"],
   }).default("citizen"),
   office: text("office"),
+  // Bussiness/Organization field
   organization: text("organization"),
+  // Nonprofit
+  nonprofit: text("nonprofit"), // Nonprofit new field
   institution: text("institution"),
   otherRole: text("other_role"),
   emailVerified: integer("email_verified").notNull().default(0),

@@ -18,6 +18,10 @@ import { routing } from "@/i18n/routing";
 import { getMetadata } from "./metadata";
 import { Metadata } from "next";
 import { MicrosoftClarity } from "@/components/analytics/microsoft-clarity";
+import { Analytics } from "@vercel/analytics/next";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,7 +34,7 @@ export function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: { locale: any };
+  params: { locale: string };
 }): Promise<Metadata> {
   const { locale } = await params;
   return getMetadata(locale);
@@ -41,12 +45,12 @@ export default async function RootLayout({
   params,
 }: {
   children: React.ReactNode;
-  params: { locale: any };
+  params: { locale: string };
 }) {
   const { locale } = await params;
 
   // Validate that the incoming `locale` parameter is valid
-  const isValidLocale = routing.locales.includes(locale as any);
+  const isValidLocale = routing.locales.includes(locale as "en" | "es");
   if (!isValidLocale) {
     notFound();
   }
@@ -55,9 +59,12 @@ export default async function RootLayout({
   let messages;
   try {
     messages = (await import(`@/messages/${locale}.json`)).default;
-  } catch (error) {
+  } catch {
     notFound();
   }
+
+  // Get server-side session to hydrate the client
+  const session = await getServerSession(authOptions);
 
   return (
     <html lang={locale}>
@@ -77,9 +84,11 @@ export default async function RootLayout({
         <FacebookPixel />
         <MicrosoftClarity />
         <NextIntlClientProvider locale={locale} messages={messages}>
-          <Providers>
+          <Providers session={session}>
             <ResourceOptimizer />
             <LayoutWrapper>{children}</LayoutWrapper>
+            <Analytics />
+            <SpeedInsights />
             <SessionExpiryWarning />
             <Toaster />
             <CookieBanner position="bottom" />
