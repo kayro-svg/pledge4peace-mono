@@ -8,12 +8,16 @@ import { Toaster } from "sonner";
 import { CookieBanner } from "@/components/cookies/cookie-banner";
 import { LayoutWrapper } from "@/components/layout/layout-wrapper";
 import { StructuredData } from "@/components/seo/structured-data";
-import { CriticalResourceHints, ResourceOptimizer } from "@/components/performance/resource-optimizer";
+import {
+  CriticalResourceHints,
+  ResourceOptimizer,
+} from "@/components/performance/resource-optimizer";
 import { Providers } from "../providers";
 import "../globals.css";
 import { routing } from "@/i18n/routing";
 import { getMetadata } from "./metadata";
 import { Metadata } from "next";
+import { MicrosoftClarity } from "@/components/analytics/microsoft-clarity";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -71,6 +75,7 @@ export default async function RootLayout({
       <body className={`${inter.className} h-full w-[100%]`}>
         <GoogleAnalytics />
         <FacebookPixel />
+        <MicrosoftClarity />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers>
             <ResourceOptimizer />
