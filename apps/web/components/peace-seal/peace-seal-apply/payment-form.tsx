@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, CreditCard, Shield, CheckCircle } from "lucide-react";
-import PeaceSealPayment from "./PeaceSealPayment";
-import { logger } from "@/lib/utils/logger";
 import DropInPayment from "@/components/donations/DropInPayment";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { logger } from "@/lib/utils/logger";
+import { CheckCircle, CreditCard } from "lucide-react";
+import { useEffect, useState } from "react";
 
 interface PaymentFormProps {
   amount: number;

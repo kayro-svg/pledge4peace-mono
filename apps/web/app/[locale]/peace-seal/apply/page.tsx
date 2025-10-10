@@ -2,15 +2,16 @@
 
 import { useState, useMemo } from "react";
 import { useAuthSession } from "@/hooks/use-auth-session";
-import { startApplication } from "@/lib/api/peace-seal";
-import PaymentForm from "@/components/peace-seal/payment-form";
+import { requestQuote, startApplication } from "@/lib/api/peace-seal";
+import PaymentForm from "@/components/peace-seal/peace-seal-apply/payment-form";
+import { QuoteNotice } from "@/components/peace-seal/peace-seal-apply/quote-notice";
 import QuestionnaireForm from "@/components/peace-seal/questionnaire/QuestionnaireForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ArrowRight, CheckCircle, DollarSign } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
 type Step = 1 | 2 | 3;
@@ -45,7 +46,11 @@ export default function ApplyPage() {
 
   // Calculate price based on employee count
   const price = useMemo(() => {
-    return Number(companyForm.employeeCount) > 50 ? 599 : 399;
+    const count = Number(companyForm.employeeCount);
+    if (count <= 0) return 99; // Default to small company
+    if (count <= 20) return 99;
+    if (count <= 50) return 499;
+    return null; // RFQ for >50 employees
   }, [companyForm.employeeCount]);
 
   // Redirect if not authenticated
@@ -135,6 +140,20 @@ export default function ApplyPage() {
     );
   };
 
+  const handleRequestQuote = async () => {
+    if (!application) return;
+    try {
+      await requestQuote(application.id, companyForm.employeeCount);
+      setLoading(true);
+      setStep(3);
+    } catch (error) {
+      console.error("Failed to request quote:", error);
+      alert("Failed to request quote. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -199,10 +218,6 @@ export default function ApplyPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 Company Information
-                <div className="ml-auto flex items-center text-sm text-gray-600">
-                  <DollarSign className="w-4 h-4 mr-1" />
-                  Annual fee: ${price}
-                </div>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -284,12 +299,6 @@ export default function ApplyPage() {
                     }
                     placeholder="e.g., 25"
                   />
-                  <p className="text-sm text-gray-600 mt-1">
-                    Fee: ${companyForm.employeeCount > 50 ? "599" : "399"}{" "}
-                    annually (
-                    {companyForm.employeeCount > 50 ? "Over 50" : "50 or fewer"}{" "}
-                    employees)
-                  </p>
                 </div>
               </div>
 
@@ -310,13 +319,17 @@ export default function ApplyPage() {
         {/* Step 2: Payment */}
         {step === 2 && application && (
           <div className="space-y-4">
-            <PaymentForm
-              amount={price}
-              companyName={companyForm.name}
-              companyId={application.id}
-              onSuccess={handlePaymentSuccess}
-              onError={handlePaymentError}
-            />
+            {companyForm.employeeCount > 50 ? (
+              <QuoteNotice onRequestQuote={handleRequestQuote} />
+            ) : (
+              <PaymentForm
+                amount={price || 0}
+                companyName={companyForm.name}
+                companyId={application.id}
+                onSuccess={handlePaymentSuccess}
+                onError={handlePaymentError}
+              />
+            )}
 
             {/* Back button */}
             <div className="flex justify-start">
@@ -354,6 +367,7 @@ export default function ApplyPage() {
             <QuestionnaireForm
               companyId={application?.id || ""}
               onComplete={handleQuestionnaireComplete}
+              employeeCount={companyForm.employeeCount}
             />
 
             {/* Link to public profile */}

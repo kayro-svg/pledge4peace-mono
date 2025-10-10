@@ -4,9 +4,11 @@ import {
   optionalAuthMiddleware,
 } from "../middleware/auth.middleware";
 import { PeaceSealController } from "../controllers/peace-seal.controller";
+import { CommunityReviewsController } from "../controllers/community-reviews.controller";
 
 const peaceSeal = new Hono();
 const controller = new PeaceSealController();
+const communityController = new CommunityReviewsController();
 
 // Public routes (no authentication required)
 peaceSeal.get("/directory", (c) => controller.directory(c));
@@ -15,6 +17,23 @@ peaceSeal.post("/companies/:companyId/report", (c) =>
   controller.submitPublicReport(c)
 );
 peaceSeal.get("/reports/reasons", (c) => controller.getReportReasons(c));
+
+// Community reviews routes (authentication required)
+peaceSeal.use("/community/*", authMiddleware);
+peaceSeal.use("/reviews", authMiddleware);
+peaceSeal.post("/community/companies", (c) =>
+  communityController.createOrFindCompany(c)
+);
+peaceSeal.get("/community/companies/search", (c) =>
+  communityController.searchCompanies(c)
+);
+peaceSeal.post("/reviews", (c) => communityController.createReview(c));
+peaceSeal.post("/reviews/verify/:token", (c) =>
+  communityController.confirmVerification(c)
+);
+peaceSeal.get("/companies/:id/reviews", (c) =>
+  communityController.listCompanyReviews(c)
+);
 
 // Applicant routes (authentication required)
 peaceSeal.use("/applications/*", authMiddleware);
@@ -51,6 +70,10 @@ peaceSeal.post("/applications/:id/documents", (c) =>
   controller.uploadApplicationDocument(c)
 );
 
+peaceSeal.post("/applications/:id/request-quote", (c) =>
+  controller.requestQuote(c)
+);
+
 // Document management routes (authentication required)
 peaceSeal.use("/documents/*", authMiddleware);
 peaceSeal.post("/documents/:documentId/verify", (c) =>
@@ -63,6 +86,9 @@ peaceSeal.use("/admin/*", authMiddleware);
 peaceSeal.get("/admin/companies", (c) => controller.adminListCompanies(c));
 peaceSeal.get("/admin/companies/:id", (c) => controller.adminGetCompany(c));
 peaceSeal.post("/admin/companies/:id/update", (c) => controller.adminUpdate(c));
+peaceSeal.post("/admin/companies/:id/confirm-payment", (c) =>
+  controller.adminConfirmPayment(c)
+);
 peaceSeal.post("/admin/companies/:id/score", (c) =>
   controller.advisorScoreQuestionnaire(c)
 );
@@ -70,6 +96,12 @@ peaceSeal.get("/admin/statistics", (c) => controller.getStatistics(c));
 peaceSeal.get("/admin/reports", (c) => controller.getReports(c));
 peaceSeal.post("/admin/reports/:reportId/resolve", (c) =>
   controller.resolveReport(c)
+);
+
+// Admin community reviews routes
+peaceSeal.get("/admin/reviews", (c) => communityController.adminListReviews(c));
+peaceSeal.post("/admin/reviews/:id/verify", (c) =>
+  communityController.adminVerifyReview(c)
 );
 
 // System/cron routes (internal use)

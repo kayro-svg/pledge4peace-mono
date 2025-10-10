@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateStaticParams() {
   const slugs = await getCampaignSlugs();
-  const locales = ["en", "es"]; 
+  const locales = ["en", "es"];
   return locales.flatMap((locale) =>
     slugs
       .filter((s) => s?.slug?.current)
@@ -41,9 +41,10 @@ export async function generateMetadata({
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://pledge4peace.org";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_SITE_URL || "https://pledge4peace.org";
   const campaignUrl = `${baseUrl}/${locale}/campaigns/${campaign.slug.current}`;
-  
+
   // Get campaign image
   const campaignImage = campaign.featuredImage?.asset?.url
     ? getSanityImageUrl(campaign.featuredImage.asset.url, 1200, 630, 80)
@@ -51,7 +52,8 @@ export async function generateMetadata({
 
   // Create title and description
   const title = `${campaign.title} | Pledge4Peace Campaign`;
-  const description = campaign.description || 
+  const description =
+    campaign.description ||
     `Join our campaign: ${campaign.title}. Take action for peace and democracy.`;
 
   return {
@@ -112,11 +114,11 @@ export async function generateMetadata({
       "article:section": "Peace Campaigns",
       "og:see_also": [
         "https://www.youtube.com/@Pledge4Peace",
-        "https://www.linkedin.com/groups/14488545/",
+        "https://www.linkedin.com/company/pledge4peace-org",
         "https://www.facebook.com/share/1F8FxiQ6Hh/",
         "https://x.com/pledge4peaceorg",
         "https://www.instagram.com/pledge4peaceorg",
-        "https://www.tiktok.com/@pledge4peace5"
+        "https://www.tiktok.com/@pledge4peace5",
       ].join(","),
     },
   };

@@ -116,6 +116,32 @@ export class PeaceSealController {
     }
   };
 
+  requestQuote = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const applicationId = c.req.param("id");
+      const { employeeCount } = await c.req.json().catch(() => ({}));
+      const result = await peaceSealService.requestQuote(
+        applicationId,
+        employeeCount
+      );
+
+      const authService = c.get("authService");
+
+      await authService.emailService.sendQuoteRequestEmailtoAdmin(
+        result.name,
+        employeeCount
+      );
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error requesting quote:", error);
+      throw new HTTPException(500, { message: "Error requesting quote" });
+    }
+  };
+
   // Applicant: save questionnaire incrementally
   saveQuestionnaire = async (c: Context) => {
     try {
@@ -254,6 +280,12 @@ export class PeaceSealController {
       const filters = {
         status: url.searchParams.get("status") || undefined,
         assignedToMe: url.searchParams.get("assignedToMe") === "true",
+        communityListed:
+          url.searchParams.get("communityListed") === "true"
+            ? true
+            : url.searchParams.get("communityListed") === "false"
+              ? false
+              : undefined,
         page: Math.max(parseInt(url.searchParams.get("page") || "1"), 1),
         limit: Math.min(
           Math.max(parseInt(url.searchParams.get("limit") || "20"), 1),
@@ -355,6 +387,43 @@ export class PeaceSealController {
       if (error instanceof HTTPException) throw error;
       logger.error("Error updating company:", error);
       throw new HTTPException(500, { message: "Error updating company" });
+    }
+  };
+
+  // Admin: confirm manual payment for RFQ companies
+  adminConfirmPayment = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("id");
+      const { amountCents, transactionId } = await c.req
+        .json()
+        .catch(() => ({}));
+      const user = c.get("user");
+
+      // Check permissions - only admin and superAdmin can confirm payments
+      if (!["admin", "superAdmin"].includes(user.role)) {
+        throw new HTTPException(403, { message: "Insufficient permissions" });
+      }
+
+      if (!amountCents || typeof amountCents !== "number") {
+        throw new HTTPException(400, {
+          message: "amountCents is required and must be a number",
+        });
+      }
+
+      const result = await peaceSealService.adminConfirmPayment(
+        companyId,
+        amountCents,
+        transactionId || null,
+        user.id
+      );
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error confirming payment:", error);
+      throw new HTTPException(500, { message: "Error confirming payment" });
     }
   };
 
@@ -739,7 +808,7 @@ export class PeaceSealController {
         companyId,
         String(transactionId),
         Number(amountCents),
-        company.createdByUserId // Use company owner as the user
+        company.createdByUserId as string // Use company owner as the user
       );
 
       // If subscription was created, store the subscription ID

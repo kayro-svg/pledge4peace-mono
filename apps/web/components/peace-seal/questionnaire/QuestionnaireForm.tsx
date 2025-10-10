@@ -16,7 +16,6 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { useQuestionnaire } from "@/hooks/use-questionnaire";
-import { QUESTIONNAIRE_SECTIONS } from "@/config/questionnaire-config";
 import FormField from "./FormField";
 
 interface QuestionnaireFormProps {
@@ -24,6 +23,7 @@ interface QuestionnaireFormProps {
   initialData?: any;
   onComplete?: (data: any) => void;
   isCompleted?: boolean;
+  employeeCount?: number;
 }
 
 // Section Navigation Sidebar
@@ -33,17 +33,19 @@ const SectionNavigation = ({
   onSectionChange,
   disabled = false,
   validationErrors = {},
+  questionnaireSections = [],
 }: {
   currentSectionId: string;
   progress: any;
   onSectionChange: (sectionId: string) => void;
   disabled?: boolean;
   validationErrors?: Record<string, string[]>;
+  questionnaireSections?: any[];
 }) => {
   return (
     <div className="space-y-2">
       <h3 className="font-semibold text-lg mb-0">Sections</h3>
-      {QUESTIONNAIRE_SECTIONS.map((section, index) => {
+      {questionnaireSections.map((section, index) => {
         const sectionProgress = progress.sectionsProgress.find(
           (sp: any) => sp.sectionId === section.id
         );
@@ -191,6 +193,7 @@ export default function QuestionnaireForm({
   initialData = {},
   onComplete = () => {},
   isCompleted = false,
+  employeeCount = 0,
 }: QuestionnaireFormProps) {
   const {
     questionnaire,
@@ -198,6 +201,7 @@ export default function QuestionnaireForm({
     currentSectionId,
     progress,
     currentSectionProgress,
+    questionnaireSections,
     isSaving,
     lastSaved,
     hasUnsavedChanges,
@@ -208,7 +212,7 @@ export default function QuestionnaireForm({
     goToSection,
     goToNextSection,
     goToPreviousSection,
-  } = useQuestionnaire(companyId, initialData);
+  } = useQuestionnaire(companyId, initialData, employeeCount);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [globalValidationErrors, setGlobalValidationErrors] = useState<
@@ -263,7 +267,7 @@ export default function QuestionnaireForm({
     const allErrors: Record<string, string[]> = {};
     let isValid = true;
 
-    QUESTIONNAIRE_SECTIONS.forEach((section) => {
+    questionnaireSections.forEach((section) => {
       if (section.isOptional) return; // Skip optional sections
 
       const sectionErrors: string[] = [];
@@ -286,7 +290,7 @@ export default function QuestionnaireForm({
     });
 
     return { isValid, errors: allErrors };
-  }, [questionnaire, validateField]);
+  }, [questionnaire, validateField, questionnaireSections]);
 
   // Handle section navigation with validation
   const handleSectionChange = useCallback(
@@ -336,9 +340,7 @@ export default function QuestionnaireForm({
       const errorSections = Object.keys(fullValidation.errors);
       const errorMessages = errorSections
         .map((sectionId) => {
-          const section = QUESTIONNAIRE_SECTIONS.find(
-            (s) => s.id === sectionId
-          );
+          const section = questionnaireSections.find((s) => s.id === sectionId);
           const errors = fullValidation.errors[sectionId];
           return `${section?.title}: ${errors.join(", ")}`;
         })
@@ -363,7 +365,7 @@ export default function QuestionnaireForm({
     // All validations passed, proceed with submission
     const success = await saveProgress(true, 100);
     if (success && onComplete) {
-      onComplete(questionnaire);
+      onComplete(questionnaire as any);
     }
   }, [
     validateCurrentSection,
@@ -372,13 +374,14 @@ export default function QuestionnaireForm({
     questionnaire,
     onComplete,
     goToSection,
+    questionnaireSections,
   ]);
 
   // Check if we're on the last section
   const isLastSection =
-    QUESTIONNAIRE_SECTIONS[QUESTIONNAIRE_SECTIONS.length - 1].id ===
+    questionnaireSections[questionnaireSections.length - 1].id ===
     currentSectionId;
-  const currentSectionIndex = QUESTIONNAIRE_SECTIONS.findIndex(
+  const currentSectionIndex = questionnaireSections.findIndex(
     (s) => s.id === currentSectionId
   );
 
@@ -412,6 +415,7 @@ export default function QuestionnaireForm({
               onSectionChange={handleSectionChange}
               disabled={isSaving}
               validationErrors={globalValidationErrors}
+              questionnaireSections={questionnaireSections}
             />
           </div>
         </div>
@@ -435,7 +439,7 @@ export default function QuestionnaireForm({
                 </div>
                 <div className="text-right text-sm text-gray-500">
                   Section {currentSectionIndex + 1} of{" "}
-                  {QUESTIONNAIRE_SECTIONS.length}
+                  {questionnaireSections.length}
                   {currentSection.weight > 0 && (
                     <div className="text-blue-600 font-medium">
                       {currentSection.weight}% of score

@@ -18,6 +18,7 @@ import {
   canTransitionStatus,
   getStatusFromScore,
   getPaymentAmount,
+  getPaymentAmountByEmployees,
   type PeaceSealStatus,
 } from "../types/peace-seal";
 import {
@@ -62,6 +63,7 @@ export interface AdminFilters extends DirectoryFilters {
   assignedToMe?: boolean;
   userId?: string;
   userRole?: string;
+  communityListed?: boolean;
 }
 
 export interface CreateReportDTO {
@@ -102,6 +104,14 @@ export class PeaceSealService {
     // Exclude draft applications from public directory
     where.push(sql`${peaceSealCompanies.status} != ${PEACE_SEAL_STATUS.DRAFT}`);
 
+    // Show companies with completed questionnaires OR community listed companies
+    where.push(sql`(
+      ${peaceSealCompanies.id} in (
+        select company_id from peace_seal_questionnaires 
+        where progress >= 100
+      ) OR ${peaceSealCompanies.communityListed} = 1
+    )`);
+
     if (q) where.push(like(peaceSealCompanies.name, `%${q}%`));
     if (country) where.push(eq(peaceSealCompanies.country, country));
     if (status) where.push(eq(peaceSealCompanies.status, status));
@@ -116,6 +126,11 @@ export class PeaceSealService {
         lastReviewedAt: peaceSealCompanies.lastReviewedAt,
         notes: peaceSealCompanies.notes,
         score: peaceSealCompanies.score,
+        communityListed: peaceSealCompanies.communityListed,
+        employeeRatingAvg: peaceSealCompanies.employeeRatingAvg,
+        employeeRatingCount: peaceSealCompanies.employeeRatingCount,
+        overallRatingAvg: peaceSealCompanies.overallRatingAvg,
+        overallRatingCount: peaceSealCompanies.overallRatingCount,
       })
       .from(peaceSealCompanies)
       .where(where.length ? (and as any)(...where) : undefined)
@@ -149,7 +164,7 @@ export class PeaceSealService {
 
     // Calculate expected payment amount based on employee count
     const expectedAmount = data.employeeCount
-      ? getPaymentAmount(data.employeeCount)
+      ? getPaymentAmountByEmployees(data.employeeCount)
       : BUSINESS_RULES.PAYMENT_SMALL_COMPANY;
 
     const application = await this.db
@@ -203,10 +218,18 @@ export class PeaceSealService {
       return { success: true, message: "Payment already confirmed" };
     }
 
-    // Validate payment amount matches expected amount
+    // Validate payment amount matches expected amount using new pricing tiers
     const expectedAmount = company.employeeCount
-      ? getPaymentAmount(company.employeeCount)
+      ? getPaymentAmountByEmployees(company.employeeCount)
       : BUSINESS_RULES.PAYMENT_SMALL_COMPANY;
+
+    // Block RFQ companies from paying online
+    if (expectedAmount === null) {
+      throw new HTTPException(400, {
+        message:
+          "Companies with more than 50 employees must request a quote and cannot pay online",
+      });
+    }
 
     if (Math.abs(amountCents - expectedAmount) > 100) {
       // Allow $1 tolerance for fees
@@ -239,6 +262,92 @@ export class PeaceSealService {
 
     // Assign advisor automatically
     await this.assignAdvisorAutomatically(companyId, userId);
+
+    return { success: true };
+  }
+
+  async requestQuote(applicationId: string, employeeCount: number) {
+    const company = await this.db
+      .select()
+      .from(peaceSealCompanies)
+      .where(eq(peaceSealCompanies.id, applicationId))
+      .then((r) => r[0]);
+
+    if (!company) {
+      throw new HTTPException(404, { message: "Application not found" });
+    }
+
+    // Mark as RFQ requested
+    const nowTs = now();
+    await this.db
+      .update(peaceSealCompanies)
+      .set({
+        rfqStatus: "requested",
+        rfqRequestedAt: nowTs,
+        updatedAt: nowTs,
+      })
+      .where(eq(peaceSealCompanies.id, applicationId));
+
+    return company;
+  }
+
+  // Admin: Confirm manual payment for RFQ companies
+  async adminConfirmPayment(
+    companyId: string,
+    amountCents: number,
+    transactionId: string | null,
+    adminUserId: string
+  ) {
+    // Get company details
+    const company = await this.db
+      .select()
+      .from(peaceSealCompanies)
+      .where(eq(peaceSealCompanies.id, companyId))
+      .then((r) => r[0]);
+
+    if (!company) {
+      throw new HTTPException(404, { message: "Company not found" });
+    }
+
+    // Verify payment not already processed
+    if (company.paymentStatus === PAYMENT_STATUS.PAID) {
+      return { success: true, message: "Payment already confirmed" };
+    }
+
+    const nowTs = now();
+
+    // Calculate expiration date (1 year from payment)
+    const expiresAt = new Date(nowTs);
+    expiresAt.setDate(
+      expiresAt.getDate() + BUSINESS_RULES.CERTIFICATION_DURATION_DAYS
+    );
+
+    // Update payment status
+    await this.db
+      .update(peaceSealCompanies)
+      .set({
+        paymentStatus: PAYMENT_STATUS.PAID,
+        paymentAmountCents: amountCents,
+        paymentTransactionId: transactionId,
+        paymentDate: nowTs,
+        expiresAt,
+        status: PEACE_SEAL_STATUS.APPLICATION_SUBMITTED,
+        updatedAt: nowTs,
+      })
+      .where(eq(peaceSealCompanies.id, companyId));
+
+    // Assign advisor automatically
+    await this.assignAdvisorAutomatically(companyId, adminUserId);
+
+    // Record in history
+    await this.db.insert(peaceSealStatusHistory).values({
+      id: ulid(),
+      companyId,
+      status: PEACE_SEAL_STATUS.APPLICATION_SUBMITTED,
+      notes: `Payment confirmed manually by admin - Amount: $${amountCents / 100}`,
+      changedByUserId: adminUserId,
+      createdAt: nowTs,
+    });
 
     return { success: true };
   }
@@ -367,11 +476,12 @@ export class PeaceSealService {
 
     // If questionnaire is completed, update status to indicate it's ready for advisor review
     if (progress >= 100) {
-      // Get current company status to determine appropriate next status
+      // Get current company status and payment info to determine appropriate next status
       const currentCompany = await this.db
         .select({
           status: peaceSealCompanies.status,
           advisorUserId: peaceSealCompanies.advisorUserId,
+          paymentStatus: peaceSealCompanies.paymentStatus,
         })
         .from(peaceSealCompanies)
         .where(eq(peaceSealCompanies.id, companyId))
@@ -379,6 +489,7 @@ export class PeaceSealService {
 
       let newStatus = currentCompany?.status;
       let statusNote = "Questionnaire completed";
+      let preliminaryScore: number | null = null;
 
       // Determine appropriate status based on current state
       if (currentCompany?.status === PEACE_SEAL_STATUS.DRAFT) {
@@ -389,13 +500,15 @@ export class PeaceSealService {
       } else if (
         currentCompany?.status === PEACE_SEAL_STATUS.APPLICATION_SUBMITTED
       ) {
-        // If payment already confirmed, move to audit in progress if advisor assigned
-        if (currentCompany.advisorUserId) {
-          newStatus = PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS;
-          statusNote = "Questionnaire completed - ready for advisor audit";
-        } else {
-          newStatus = PEACE_SEAL_STATUS.UNDER_REVIEW;
-          statusNote = "Questionnaire completed - awaiting advisor assignment";
+        // Keep as application_submitted - no auto-transition to under_review
+        newStatus = PEACE_SEAL_STATUS.APPLICATION_SUBMITTED;
+        statusNote =
+          "Questionnaire completed - application submitted for review";
+
+        // If payment is completed, calculate preliminary score for directory display
+        if (currentCompany.paymentStatus === PAYMENT_STATUS.PAID) {
+          preliminaryScore = this.calculateScore(responses);
+          statusNote += ` - Preliminary score: ${preliminaryScore}/100`;
         }
       } else if (
         currentCompany?.status === PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS
@@ -405,24 +518,31 @@ export class PeaceSealService {
         statusNote = "Questionnaire updated - ready for advisor review";
       }
 
-      // Update company status (but NOT score - that's for advisors only)
+      // Update company status and preliminary score (if paid)
       const updatePayload: any = {
         status: newStatus,
         updatedAt: nowTs,
-        // Note: We do NOT set score here - only advisors can set scores
       };
+
+      // Only set preliminary score if payment is completed and questionnaire is done
+      if (
+        preliminaryScore !== null &&
+        currentCompany?.paymentStatus === PAYMENT_STATUS.PAID
+      ) {
+        updatePayload.score = preliminaryScore;
+      }
 
       await this.db
         .update(peaceSealCompanies)
         .set(updatePayload)
         .where(eq(peaceSealCompanies.id, companyId));
 
-      // Record in history (without score)
+      // Record in history (with preliminary score if applicable)
       await this.db.insert(peaceSealStatusHistory).values({
         id: ulid(),
         companyId,
         status: newStatus,
-        score: null, // No automatic score calculation
+        score: preliminaryScore, // Preliminary score for paid companies
         notes: statusNote,
         changedByUserId: userId,
         createdAt: nowTs,
@@ -467,6 +587,14 @@ export class PeaceSealService {
 
     if (!company) {
       throw new HTTPException(404, { message: "Company not found" });
+    }
+
+    // Enforce payment requirement for advisor scoring
+    if (company.paymentStatus !== PAYMENT_STATUS.PAID) {
+      throw new HTTPException(400, {
+        message:
+          "Payment must be completed before advisor can score questionnaire",
+      });
     }
 
     const questionnaire = await this.db
@@ -937,6 +1065,7 @@ export class PeaceSealService {
       assignedToMe,
       userId,
       userRole,
+      communityListed,
       page = 1,
       limit = 20,
     } = filters;
@@ -951,6 +1080,11 @@ export class PeaceSealService {
     if (status) where.push(eq(peaceSealCompanies.status, status));
     if (assignedToMe && userRole === "advisor" && userId) {
       where.push(eq(peaceSealCompanies.advisorUserId, userId));
+    }
+    if (communityListed !== undefined) {
+      where.push(
+        eq(peaceSealCompanies.communityListed, communityListed ? 1 : 0)
+      );
     }
 
     const items = await this.db
@@ -972,6 +1106,11 @@ export class PeaceSealService {
         advisorUserId: peaceSealCompanies.advisorUserId,
         notes: peaceSealCompanies.notes, // Include notes for advisors
         expiresAt: peaceSealCompanies.expiresAt,
+        communityListed: peaceSealCompanies.communityListed,
+        employeeRatingAvg: peaceSealCompanies.employeeRatingAvg,
+        employeeRatingCount: peaceSealCompanies.employeeRatingCount,
+        overallRatingAvg: peaceSealCompanies.overallRatingAvg,
+        overallRatingCount: peaceSealCompanies.overallRatingCount,
       })
       .from(peaceSealCompanies)
       .where(where.length ? (and as any)(...where) : undefined)

@@ -114,8 +114,8 @@ export const SCORE_THRESHOLDS = {
 // Business rules
 export const BUSINESS_RULES = {
   // Payment amounts (in cents)
-  PAYMENT_SMALL_COMPANY: 39900, // $399 for ≤50 employees
-  PAYMENT_LARGE_COMPANY: 59900, // $599 for >50 employees
+  PAYMENT_SMALL_COMPANY: 9900, // $99 for 1–20 employees
+  PAYMENT_MEDIUM_COMPANY: 49900, // $499 for 21–50 employees
   EMPLOYEE_COUNT_THRESHOLD: 50,
 
   // Time periods
@@ -166,10 +166,25 @@ export function getStatusFromScore(score: number): PeaceSealStatus {
   return PEACE_SEAL_STATUS.DID_NOT_PASS;
 }
 
+// Legacy helper retained for compatibility (maps to new tiers)
 export function getPaymentAmount(employeeCount: number): number {
-  return employeeCount <= BUSINESS_RULES.EMPLOYEE_COUNT_THRESHOLD
-    ? BUSINESS_RULES.PAYMENT_SMALL_COMPANY
-    : BUSINESS_RULES.PAYMENT_LARGE_COMPANY;
+  return (
+    getPaymentAmountByEmployees(employeeCount) ??
+    BUSINESS_RULES.PAYMENT_MEDIUM_COMPANY
+  );
+}
+
+// New helper: returns null for RFQ (>50 employees)
+export function getPaymentAmountByEmployees(
+  employeeCount: number | null | undefined
+): number | null {
+  if (!employeeCount || employeeCount <= 0) {
+    // Fallback to small tier when not provided (conservative)
+    return BUSINESS_RULES.PAYMENT_SMALL_COMPANY;
+  }
+  if (employeeCount <= 20) return BUSINESS_RULES.PAYMENT_SMALL_COMPANY;
+  if (employeeCount <= 50) return BUSINESS_RULES.PAYMENT_MEDIUM_COMPANY;
+  return null; // RFQ only
 }
 
 export function isEligibleForReapplication(rejectedAt: Date): boolean {

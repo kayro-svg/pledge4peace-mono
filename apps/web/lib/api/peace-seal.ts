@@ -8,6 +8,11 @@ export type DirectoryItem = {
   status: string;
   lastReviewedAt?: number | string | null;
   notes?: string | null;
+  communityListed?: number | null;
+  employeeRatingAvg?: number | null;
+  employeeRatingCount?: number | null;
+  overallRatingAvg?: number | null;
+  overallRatingCount?: number | null;
 };
 
 export type Company = {
@@ -28,6 +33,14 @@ export type Company = {
   paymentAmountCents?: number | null;
   paymentTransactionId?: string | null;
   paymentDate?: number | string | null;
+  rfqStatus?: string | null;
+  rfqRequestedAt?: number | string | null;
+  rfqQuotedAmountCents?: number | null;
+  communityListed?: number | null;
+  employeeRatingAvg?: number | null;
+  employeeRatingCount?: number | null;
+  overallRatingAvg?: number | null;
+  overallRatingCount?: number | null;
   createdAt: number | string;
   updatedAt: number | string;
 };
@@ -83,6 +96,13 @@ export async function startApplication(data: {
   );
 }
 
+export async function requestQuote(id: string, employeeCount: number) {
+  return apiClient.post<{ success: true }>(
+    `/peace-seal/applications/${id}/request-quote`,
+    { employeeCount }
+  );
+}
+
 export async function confirmPayment(
   id: string,
   payload: {
@@ -99,7 +119,7 @@ export async function confirmPayment(
 export async function saveQuestionnaire(
   id: string,
   payload: {
-    responses: Record<string, any>;
+    responses: Record<string, unknown>;
     progress: number;
   }
 ) {
@@ -125,12 +145,15 @@ export async function myApplications() {
 export async function adminListCompanies(params?: {
   status?: string;
   assignedToMe?: boolean;
+  communityListed?: boolean;
   page?: number;
   limit?: number;
 }) {
   const qs = new URLSearchParams();
   if (params?.status) qs.set("status", params.status);
   if (params?.assignedToMe) qs.set("assignedToMe", "true");
+  if (params?.communityListed !== undefined)
+    qs.set("communityListed", params.communityListed.toString());
   if (params?.page) qs.set("page", params.page.toString());
   if (params?.limit) qs.set("limit", params.limit.toString());
 
@@ -151,6 +174,11 @@ export async function adminListCompanies(params?: {
       updatedAt: string;
       lastReviewedAt?: string;
       advisorUserId?: string;
+      communityListed?: number;
+      employeeRatingAvg?: number;
+      employeeRatingCount?: number;
+      overallRatingAvg?: number;
+      overallRatingCount?: number;
     }>;
     page: number;
     limit: number;
@@ -225,6 +253,19 @@ export async function adminUpdateCompany(
 ) {
   return apiClient.post<{ success: true }>(
     `/peace-seal/admin/companies/${id}/update`,
+    payload
+  );
+}
+
+export async function adminConfirmPayment(
+  id: string,
+  payload: {
+    amountCents: number;
+    transactionId?: string;
+  }
+) {
+  return apiClient.post<{ success: true }>(
+    `/peace-seal/admin/companies/${id}/confirm-payment`,
     payload
   );
 }
@@ -375,4 +416,134 @@ export async function resolveReport(
     console.error("Error resolving report:", error);
     throw error;
   }
+}
+
+// Helper function to get badge level from score
+export function getBadgeLevel(
+  score: number | null | undefined
+): "Bronze" | "Silver" | "Gold" | null {
+  if (!score || score < 70) return null;
+  if (score >= 100) return "Gold";
+  if (score >= 90) return "Silver";
+  return "Bronze";
+}
+
+// Community Reviews Types
+export type ReviewRole = "employee" | "customer" | "investor" | "supplier";
+export type VerificationMethod =
+  | "email"
+  | "linkedin"
+  | "document"
+  | "receipt"
+  | "none";
+export type VerificationStatus = "pending" | "verified" | "unverified";
+
+export type CommunityReview = {
+  id: string;
+  role: ReviewRole;
+  verificationStatus: VerificationStatus;
+  totalScore?: number | null;
+  starRating?: number | null;
+  createdAt: number | string;
+  verifiedAt?: number | string | null;
+};
+
+export type CreateCompanyData = {
+  name: string;
+  website?: string;
+  country?: string;
+  industry?: string;
+};
+
+export type CreateReviewData = {
+  companyId: string;
+  role: ReviewRole;
+  verificationMethod?: VerificationMethod;
+  reviewerName?: string;
+  reviewerEmail?: string;
+  signedDisclosure: boolean;
+  answers: Record<string, unknown>;
+};
+
+// Community Reviews API Functions
+export async function createOrFindCompany(data: CreateCompanyData) {
+  return apiClient.post<{ company: Company }>(
+    "/peace-seal/community/companies",
+    data
+  );
+}
+
+export async function searchCompanies(query: string, limit = 10) {
+  return apiClient.get<{ items: Company[] }>(
+    `/peace-seal/community/companies/search?q=${encodeURIComponent(query)}&limit=${limit}`
+  );
+}
+
+export async function createReview(data: CreateReviewData) {
+  return apiClient.post<{ review: CommunityReview }>(
+    "/peace-seal/reviews",
+    data
+  );
+}
+
+export async function confirmVerification(token: string) {
+  return apiClient.post<{ success: boolean }>(
+    `/peace-seal/reviews/verify/${token}`
+  );
+}
+
+export async function listCompanyReviews(
+  companyId: string,
+  filters?: {
+    role?: string;
+    verifiedOnly?: boolean;
+    page?: number;
+    limit?: number;
+  }
+) {
+  const qs = new URLSearchParams();
+  if (filters?.role) qs.set("role", filters.role);
+  if (filters?.verifiedOnly) qs.set("verifiedOnly", "true");
+  if (filters?.page) qs.set("page", filters.page.toString());
+  if (filters?.limit) qs.set("limit", filters.limit.toString());
+
+  return apiClient.get<{
+    items: CommunityReview[];
+    page: number;
+    limit: number;
+    total: number;
+  }>(`/peace-seal/companies/${companyId}/reviews?${qs}`);
+}
+
+// Admin functions
+export async function adminListReviews(filters?: {
+  status?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const qs = new URLSearchParams();
+  if (filters?.status) qs.set("status", filters.status);
+  if (filters?.page) qs.set("page", filters.page.toString());
+  if (filters?.limit) qs.set("limit", filters.limit.toString());
+
+  return apiClient.get<{
+    items: Array<CommunityReview & { companyName?: string }>;
+    page: number;
+    limit: number;
+    total: number;
+  }>(`/peace-seal/admin/reviews?${qs}`);
+}
+
+export async function adminVerifyReview(
+  reviewId: string,
+  action: "verify" | "dismiss",
+  notes?: string
+) {
+  return apiClient.post<{ success: boolean }>(
+    `/peace-seal/admin/reviews/${reviewId}/verify`,
+    {
+      action,
+      notes,
+    }
+  );
 }

@@ -21,9 +21,9 @@ export async function POST(req: NextRequest) {
 
     // Validate amount for Peace Seal certification
     const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount < 399 || numAmount > 599) {
+    if (isNaN(numAmount) || numAmount < 99 || numAmount > 499) {
       return NextResponse.json(
-        { error: "Peace Seal certification fee must be $399 or $599" },
+        { error: "Peace Seal certification fee must be $99 or $499" },
         { status: 400 }
       );
     }
@@ -192,9 +192,10 @@ async function handleSubscriptionPayment(
 
     // Determine plan ID based on amount
     const planId =
-      amount === 399
+      amount === 99
         ? process.env.BT_PEACE_SEAL_SMALL_PLAN_ID || "peace_seal_small_annual"
-        : process.env.BT_PEACE_SEAL_LARGE_PLAN_ID || "peace_seal_large_annual";
+        : process.env.BT_PEACE_SEAL_MEDIUM_PLAN_ID ||
+          "peace_seal_medium_annual";
 
     // Check if plan exists
     const plansResponse = await gateway.plan.all();

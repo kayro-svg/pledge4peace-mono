@@ -6,12 +6,17 @@ import {
   adminListCompanies,
   adminGetCompany,
   adminUpdateCompany,
+  adminConfirmPayment,
   advisorScoreQuestionnaire,
   getUserCompany,
   getCompanyQuestionnaire,
   getReports,
   resolveReport,
+  getBadgeLevel,
+  adminListReviews,
+  adminVerifyReview,
   type Report,
+  type CommunityReview,
 } from "@/lib/api/peace-seal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -47,6 +52,7 @@ import {
   AlertCircle,
   ExternalLink,
   Flag,
+  MessageSquare,
 } from "lucide-react";
 import { logger } from "@/lib/utils/logger";
 import { useToast } from "@/hooks/use-toast";
@@ -54,6 +60,7 @@ import type {
   ParsedQuestionnaireSection,
   ParsedQuestionnaireResponse,
 } from "@/lib/api/peace-seal";
+import { MoneyInput } from "@/components/money-input/money-input";
 
 type CompanyItem = {
   id: string;
@@ -68,12 +75,20 @@ type CompanyItem = {
   paymentStatus: string;
   paymentAmountCents?: number | null;
   paymentDate?: string | number | null;
+  rfqStatus?: string | null;
+  rfqRequestedAt?: string | number | null;
+  rfqQuotedAmountCents?: number | null;
   createdAt: string | number;
   updatedAt: string | number;
   lastReviewedAt?: string | number | null;
   advisorUserId?: string | null;
   notes?: string | null;
   expiresAt?: string | number | null;
+  communityListed?: number | null;
+  employeeRatingAvg?: number | null;
+  employeeRatingCount?: number | null;
+  overallRatingAvg?: number | null;
+  overallRatingCount?: number | null;
 };
 
 type UserCompany = {
@@ -283,6 +298,7 @@ export default function PeaceSealDashboard() {
   const [companies, setCompanies] = useState<CompanyItem[]>([]);
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [assignedToMe, setAssignedToMe] = useState(false);
+  const [communityListed, setCommunityListed] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [selectedCompany, setSelectedCompany] = useState<{
@@ -336,6 +352,15 @@ export default function PeaceSealDashboard() {
   const [resolvingReport, setResolvingReport] = useState<string | null>(null);
   const [notes, setNotes] = useState<string>("");
 
+  // Community Reviews state
+  const [reviews, setReviews] = useState<
+    Array<CommunityReview & { companyName?: string }>
+  >([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [reviewPage] = useState(1);
+  const [, setReviewTotal] = useState(0);
+  const [reviewStatus, setReviewStatus] = useState("pending");
+
   // Company states
   const [userCompany, setUserCompany] = useState<UserCompany | null>(null);
   const [questionnaire, setQuestionnaire] = useState<QuestionnaireData | null>(
@@ -362,6 +387,10 @@ export default function PeaceSealDashboard() {
             ? selectedStatus
             : undefined,
         assignedToMe,
+        communityListed:
+          communityListed && communityListed !== "all"
+            ? communityListed === "true"
+            : undefined,
         page,
         limit: 20,
       });
@@ -372,7 +401,7 @@ export default function PeaceSealDashboard() {
     } finally {
       setLoading(false);
     }
-  }, [selectedStatus, assignedToMe, page]);
+  }, [selectedStatus, assignedToMe, communityListed, page]);
 
   const loadUserCompanyData = useCallback(async () => {
     setLoading(true);
@@ -400,13 +429,45 @@ export default function PeaceSealDashboard() {
     }
   }, []);
 
+  // Community Reviews functions
+  const loadReviews = useCallback(async () => {
+    if (!isAdvisor) return;
+
+    setLoadingReviews(true);
+    try {
+      const result = await adminListReviews({
+        status: reviewStatus,
+        page: reviewPage,
+        limit: 20,
+      });
+
+      setReviews(result.items);
+      setReviewTotal(result.total);
+    } catch (error) {
+      logger.error("Failed to load reviews:", error);
+      toast({
+        title: "Failed to load reviews",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingReviews(false);
+    }
+  }, [isAdvisor, reviewStatus, reviewPage, toast]);
+
   useEffect(() => {
     if (isAdvisor) {
       loadCompanies();
+      loadReviews();
     } else if (isCompany) {
       loadUserCompanyData();
     }
-  }, [isAdvisor, isCompany, loadCompanies, loadUserCompanyData]);
+  }, [isAdvisor, isCompany, loadCompanies, loadUserCompanyData, loadReviews]);
+
+  useEffect(() => {
+    if (isAdvisor) {
+      loadReviews();
+    }
+  }, [reviewStatus, reviewPage, isAdvisor, loadReviews]);
 
   const loadCompanyDetails = async (companyId: string) => {
     try {
@@ -435,8 +496,6 @@ export default function PeaceSealDashboard() {
       setLoadingReports(false);
     }
   };
-
-  logger.info("selectedCompany", selectedCompany?.questionnaire?.sections);
 
   const handleUpdate = async () => {
     if (!selectedCompany) return;
@@ -545,6 +604,31 @@ export default function PeaceSealDashboard() {
       });
     } finally {
       setResolvingReport(null);
+    }
+  };
+
+  const handleVerifyReview = async (
+    reviewId: string,
+    action: "verify" | "dismiss"
+  ) => {
+    setLoadingReviews(true);
+    try {
+      await adminVerifyReview(reviewId, action);
+
+      toast({
+        title: `Review ${action === "verify" ? "verified" : "dismissed"} successfully`,
+      });
+
+      // Reload reviews
+      await loadReviews();
+    } catch (error) {
+      logger.error(`Failed to ${action} review:`, error);
+      toast({
+        title: `Failed to ${action} review`,
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingReviews(false);
     }
   };
 
@@ -817,7 +901,7 @@ export default function PeaceSealDashboard() {
           {/* Filters */}
           <Card className="mb-6">
             <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
                   <Label htmlFor="status">Status Filter</Label>
                   <Select
@@ -840,6 +924,25 @@ export default function PeaceSealDashboard() {
                       <SelectItem value="under_review">Under Review</SelectItem>
                       <SelectItem value="conditional">Conditional</SelectItem>
                       <SelectItem value="verified">Verified</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="community">Community Filter</Label>
+                  <Select
+                    value={communityListed}
+                    onValueChange={setCommunityListed}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Companies" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Companies</SelectItem>
+                      <SelectItem value="true">Community Added</SelectItem>
+                      <SelectItem value="false">
+                        Regular Applications
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -898,9 +1001,46 @@ export default function PeaceSealDashboard() {
                         <tr key={company.id} className="border-b">
                           <td className="py-3">
                             <div>
-                              <div className="font-medium">{company.name}</div>
+                              <div className="font-medium flex items-center gap-2">
+                                {company.name}
+                                {company.communityListed && (
+                                  <Badge
+                                    variant="outline"
+                                    className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                                  >
+                                    Community
+                                  </Badge>
+                                )}
+                                {company.score && (
+                                  <Badge
+                                    variant={
+                                      getBadgeLevel(company.score) === "Gold"
+                                        ? "default"
+                                        : getBadgeLevel(company.score) ===
+                                            "Silver"
+                                          ? "secondary"
+                                          : "outline"
+                                    }
+                                    className={
+                                      getBadgeLevel(company.score) === "Gold"
+                                        ? "bg-yellow-500 text-white text-xs"
+                                        : getBadgeLevel(company.score) ===
+                                            "Silver"
+                                          ? "bg-gray-400 text-white text-xs"
+                                          : "bg-orange-500 text-white text-xs"
+                                    }
+                                  >
+                                    {getBadgeLevel(company.score)}
+                                  </Badge>
+                                )}
+                              </div>
                               <div className="text-gray-500 text-xs">
                                 {company.country} • {company.industry}
+                                {company.rfqStatus && (
+                                  <span className="ml-2 text-blue-600">
+                                    • RFQ: {company.rfqStatus}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </td>
@@ -972,6 +1112,49 @@ export default function PeaceSealDashboard() {
                                           <p>
                                             <strong>Name:</strong>{" "}
                                             {selectedCompany.company.name}
+                                            {selectedCompany.company.score && (
+                                              <span className="ml-2">
+                                                <Badge
+                                                  variant={
+                                                    getBadgeLevel(
+                                                      selectedCompany.company
+                                                        .score
+                                                    ) === "Gold"
+                                                      ? "default"
+                                                      : getBadgeLevel(
+                                                            selectedCompany
+                                                              .company.score
+                                                          ) === "Silver"
+                                                        ? "secondary"
+                                                        : "outline"
+                                                  }
+                                                  className={
+                                                    getBadgeLevel(
+                                                      selectedCompany.company
+                                                        .score
+                                                    ) === "Gold"
+                                                      ? "bg-yellow-500 text-white"
+                                                      : getBadgeLevel(
+                                                            selectedCompany
+                                                              .company.score
+                                                          ) === "Silver"
+                                                        ? "bg-gray-400 text-white"
+                                                        : "bg-orange-500 text-white"
+                                                  }
+                                                >
+                                                  {getBadgeLevel(
+                                                    selectedCompany.company
+                                                      .score
+                                                  )}{" "}
+                                                  (
+                                                  {
+                                                    selectedCompany.company
+                                                      .score
+                                                  }
+                                                  /100)
+                                                </Badge>
+                                              </span>
+                                            )}
                                           </p>
                                           <p>
                                             <strong>Country:</strong>{" "}
@@ -1007,6 +1190,16 @@ export default function PeaceSealDashboard() {
                                               selectedCompany.company
                                                 .paymentStatus
                                             }
+                                            {selectedCompany.company
+                                              .rfqStatus && (
+                                              <span className="ml-2">
+                                                • RFQ:{" "}
+                                                {
+                                                  selectedCompany.company
+                                                    .rfqStatus
+                                                }
+                                              </span>
+                                            )}
                                           </p>
                                           <p>
                                             <strong>Amount:</strong> $
@@ -1371,6 +1564,136 @@ export default function PeaceSealDashboard() {
                                       )}
                                     </div>
 
+                                    {/* Community Reviews Section */}
+                                    <div className="border-t pt-4">
+                                      <h4 className="font-medium mb-4 flex items-center gap-2">
+                                        <MessageSquare className="w-4 h-4 text-blue-500" />
+                                        Community Reviews
+                                      </h4>
+
+                                      {/* Review Status Filter */}
+                                      <div className="mb-4">
+                                        <Select
+                                          value={reviewStatus}
+                                          onValueChange={setReviewStatus}
+                                        >
+                                          <SelectTrigger className="w-48">
+                                            <SelectValue placeholder="Filter by status" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="pending">
+                                              Pending Review
+                                            </SelectItem>
+                                            <SelectItem value="verified">
+                                              Verified
+                                            </SelectItem>
+                                            <SelectItem value="unverified">
+                                              Unverified
+                                            </SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+
+                                      {loadingReviews ? (
+                                        <div className="text-sm text-gray-500">
+                                          Loading reviews...
+                                        </div>
+                                      ) : reviews.length > 0 ? (
+                                        <div className="space-y-3">
+                                          {reviews.map((review) => (
+                                            <div
+                                              key={review.id}
+                                              className="border rounded-lg p-3 bg-blue-50"
+                                            >
+                                              <div className="flex justify-between items-start mb-2">
+                                                <div className="flex-1">
+                                                  <div className="flex items-center gap-2 mb-1">
+                                                    <span className="text-sm font-medium text-blue-900">
+                                                      {review.companyName ||
+                                                        "Unknown Company"}
+                                                    </span>
+                                                    <Badge
+                                                      variant={
+                                                        review.verificationStatus ===
+                                                        "verified"
+                                                          ? "default"
+                                                          : review.verificationStatus ===
+                                                              "pending"
+                                                            ? "secondary"
+                                                            : "outline"
+                                                      }
+                                                    >
+                                                      {review.verificationStatus ===
+                                                      "verified"
+                                                        ? "✓ Verified"
+                                                        : review.verificationStatus ===
+                                                            "pending"
+                                                          ? "⏳ Pending"
+                                                          : "Unverified"}{" "}
+                                                      {review.role}
+                                                    </Badge>
+                                                  </div>
+                                                  <p className="text-sm text-gray-700 mb-2">
+                                                    Score:{" "}
+                                                    {review.totalScore || "N/A"}
+                                                    /100
+                                                    {review.starRating && (
+                                                      <span className="ml-2">
+                                                        ⭐ {review.starRating}/5
+                                                      </span>
+                                                    )}
+                                                  </p>
+                                                  <p className="text-xs text-gray-500">
+                                                    Created:{" "}
+                                                    {new Date(
+                                                      review.createdAt
+                                                    ).toLocaleDateString()}
+                                                  </p>
+                                                </div>
+                                              </div>
+
+                                              {/* Action Buttons */}
+                                              {review.verificationStatus ===
+                                                "pending" && (
+                                                <div className="flex gap-2 mt-2">
+                                                  <Button
+                                                    size="sm"
+                                                    className="bg-green-600 hover:bg-green-700"
+                                                    onClick={() =>
+                                                      handleVerifyReview(
+                                                        review.id,
+                                                        "verify"
+                                                      )
+                                                    }
+                                                    disabled={loadingReviews}
+                                                  >
+                                                    Verify
+                                                  </Button>
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() =>
+                                                      handleVerifyReview(
+                                                        review.id,
+                                                        "dismiss"
+                                                      )
+                                                    }
+                                                    disabled={loadingReviews}
+                                                  >
+                                                    Dismiss
+                                                  </Button>
+                                                </div>
+                                              )}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <div className="text-sm text-gray-500">
+                                          No {reviewStatus} reviews found.
+                                        </div>
+                                      )}
+                                    </div>
+
                                     {/* Application Review & Management */}
                                     <div className="border-t pt-4">
                                       <h4 className="font-medium mb-4">
@@ -1451,12 +1774,43 @@ export default function PeaceSealDashboard() {
                                             <h5 className="font-medium mb-3 text-green-900">
                                               🔍 Complete Review & Scoring
                                             </h5>
-                                            <p className="text-sm text-green-800 mb-4">
-                                              The questionnaire is complete and
-                                              ready for scoring. Please review
-                                              all responses above and provide
-                                              your assessment.
-                                            </p>
+
+                                            {/* Payment Status Check */}
+                                            {selectedCompany.company
+                                              .paymentStatus !== "paid" ? (
+                                              <div className="p-3 border border-orange-200 rounded-lg bg-orange-50 mb-4">
+                                                <div className="flex items-center gap-2 text-orange-800">
+                                                  <AlertTriangle className="w-4 h-4" />
+                                                  <span className="font-medium">
+                                                    Payment Required
+                                                  </span>
+                                                </div>
+                                                <p className="text-sm text-orange-700 mt-1">
+                                                  Payment must be completed
+                                                  before scoring can be
+                                                  finalized.
+                                                  {selectedCompany.company
+                                                    .rfqStatus && (
+                                                    <span className="block mt-1">
+                                                      RFQ Status:{" "}
+                                                      <Badge variant="outline">
+                                                        {
+                                                          selectedCompany
+                                                            .company.rfqStatus
+                                                        }
+                                                      </Badge>
+                                                    </span>
+                                                  )}
+                                                </p>
+                                              </div>
+                                            ) : (
+                                              <p className="text-sm text-green-800 mb-4">
+                                                The questionnaire is complete
+                                                and ready for scoring. Please
+                                                review all responses above and
+                                                provide your assessment.
+                                              </p>
+                                            )}
 
                                             <div className="space-y-4">
                                               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1493,13 +1847,21 @@ export default function PeaceSealDashboard() {
                                                       handleScoreQuestionnaire
                                                     }
                                                     disabled={
-                                                      scoring || !manualScore
+                                                      scoring ||
+                                                      !manualScore ||
+                                                      selectedCompany.company
+                                                        .paymentStatus !==
+                                                        "paid"
                                                     }
                                                     className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
                                                   >
                                                     {scoring
                                                       ? "Processing..."
-                                                      : "Complete Review"}
+                                                      : selectedCompany.company
+                                                            .paymentStatus !==
+                                                          "paid"
+                                                        ? "Payment Required"
+                                                        : "Complete Review"}
                                                   </Button>
                                                 </div>
                                               </div>
@@ -1527,6 +1889,133 @@ export default function PeaceSealDashboard() {
                                                   decision
                                                 </p>
                                               </div>
+                                            </div>
+                                          </div>
+                                        )}
+
+                                      {/* Admin Payment Confirmation */}
+                                      {["admin", "superAdmin"].includes(
+                                        session?.user?.role || ""
+                                      ) &&
+                                        selectedCompany.company.rfqStatus ===
+                                          "requested" &&
+                                        selectedCompany.company
+                                          .paymentStatus !== "paid" && (
+                                          <div className="p-4 border-2 border-blue-200 rounded-lg bg-blue-50 mt-4">
+                                            <h5 className="font-medium mb-3 text-blue-900">
+                                              💳 Admin Payment Confirmation
+                                            </h5>
+                                            <p className="text-sm text-blue-800 mb-4">
+                                              Confirm manual payment for this
+                                              company.
+                                            </p>
+
+                                            <div className="space-y-4">
+                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                <div>
+                                                  <Label
+                                                    htmlFor="payment-amount"
+                                                    className="text-blue-900 font-medium"
+                                                  >
+                                                    Amount (cents) *
+                                                  </Label>
+                                                  {/* <Input
+                                                    id="payment-amount"
+                                                    type="number"
+                                                    placeholder="e.g., 49900 for $499"
+                                                    className="bg-white border-blue-300"
+                                                  /> */}
+                                                  <MoneyInput
+                                                    id="payment-amount"
+                                                    valueCents={
+                                                      selectedCompany.company
+                                                        .paymentAmountCents ||
+                                                      null
+                                                    }
+                                                    onChangeCents={(cents) => {
+                                                      setUpdateForm((prev) => ({
+                                                        ...prev,
+                                                        paymentAmountCents:
+                                                          cents || null,
+                                                      }));
+                                                    }}
+                                                  />
+                                                </div>
+                                                <div>
+                                                  <Label
+                                                    htmlFor="payment-tx-id"
+                                                    className="text-blue-900 font-medium"
+                                                  >
+                                                    Transaction ID (optional)
+                                                  </Label>
+                                                  <Input
+                                                    id="payment-tx-id"
+                                                    placeholder="External transaction reference"
+                                                    className="bg-white border-blue-300"
+                                                  />
+                                                </div>
+                                              </div>
+
+                                              <Button
+                                                className="w-full bg-blue-600 hover:bg-blue-700"
+                                                onClick={async () => {
+                                                  const amountInput =
+                                                    document.getElementById(
+                                                      "payment-amount"
+                                                    ) as HTMLInputElement;
+                                                  const txIdInput =
+                                                    document.getElementById(
+                                                      "payment-tx-id"
+                                                    ) as HTMLInputElement;
+
+                                                  if (!amountInput.value) {
+                                                    toast({
+                                                      title: "Error",
+                                                      description:
+                                                        "Amount is required",
+                                                      variant: "destructive",
+                                                    });
+                                                    return;
+                                                  }
+
+                                                  try {
+                                                    await adminConfirmPayment(
+                                                      selectedCompany.company
+                                                        .id,
+                                                      {
+                                                        amountCents: parseInt(
+                                                          amountInput.value
+                                                        ),
+                                                        transactionId:
+                                                          txIdInput.value ||
+                                                          undefined,
+                                                      }
+                                                    );
+
+                                                    toast({
+                                                      title: "Success",
+                                                      description:
+                                                        "Payment confirmed successfully",
+                                                    });
+
+                                                    // Refresh company data
+                                                    await loadCompanyDetails(
+                                                      selectedCompany.company.id
+                                                    );
+                                                    amountInput.value = "";
+                                                    txIdInput.value = "";
+                                                  } catch {
+                                                    toast({
+                                                      title: "Error",
+                                                      description:
+                                                        "Failed to confirm payment",
+                                                      variant: "destructive",
+                                                    });
+                                                  }
+                                                }}
+                                              >
+                                                Confirm Payment
+                                              </Button>
                                             </div>
                                           </div>
                                         )}

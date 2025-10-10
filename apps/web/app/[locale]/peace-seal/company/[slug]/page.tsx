@@ -1,4 +1,8 @@
-import { getCompanyBySlug } from "@/lib/api/peace-seal";
+import {
+  getCompanyBySlug,
+  listCompanyReviews,
+  type CommunityReview,
+} from "@/lib/api/peace-seal";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -11,11 +15,12 @@ import {
   AlertTriangle,
   CheckCircle2,
   Flag,
+  Star,
 } from "lucide-react";
-import {
-  getStatusLabel,
-  getStatusColor,
-} from "@/components/peace-seal/directory-page/directory-page";
+// import { getStatusLabel, getStatusColor } from "@/components/peace-seal/directory-page/directory-page";
+import { getStatusLabel, getStatusClasses } from "@/lib/peace-seal/status";
+import { Badge } from "@/components/ui/badge";
+import { CommunityReviewButton } from "@/components/peace-seal/community-review-button";
 
 export const revalidate = 0;
 
@@ -27,12 +32,89 @@ const isInProgress = (s: string) =>
   s === "audit_in_progress" ||
   s === "under_review";
 
+function StarRating({
+  rating,
+  count,
+}: {
+  rating?: number | null;
+  count?: number | null;
+}) {
+  if (!rating || !count)
+    return <span className="text-gray-400 text-sm">No ratings yet</span>;
+
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={`w-5 h-5 ${
+            star <= rating ? "text-yellow-400 fill-current" : "text-gray-300"
+          }`}
+        />
+      ))}
+      <span className="text-sm text-gray-600 ml-2">({count} reviews)</span>
+    </div>
+  );
+}
+
+function ReviewItem({ review }: { review: CommunityReview }) {
+  const isVerified = review.verificationStatus === "verified";
+  const isPending = review.verificationStatus === "pending";
+
+  return (
+    <div className="border rounded-lg p-4 space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Badge
+            variant={
+              isVerified ? "default" : isPending ? "secondary" : "outline"
+            }
+          >
+            {isVerified
+              ? "✓ Verified"
+              : isPending
+                ? "⏳ Pending"
+                : "Unverified"}{" "}
+            {review.role}
+          </Badge>
+          {review.starRating && (
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`w-4 h-4 ${
+                    star <= review.starRating!
+                      ? "text-yellow-400 fill-current"
+                      : "text-gray-300"
+                  }`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+        <span className="text-sm text-gray-500">
+          {new Date(review.createdAt).toLocaleDateString()}
+        </span>
+      </div>
+      {review.totalScore && (
+        <p className="text-sm text-gray-600">Score: {review.totalScore}/100</p>
+      )}
+    </div>
+  );
+}
+
 export default async function CompanyProfilePage({
   params,
 }: {
   params: { slug: string };
 }) {
   const company = await getCompanyBySlug(params.slug);
+
+  // Load reviews
+  const reviewsData = await listCompanyReviews(company.id, { limit: 10 }).catch(
+    () => ({ items: [], total: 0 })
+  );
+  const reviews = reviewsData.items || [];
 
   const hasScore = company.score !== null && company.score !== undefined;
   const hasNotes = Boolean(company.notes && company.notes.trim().length > 0);
@@ -78,6 +160,16 @@ export default async function CompanyProfilePage({
           </div>
 
           <div className="p-6">
+            {/* Community Review Button */}
+            <div className="mb-6">
+              <div className="flex justify-end">
+                <CommunityReviewButton
+                  companyId={company.id}
+                  companyName={company.name}
+                />
+              </div>
+            </div>
+
             {/* Status */}
             <div className="mb-6">
               <div className="flex items-start gap-4 justify-between">
@@ -86,7 +178,7 @@ export default async function CompanyProfilePage({
                     Peace Seal Status
                   </h2>
                   <div
-                    className={`inline-flex items-center px-4 py-2 rounded-full border ${getStatusColor(
+                    className={`inline-flex items-center px-4 py-2 rounded-full border ${getStatusClasses(
                       company.status
                     )}`}
                   >
@@ -279,11 +371,53 @@ export default async function CompanyProfilePage({
                 ) : (
                   <div className="rounded-md border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
                     {/* There are no audit details for this status. */}
-                    {company.notes}
+                    {company.notes ||
+                      "There are no audit details for this status."}
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Community Ratings */}
+            <div className="mt-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                Community Ratings
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-gray-900 mb-2">
+                    Employee Rating
+                  </h3>
+                  <StarRating
+                    rating={company.employeeRatingAvg}
+                    count={company.employeeRatingCount}
+                  />
+                </div>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-medium text-gray-900 mb-2">
+                    Overall Rating
+                  </h3>
+                  <StarRating
+                    rating={company.overallRatingAvg}
+                    count={company.overallRatingCount}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Reviews Tab */}
+            {reviews.length > 0 && (
+              <div className="mt-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">
+                  Community Reviews
+                </h2>
+                <div className="space-y-3">
+                  {reviews.map((review) => (
+                    <ReviewItem key={review.id} review={review} />
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Badge final si aprobado */}
             {isApproved(company.status) && (

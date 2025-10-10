@@ -14,9 +14,7 @@ export const peaceSealCompanies = sqliteTable("peace_seal_companies", {
   lastReviewedAt: integer("last_reviewed_at", { mode: "timestamp" }),
   notes: text("notes"),
   advisorUserId: text("advisor_user_id").references(() => users.id),
-  createdByUserId: text("created_by_user_id")
-    .notNull()
-    .references(() => users.id),
+  createdByUserId: text("created_by_user_id").references(() => users.id),
   paymentStatus: text("payment_status").notNull().default("pending"), // pending|paid|failed|refunded
   paymentAmountCents: integer("payment_amount_cents"),
   paymentTransactionId: text("payment_txn_id"),
@@ -24,6 +22,14 @@ export const peaceSealCompanies = sqliteTable("peace_seal_companies", {
   verifiedAt: integer("verified_at", { mode: "timestamp" }),
   expiresAt: integer("expires_at", { mode: "timestamp" }),
   renewalReminderSent: integer("renewal_reminder_sent").notNull().default(0),
+  rfqStatus: text("rfq_status"), // requested|quoted|accepted|rejected
+  rfqRequestedAt: integer("rfq_requested_at", { mode: "timestamp" }),
+  rfqQuotedAmountCents: integer("rfq_quoted_amount_cents"),
+  communityListed: integer("community_listed").notNull().default(0), // 0|1
+  employeeRatingAvg: integer("employee_rating_avg"), // 1-5 stars
+  employeeRatingCount: integer("employee_rating_count").notNull().default(0),
+  overallRatingAvg: integer("overall_rating_avg"), // 1-5 stars
+  overallRatingCount: integer("overall_rating_count").notNull().default(0),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
   updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
 });
@@ -91,3 +97,37 @@ export const peaceSealDocuments = sqliteTable("peace_seal_documents", {
   verifiedByAdvisor: integer("verified_by_advisor").notNull().default(0),
   createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
 });
+
+export const peaceSealReviews = sqliteTable("peace_seal_reviews", {
+  id: text("id").primaryKey(),
+  companyId: text("company_id")
+    .notNull()
+    .references(() => peaceSealCompanies.id),
+  role: text("role").notNull(), // employee|customer|investor|supplier
+  verificationStatus: text("verification_status").notNull().default("pending"), // pending|verified|unverified
+  verificationMethod: text("verification_method"), // email|linkedin|document|receipt|none
+  reviewerName: text("reviewer_name"), // Optional, stored but never exposed
+  reviewerEmail: text("reviewer_email"), // Optional, stored but never exposed
+  signedDisclosure: integer("signed_disclosure").notNull().default(0), // 0|1
+  answers: text("answers"), // JSON string of all answers
+  sectionScores: text("section_scores"), // JSON string of section scores
+  totalScore: integer("total_score"), // 0-100
+  starRating: integer("star_rating"), // 1-5
+  createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),
+  verifiedAt: integer("verified_at", { mode: "timestamp" }),
+});
+
+export const peaceSealReviewVerifications = sqliteTable(
+  "peace_seal_review_verifications",
+  {
+    id: text("id").primaryKey(),
+    reviewId: text("review_id")
+      .notNull()
+      .references(() => peaceSealReviews.id),
+    token: text("token").notNull().unique(),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    consumedAt: integer("consumed_at", { mode: "timestamp" }),
+    createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
+  }
+);

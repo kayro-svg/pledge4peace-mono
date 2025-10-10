@@ -1,5 +1,25 @@
+"use client";
+
 import { DirectoryItem } from "@/lib/api/peace-seal";
 import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import {
+  createOrFindCompany,
+  type CreateCompanyData,
+} from "@/lib/api/peace-seal";
+import { Star } from "lucide-react";
 
 type DirectoryPageProps = {
   items: DirectoryItem[];
@@ -48,12 +68,82 @@ export function getStatusColor(status: string): string {
   }
 }
 
+function StarRating({
+  rating,
+  count,
+}: {
+  rating?: number | null;
+  count?: number | null;
+}) {
+  if (!rating || !count)
+    return <span className="text-gray-400 text-sm">Pending</span>;
+
+  return (
+    <div className="flex items-center gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <Star
+          key={star}
+          className={`w-4 h-4 ${
+            star <= rating ? "text-yellow-400 fill-current" : "text-gray-300"
+          }`}
+        />
+      ))}
+      <span className="text-sm text-gray-600 ml-1">({count})</span>
+    </div>
+  );
+}
+
 export function DirectoryPage({
   items,
   q,
   country,
   status,
 }: DirectoryPageProps) {
+  const [isAddCompanyOpen, setIsAddCompanyOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const handleAddCompany = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      const data: CreateCompanyData = {
+        name: formData.get("name") as string,
+        website: (formData.get("website") as string) || undefined,
+        country: (formData.get("country") as string) || undefined,
+        industry: (formData.get("industry") as string) || undefined,
+      };
+
+      const result = await createOrFindCompany(data);
+
+      toast({
+        title: "Company added successfully",
+        description:
+          "Now let's get your review of this company to help the community.",
+      });
+
+      setIsAddCompanyOpen(false);
+      // Reset form
+      (e.target as HTMLFormElement).reset();
+
+      // Redirect to community review flow
+      router.push(
+        `/peace-seal/community-review?companyId=${result.company.id}&companyName=${encodeURIComponent(result.company.name)}`
+      );
+    } catch (error: unknown) {
+      toast({
+        title: "Error adding company",
+        description: (error as Error).message || "Please try again later.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
@@ -64,8 +154,8 @@ export function DirectoryPage({
         <p className="text-lg text-gray-600 max-w-3xl">
           Discover businesses committed to ethical practices, nonviolence,
           social impact, and transparent governance. The Peace Seal is awarded
-          to companies that demonstrate a genuine commitment to peace,
-          democracy, and people-first values.
+          to companies that demonstrate good practices in the workplace and
+          commitment to global peace.
         </p>
       </div>
 
@@ -162,7 +252,10 @@ export function DirectoryPage({
                   Last Reviewed
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Notes
+                  Employee Rating
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Rating by Employees
                 </th>
               </tr>
             </thead>
@@ -192,8 +285,37 @@ export function DirectoryPage({
                       ? new Date(item.lastReviewedAt).toLocaleDateString()
                       : "Pending"}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
-                    {item.notes || "—"}
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <StarRating
+                      rating={item.employeeRatingAvg}
+                      count={item.employeeRatingCount}
+                    />
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <button
+                      onClick={() =>
+                        router.push(
+                          `/peace-seal/community-review?companyId=${item.id}&companyName=${encodeURIComponent(item.name)}`
+                        )
+                      }
+                      className="text-[#548281] hover:text-[#2F4858] font-medium underline text-sm transition-colors"
+                    >
+                      {item.employeeRatingAvg && item.employeeRatingCount ? (
+                        <div className="flex items-center gap-2">
+                          <StarRating
+                            rating={item.employeeRatingAvg}
+                            count={item.employeeRatingCount}
+                          />
+                          <span className="text-xs text-gray-500">
+                            ({item.employeeRatingCount} reviews)
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 hover:text-[#548281]">
+                          Rate this company
+                        </span>
+                      )}
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -201,7 +323,7 @@ export function DirectoryPage({
                 <tr>
                   <td
                     className="px-6 py-8 text-center text-gray-500"
-                    colSpan={5}
+                    colSpan={6}
                   >
                     <div className="flex flex-col items-center">
                       <p className="text-lg font-medium mb-2">
@@ -222,13 +344,87 @@ export function DirectoryPage({
       {/* Footer Info */}
       <div className="mt-8 text-center text-gray-600">
         <p className="text-sm">
-          Showing {items.length} companies.
+          Add your company to the directory.
           <Link
             href="/peace-seal/apply"
             className="ml-2 text-[#548281] hover:underline"
           >
-            Apply for Peace Seal certification →
+            Apply for a Peace Seal certification →
           </Link>
+        </p>
+      </div>
+      {/* Footer Info */}
+      <div className="mt-8 text-center text-gray-600">
+        <p className="text-sm">
+          Can&apos;t find the company you work for?
+          <Dialog open={isAddCompanyOpen} onOpenChange={setIsAddCompanyOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="link"
+                className="ml-2 text-[#548281] hover:underline p-0 h-auto"
+              >
+                Add them to the directory →
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Add Company to Directory</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddCompany} className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Company Name *</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    required
+                    placeholder="Enter company name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="website">Website</Label>
+                  <Input
+                    id="website"
+                    name="website"
+                    type="url"
+                    placeholder="https://example.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    name="country"
+                    placeholder="United States"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="industry">Industry</Label>
+                  <Input
+                    id="industry"
+                    name="industry"
+                    placeholder="Technology, Healthcare, etc."
+                  />
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsAddCompanyOpen(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 bg-[#548281] hover:bg-[#2F4858]"
+                  >
+                    {isSubmitting ? "Adding..." : "Add Company"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </p>
       </div>
     </div>

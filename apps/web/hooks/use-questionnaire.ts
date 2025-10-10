@@ -7,11 +7,11 @@ import {
   UploadResponse,
 } from "@/types/questionnaire";
 import {
-  QUESTIONNAIRE_SECTIONS,
+  getQuestionnaireSections,
   DOCUMENT_TYPE_MAPPING,
-} from "@/config/questionnaire-config";
+} from "@/config/questionnaire-configs";
 import { saveQuestionnaire } from "@/lib/api/peace-seal";
-import { apiClient } from "@/lib/api-client";
+// import { apiClient } from "@/lib/api-client"; // Not used in this file
 
 // Initialize empty questionnaire
 function initializeQuestionnaire(): PeaceSealQuestionnaire {
@@ -106,7 +106,8 @@ function initializeQuestionnaire(): PeaceSealQuestionnaire {
 
 export function useQuestionnaire(
   companyId: string,
-  initialData?: Partial<PeaceSealQuestionnaire>
+  initialData?: Partial<PeaceSealQuestionnaire>,
+  employeeCount?: number
 ) {
   const [questionnaire, setQuestionnaire] = useState<PeaceSealQuestionnaire>(
     () => ({
@@ -123,9 +124,14 @@ export function useQuestionnaire(
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
+  // Get questionnaire sections based on company size
+  const questionnaireSections = useMemo(() => {
+    return getQuestionnaireSections(employeeCount || 0);
+  }, [employeeCount]);
+
   // Calculate progress
   const progress = useMemo((): QuestionnaireProgress => {
-    const sectionsProgress: SectionProgress[] = QUESTIONNAIRE_SECTIONS.map(
+    const sectionsProgress: SectionProgress[] = questionnaireSections.map(
       (section) => {
         let completedFields = 0;
         let totalFields = 0;
@@ -196,13 +202,13 @@ export function useQuestionnaire(
       overallPercentage,
       sectionsProgress,
       completedSections,
-      totalSections: QUESTIONNAIRE_SECTIONS.filter((s) => !s.isOptional).length,
+      totalSections: questionnaireSections.filter((s) => !s.isOptional).length,
     };
-  }, [questionnaire]);
+  }, [questionnaire, questionnaireSections]);
 
   // Update field value
   const updateField = useCallback(
-    (sectionId: string, fieldId: string, value: any) => {
+    (sectionId: string, fieldId: string, value: unknown) => {
       setQuestionnaire((prev) => ({
         ...prev,
         [sectionId]: {
@@ -345,7 +351,7 @@ export function useQuestionnaire(
             ? forceProgress
             : progress.overallPercentage;
         await saveQuestionnaire(companyId, {
-          responses: questionnaire,
+          responses: questionnaire as unknown as Record<string, unknown>,
           progress: progressToSend,
         });
 
@@ -359,7 +365,7 @@ export function useQuestionnaire(
         setIsSaving(false);
       }
     },
-    [companyId, questionnaire, progress.overallPercentage, hasUnsavedChanges]
+    [questionnaire, progress.overallPercentage, hasUnsavedChanges]
   );
 
   // Load existing documents on mount
@@ -393,13 +399,13 @@ export function useQuestionnaire(
           // Map documents to questionnaire fields
           const updatedQuestionnaire = { ...questionnaire };
 
-          documents.forEach((doc: any) => {
+          documents.forEach((doc: Record<string, unknown>) => {
             if (doc.sectionId && doc.fieldId) {
               const sectionData = updatedQuestionnaire[
                 doc.sectionId as keyof PeaceSealQuestionnaire
-              ] as any;
+              ] as unknown as Record<string, unknown>;
               if (sectionData) {
-                sectionData[doc.fieldId] = {
+                sectionData[doc.fieldId as string] = {
                   id: doc.id,
                   fileName: doc.fileName,
                   fileUrl: doc.fileUrl,
@@ -421,8 +427,7 @@ export function useQuestionnaire(
     };
 
     loadExistingDocuments();
-  }, [companyId]); // Only run on mount and when companyId changes
-  // Note: questionnaire is intentionally omitted to prevent infinite loops
+  }, [companyId, questionnaire]); // Include questionnaire for proper updates
 
   // Auto-save every 30 seconds if there are unsaved changes
   useEffect(() => {
@@ -441,27 +446,27 @@ export function useQuestionnaire(
   }, []);
 
   const goToNextSection = useCallback(() => {
-    const currentIndex = QUESTIONNAIRE_SECTIONS.findIndex(
+    const currentIndex = questionnaireSections.findIndex(
       (s) => s.id === currentSectionId
     );
-    if (currentIndex < QUESTIONNAIRE_SECTIONS.length - 1) {
-      setCurrentSectionId(QUESTIONNAIRE_SECTIONS[currentIndex + 1].id);
+    if (currentIndex < questionnaireSections.length - 1) {
+      setCurrentSectionId(questionnaireSections[currentIndex + 1].id);
     }
-  }, [currentSectionId]);
+  }, [currentSectionId, questionnaireSections]);
 
   const goToPreviousSection = useCallback(() => {
-    const currentIndex = QUESTIONNAIRE_SECTIONS.findIndex(
+    const currentIndex = questionnaireSections.findIndex(
       (s) => s.id === currentSectionId
     );
     if (currentIndex > 0) {
-      setCurrentSectionId(QUESTIONNAIRE_SECTIONS[currentIndex - 1].id);
+      setCurrentSectionId(questionnaireSections[currentIndex - 1].id);
     }
-  }, [currentSectionId]);
+  }, [currentSectionId, questionnaireSections]);
 
   // Get current section info
   const currentSection = useMemo(() => {
-    return QUESTIONNAIRE_SECTIONS.find((s) => s.id === currentSectionId);
-  }, [currentSectionId]);
+    return questionnaireSections.find((s) => s.id === currentSectionId);
+  }, [currentSectionId, questionnaireSections]);
 
   const currentSectionProgress = useMemo(() => {
     return progress.sectionsProgress.find(
@@ -476,6 +481,7 @@ export function useQuestionnaire(
     currentSectionId,
     progress,
     currentSectionProgress,
+    questionnaireSections,
 
     // Status
     isSaving,

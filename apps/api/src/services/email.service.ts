@@ -820,4 +820,51 @@ export class EmailService {
 
     return await response.json();
   }
+
+  async sendQuoteRequestEmailtoAdmin(
+    companyName: string,
+    employeeCount: number
+  ) {
+    const body = {
+      sender: { name: this.fromName, email: this.fromEmail },
+      to: [
+        // { email: "info@pledge4peace.org", name: "Pledge4Peace Admin" },
+        // {
+        //   email: "shelsys@pledge4peace.org",
+        //   name: "Shelsys Rivera - Marketing Chief",
+        // },
+        {
+          email: "kayrov@weversity.org",
+          name: "kayro developer",
+        },
+      ],
+      subject: `Peace Seal Certification Quote Request for ${companyName}`,
+      htmlContent: `
+        <h1>Quote Request</h1>
+        <p>A new quote request has been submitted for ${companyName} with ${employeeCount} employees.</p>
+        <p>Please contact the company to discuss the details.</p>
+      `,
+    };
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error(
+        "Brevo sendQuoteRequestEmailtoAdmin error:",
+        response.status,
+        text
+      );
+      throw new Error("Failed to send quote request email to admin");
+    }
+
+    return await response.json();
+  }
 }
