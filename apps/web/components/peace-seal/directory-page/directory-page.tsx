@@ -19,7 +19,7 @@ import {
   createOrFindCompany,
   type CreateCompanyData,
 } from "@/lib/api/peace-seal";
-import { Star } from "lucide-react";
+import { Star, Loader2 } from "lucide-react";
 
 type DirectoryPageProps = {
   items: DirectoryItem[];
@@ -125,7 +125,6 @@ export function DirectoryPage({
           "Now let's get your review of this company to help the community.",
       });
 
-      setIsAddCompanyOpen(false);
       // Reset form
       (e.target as HTMLFormElement).reset();
 
@@ -133,6 +132,9 @@ export function DirectoryPage({
       router.push(
         `/peace-seal/community-review?companyId=${result.company.id}&companyName=${encodeURIComponent(result.company.name)}`
       );
+
+      // Close modal after successful redirect
+      setIsAddCompanyOpen(false);
     } catch (error: unknown) {
       toast({
         title: "Error adding company",
@@ -252,11 +254,11 @@ export function DirectoryPage({
                   Last Reviewed
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employee Rating
+                  Community Rating
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                {/* <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Rating by Employees
-                </th>
+                </th> */}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -291,7 +293,7 @@ export function DirectoryPage({
                       count={item.employeeRatingCount}
                     />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  {/* <td className="px-6 py-4 whitespace-nowrap">
                     <button
                       onClick={() =>
                         router.push(
@@ -316,7 +318,7 @@ export function DirectoryPage({
                         </span>
                       )}
                     </button>
-                  </td>
+                  </td> */}
                 </tr>
               ))}
               {items.length === 0 && (
@@ -357,7 +359,15 @@ export function DirectoryPage({
       <div className="mt-8 text-center text-gray-600">
         <p className="text-sm">
           Can&apos;t find the company you work for?
-          <Dialog open={isAddCompanyOpen} onOpenChange={setIsAddCompanyOpen}>
+          <Dialog
+            open={isAddCompanyOpen}
+            onOpenChange={(open) => {
+              // Prevent closing during submission
+              if (!isSubmitting) {
+                setIsAddCompanyOpen(open);
+              }
+            }}
+          >
             <DialogTrigger asChild>
               <Button
                 variant="link"
@@ -366,63 +376,78 @@ export function DirectoryPage({
                 Add them to the directory →
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="max-w-2xl h-[60vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Add Company to Directory</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleAddCompany} className="space-y-4">
-                <div>
-                  <Label htmlFor="name">Company Name *</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    required
-                    placeholder="Enter company name"
-                  />
+              {isSubmitting ? (
+                <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                  <Loader2 className="h-8 w-8 animate-spin text-[#548281]" />
+                  <div className="text-center">
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">
+                      Adding Company...
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Please wait while we add the company to the directory and
+                      prepare your review.
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <Label htmlFor="website">Website</Label>
-                  <Input
-                    id="website"
-                    name="website"
-                    type="url"
-                    placeholder="https://example.com"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="country">Country</Label>
-                  <Input
-                    id="country"
-                    name="country"
-                    placeholder="United States"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="industry">Industry</Label>
-                  <Input
-                    id="industry"
-                    name="industry"
-                    placeholder="Technology, Healthcare, etc."
-                  />
-                </div>
-                <div className="flex gap-2 pt-4">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsAddCompanyOpen(false)}
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="flex-1 bg-[#548281] hover:bg-[#2F4858]"
-                  >
-                    {isSubmitting ? "Adding..." : "Add Company"}
-                  </Button>
-                </div>
-              </form>
+              ) : (
+                <form onSubmit={handleAddCompany} className="space-y-4">
+                  <div>
+                    <Label htmlFor="name">Company Name *</Label>
+                    <Input
+                      id="name"
+                      name="name"
+                      required
+                      placeholder="Enter company name"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="website">Website</Label>
+                    <Input
+                      id="website"
+                      name="website"
+                      type="url"
+                      placeholder="https://example.com"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="country">Country</Label>
+                    <Input
+                      id="country"
+                      name="country"
+                      placeholder="United States"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="industry">Industry</Label>
+                    <Input
+                      id="industry"
+                      name="industry"
+                      placeholder="Technology, Healthcare, etc."
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsAddCompanyOpen(false)}
+                      className="flex-1"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="flex-1 bg-[#548281] hover:bg-[#2F4858]"
+                    >
+                      {isSubmitting ? "Adding..." : "Add Company"}
+                    </Button>
+                  </div>
+                </form>
+              )}
             </DialogContent>
           </Dialog>
         </p>

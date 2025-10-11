@@ -2,7 +2,11 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useAuthSession } from "@/hooks/use-auth-session";
-import { getUserCompany, getCompanyQuestionnaire } from "@/lib/api/peace-seal";
+import {
+  getUserCompany,
+  getCompanyQuestionnaire,
+  getMyReviews,
+} from "@/lib/api/peace-seal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -145,6 +149,9 @@ export default function CompanyPeaceSealDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
+  const [hasReviews, setHasReviews] = useState(false);
+  const [isCommunityListedCompany, setIsCommunityListedCompany] =
+    useState(false);
 
   // Check if user is a company (will be determined after loading company data)
   const isUser = session?.user?.role === "user";
@@ -160,8 +167,12 @@ export default function CompanyPeaceSealDashboard() {
       const companyResult = await getUserCompany();
       setUserCompany(companyResult);
 
-      // Load questionnaire data if company exists
-      if (companyResult?.id) {
+      // Check if this is a community listed company (not a Peace Seal company)
+      const isCommunityListed = companyResult.communityListed === 1;
+      setIsCommunityListedCompany(isCommunityListed);
+
+      // Load questionnaire data if company exists and is not community listed
+      if (companyResult?.id && !isCommunityListed) {
         try {
           const questionnaireResult = await getCompanyQuestionnaire(
             companyResult.id
@@ -176,6 +187,16 @@ export default function CompanyPeaceSealDashboard() {
       logger.info("User does not have a company associated:", error);
       // This is expected for users without companies, so don't set it as an error
       setUserCompany(null);
+      setIsCommunityListedCompany(false);
+
+      // Check if user has reviews instead
+      try {
+        const reviewsResult = await getMyReviews({ page: 1, limit: 1 });
+        setHasReviews(reviewsResult.total > 0);
+      } catch (reviewError) {
+        logger.info("User has no reviews:", reviewError);
+        setHasReviews(false);
+      }
     } finally {
       setLoading(false);
     }
@@ -279,17 +300,90 @@ export default function CompanyPeaceSealDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building className="w-5 h-5 text-gray-500" />
-              No Company Found
+              {hasReviews ? "Community Reviewer" : "No Company Found"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {hasReviews ? (
+              <>
+                <p className="text-gray-600 mb-4">
+                  You&apos;ve been reviewing companies in our community
+                  directory, but you don&apos;t have a company registered for
+                  Peace Seal certification.
+                </p>
+                <p className="text-sm text-gray-500 mb-4">
+                  If you want to apply for Peace Seal certification for your
+                  company, please contact support.
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() =>
+                      (window.location.href = "/dashboard/my-reviews")
+                    }
+                    className="flex-1"
+                  >
+                    View My Reviews
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => window.open("/contact", "_blank")}
+                  >
+                    Contact Support
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-600 mb-4">
+                  You don&apos;t seem to be associated with a company yet.
+                </p>
+                <p className="text-sm text-gray-500">
+                  Please contact support to get your company set up for Peace
+                  Seal certification.
+                </p>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // If user has a company but it's community listed, redirect to reviews
+  if (isCommunityListedCompany) {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center min-h-[60vh]">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Building className="w-5 h-5 text-gray-500" />
+              Community Listed Company
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-gray-600 mb-4">
-              You don&apos;t seem to be associated with a company yet.
+              Your company &quot;{userCompany.name}&quot; is listed in our
+              community directory for reviews, but it&apos;s not registered for
+              Peace Seal certification.
             </p>
-            <p className="text-sm text-gray-500">
-              Please contact support to get your company set up for Peace Seal
-              certification.
+            <p className="text-sm text-gray-500 mb-4">
+              If you want to apply for Peace Seal certification for your
+              company, please contact support.
             </p>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => (window.location.href = "/dashboard/my-reviews")}
+                className="flex-1"
+              >
+                View My Reviews
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => window.open("/contact", "_blank")}
+              >
+                Contact Support
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

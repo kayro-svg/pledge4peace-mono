@@ -54,6 +54,7 @@ import {
   Flag,
   MessageSquare,
 } from "lucide-react";
+import { ReviewDetailsModal } from "@/components/peace-seal/review-details-modal";
 import { logger } from "@/lib/utils/logger";
 import { useToast } from "@/hooks/use-toast";
 import type {
@@ -360,6 +361,8 @@ export default function PeaceSealDashboard() {
   const [reviewPage] = useState(1);
   const [, setReviewTotal] = useState(0);
   const [reviewStatus, setReviewStatus] = useState("pending");
+  const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
+  const [showReviewDetails, setShowReviewDetails] = useState(false);
 
   // Company states
   const [userCompany, setUserCompany] = useState<UserCompany | null>(null);
@@ -619,7 +622,9 @@ export default function PeaceSealDashboard() {
         title: `Review ${action === "verify" ? "verified" : "dismissed"} successfully`,
       });
 
-      // Reload reviews
+      // Close modal and reload reviews
+      setShowReviewDetails(false);
+      setSelectedReviewId(null);
       await loadReviews();
     } catch (error) {
       logger.error(`Failed to ${action} review:`, error);
@@ -630,6 +635,16 @@ export default function PeaceSealDashboard() {
     } finally {
       setLoadingReviews(false);
     }
+  };
+
+  const handleViewReviewDetails = (reviewId: string) => {
+    setSelectedReviewId(reviewId);
+    setShowReviewDetails(true);
+  };
+
+  const handleCloseReviewDetails = () => {
+    setShowReviewDetails(false);
+    setSelectedReviewId(null);
   };
 
   if (!isAdvisor && !isCompany) {
@@ -929,7 +944,7 @@ export default function PeaceSealDashboard() {
                 </div>
 
                 <div>
-                  <Label htmlFor="community">Community Filter</Label>
+                  <Label htmlFor="community">Company Type </Label>
                   <Select
                     value={communityListed}
                     onValueChange={setCommunityListed}
@@ -939,7 +954,7 @@ export default function PeaceSealDashboard() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Companies</SelectItem>
-                      <SelectItem value="true">Community Added</SelectItem>
+                      <SelectItem value="true">Added by Community</SelectItem>
                       <SelectItem value="false">
                         Regular Applications
                       </SelectItem>
@@ -1628,8 +1643,8 @@ export default function PeaceSealDashboard() {
                                                         ? "✓ Verified"
                                                         : review.verificationStatus ===
                                                             "pending"
-                                                          ? "⏳ Pending"
-                                                          : "Unverified"}{" "}
+                                                          ? "Unverified"
+                                                          : "Pending"}
                                                       {review.role}
                                                     </Badge>
                                                   </div>
@@ -1653,37 +1668,52 @@ export default function PeaceSealDashboard() {
                                               </div>
 
                                               {/* Action Buttons */}
-                                              {review.verificationStatus ===
-                                                "pending" && (
-                                                <div className="flex gap-2 mt-2">
-                                                  <Button
-                                                    size="sm"
-                                                    className="bg-green-600 hover:bg-green-700"
-                                                    onClick={() =>
-                                                      handleVerifyReview(
-                                                        review.id,
-                                                        "verify"
-                                                      )
-                                                    }
-                                                    disabled={loadingReviews}
-                                                  >
-                                                    Verify
-                                                  </Button>
-                                                  <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() =>
-                                                      handleVerifyReview(
-                                                        review.id,
-                                                        "dismiss"
-                                                      )
-                                                    }
-                                                    disabled={loadingReviews}
-                                                  >
-                                                    Dismiss
-                                                  </Button>
-                                                </div>
-                                              )}
+                                              <div className="flex gap-2 mt-2">
+                                                <Button
+                                                  size="sm"
+                                                  variant="outline"
+                                                  onClick={() =>
+                                                    handleViewReviewDetails(
+                                                      review.id
+                                                    )
+                                                  }
+                                                  disabled={loadingReviews}
+                                                >
+                                                  <Eye className="w-4 h-4 mr-1" />
+                                                  View Details
+                                                </Button>
+                                                {review.verificationStatus ===
+                                                  "pending" && (
+                                                  <>
+                                                    <Button
+                                                      size="sm"
+                                                      className="bg-green-600 hover:bg-green-700"
+                                                      onClick={() =>
+                                                        handleVerifyReview(
+                                                          review.id,
+                                                          "verify"
+                                                        )
+                                                      }
+                                                      disabled={loadingReviews}
+                                                    >
+                                                      Verify
+                                                    </Button>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() =>
+                                                        handleVerifyReview(
+                                                          review.id,
+                                                          "dismiss"
+                                                        )
+                                                      }
+                                                      disabled={loadingReviews}
+                                                    >
+                                                      Dismiss
+                                                    </Button>
+                                                  </>
+                                                )}
+                                              </div>
                                             </div>
                                           ))}
                                         </div>
@@ -2140,6 +2170,15 @@ export default function PeaceSealDashboard() {
           </Card>
         </div>
       </div>
+
+      {/* Review Details Modal */}
+      <ReviewDetailsModal
+        reviewId={selectedReviewId}
+        isOpen={showReviewDetails}
+        onClose={handleCloseReviewDetails}
+        onVerify={handleVerifyReview}
+        isLoading={loadingReviews}
+      />
     </div>
   );
 }

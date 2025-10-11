@@ -16,12 +16,14 @@ export interface CreateCompanyDTO {
 
 export interface CreateReviewDTO {
   companyId: string;
+  userId: string; // Track which user created the review
   role: "employee" | "customer" | "investor" | "supplier";
   verificationMethod?: "email" | "linkedin" | "document" | "receipt" | "none";
   reviewerName?: string;
   reviewerEmail?: string;
   signedDisclosure: boolean;
   answers: Record<string, any>;
+  verificationDocumentUrl?: string;
 }
 
 export interface ReviewFilters {
@@ -172,12 +174,14 @@ export class CommunityReviewsService {
   async createReview(data: CreateReviewDTO) {
     const {
       companyId,
+      userId,
       role,
       verificationMethod = "none",
       reviewerName,
       reviewerEmail,
       signedDisclosure,
       answers,
+      verificationDocumentUrl,
     } = data;
 
     // Verify company exists
@@ -216,9 +220,11 @@ export class CommunityReviewsService {
       .values({
         id: reviewId,
         companyId,
+        userId,
         role,
         verificationStatus,
         verificationMethod,
+        verificationDocumentUrl: verificationDocumentUrl || null,
         reviewerName: reviewerName || null,
         reviewerEmail: reviewerEmail || null,
         signedDisclosure: signedDisclosure ? 1 : 0,
@@ -455,6 +461,100 @@ export class CommunityReviewsService {
     const total = countResult[0]?.count || 0;
 
     return { items: reviews, page, limit: Math.min(limit, 100), total };
+  }
+
+  // User: Get my reviews
+  async getUserReviews(
+    userId: string,
+    filters: { page?: number; limit?: number }
+  ) {
+    const { page = 1, limit = 20 } = filters;
+    const offset = (page - 1) * Math.min(limit, 100);
+
+    const reviews = await this.db
+      .select({
+        id: peaceSealReviews.id,
+        companyId: peaceSealReviews.companyId,
+        role: peaceSealReviews.role,
+        verificationStatus: peaceSealReviews.verificationStatus,
+        verificationMethod: peaceSealReviews.verificationMethod,
+        totalScore: peaceSealReviews.totalScore,
+        starRating: peaceSealReviews.starRating,
+        createdAt: peaceSealReviews.createdAt,
+        verifiedAt: peaceSealReviews.verifiedAt,
+        // Include company info
+        companyName: peaceSealCompanies.name,
+        companySlug: peaceSealCompanies.slug,
+        companyCountry: peaceSealCompanies.country,
+        companyIndustry: peaceSealCompanies.industry,
+      })
+      .from(peaceSealReviews)
+      .leftJoin(
+        peaceSealCompanies,
+        eq(peaceSealReviews.companyId, peaceSealCompanies.id)
+      )
+      .where(eq(peaceSealReviews.userId, userId))
+      .orderBy(desc(peaceSealReviews.createdAt))
+      .limit(Math.min(limit, 100))
+      .offset(offset);
+
+    // Get total count
+    const countResult = await this.db
+      .select({ count: sql<number>`count(*)` })
+      .from(peaceSealReviews)
+      .where(eq(peaceSealReviews.userId, userId));
+
+    const total = countResult[0]?.count || 0;
+
+    return { items: reviews, page, limit: Math.min(limit, 100), total };
+  }
+
+  // Admin: Get detailed review data for verification
+  async adminGetReviewDetails(reviewId: string) {
+    const review = await this.db
+      .select({
+        id: peaceSealReviews.id,
+        companyId: peaceSealReviews.companyId,
+        role: peaceSealReviews.role,
+        verificationStatus: peaceSealReviews.verificationStatus,
+        verificationMethod: peaceSealReviews.verificationMethod,
+        verificationDocumentUrl: peaceSealReviews.verificationDocumentUrl,
+        reviewerName: peaceSealReviews.reviewerName,
+        reviewerEmail: peaceSealReviews.reviewerEmail,
+        signedDisclosure: peaceSealReviews.signedDisclosure,
+        answers: peaceSealReviews.answers,
+        sectionScores: peaceSealReviews.sectionScores,
+        totalScore: peaceSealReviews.totalScore,
+        starRating: peaceSealReviews.starRating,
+        createdAt: peaceSealReviews.createdAt,
+        updatedAt: peaceSealReviews.updatedAt,
+        verifiedAt: peaceSealReviews.verifiedAt,
+        // Include company name for admin view
+        companyName: peaceSealCompanies.name,
+      })
+      .from(peaceSealReviews)
+      .leftJoin(
+        peaceSealCompanies,
+        eq(peaceSealReviews.companyId, peaceSealCompanies.id)
+      )
+      .where(eq(peaceSealReviews.id, reviewId))
+      .then((r) => r[0]);
+
+    if (!review) {
+      throw new HTTPException(404, { message: "Review not found" });
+    }
+
+    // Parse JSON fields
+    const parsedAnswers = review.answers ? JSON.parse(review.answers) : {};
+    const parsedSectionScores = review.sectionScores
+      ? JSON.parse(review.sectionScores)
+      : {};
+
+    return {
+      ...review,
+      answers: parsedAnswers,
+      sectionScores: parsedSectionScores,
+    };
   }
 
   // Admin: Verify or dismiss review

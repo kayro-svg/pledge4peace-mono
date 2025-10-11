@@ -463,6 +463,7 @@ export type CreateReviewData = {
   reviewerEmail?: string;
   signedDisclosure: boolean;
   answers: Record<string, unknown>;
+  verificationDocumentUrl?: string;
 };
 
 // Community Reviews API Functions
@@ -492,6 +493,20 @@ export async function confirmVerification(token: string) {
   );
 }
 
+export async function adminGetReviewDetails(reviewId: string) {
+  return apiClient.get<{
+    review: CommunityReview & {
+      answers: Record<string, string>;
+      sectionScores: Record<string, number>;
+      companyName: string;
+      reviewerName?: string;
+      reviewerEmail?: string;
+      verificationDocumentUrl?: string;
+      signedDisclosure: boolean;
+    };
+  }>(`/peace-seal/admin/reviews/${reviewId}`);
+}
+
 export async function listCompanyReviews(
   companyId: string,
   filters?: {
@@ -513,6 +528,30 @@ export async function listCompanyReviews(
     limit: number;
     total: number;
   }>(`/peace-seal/companies/${companyId}/reviews?${qs}`);
+}
+
+// User functions
+export async function getMyReviews(filters?: {
+  page?: number;
+  limit?: number;
+}) {
+  const qs = new URLSearchParams();
+  if (filters?.page) qs.set("page", filters.page.toString());
+  if (filters?.limit) qs.set("limit", filters.limit.toString());
+
+  return apiClient.get<{
+    items: Array<
+      CommunityReview & {
+        companyName?: string;
+        companySlug?: string;
+        companyCountry?: string;
+        companyIndustry?: string;
+      }
+    >;
+    page: number;
+    limit: number;
+    total: number;
+  }>(`/peace-seal/my-reviews?${qs}`);
 }
 
 // Admin functions

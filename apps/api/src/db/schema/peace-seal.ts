@@ -103,9 +103,11 @@ export const peaceSealReviews = sqliteTable("peace_seal_reviews", {
   companyId: text("company_id")
     .notNull()
     .references(() => peaceSealCompanies.id),
+  userId: text("user_id").references(() => users.id), // Track which user created the review
   role: text("role").notNull(), // employee|customer|investor|supplier
   verificationStatus: text("verification_status").notNull().default("pending"), // pending|verified|unverified
   verificationMethod: text("verification_method"), // email|linkedin|document|receipt|none
+  verificationDocumentUrl: text("verification_document_url"), // URL to uploaded verification document
   reviewerName: text("reviewer_name"), // Optional, stored but never exposed
   reviewerEmail: text("reviewer_email"), // Optional, stored but never exposed
   signedDisclosure: integer("signed_disclosure").notNull().default(0), // 0|1

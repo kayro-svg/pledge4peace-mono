@@ -31,6 +31,7 @@ const isInProgress = (s: string) =>
   s === "application_submitted" ||
   s === "audit_in_progress" ||
   s === "under_review";
+const isCommunityListed = (company: any) => company.communityListed === 1;
 
 function StarRating({
   rating,
@@ -70,11 +71,7 @@ function ReviewItem({ review }: { review: CommunityReview }) {
               isVerified ? "default" : isPending ? "secondary" : "outline"
             }
           >
-            {isVerified
-              ? "✓ Verified"
-              : isPending
-                ? "⏳ Pending"
-                : "Unverified"}{" "}
+            {isVerified ? "✓ Verified" : isPending ? "Unverified" : "Pending"}{" "}
             {review.role}
           </Badge>
           {review.starRating && (
@@ -175,15 +172,21 @@ export default async function CompanyProfilePage({
               <div className="flex items-start gap-4 justify-between">
                 <div>
                   <h2 className="text-lg font-semibold text-gray-900 mb-3">
-                    Peace Seal Status
+                    {isCommunityListed(company)
+                      ? "Community Listing Status"
+                      : "Peace Seal Status"}
                   </h2>
                   <div
-                    className={`inline-flex items-center px-4 py-2 rounded-full border ${getStatusClasses(
-                      company.status
-                    )}`}
+                    className={`inline-flex items-center px-4 py-2 rounded-full border ${
+                      isCommunityListed(company)
+                        ? "border-blue-200 bg-blue-50 text-blue-800"
+                        : getStatusClasses(company.status)
+                    }`}
                   >
                     <span className="font-medium">
-                      {getStatusLabel(company.status)}
+                      {isCommunityListed(company)
+                        ? "Community Listed"
+                        : getStatusLabel(company.status)}
                     </span>
                   </div>
                 </div>
@@ -211,7 +214,33 @@ export default async function CompanyProfilePage({
               </div>
 
               {/* Mensajes claros por estado */}
-              {isApproved(company.status) && (
+              {isCommunityListed(company) && (
+                <div className="mt-4 flex items-start gap-3 rounded-md border border-blue-200 bg-blue-50 p-4 text-blue-800">
+                  <Info className="w-5 h-5 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium">
+                      This company was added to our community directory for
+                      reviews.
+                    </p>
+                    <p className="mt-1">
+                      This company has not applied for Peace Seal certification.
+                      It was added by community members who wanted to review and
+                      rate the company. Community reviews help provide
+                      transparency about company practices.
+                    </p>
+                    {company.createdAt && (
+                      <p className="mt-2">
+                        Added to directory:{" "}
+                        <strong>
+                          {new Date(company.createdAt).toLocaleDateString()}
+                        </strong>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {!isCommunityListed(company) && isApproved(company.status) && (
                 <div className="mt-4 flex items-start gap-3 rounded-md border border-green-200 bg-green-50 p-4 text-green-800">
                   <CheckCircle2 className="w-5 h-5 mt-0.5" />
                   <div className="text-sm">
@@ -226,7 +255,7 @@ export default async function CompanyProfilePage({
                 </div>
               )}
 
-              {isInProgress(company.status) && (
+              {!isCommunityListed(company) && isInProgress(company.status) && (
                 <div className="mt-4 flex items-start gap-3 rounded-md border border-yellow-200 bg-yellow-50 p-4 text-yellow-800">
                   <Info className="w-5 h-5 mt-0.5" />
                   <div className="text-sm">
@@ -257,7 +286,7 @@ export default async function CompanyProfilePage({
                 </div>
               )}
 
-              {isDenied(company.status) && (
+              {!isCommunityListed(company) && isDenied(company.status) && (
                 <div className="mt-4 flex items-start gap-3 rounded-md border border-red-200 bg-red-50 p-4 text-red-800">
                   <AlertTriangle className="w-5 h-5 mt-0.5" />
                   <div className="text-sm">
@@ -299,7 +328,9 @@ export default async function CompanyProfilePage({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Application Date
+                    {isCommunityListed(company)
+                      ? "Added to Directory"
+                      : "Application Date"}
                   </label>
                   <div className="flex items-center text-gray-900">
                     <Calendar className="w-4 h-4 mr-2 text-gray-500" />
@@ -323,10 +354,30 @@ export default async function CompanyProfilePage({
               {/* Audit Information: solo visible si está aprobado */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900">
-                  Audit Information
+                  {isCommunityListed(company)
+                    ? "Community Information"
+                    : "Audit Information"}
                 </h3>
 
-                {isApproved(company.status) ? (
+                {isCommunityListed(company) ? (
+                  <div className="rounded-md border border-blue-200 bg-blue-50 p-4 text-sm text-blue-700">
+                    <p className="font-medium mb-2">Community Listed Company</p>
+                    <p>
+                      This company was added to our community directory for
+                      reviews and ratings. It has not undergone the Peace Seal
+                      certification process.
+                    </p>
+                    {(company.employeeRatingCount || 0) > 0 && (
+                      <p className="mt-2">
+                        Community reviews:{" "}
+                        <strong>{company.employeeRatingCount || 0}</strong>{" "}
+                        employee reviews,
+                        <strong> {company.overallRatingCount || 0}</strong>{" "}
+                        overall reviews
+                      </p>
+                    )}
+                  </div>
+                ) : isApproved(company.status) ? (
                   <>
                     {hasScore && (
                       <div>
@@ -438,12 +489,34 @@ export default async function CompanyProfilePage({
 
             {/* CTA */}
             <div className="mt-8 text-center">
-              <Link
-                href="/peace-seal/apply"
-                className="inline-flex items-center bg-[#548281] text-white px-6 py-3 rounded-md hover:bg-[#2F4858] transition-colors"
-              >
-                Apply for your Peace Seal certification
-              </Link>
+              {isCommunityListed(company) ? (
+                <div className="space-y-4">
+                  <p className="text-gray-600">
+                    Want to help this company get Peace Seal certified?
+                  </p>
+                  <div className="flex gap-4 justify-center">
+                    <Link
+                      href="/peace-seal/apply"
+                      className="inline-flex items-center bg-[#548281] text-white px-6 py-3 rounded-md hover:bg-[#2F4858] transition-colors"
+                    >
+                      Apply for Peace Seal certification
+                    </Link>
+                    <Link
+                      href="/contact"
+                      className="inline-flex items-center border border-[#548281] text-[#548281] px-6 py-3 rounded-md hover:bg-[#548281] hover:text-white transition-colors"
+                    >
+                      Contact Support
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <Link
+                  href="/peace-seal/apply"
+                  className="inline-flex items-center bg-[#548281] text-white px-6 py-3 rounded-md hover:bg-[#2F4858] transition-colors"
+                >
+                  Apply for your Peace Seal certification
+                </Link>
+              )}
             </div>
           </div>
         </div>

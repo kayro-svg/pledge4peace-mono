@@ -34,7 +34,7 @@ import {
   type ReviewRole,
   type VerificationMethod,
 } from "@/lib/api/peace-seal";
-import { Star, Upload, CheckCircle, AlertCircle } from "lucide-react";
+import { Upload, CheckCircle } from "lucide-react";
 
 type CommunityReviewFlowProps = {
   companyId: string;
@@ -205,6 +205,7 @@ export function CommunityReviewFlow({
   const [experienceDescription, setExperienceDescription] = useState("");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [signedDisclosure, setSignedDisclosure] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
   const getAvailableSections = () => {
     if (!role) return [];
@@ -231,6 +232,11 @@ export function CommunityReviewFlow({
       ...prev,
       [questionId]: answer,
     }));
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    setUploadedFile(file);
   };
 
   const handleNext = () => {
@@ -260,6 +266,17 @@ export function CommunityReviewFlow({
           });
           return;
         }
+        if (
+          (verificationMethod === "document" ||
+            verificationMethod === "receipt") &&
+          !uploadedFile
+        ) {
+          toast({
+            title: "Please upload a document for verification",
+            variant: "destructive",
+          });
+          return;
+        }
         if (!experienceDescription.trim()) {
           toast({
             title: "Please describe your experience",
@@ -269,7 +286,7 @@ export function CommunityReviewFlow({
         }
         setCurrentStep("questions");
         break;
-      case "questions":
+      case "questions": {
         // Check if at least one question is answered
         const hasAnswers = Object.values(answers).some(
           (answer) => answer && answer !== ""
@@ -283,7 +300,8 @@ export function CommunityReviewFlow({
         }
         setCurrentStep("disclosure");
         break;
-      case "disclosure":
+      }
+      case "disclosure": {
         if (!signedDisclosure) {
           toast({
             title: "Please accept the disclosure",
@@ -293,12 +311,42 @@ export function CommunityReviewFlow({
         }
         handleSubmit();
         break;
+      }
     }
   };
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      // If there's a file to upload, upload it first
+      let uploadedFileUrl: string | undefined;
+      if (
+        uploadedFile &&
+        (verificationMethod === "document" || verificationMethod === "receipt")
+      ) {
+        const formData = new FormData();
+        formData.append("file", uploadedFile);
+        formData.append("companyId", companyId);
+        formData.append("documentType", verificationMethod);
+        formData.append("sectionId", "community-review");
+        formData.append("fieldId", "verification-document");
+
+        const uploadResponse = await fetch(
+          "/api/peace-seal/reviews/upload-document",
+          {
+            method: "POST",
+            body: formData,
+          }
+        );
+
+        if (!uploadResponse.ok) {
+          throw new Error("Failed to upload verification document");
+        }
+
+        const uploadResult = await uploadResponse.json();
+        uploadedFileUrl = uploadResult.fileUrl;
+      }
+
       const reviewData: CreateReviewData = {
         companyId,
         role: role as ReviewRole,
@@ -307,6 +355,7 @@ export function CommunityReviewFlow({
         reviewerEmail: reviewerEmail.trim() || undefined,
         signedDisclosure: true,
         answers,
+        verificationDocumentUrl: uploadedFileUrl,
       };
 
       await createReview(reviewData);
@@ -334,7 +383,7 @@ export function CommunityReviewFlow({
         <CardTitle>Your Role with {companyName}</CardTitle>
         <CardDescription>
           Please select your relationship with this company. This determines
-          which aspects you'll be asked to review.
+          which aspects you&apos;ll be asked to review.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -453,7 +502,7 @@ export function CommunityReviewFlow({
               required
             />
             <p className="text-xs text-gray-500 mt-1">
-              Don't have a work email? Use your personal email.
+              Don&apos;t have a work email? Use your personal email.
             </p>
           </div>
         )}
@@ -463,15 +512,32 @@ export function CommunityReviewFlow({
           <div>
             <Label>Upload Document</Label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-              <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
-              <p className="text-sm text-gray-600">
-                Click to upload or drag and drop
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                {verificationMethod === "document"
-                  ? "Upload agreement, contract, or other document proving your relationship"
-                  : "Upload receipt, invoice, or other proof of business relationship"}
-              </p>
+              <input
+                type="file"
+                id="verification-file"
+                onChange={handleFileChange}
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                className="hidden"
+              />
+              <label htmlFor="verification-file" className="cursor-pointer">
+                <Upload className="w-8 h-8 mx-auto text-gray-400 mb-2" />
+                <p className="text-sm text-gray-600">
+                  {uploadedFile
+                    ? uploadedFile.name
+                    : "Click to upload or drag and drop"}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {verificationMethod === "document"
+                    ? "Upload agreement, contract, or other document proving your relationship"
+                    : "Upload receipt, invoice, or other proof of business relationship"}
+                </p>
+                {uploadedFile && (
+                  <p className="text-xs text-green-600 mt-2">
+                    ✓ File selected: {uploadedFile.name} (
+                    {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+              </label>
             </div>
           </div>
         )}
@@ -505,7 +571,8 @@ export function CommunityReviewFlow({
           <CardTitle>Review Questions</CardTitle>
           <CardDescription>
             Please answer the questions that apply to your role as a {role}. You
-            can skip questions that don't apply by selecting "N/A".
+            can skip questions that don&apos;t apply by selecting
+            &quot;N/A&quot;.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -589,7 +656,7 @@ export function CommunityReviewFlow({
             representatives of this organization. If I cannot verify my
             involvement with this organization, my review will still be publicly
             posted as an unverified comment, but it will not affect the
-            company's rating or score.{" "}
+            company&apos;s rating or score.{" "}
             <strong>I accept and would like to continue.</strong>
           </p>
         </div>

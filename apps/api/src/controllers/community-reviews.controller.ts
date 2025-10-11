@@ -3,6 +3,7 @@ import { createDb } from "../db";
 import { Context } from "hono";
 import { CommunityReviewsService } from "../services/community-reviews.service";
 import { logger } from "../utils/logger";
+import { DocumentsController } from "./documents.controller";
 
 export class CommunityReviewsController {
   // Create or find company for community listing
@@ -90,6 +91,7 @@ export class CommunityReviewsController {
         reviewerEmail,
         signedDisclosure,
         answers,
+        verificationDocumentUrl,
       } = await c.req.json().catch(() => ({}));
 
       if (!companyId || !role || !signedDisclosure || !answers) {
@@ -108,12 +110,14 @@ export class CommunityReviewsController {
 
       const review = await communityReviewsService.createReview({
         companyId,
+        userId: user.id,
         role,
         verificationMethod,
         reviewerName,
         reviewerEmail,
         signedDisclosure: Boolean(signedDisclosure),
         answers,
+        verificationDocumentUrl,
       });
 
       return c.json({ review });
@@ -199,6 +203,59 @@ export class CommunityReviewsController {
     }
   };
 
+  // User: Get my reviews
+  getMyReviews = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const communityReviewsService = new CommunityReviewsService(db);
+      const user = c.get("user");
+
+      // Check if user is authenticated
+      if (!user) {
+        throw new HTTPException(401, { message: "Authentication required" });
+      }
+
+      const url = new URL(c.req.url);
+      const filters = {
+        page: parseInt(url.searchParams.get("page") || "1"),
+        limit: parseInt(url.searchParams.get("limit") || "20"),
+      };
+
+      const result = await communityReviewsService.getUserReviews(
+        user.id,
+        filters
+      );
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error getting user reviews:", error);
+      throw new HTTPException(500, { message: "Error getting reviews" });
+    }
+  };
+
+  // Admin: Get detailed review data for verification
+  adminGetReviewDetails = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const communityReviewsService = new CommunityReviewsService(db);
+      const reviewId = c.req.param("id");
+      const user = c.get("user");
+
+      // Check permissions
+      if (!["admin", "superAdmin"].includes(user.role)) {
+        throw new HTTPException(403, { message: "Insufficient permissions" });
+      }
+
+      const review =
+        await communityReviewsService.adminGetReviewDetails(reviewId);
+      return c.json({ review });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error getting review details:", error);
+      throw new HTTPException(500, { message: "Error getting review details" });
+    }
+  };
+
   // Admin: Verify or dismiss review
   adminVerifyReview = async (c: Context) => {
     try {
@@ -231,6 +288,52 @@ export class CommunityReviewsController {
       if (error instanceof HTTPException) throw error;
       logger.error("Error verifying review:", error);
       throw new HTTPException(500, { message: "Error verifying review" });
+    }
+  };
+
+  // Upload verification document for community review (no auth required)
+  uploadVerificationDocument = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const documentsController = new DocumentsController();
+
+      // Get form data
+      const formData = await c.req.formData();
+      const file = formData.get("file") as File;
+      const companyId = formData.get("companyId") as string;
+      const documentType = formData.get("documentType") as string;
+
+      // Validate required fields
+      if (!file || !companyId || !documentType) {
+        throw new HTTPException(400, {
+          message: "Missing required fields: file, companyId, documentType",
+        });
+      }
+
+      // Validate file
+      if (file.size === 0) {
+        throw new HTTPException(400, {
+          message: "Empty file not allowed",
+        });
+      }
+
+      // Set a temporary user ID for community review documents
+      // This allows the document upload to work without authentication
+      c.set("user", {
+        id: "community-review-user",
+        email: "community-review@example.com",
+        name: "Community Review User",
+        role: "user",
+      });
+
+      // Delegate to documents controller
+      return await documentsController.uploadDocument(c);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error uploading verification document:", error);
+      throw new HTTPException(500, {
+        message: "Error uploading verification document",
+      });
     }
   };
 }

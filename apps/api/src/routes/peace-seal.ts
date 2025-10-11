@@ -31,9 +31,14 @@ peaceSeal.post("/reviews", (c) => communityController.createReview(c));
 peaceSeal.post("/reviews/verify/:token", (c) =>
   communityController.confirmVerification(c)
 );
+peaceSeal.post("/reviews/upload-document", (c) =>
+  communityController.uploadVerificationDocument(c)
+);
 peaceSeal.get("/companies/:id/reviews", (c) =>
   communityController.listCompanyReviews(c)
 );
+peaceSeal.use("/my-reviews", authMiddleware);
+peaceSeal.get("/my-reviews", (c) => communityController.getMyReviews(c));
 
 // Applicant routes (authentication required)
 peaceSeal.use("/applications/*", authMiddleware);
@@ -100,6 +105,9 @@ peaceSeal.post("/admin/reports/:reportId/resolve", (c) =>
 
 // Admin community reviews routes
 peaceSeal.get("/admin/reviews", (c) => communityController.adminListReviews(c));
+peaceSeal.get("/admin/reviews/:id", (c) =>
+  communityController.adminGetReviewDetails(c)
+);
 peaceSeal.post("/admin/reviews/:id/verify", (c) =>
   communityController.adminVerifyReview(c)
 );

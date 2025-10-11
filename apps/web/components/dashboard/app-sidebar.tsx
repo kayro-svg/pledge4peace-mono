@@ -10,6 +10,7 @@ import {
   ScanEye,
   Shield,
   LucideIcon,
+  MessageSquare,
 } from "lucide-react";
 import * as React from "react";
 
@@ -88,6 +89,12 @@ const data: {
       title: "Peace Seal",
       url: "/dashboard/company-peace-seal",
       icon: Shield,
+    },
+    // My Reviews for community reviewers
+    {
+      title: "My Reviews",
+      url: "/dashboard/my-reviews",
+      icon: MessageSquare,
     },
   ],
   // navClouds: [
@@ -178,34 +185,46 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter();
   const isMobile = useIsMobile();
   const { session } = useAuthSession();
-  const [hasCompany, setHasCompany] = useState<boolean | null>(null);
+  const [hasPeaceSealCompany, setHasPeaceSealCompany] = useState<
+    boolean | null
+  >(null);
 
-  // Check if user has a company associated
+  // Check if user has a company associated and reviews
   useEffect(() => {
-    async function checkUserCompany() {
+    async function checkUserStatus() {
       if (session?.user?.role !== "user") {
-        setHasCompany(false);
+        setHasPeaceSealCompany(false);
         return;
       }
 
+      // Check for company
       try {
-        await getUserCompany();
-        setHasCompany(true);
+        const company = await getUserCompany();
+        // Check if it's a Peace Seal company (not just community listed)
+        const isPeaceSealCompany =
+          company.communityListed === 0 || company.communityListed === null;
+        setHasPeaceSealCompany(isPeaceSealCompany);
       } catch {
-        setHasCompany(false);
+        setHasPeaceSealCompany(false);
       }
     }
 
     if (session) {
-      checkUserCompany();
+      checkUserStatus();
     }
   }, [session]);
 
   // Filter navigation items based on user role and company status
   const filteredNavItems = data.navMain.filter((item) => {
-    // Show Peace Seal for companies only if they have a company
+    // Show Peace Seal for companies only if they have a Peace Seal company (not just community listed)
     if (item.url === "/dashboard/company-peace-seal") {
-      return session?.user?.role === "user" && hasCompany === true;
+      return session?.user?.role === "user" && hasPeaceSealCompany === true;
+    }
+
+    // Show My Reviews for regular users who don't have Peace Seal companies
+    // This allows users to access the page even if they haven't made reviews yet
+    if (item.url === "/dashboard/my-reviews") {
+      return session?.user?.role === "user" && hasPeaceSealCompany !== true;
     }
 
     // Handle other role-based filtering
