@@ -69,15 +69,15 @@ class ApiClient {
     const token = await this.getValidToken();
 
     // Debug logging for token issues
-    if (process.env.NODE_ENV === "development") {
-      console.log(`[ApiClient] Request to ${endpoint}:`, {
-        hasToken: !!token,
-        tokenLength: token?.length || 0,
-        tokenExpiry: this.tokenExpiry,
-        currentTime: Date.now(),
-        isExpired: this.tokenExpiry > 0 && Date.now() >= this.tokenExpiry,
-      });
-    }
+    // if (process.env.NODE_ENV === "development") {
+    //   console.log(`[ApiClient] Request to ${endpoint}:`, {
+    //     hasToken: !!token,
+    //     tokenLength: token?.length || 0,
+    //     tokenExpiry: this.tokenExpiry,
+    //     currentTime: Date.now(),
+    //     isExpired: this.tokenExpiry > 0 && Date.now() >= this.tokenExpiry,
+    //   });
+    // }
 
     const config: RequestInit = {
       ...options,

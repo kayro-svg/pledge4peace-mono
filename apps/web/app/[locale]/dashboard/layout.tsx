@@ -10,6 +10,11 @@ import {
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { redirect } from "next/navigation";
 import { useEffect } from "react";
+import Clarity from "@microsoft/clarity";
+
+const projectId = process.env.NEXT_PUBLIC_CLARITY_ID || "";
+
+Clarity.init(projectId || "");
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const { status } = useDashboardSession();

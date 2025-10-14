@@ -34,12 +34,11 @@ export function usePledges(
     }
 
     try {
-      logger.log(`[Pledges] Fetching pledge count for campaign: ${campaignId}`);
       setIsLoading(true);
       setLastFetchTime(now);
 
       const count = await getCampaignPledgeCount(campaignId);
-      logger.log(`[Pledges] Retrieved count for ${campaignId}: ${count}`);
+      // logger.log(`[Pledges] Retrieved count for ${campaignId}: ${count}`);
 
       // Only update if we got a valid number
       if (typeof count === "number" && !isNaN(count)) {
