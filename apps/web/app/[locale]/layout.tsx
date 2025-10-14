@@ -17,7 +17,7 @@ import "../globals.css";
 import { routing } from "@/i18n/routing";
 import { getMetadata } from "./metadata";
 import { Metadata } from "next";
-import { MicrosoftClarity } from "@/components/analytics/microsoft-clarity";
+import Clarity from "@microsoft/clarity";
 import { Analytics } from "@vercel/analytics/next";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -39,6 +39,10 @@ export async function generateMetadata({
   const { locale } = await params;
   return getMetadata(locale);
 }
+
+const projectId = process.env.NEXT_PUBLIC_CLARITY_ID || "";
+
+Clarity.init(projectId || "");
 
 export default async function RootLayout({
   children,
@@ -82,7 +86,6 @@ export default async function RootLayout({
       <body className={`${inter.className} h-full w-[100%]`}>
         <GoogleAnalytics />
         <FacebookPixel />
-        <MicrosoftClarity />
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers session={session}>
             <ResourceOptimizer />

@@ -162,7 +162,6 @@ export async function getCampaignPledgeCount(
 
     try {
       // Try to fetch from the API using apiClient
-      logger.log(`[API] Fetching pledge count for campaign: ${campaignId}`);
       const data = await apiClient.get<{ count: number }>(
         `/pledges/campaign/${campaignId}/count`
       );
