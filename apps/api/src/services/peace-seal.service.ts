@@ -102,15 +102,15 @@ export class PeaceSealService {
 
     const where: any[] = [];
     // Exclude draft applications from public directory
-    where.push(sql`${peaceSealCompanies.status} != ${PEACE_SEAL_STATUS.DRAFT}`);
+    // where.push(sql`${peaceSealCompanies.status} != ${PEACE_SEAL_STATUS.DRAFT}`);
 
     // Show companies with completed questionnaires OR community listed companies
-    where.push(sql`(
-      ${peaceSealCompanies.id} in (
-        select company_id from peace_seal_questionnaires 
-        where progress >= 100
-      ) OR ${peaceSealCompanies.communityListed} = 1
-    )`);
+    // where.push(sql`(
+    //   ${peaceSealCompanies.id} in (
+    //     select company_id from peace_seal_questionnaires
+    //     where progress >= 100
+    //   ) OR ${peaceSealCompanies.communityListed} = 1
+    // )`);
 
     if (q) where.push(like(peaceSealCompanies.name, `%${q}%`));
     if (country) where.push(eq(peaceSealCompanies.country, country));
@@ -207,7 +207,13 @@ export class PeaceSealService {
       .where(eq(peaceSealCompanies.id, companyId))
       .then((r) => r[0]);
 
-    if (!company || company.createdByUserId !== userId) {
+    if (!company) {
+      throw new HTTPException(404, { message: "Company not found" });
+    }
+
+    // For webhook calls, userId will be the company owner's ID
+    // For direct user calls, userId should match the company owner
+    if (company.createdByUserId !== userId) {
       throw new HTTPException(403, { message: "Not allowed" });
     }
 

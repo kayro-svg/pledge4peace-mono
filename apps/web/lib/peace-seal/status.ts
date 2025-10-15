@@ -14,7 +14,7 @@ const LABEL: Record<CompanyStatus | string, string> = {
   application_submitted: "Application Submitted",
   audit_in_progress: "Audit in Progress",
   under_review: "Under Review",
-  draft: "Draft",
+  draft: "Application in Progress",
   pending: "Pending",
 };
 

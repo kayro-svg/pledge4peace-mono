@@ -200,7 +200,7 @@ async function handleSubscriptionPayment(
     // Check if plan exists
     const plansResponse = await gateway.plan.all();
     const planList = plansResponse.plans || [];
-    const planExists = planList.some((p: any) => p.id === planId);
+    const planExists = planList.some((p: { id: string }) => p.id === planId);
 
     if (!planExists) {
       logger.error(`Peace Seal plan '${planId}' does not exist`);
@@ -308,67 +308,80 @@ async function handleSubscriptionPayment(
       const subscription = subscriptionResult.subscription;
 
       // Get the first transaction (initial payment)
-      const initialTransaction = subscription.transactions?.[0];
+      // In Braintree, the subscription response doesn't include transactions directly
+      // We need to get the subscription details to find the initial transaction
+      let initialTransactionId = null;
+
+      try {
+        const subscriptionDetails = await gateway.subscription.find(
+          subscription.id
+        );
+        if (
+          subscriptionDetails &&
+          subscriptionDetails.transactions &&
+          subscriptionDetails.transactions.length > 0
+        ) {
+          initialTransactionId = subscriptionDetails.transactions[0].id;
+        }
+      } catch (error) {
+        logger.error("Error fetching subscription details:", error);
+      }
 
       logger.log("Peace Seal subscription created:", {
         subscriptionId: subscription.id,
         companyId,
         amount,
-        initialTransactionId: initialTransaction?.id,
+        initialTransactionId,
       });
 
       // Confirm payment with backend immediately
-      if (initialTransaction?.id) {
-        try {
-          const backendApiUrl =
-            process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787/api";
-          const confirmResponse = await fetch(
-            `${backendApiUrl}/peace-seal/webhooks/applications/${companyId}/confirm-payment`,
+      // Try to confirm even if we don't have the transaction ID
+      try {
+        const backendApiUrl =
+          process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787/api";
+        const confirmResponse = await fetch(
+          `${backendApiUrl}/peace-seal/webhooks/applications/${companyId}/confirm-payment`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${process.env.WEBHOOK_AUTH_TOKEN || ""}`,
+            },
+            body: JSON.stringify({
+              transactionId: initialTransactionId || `sub_${subscription.id}`,
+              amountCents: Math.round(amount * 100),
+              subscriptionId: subscription.id,
+            }),
+          }
+        );
+
+        if (confirmResponse.ok) {
+          logger.log(
+            "Peace Seal subscription payment confirmed with backend:",
             {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${process.env.WEBHOOK_AUTH_TOKEN || ""}`,
-              },
-              body: JSON.stringify({
-                transactionId: initialTransaction.id,
-                amountCents: Math.round(amount * 100),
-                subscriptionId: subscription.id,
-              }),
+              subscriptionId: subscription.id,
+              transactionId: initialTransactionId,
+              companyId,
             }
           );
-
-          if (confirmResponse.ok) {
-            logger.log(
-              "Peace Seal subscription payment confirmed with backend:",
-              {
-                subscriptionId: subscription.id,
-                transactionId: initialTransaction.id,
-                companyId,
-              }
-            );
-          } else {
-            const errorText = await confirmResponse.text();
-            logger.error(
-              "Failed to confirm subscription payment with backend:",
-              {
-                error: errorText,
-                status: confirmResponse.status,
-              }
-            );
-          }
-        } catch (error) {
-          logger.error(
-            "Error confirming subscription payment with backend:",
-            error
-          );
+        } else {
+          const errorText = await confirmResponse.text();
+          logger.error("Failed to confirm subscription payment with backend:", {
+            error: errorText,
+            status: confirmResponse.status,
+          });
         }
+      } catch (error) {
+        logger.error(
+          "Error confirming subscription payment with backend:",
+          error
+        );
       }
 
       return NextResponse.json({
         success: true,
         subscriptionId: subscription.id,
-        transactionId: initialTransaction?.id,
+        transactionId: initialTransactionId,
         amount: parseFloat(subscription.price || "0"),
         status: subscription.status,
         nextBillingDate: subscription.nextBillingDate,
