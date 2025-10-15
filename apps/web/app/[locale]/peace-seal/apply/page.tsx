@@ -368,6 +368,15 @@ export default function ApplyPage() {
               companyId={application?.id || ""}
               onComplete={handleQuestionnaireComplete}
               employeeCount={companyForm.employeeCount}
+              initialData={{
+                companyInformation: {
+                  organizationName: companyForm.name,
+                  website: companyForm.website,
+                  countryOfRegistration: companyForm.country,
+                  employeeCount: companyForm.employeeCount,
+                  // Note: industry field may need to be mapped to appropriate field in questionnaire
+                },
+              }}
             />
 
             {/* Link to public profile */}
