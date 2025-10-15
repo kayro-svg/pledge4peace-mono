@@ -397,27 +397,29 @@ export function useQuestionnaire(
           const { documents } = await response.json();
 
           // Map documents to questionnaire fields
-          const updatedQuestionnaire = { ...questionnaire };
+          setQuestionnaire((currentQuestionnaire) => {
+            const updatedQuestionnaire = { ...currentQuestionnaire };
 
-          documents.forEach((doc: Record<string, unknown>) => {
-            if (doc.sectionId && doc.fieldId) {
-              const sectionData = updatedQuestionnaire[
-                doc.sectionId as keyof PeaceSealQuestionnaire
-              ] as unknown as Record<string, unknown>;
-              if (sectionData) {
-                sectionData[doc.fieldId as string] = {
-                  id: doc.id,
-                  fileName: doc.fileName,
-                  fileUrl: doc.fileUrl,
-                  fileSize: doc.fileSize,
-                  uploadedAt: doc.createdAt,
-                  documentType: doc.documentType,
-                };
+            documents.forEach((doc: Record<string, unknown>) => {
+              if (doc.sectionId && doc.fieldId) {
+                const sectionData = updatedQuestionnaire[
+                  doc.sectionId as keyof PeaceSealQuestionnaire
+                ] as unknown as Record<string, unknown>;
+                if (sectionData) {
+                  sectionData[doc.fieldId as string] = {
+                    id: doc.id,
+                    fileName: doc.fileName,
+                    fileUrl: doc.fileUrl,
+                    fileSize: doc.fileSize,
+                    uploadedAt: doc.createdAt,
+                    documentType: doc.documentType,
+                  };
+                }
               }
-            }
-          });
+            });
 
-          setQuestionnaire(updatedQuestionnaire);
+            return updatedQuestionnaire;
+          });
         }
       } catch (error) {
         console.error("Error loading existing documents:", error);
@@ -426,8 +428,11 @@ export function useQuestionnaire(
       }
     };
 
-    loadExistingDocuments();
-  }, [companyId, questionnaire]); // Include questionnaire for proper updates
+    // Only load documents if we have a valid companyId
+    if (companyId) {
+      loadExistingDocuments();
+    }
+  }, [companyId]); // Only depend on companyId to prevent infinite loops
 
   // Auto-save every 30 seconds if there are unsaved changes
   useEffect(() => {

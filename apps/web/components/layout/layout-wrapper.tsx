@@ -34,6 +34,8 @@ export function LayoutWrapper({ children }: { children: React.ReactNode }) {
     "/es/dashboard/peace-seal",
     "/dashboard/company-peace-seal",
     "/es/dashboard/company-peace-seal",
+    "/dashboard/my-reviews",
+    "/es/dashboard/my-reviews",
   ];
   const showHeaderFooter = !noHeaderFooterRoutes.includes(pathname);
 
