@@ -26,7 +26,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Check, X, MoreHorizontal, Flag, Clock, User } from "lucide-react";
+import {
+  Check,
+  X,
+  MoreHorizontal,
+  Flag,
+  Clock,
+  User,
+  Edit,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   approveSolution,
@@ -34,6 +42,7 @@ import {
   revertSolutionToDraft,
 } from "@/lib/api/solutions";
 import { logger } from "@/lib/utils/logger";
+import { EditSolutionModal } from "./edit-solution-modal";
 
 interface Post {
   id: string | number;
@@ -49,6 +58,7 @@ interface Post {
   country: string;
   tags: string[];
   rejectionReason?: string;
+  campaignId?: string;
 }
 
 interface PostCardProps {
@@ -57,13 +67,23 @@ interface PostCardProps {
     id: string | number,
     newStatus: "approved" | "rejected" | "pending"
   ) => void;
+  onContentUpdate?: (
+    id: string | number,
+    updatedContent: { title: string; description: string }
+  ) => void;
+  campaignTitle?: string;
 }
 
-export function PostCard({ post, onStatusChange }: PostCardProps) {
-  const [rejectionReason, setRejectionReason] = useState("");
+export function PostCard({
+  post,
+  onStatusChange,
+  onContentUpdate,
+  campaignTitle,
+}: PostCardProps) {
   const [isRejecting, setIsRejecting] = useState(false);
   const [isReopening, setIsReopening] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   logger.log("post card", post);
 
@@ -87,7 +107,6 @@ export function PostCard({ post, onStatusChange }: PostCardProps) {
       return;
     } finally {
       setIsRejecting(false);
-      setRejectionReason("");
     }
   };
 
@@ -106,6 +125,13 @@ export function PostCard({ post, onStatusChange }: PostCardProps) {
     } finally {
       setIsReopening(false);
     }
+  };
+
+  const handleContentUpdate = (updatedContent: {
+    title: string;
+    description: string;
+  }) => {
+    onContentUpdate?.(post.id, updatedContent);
   };
 
   const formatDate = (dateString: string) => {
@@ -167,7 +193,6 @@ export function PostCard({ post, onStatusChange }: PostCardProps) {
                 {getStatusIcon(post.status)}
                 {post.status} {post.category}
               </Badge>
-
               {post.status !== "pending" && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -200,14 +225,20 @@ export function PostCard({ post, onStatusChange }: PostCardProps) {
                   <User className="h-3 w-3" />
                 </AvatarFallback>
               </Avatar>
-              <div className="flex flex-row items-center gap-1">
-                <span className="text-sm text-muted-foreground">
-                  {post.author}
-                </span>
-
-                <span className="text-sm text-muted-foreground">
-                  {formatDate(post.submittedAt)}
-                </span>
+              <div className="flex flex-col gap-1">
+                <div className="flex flex-row items-center gap-1">
+                  <span className="text-sm text-muted-foreground">
+                    {post.author}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {formatDate(post.submittedAt)}
+                  </span>
+                </div>
+                {campaignTitle && (
+                  <span className="text-xs text-muted-foreground">
+                    Campaign: {campaignTitle}
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -250,6 +281,15 @@ export function PostCard({ post, onStatusChange }: PostCardProps) {
             Approve
           </Button>
 
+          <Button
+            variant="outline"
+            onClick={() => setIsEditModalOpen(true)}
+            className="flex-1"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+
           <AlertDialog open={isRejecting} onOpenChange={setIsRejecting}>
             <AlertDialogTrigger asChild>
               <Button variant="destructive" className="flex-1">
@@ -278,6 +318,17 @@ export function PostCard({ post, onStatusChange }: PostCardProps) {
           </AlertDialog>
         </CardFooter>
       )}
+
+      <EditSolutionModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        solution={{
+          id: String(post.id),
+          title: post.title,
+          description: post.description,
+        }}
+        onSave={handleContentUpdate}
+      />
     </Card>
   );
 }

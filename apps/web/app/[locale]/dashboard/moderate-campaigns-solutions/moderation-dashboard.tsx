@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, Filter, MoreHorizontal } from "lucide-react";
+import { Search } from "lucide-react";
 import { PostCard } from "@/components/dashboard/moderation-campaign-solutions/post-card";
 import { ModerationStats } from "@/components/dashboard/moderation-campaign-solutions/moderation-stats";
 import {
@@ -28,11 +28,11 @@ type UIStatus = "pending" | "approved" | "rejected";
 export function ModerationDashboard() {
   const locale = useLocale() as "en" | "es";
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedCountry, setSelectedCountry] = useState("all");
+  const [selectedCategory] = useState("all");
+  const [selectedCountry] = useState("all");
   const [selectedCampaign, setSelectedCampaign] = useState<string>("all");
   const [rows, setRows] = useState<ModerationRow[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
   const [tab, setTab] = useState<UIStatus>("pending");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
@@ -53,9 +53,14 @@ export function ModerationDashboard() {
       try {
         const campaigns = await getCampaigns(20, locale);
         setCampaignOptions(
-          (campaigns || []).map((c: any) => ({ id: c._id, title: c.title }))
+          (campaigns || []).map((c: { _id: string; title: string }) => ({
+            id: c._id,
+            title: c.title,
+          }))
         );
-      } catch {}
+      } catch {
+        // Ignore error, campaigns will remain empty
+      }
     })();
   }, [locale]);
 
@@ -83,7 +88,7 @@ export function ModerationDashboard() {
         setLoading(false);
       }
     })();
-  }, [selectedCampaign, tab, page, refreshKey]);
+  }, [selectedCampaign, tab, page, refreshKey, searchTerm]);
 
   // Fetch totals for stats across all statuses (independent of current tab/page)
   useEffect(() => {
@@ -137,6 +142,7 @@ export function ModerationDashboard() {
     shares: number;
     country: string;
     tags: string[];
+    campaignId?: string;
   };
 
   const mapped = useMemo<UIPost[]>(() => {
@@ -158,6 +164,7 @@ export function ModerationDashboard() {
       shares: 0,
       country: "",
       tags: [],
+      campaignId: r.campaignId,
     });
     return rows.map(toPost);
   }, [rows]);
@@ -184,6 +191,13 @@ export function ModerationDashboard() {
   const pendingPosts = filterPosts(mapped, "pending");
   const approvedPosts = filterPosts(mapped, "approved");
   const rejectedPosts = filterPosts(mapped, "rejected");
+
+  // Helper function to get campaign title by ID
+  const getCampaignTitle = (campaignId?: string) => {
+    if (!campaignId) return undefined;
+    const campaign = campaignOptions.find((c) => c.id === campaignId);
+    return campaign?.title;
+  };
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -319,6 +333,7 @@ export function ModerationDashboard() {
                   <PostCard
                     key={post.id}
                     post={post}
+                    campaignTitle={getCampaignTitle(post.campaignId)}
                     onStatusChange={(id, newStatus) => {
                       // Optimistic update list
                       if (newStatus === "approved") {
@@ -329,6 +344,20 @@ export function ModerationDashboard() {
                       }
                       // Refresh counters
                       setRefreshKey((k) => k + 1);
+                    }}
+                    onContentUpdate={(id, updatedContent) => {
+                      // Update the row with new content
+                      setRows((rows) =>
+                        rows.map((r) =>
+                          r.id === id
+                            ? {
+                                ...r,
+                                title: updatedContent.title,
+                                description: updatedContent.description,
+                              }
+                            : r
+                        )
+                      );
                     }}
                   />
                 ))}
@@ -347,11 +376,26 @@ export function ModerationDashboard() {
                   <PostCard
                     key={post.id}
                     post={post}
+                    campaignTitle={getCampaignTitle(post.campaignId)}
                     onStatusChange={(id, newStatus) => {
                       if (newStatus === "rejected" || newStatus === "pending") {
                         setRows((rows) => rows.filter((r) => r.id !== id));
                       }
                       setRefreshKey((k) => k + 1);
+                    }}
+                    onContentUpdate={(id, updatedContent) => {
+                      // Update the row with new content
+                      setRows((rows) =>
+                        rows.map((r) =>
+                          r.id === id
+                            ? {
+                                ...r,
+                                title: updatedContent.title,
+                                description: updatedContent.description,
+                              }
+                            : r
+                        )
+                      );
                     }}
                   />
                 ))}
@@ -370,11 +414,26 @@ export function ModerationDashboard() {
                   <PostCard
                     key={post.id}
                     post={post}
+                    campaignTitle={getCampaignTitle(post.campaignId)}
                     onStatusChange={(id, newStatus) => {
                       if (newStatus === "pending" || newStatus === "approved") {
                         setRows((rows) => rows.filter((r) => r.id !== id));
                       }
                       setRefreshKey((k) => k + 1);
+                    }}
+                    onContentUpdate={(id, updatedContent) => {
+                      // Update the row with new content
+                      setRows((rows) =>
+                        rows.map((r) =>
+                          r.id === id
+                            ? {
+                                ...r,
+                                title: updatedContent.title,
+                                description: updatedContent.description,
+                              }
+                            : r
+                        )
+                      );
                     }}
                   />
                 ))}
