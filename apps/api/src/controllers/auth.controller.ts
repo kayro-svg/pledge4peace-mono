@@ -302,8 +302,8 @@ export class AuthController {
 
       // 2) Call the service
       const authService = c.get("authService");
-      const baseUrl = new URL(c.req.url).origin;
-      const result = await authService.requestPasswordReset(
+      const baseUrl = c.env.FRONTEND_URL || "http://localhost:3000";
+      const result = await authService.requestPasswordResetService(
         validation.data,
         baseUrl
       );

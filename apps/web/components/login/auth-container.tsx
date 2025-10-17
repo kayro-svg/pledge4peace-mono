@@ -9,12 +9,14 @@ interface AuthContainerProps {
   onLoginSuccess?: () => void;
   isModal?: boolean;
   isLogin?: boolean;
+  preSelectedUserType?: string;
 }
 
 export default function AuthContainer({
   onLoginSuccess,
   isModal,
   isLogin = false,
+  preSelectedUserType,
 }: AuthContainerProps) {
   const [isLoginView, setIsLoginView] = useState(isLogin);
 
@@ -43,6 +45,7 @@ export default function AuthContainer({
           onSwitchToLogin={handleSwitchToLogin}
           isModal={isModal}
           onRegisterSuccess={onLoginSuccess}
+          preSelectedUserType={preSelectedUserType}
         />
       )}
     </div>

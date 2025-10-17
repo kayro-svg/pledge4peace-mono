@@ -340,7 +340,10 @@ export class AuthService {
     };
   }
 
-  async requestPasswordReset(data: RequestPasswordResetDTO, baseUrl: string) {
+  async requestPasswordResetService(
+    data: RequestPasswordResetDTO,
+    baseUrl: string
+  ) {
     const user = await this.db.query.users.findFirst({
       where: eq(users.email, data.email),
     });

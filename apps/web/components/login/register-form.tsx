@@ -40,19 +40,30 @@ interface RegisterFormProps {
   onSwitchToLogin: () => void;
   isModal?: boolean;
   onRegisterSuccess?: () => void;
+  preSelectedUserType?: string;
 }
 
 export default function RegisterForm({
   onSwitchToLogin,
   isModal,
   onRegisterSuccess,
+  preSelectedUserType,
 }: RegisterFormProps) {
   const form = useForm<RegisterFormData>();
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const [userType, setUserType] = useState("");
+  const [userType, setUserType] = useState(preSelectedUserType || "");
   const userTypeRef = useRef<HTMLButtonElement>(null);
   const t = useTranslations("Register_Page");
+
+  // Set pre-selected user type on mount
+  useEffect(() => {
+    if (preSelectedUserType) {
+      setUserType(preSelectedUserType);
+      form.setValue("userType", preSelectedUserType);
+    }
+  }, [preSelectedUserType, form]);
+
   // Handle form errors and focus
   useEffect(() => {
     if (form.formState.errors.userType) {
