@@ -313,6 +313,19 @@ export default function PeaceAgreementContent({
 
   const handleCreateSolution = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate minimum word count for description
+    const wordCount = newSolution.description
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length;
+    if (wordCount < 50) {
+      toast.error(
+        `Description must be at least 50 words. Current: ${wordCount} words.`
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       // Create party limits object from campaign parties
@@ -831,9 +844,29 @@ export default function PeaceAgreementContent({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description" className="text-sm font-medium">
-                  Description
-                </Label>
+                <div className="flex justify-between items-center">
+                  <Label htmlFor="description" className="text-sm font-medium">
+                    Description
+                  </Label>
+                  <span
+                    className={`text-xs ${
+                      newSolution.description
+                        .trim()
+                        .split(/\s+/)
+                        .filter((word) => word.length > 0).length < 50
+                        ? "text-red-500"
+                        : "text-green-600"
+                    }`}
+                  >
+                    {
+                      newSolution.description
+                        .trim()
+                        .split(/\s+/)
+                        .filter((word) => word.length > 0).length
+                    }
+                    /50 words minimum
+                  </span>
+                </div>
                 <Textarea
                   id="description"
                   value={newSolution.description}
@@ -843,10 +876,14 @@ export default function PeaceAgreementContent({
                       description: e.target.value,
                     }))
                   }
-                  placeholder="Describe your solution in detail"
+                  placeholder="Describe your solution in detail (minimum 50 words required)"
                   required
                   className="min-h-[150px]"
                 />
+                <p className="text-xs text-gray-500">
+                  Please provide a detailed description of your solution.
+                  Minimum 50 words required.
+                </p>
               </div>
               <div className="flex justify-end gap-3">
                 <Button
@@ -856,7 +893,16 @@ export default function PeaceAgreementContent({
                 >
                   Cancel
                 </Button>
-                <Button type="submit" disabled={isSubmitting}>
+                <Button
+                  type="submit"
+                  disabled={
+                    isSubmitting ||
+                    newSolution.description
+                      .trim()
+                      .split(/\s+/)
+                      .filter((word) => word.length > 0).length < 50
+                  }
+                >
                   {isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
