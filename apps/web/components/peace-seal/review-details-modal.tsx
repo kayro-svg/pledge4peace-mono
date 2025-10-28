@@ -196,7 +196,7 @@ export function ReviewDetailsModal({
     setLoadingDetails(true);
     try {
       const response = await adminGetReviewDetails(reviewId);
-      setReviewDetails(response.review);
+      setReviewDetails(response.review as unknown as ReviewDetails);
     } catch (error) {
       toast({
         title: "Error loading review details",
