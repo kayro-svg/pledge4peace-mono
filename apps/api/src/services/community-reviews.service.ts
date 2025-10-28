@@ -6,6 +6,7 @@ import {
 } from "../db/schema/peace-seal";
 import type { DbClient } from "../types";
 import { HTTPException } from "hono/http-exception";
+// LinkedIn verification is done via userinfo endpoint, no JWT verification needed
 
 export interface CreateCompanyDTO {
   name: string;
@@ -16,7 +17,7 @@ export interface CreateCompanyDTO {
 
 export interface CreateReviewDTO {
   companyId: string;
-  userId: string; // Track which user created the review
+  userId: string | null; // Track which user created the review (can be null for anonymous reviews)
   role: "employee" | "customer" | "investor" | "supplier";
   verificationMethod?: "email" | "linkedin" | "document" | "receipt" | "none";
   reviewerName?: string;
@@ -24,6 +25,9 @@ export interface CreateReviewDTO {
   signedDisclosure: boolean;
   answers: Record<string, any>;
   verificationDocumentUrl?: string;
+  experienceDescription?: string;
+  oidcIdToken?: string;
+  oidcAccessToken?: string;
 }
 
 export interface ReviewFilters {
@@ -35,7 +39,7 @@ export interface ReviewFilters {
 }
 
 function now() {
-  return new Date();
+  return Date.now();
 }
 
 function ulid() {
@@ -111,7 +115,10 @@ const SECTION_QUESTIONS = {
 };
 
 export class CommunityReviewsService {
-  constructor(private db: DbClient) {}
+  constructor(
+    private db: DbClient,
+    private linkedinClientId: string
+  ) {}
 
   // Create or find company for community listing
   async createOrFindCompany(data: CreateCompanyDTO, userId: string) {
@@ -174,7 +181,7 @@ export class CommunityReviewsService {
   async createReview(data: CreateReviewDTO) {
     const {
       companyId,
-      userId,
+      userId, // Can be null for anonymous reviews
       role,
       verificationMethod = "none",
       reviewerName,
@@ -182,6 +189,9 @@ export class CommunityReviewsService {
       signedDisclosure,
       answers,
       verificationDocumentUrl,
+      experienceDescription,
+      oidcIdToken,
+      oidcAccessToken,
     } = data;
 
     // Verify company exists
@@ -203,8 +213,33 @@ export class CommunityReviewsService {
 
     // Determine verification status
     let verificationStatus: "pending" | "verified" | "unverified";
+    let verifiedAt: number | null = null;
+
     if (verificationMethod === "email" && reviewerEmail) {
       verificationStatus = "pending";
+    } else if (
+      verificationMethod === "linkedin" &&
+      oidcIdToken &&
+      oidcAccessToken &&
+      reviewerEmail
+    ) {
+      // Verify LinkedIn identity
+      try {
+        await this.verifyLinkedInIdentity({
+          idToken: oidcIdToken,
+          accessToken: oidcAccessToken,
+          expectedEmail: reviewerEmail,
+        });
+        verificationStatus = "verified";
+        verifiedAt = now();
+      } catch (error) {
+        throw new HTTPException(400, {
+          message:
+            error instanceof Error
+              ? error.message
+              : "LinkedIn verification failed",
+        });
+      }
     } else if (verificationMethod === "none") {
       verificationStatus = "unverified";
     } else {
@@ -220,10 +255,10 @@ export class CommunityReviewsService {
       .values({
         id: reviewId,
         companyId,
-        userId,
+        userId: userId || null, // Allow null for anonymous reviews
         role,
-        verificationStatus,
-        verificationMethod,
+        verificationStatus: verificationStatus,
+        verificationMethod: verificationMethod || null,
         verificationDocumentUrl: verificationDocumentUrl || null,
         reviewerName: reviewerName || null,
         reviewerEmail: reviewerEmail || null,
@@ -234,7 +269,15 @@ export class CommunityReviewsService {
         starRating,
         createdAt: nowTs,
         updatedAt: nowTs,
-        verifiedAt: null, // Only set when verification is completed via email
+        verifiedAt: verifiedAt, // Set when verification is completed via email or LinkedIn
+        // Additional fields with defaults
+        authorType: "anonymous",
+        isVerifiedAuthor: 0,
+        rating: null,
+        lowRatingReason: null,
+        evidenceUrl: null,
+        isFlagged: 0,
+        experienceDescription: experienceDescription || null,
       })
       .returning();
 
@@ -284,6 +327,14 @@ export class CommunityReviewsService {
       totalScore += sectionScore * weight;
     }
 
+    // If no answers provided, set default scores
+    if (Object.keys(answers).length === 0) {
+      totalScore = 50; // Default neutral score
+      for (const section of Object.keys(weights)) {
+        sectionScores[section] = 50;
+      }
+    }
+
     // Convert to star rating
     const finalScore = Math.round(totalScore);
     let starRating: number;
@@ -299,8 +350,7 @@ export class CommunityReviewsService {
   // Send verification email
   private async sendVerificationEmail(reviewId: string, email: string) {
     const token = crypto.randomUUID();
-    const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 24); // 24 hour expiry
+    const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hour expiry
 
     await this.db.insert(peaceSealReviewVerifications).values({
       id: ulid(),
@@ -398,6 +448,8 @@ export class CommunityReviewsService {
         starRating: peaceSealReviews.starRating,
         createdAt: peaceSealReviews.createdAt,
         verifiedAt: peaceSealReviews.verifiedAt,
+        answers: peaceSealReviews.answers,
+        experienceDescription: peaceSealReviews.experienceDescription,
         // Never expose PII
       })
       .from(peaceSealReviews)
@@ -423,10 +475,14 @@ export class CommunityReviewsService {
     page?: number;
     limit?: number;
   }) {
-    const { status = "pending", page = 1, limit = 20 } = filters;
+    const { status = "all", page = 1, limit = 20 } = filters;
     const offset = (page - 1) * Math.min(limit, 100);
 
-    const where: any[] = [eq(peaceSealReviews.verificationStatus, status)];
+    const where: any[] = [];
+    // Only filter by status if not "all"
+    if (status && status !== "all") {
+      where.push(eq(peaceSealReviews.verificationStatus, status));
+    }
 
     const reviews = await this.db
       .select({
@@ -439,6 +495,7 @@ export class CommunityReviewsService {
         starRating: peaceSealReviews.starRating,
         createdAt: peaceSealReviews.createdAt,
         verifiedAt: peaceSealReviews.verifiedAt,
+        answers: peaceSealReviews.answers, // Include answers for advisor evaluation
         // Include company name for admin view
         companyName: peaceSealCompanies.name,
       })
@@ -662,5 +719,82 @@ export class CommunityReviewsService {
       .limit(limit);
 
     return companies;
+  }
+
+  // Verify LinkedIn identity using access token
+  // Since we obtained the access token through our own OAuth flow,
+  // we can trust it and validate by calling LinkedIn's userinfo endpoint
+  private async verifyLinkedInIdentity(params: {
+    idToken: string;
+    accessToken: string;
+    expectedEmail: string;
+  }): Promise<void> {
+    const { accessToken, expectedEmail } = params;
+
+    try {
+      // Validate the access token by fetching user info from LinkedIn
+      // This is more reliable than JWT verification in Cloudflare Workers
+      const userinfoResponse = await fetch(
+        "https://api.linkedin.com/v2/userinfo",
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (!userinfoResponse.ok) {
+        const errorText = await userinfoResponse.text();
+        console.error("LinkedIn userinfo error:", errorText);
+        throw new Error(
+          "Failed to validate LinkedIn access token. The token may be invalid or expired."
+        );
+      }
+
+      const userinfo = (await userinfoResponse.json()) as {
+        sub?: string;
+        email?: string;
+        email_verified?: boolean;
+        name?: string;
+      };
+
+      const { sub, email, email_verified } = userinfo;
+
+      // Check if email is present
+      if (!email) {
+        throw new Error(
+          "Email not provided by LinkedIn. Please ensure your LinkedIn account has a verified email address and that you've granted email permission."
+        );
+      }
+
+      // Check if email is verified (if claim is present and false)
+      if (email_verified === false) {
+        throw new Error(
+          "LinkedIn email address is not verified. Please verify your email on LinkedIn and try again."
+        );
+      }
+
+      // Compare emails (case-insensitive)
+      const normalizedExpected = expectedEmail.trim().toLowerCase();
+      const normalizedActual = email.trim().toLowerCase();
+
+      if (normalizedActual !== normalizedExpected) {
+        throw new Error(
+          `Email mismatch: LinkedIn email (${email}) does not match entered email (${expectedEmail})`
+        );
+      }
+
+      // Verification successful - log without tokens
+      console.log("LinkedIn verification successful", {
+        sub,
+        email: email.substring(0, 3) + "***",
+      });
+    } catch (error) {
+      console.error("LinkedIn verification error:", error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error("LinkedIn verification failed");
+    }
   }
 }

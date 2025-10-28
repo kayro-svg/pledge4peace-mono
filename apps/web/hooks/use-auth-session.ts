@@ -19,7 +19,15 @@ export function useAuthSession(): AuthSessionReturn {
 
   // Check if JWT token is expired
   const checkTokenValidity = useCallback(() => {
+    // If no backend accessToken, check if we have a LinkedIn-only session
     if (!session?.accessToken) {
+      // LinkedIn-only sessions are valid (for verification purposes)
+      const hasLinkedInSession = !!(session as any)?.linkedin?.idToken;
+      if (hasLinkedInSession) {
+        setIsTokenValid(true);
+        return true;
+      }
+
       setIsTokenValid(false);
       return false;
     }
@@ -47,7 +55,7 @@ export function useAuthSession(): AuthSessionReturn {
       setIsTokenValid(false);
       return false;
     }
-  }, [session?.accessToken]);
+  }, [session?.accessToken, session]);
 
   // Handle authentication errors
   const handleAuthError = useCallback(async () => {
@@ -80,15 +88,18 @@ export function useAuthSession(): AuthSessionReturn {
   // Set up periodic token validation (reduced frequency)
   useEffect(() => {
     if (status === "authenticated") {
-      const interval = setInterval(() => {
-        const isValid = checkTokenValidity();
-        if (!isValid) {
-          handleAuthError();
-          return;
-        }
-        // Removed frequent API calls to session-status endpoint
-        // Token validity is checked locally, reducing server load
-      }, 5 * 60 * 1000); // every 5 minutes instead of 1 minute
+      const interval = setInterval(
+        () => {
+          const isValid = checkTokenValidity();
+          if (!isValid) {
+            handleAuthError();
+            return;
+          }
+          // Removed frequent API calls to session-status endpoint
+          // Token validity is checked locally, reducing server load
+        },
+        5 * 60 * 1000
+      ); // every 5 minutes instead of 1 minute
 
       return () => clearInterval(interval);
     }

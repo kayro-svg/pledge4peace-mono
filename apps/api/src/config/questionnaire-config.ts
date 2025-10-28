@@ -56,17 +56,28 @@ export const QUESTIONNAIRE_SECTIONS: QuestionnaireSection[] = [
         placeholder: "+1 (555) 123-4567",
       },
       {
-        id: "countryOfRegistration",
-        label: "Country of Registration",
+        id: "contactName",
+        label: "Contact Name",
+        type: "text",
+        required: true,
+        placeholder: "Full name of person in charge",
+        helpText:
+          "Name of the person responsible for this Peace Seal application",
+      },
+      {
+        id: "headquartersCountry",
+        label: "Headquarters Country",
         type: "select",
         required: true,
       },
       {
-        id: "countryOfOperations",
-        label: "Countries of Operations",
-        type: "multiselect",
-        required: true,
-        helpText: "Select all countries where you operate",
+        id: "countriesOfOperations",
+        label: "Countries of Operations (Optional)",
+        type: "textarea",
+        required: false,
+        placeholder: "e.g., United States, Canada, Mexico, United Kingdom",
+        helpText:
+          "List all countries where your organization operates (comma-separated)",
       },
       {
         id: "employeeCount",

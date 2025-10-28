@@ -372,7 +372,7 @@ export default function ApplyPage() {
                 companyInformation: {
                   organizationName: companyForm.name,
                   website: companyForm.website,
-                  countryOfRegistration: companyForm.country,
+                  headquartersCountry: companyForm.country,
                   employeeCount: companyForm.employeeCount,
                   // Note: industry field may need to be mapped to appropriate field in questionnaire
                 },

@@ -1058,4 +1058,114 @@ export class PeaceSealController {
       });
     }
   };
+
+  // Accept an agreement template
+  acceptAgreement = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("companyId");
+      const { sectionId, fieldId, templateId, acceptanceData } =
+        await c.req.json();
+      const user = c.get("user");
+
+      if (!sectionId || !fieldId || !templateId) {
+        throw new HTTPException(400, {
+          message: "sectionId, fieldId, and templateId are required",
+        });
+      }
+
+      const result = await peaceSealService.acceptAgreement({
+        companyId,
+        sectionId,
+        fieldId,
+        templateId,
+        userId: user.id,
+        acceptanceData,
+      });
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error accepting agreement:", error);
+      throw new HTTPException(500, { message: "Error accepting agreement" });
+    }
+  };
+
+  // Get agreement acceptances for a company
+  getAgreementAcceptances = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("companyId");
+      const user = c.get("user");
+
+      // Verify ownership
+      const company = await db
+        .select({ createdByUserId: peaceSealCompanies.createdByUserId })
+        .from(peaceSealCompanies)
+        .where(eq(peaceSealCompanies.id, companyId))
+        .then((r) => r[0]);
+
+      if (!company || company.createdByUserId !== user.id) {
+        throw new HTTPException(403, { message: "Not allowed" });
+      }
+
+      const acceptances =
+        await peaceSealService.getAgreementAcceptances(companyId);
+      return c.json({ acceptances });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching agreement acceptances:", error);
+      throw new HTTPException(500, {
+        message: "Error fetching agreement acceptances",
+      });
+    }
+  };
+
+  // Delete an agreement acceptance
+  deleteAgreementAcceptance = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("companyId");
+      const acceptanceId = c.req.param("acceptanceId");
+      const user = c.get("user");
+
+      const result = await peaceSealService.deleteAgreementAcceptance(
+        companyId,
+        acceptanceId,
+        user.id
+      );
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error deleting agreement acceptance:", error);
+      throw new HTTPException(500, {
+        message: "Error deleting agreement acceptance",
+      });
+    }
+  };
+
+  // Get templates
+  getTemplates = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+
+      const url = new URL(c.req.url);
+      const filters = {
+        category: url.searchParams.get("category") || undefined,
+        resourceType: url.searchParams.get("resourceType") || "template",
+      };
+
+      const templates = await peaceSealService.getTemplates(filters);
+      return c.json({ templates });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching templates:", error);
+      throw new HTTPException(500, { message: "Error fetching templates" });
+    }
+  };
 }

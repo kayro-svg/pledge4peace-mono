@@ -5,10 +5,14 @@ import {
 } from "../middleware/auth.middleware";
 import { PeaceSealController } from "../controllers/peace-seal.controller";
 import { CommunityReviewsController } from "../controllers/community-reviews.controller";
+import { AdvisorEvaluationController } from "../controllers/advisor-evaluation.controller";
+import { PeaceSealRenewalController } from "../controllers/peace-seal-renewal.controller";
 
 const peaceSeal = new Hono();
 const controller = new PeaceSealController();
 const communityController = new CommunityReviewsController();
+const advisorEvaluationController = new AdvisorEvaluationController();
+const renewalController = new PeaceSealRenewalController();
 
 // Public routes (no authentication required)
 peaceSeal.get("/directory", (c) => controller.directory(c));
@@ -20,18 +24,19 @@ peaceSeal.get("/reports/reasons", (c) => controller.getReportReasons(c));
 
 // Community reviews routes (authentication required)
 peaceSeal.use("/community/*", authMiddleware);
-peaceSeal.use("/reviews", authMiddleware);
 peaceSeal.post("/community/companies", (c) =>
   communityController.createOrFindCompany(c)
 );
 peaceSeal.get("/community/companies/search", (c) =>
   communityController.searchCompanies(c)
 );
-peaceSeal.post("/reviews", (c) => communityController.createReview(c));
+peaceSeal.post("/reviews", optionalAuthMiddleware, (c) =>
+  communityController.createReview(c)
+);
 peaceSeal.post("/reviews/verify/:token", (c) =>
   communityController.confirmVerification(c)
 );
-peaceSeal.post("/reviews/upload-document", (c) =>
+peaceSeal.post("/reviews/upload-document", optionalAuthMiddleware, (c) =>
   communityController.uploadVerificationDocument(c)
 );
 peaceSeal.get("/companies/:id/reviews", (c) =>
@@ -62,6 +67,20 @@ peaceSeal.post("/applications/:id/questionnaire/save", (c) =>
 peaceSeal.post("/applications/:id/questionnaire/validate", (c) =>
   controller.validateQuestionnaire(c)
 );
+
+// Agreement routes for applications (already covered by /applications/* middleware)
+peaceSeal.post("/applications/:companyId/agreements/accept", (c) =>
+  controller.acceptAgreement(c)
+);
+peaceSeal.get("/applications/:companyId/agreements", (c) =>
+  controller.getAgreementAcceptances(c)
+);
+peaceSeal.delete("/applications/:companyId/agreements/:acceptanceId", (c) =>
+  controller.deleteAgreementAcceptance(c)
+);
+
+// Public templates route
+peaceSeal.get("/templates", (c) => controller.getTemplates(c));
 
 // Document routes for applications (already covered by /applications/* middleware)
 peaceSeal.get("/applications/:id/documents", (c) => controller.getDocuments(c));
@@ -123,6 +142,66 @@ peaceSeal.post("/webhooks/payment", (c) => controller.handlePaymentWebhook(c));
 // Service routes for webhook processing (authenticated via service token)
 peaceSeal.post("/webhooks/applications/:id/confirm-payment", (c) =>
   controller.confirmPaymentWebhook(c)
+);
+
+// Advisor Evaluation routes
+peaceSeal.use("/advisor/evaluations", authMiddleware);
+peaceSeal.post("/advisor/evaluations", (c) =>
+  advisorEvaluationController.createEvaluation(c)
+);
+peaceSeal.get("/advisor/evaluations", (c) =>
+  advisorEvaluationController.getEvaluationsForAdvisor(c)
+);
+peaceSeal.put("/advisor/evaluations/:id", (c) =>
+  advisorEvaluationController.updateEvaluation(c)
+);
+peaceSeal.get("/advisor/evaluations/:id", (c) =>
+  advisorEvaluationController.getEvaluationDetails(c)
+);
+
+// Company response routes
+peaceSeal.use("/companies/:companyId/issues", authMiddleware);
+peaceSeal.get("/companies/:companyId/issues", (c) =>
+  advisorEvaluationController.getCompanyIssues(c)
+);
+peaceSeal.post("/evaluations/:id/respond", (c) =>
+  advisorEvaluationController.companyRespondToEvaluation(c)
+);
+
+// Peace Seal Renewal routes
+peaceSeal.use("/renewals", authMiddleware);
+peaceSeal.post("/renewals", (c) => renewalController.createRenewal(c));
+peaceSeal.get("/renewals/expiring", (c) =>
+  renewalController.getExpiringRenewals(c)
+);
+peaceSeal.post("/renewals/payment", (c) =>
+  renewalController.processRenewalPayment(c)
+);
+
+// Company renewal and rewards routes
+peaceSeal.use("/companies/:companyId/renewals", authMiddleware);
+peaceSeal.get("/companies/:companyId/renewals", (c) =>
+  renewalController.getCompanyRenewals(c)
+);
+peaceSeal.get("/companies/:companyId/rewards", (c) =>
+  renewalController.getCompanyRewards(c)
+);
+peaceSeal.post("/companies/:companyId/badge-level", (c) =>
+  renewalController.updateBadgeLevel(c)
+);
+peaceSeal.post("/companies/:companyId/physical-badge", (c) =>
+  renewalController.requestPhysicalBadge(c)
+);
+peaceSeal.get("/companies/:companyId/digital-badge", (c) =>
+  renewalController.generateDigitalBadge(c)
+);
+
+// Peace Seal Center routes
+peaceSeal.get("/peace-seal-center/resources", authMiddleware, (c) =>
+  renewalController.getPeaceSealCenterResources(c)
+);
+peaceSeal.post("/peace-seal-center/resources", authMiddleware, (c) =>
+  renewalController.addPeaceSealCenterResource(c)
 );
 
 // Test route for R2 connectivity (development only)

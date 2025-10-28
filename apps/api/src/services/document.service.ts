@@ -38,7 +38,7 @@ const ALLOWED_DOCUMENT_TYPES = Object.values(DOCUMENT_TYPES);
 const MAX_FILE_SIZE = BUSINESS_RULES.MAX_FILE_SIZE_BYTES;
 
 function now() {
-  return new Date();
+  return Date.now(); // Return timestamp for D1 compatibility
 }
 
 export class DocumentService {

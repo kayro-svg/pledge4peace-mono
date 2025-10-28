@@ -20,6 +20,8 @@ import {
   type CreateCompanyData,
 } from "@/lib/api/peace-seal";
 import { Star, Loader2 } from "lucide-react";
+import { useAuthSession } from "@/hooks/use-auth-session";
+import AuthContainer from "@/components/login/auth-container";
 
 type DirectoryPageProps = {
   items: DirectoryItem[];
@@ -103,7 +105,9 @@ export function DirectoryPage({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const router = useRouter();
-
+  const { isAuthenticated } = useAuthSession();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [addForCommunityReview, setAddForCommunityReview] = useState(false);
   const handleAddCompany = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -290,35 +294,9 @@ export function DirectoryPage({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <StarRating
                       rating={item.employeeRatingAvg}
-                      count={item.employeeRatingCount}
+                      count={item.employeeRatingAvg}
                     />
                   </td>
-                  {/* <td className="px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={() =>
-                        router.push(
-                          `/peace-seal/community-review?companyId=${item.id}&companyName=${encodeURIComponent(item.name)}`
-                        )
-                      }
-                      className="text-[#548281] hover:text-[#2F4858] font-medium underline text-sm transition-colors"
-                    >
-                      {item.employeeRatingAvg && item.employeeRatingCount ? (
-                        <div className="flex items-center gap-2">
-                          <StarRating
-                            rating={item.employeeRatingAvg}
-                            count={item.employeeRatingCount}
-                          />
-                          <span className="text-xs text-gray-500">
-                            ({item.employeeRatingCount} reviews)
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="text-gray-500 hover:text-[#548281]">
-                          Rate this company
-                        </span>
-                      )}
-                    </button>
-                  </td> */}
                 </tr>
               ))}
               {items.length === 0 && (
@@ -348,7 +326,14 @@ export function DirectoryPage({
         <p className="text-sm">
           Add your company to the directory.
           <Link
-            href="/peace-seal/apply"
+            href="#"
+            onClick={() => {
+              if (!isAuthenticated) {
+                setShowLoginModal(true);
+              } else {
+                router.push("/peace-seal/apply");
+              }
+            }}
             className="ml-2 text-[#548281] hover:underline"
           >
             Apply for a Peace Seal certification →
@@ -362,8 +347,10 @@ export function DirectoryPage({
           <Dialog
             open={isAddCompanyOpen}
             onOpenChange={(open) => {
-              // Prevent closing during submission
-              if (!isSubmitting) {
+              if (!isAuthenticated) {
+                setAddForCommunityReview(true);
+                setShowLoginModal(true);
+              } else {
                 setIsAddCompanyOpen(open);
               }
             }}
@@ -448,6 +435,32 @@ export function DirectoryPage({
                   </div>
                 </form>
               )}
+            </DialogContent>
+          </Dialog>
+          <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
+            {/* <DialogContent className="max-w-lg w-full max-h-[80vh] md:max-h-[85%]"> */}
+            <DialogContent className="max-w-lg w-full h-[80vh] md:h-[fit-content]">
+              <DialogHeader>
+                <DialogTitle>
+                  <p className="text-lg font-semibold mb-4 text-center">
+                    To apply for a Peace Seal you must login
+                  </p>
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-col items-center">
+                <AuthContainer
+                  onLoginSuccess={() => {
+                    setShowLoginModal(false);
+                    if (addForCommunityReview) {
+                      setIsAddCompanyOpen(true);
+                    } else {
+                      router.push("/peace-seal/apply");
+                    }
+                  }}
+                  isModal
+                  preSelectedUserType="organization"
+                />
+              </div>
             </DialogContent>
           </Dialog>
         </p>

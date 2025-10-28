@@ -11,6 +11,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CompanyIssuesDashboard } from "@/components/peace-seal/company-issues-dashboard";
+import { PeaceSealCenter } from "@/components/peace-seal/peace-seal-center";
+import { RenewalDashboard } from "@/components/peace-seal/renewal-dashboard";
 import {
   Award,
   FileText,
@@ -29,10 +33,14 @@ import {
   ExternalLink,
   PlayCircle,
   ArrowLeft,
+  Home,
+  HelpCircle,
+  Star,
 } from "lucide-react";
 import { logger } from "@/lib/utils/logger";
 import QuestionnaireForm from "@/components/peace-seal/questionnaire/QuestionnaireForm";
 import { toast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
 
 type UserCompany = {
   id: string;
@@ -142,6 +150,7 @@ function getStatusDescription(status: string): string {
 
 export default function CompanyPeaceSealDashboard() {
   const { session } = useAuthSession();
+  const router = useRouter();
   const [userCompany, setUserCompany] = useState<UserCompany | null>(null);
   const [questionnaire, setQuestionnaire] = useState<QuestionnaireData | null>(
     null
@@ -559,249 +568,295 @@ export default function CompanyPeaceSealDashboard() {
             </CardContent>
           </Card>
 
-          {/* Company Information */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Building className="w-5 h-5" />
-                Company Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
-                    <Globe className="w-4 h-4" />
-                    Country
-                  </div>
-                  <p className="text-lg">
-                    {userCompany.country || "Not specified"}
-                  </p>
-                </div>
+          {/* Main Content Tabs */}
+          <Tabs defaultValue="overview" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="overview">
+                <Home className="w-4 h-4 mr-2" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="center">
+                <HelpCircle className="w-4 h-4 mr-2" />
+                Peace Seal Center
+              </TabsTrigger>
+              <TabsTrigger value="renewal">
+                <Star className="w-4 h-4 mr-2" />
+                Renewal & Rewards
+              </TabsTrigger>
+              <TabsTrigger value="issues">
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                Issues
+              </TabsTrigger>
+            </TabsList>
 
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
-                    <Building className="w-4 h-4" />
-                    Industry
-                  </div>
-                  <p className="text-lg">
-                    {userCompany.industry || "Not specified"}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
-                    <Users className="w-4 h-4" />
-                    Employees
-                  </div>
-                  <p className="text-lg">
-                    {userCompany.employeeCount || "Not specified"}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
-                    <Calendar className="w-4 h-4" />
-                    Member Since
-                  </div>
-                  <p className="text-lg">
-                    {new Date(userCompany.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Application Progress */}
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                Peace Seal Application
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {questionnaire ? (
-                <div className="space-y-6">
-                  {/* Progress Bar */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-gray-700">
-                          Application Progress
-                        </p>
-                        <p className="text-2xl font-bold text-[#548281]">
-                          {questionnaire.progress}%
-                        </p>
+            <TabsContent value="overview" className="space-y-6">
+              {/* Company Information */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building className="w-5 h-5" />
+                    Company Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
+                        <Globe className="w-4 h-4" />
+                        Country
                       </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500">
-                          {isCompleted ? "Completed" : "In Progress"}
-                        </p>
-                        {questionnaire.completedAt && (
-                          <p className="text-xs text-gray-400">
-                            Completed on{" "}
-                            {new Date(
-                              questionnaire.completedAt
-                            ).toLocaleDateString()}
-                          </p>
+                      <p className="text-lg">
+                        {userCompany.country || "Not specified"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
+                        <Building className="w-4 h-4" />
+                        Industry
+                      </div>
+                      <p className="text-lg">
+                        {userCompany.industry || "Not specified"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
+                        <Users className="w-4 h-4" />
+                        Employees
+                      </div>
+                      <p className="text-lg">
+                        {userCompany.employeeCount || "Not specified"}
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
+                        <Calendar className="w-4 h-4" />
+                        Member Since
+                      </div>
+                      <p className="text-lg">
+                        {new Date(userCompany.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Application Progress */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    Peace Seal Application
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {questionnaire ? (
+                    <div className="space-y-6">
+                      {/* Progress Bar */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div className="space-y-1">
+                            <p className="text-sm font-medium text-gray-700">
+                              Application Progress
+                            </p>
+                            <p className="text-2xl font-bold text-[#548281]">
+                              {questionnaire.progress}%
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-sm text-gray-500">
+                              {isCompleted ? "Completed" : "In Progress"}
+                            </p>
+                            {questionnaire.completedAt && (
+                              <p className="text-xs text-gray-400">
+                                Completed on{" "}
+                                {new Date(
+                                  questionnaire.completedAt
+                                ).toLocaleDateString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <Progress
+                          value={questionnaire.progress}
+                          className="h-3"
+                        />
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap gap-3">
+                        {!isCompleted && (
+                          <Button
+                            onClick={handleContinueApplication}
+                            className="flex items-center gap-2"
+                            size="lg"
+                          >
+                            <Edit className="w-4 h-4" />
+                            Continue Application
+                          </Button>
+                        )}
+
+                        {isCompleted && (
+                          <Button
+                            variant="outline"
+                            onClick={handleViewApplication}
+                            className="flex items-center gap-2"
+                            size="lg"
+                          >
+                            <Eye className="w-4 h-4" />
+                            Review Application
+                          </Button>
+                        )}
+
+                        {isCompleted && (
+                          <div className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-lg">
+                            <CheckCircle className="w-4 h-4" />
+                            <span className="text-sm font-medium">
+                              {userCompany.status === "application_submitted"
+                                ? "Application sent and in review"
+                                : userCompany.status === "under_review"
+                                  ? "In review! An advisor has been assigned and is reviewing your application."
+                                  : userCompany.status === "audit_in_progress"
+                                    ? "In audit! Your advisor is evaluating the questionnaire responses."
+                                    : userCompany.status === "verified"
+                                      ? "Congratulations! Peace Seal certified!"
+                                      : userCompany.status === "conditional"
+                                        ? "Conditional approval - Review comments from the advisor"
+                                        : userCompany.status === "did_not_pass"
+                                          ? "Not approved - Review comments and apply again"
+                                          : userCompany.status ===
+                                              "audit_completed"
+                                            ? "Congratulations! Peace Seal certified!"
+                                            : "Application completed and sent for review!"}
+                            </span>
+                          </div>
                         )}
                       </div>
+
+                      {/* Application Details */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 mb-1">
+                            Started
+                          </p>
+                          <p className="text-sm text-gray-700">
+                            {new Date(
+                              questionnaire.createdAt
+                            ).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500 mb-1">
+                            Last Updated
+                          </p>
+                          <p className="text-sm text-gray-700">
+                            {new Date(
+                              questionnaire.updatedAt
+                            ).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                    <Progress value={questionnaire.progress} className="h-3" />
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex flex-wrap gap-3">
-                    {!isCompleted && (
+                  ) : (
+                    /* No Application Started */
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <PlayCircle className="w-8 h-8 text-gray-400" />
+                      </div>
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                        Ready to Start Your Peace Seal Journey?
+                      </h3>
+                      <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                        Begin your Peace Seal certification by completing our
+                        comprehensive questionnaire. This process will help us
+                        understand your company&apos;s commitment to peace and
+                        sustainability.
+                      </p>
                       <Button
-                        onClick={handleContinueApplication}
-                        className="flex items-center gap-2"
+                        onClick={handleStartApplication}
+                        className="flex items-center gap-2 mx-auto"
                         size="lg"
                       >
-                        <Edit className="w-4 h-4" />
-                        Continue Application
+                        <PlayCircle className="w-5 h-5" />
+                        Start Peace Seal Application
                       </Button>
-                    )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
 
-                    {isCompleted && (
-                      <Button
-                        variant="outline"
-                        onClick={handleViewApplication}
-                        className="flex items-center gap-2"
-                        size="lg"
-                      >
-                        <Eye className="w-4 h-4" />
-                        Review Application
-                      </Button>
-                    )}
-
-                    {isCompleted && (
-                      <div className="flex items-center gap-2 text-green-600 bg-green-50 px-4 py-2 rounded-lg">
-                        <CheckCircle className="w-4 h-4" />
-                        <span className="text-sm font-medium">
-                          {userCompany.status === "application_submitted"
-                            ? "Application sent and in review"
-                            : userCompany.status === "under_review"
-                              ? "In review! An advisor has been assigned and is reviewing your application."
-                              : userCompany.status === "audit_in_progress"
-                                ? "In audit! Your advisor is evaluating the questionnaire responses."
-                                : userCompany.status === "verified"
-                                  ? "Congratulations! Peace Seal certified!"
-                                  : userCompany.status === "conditional"
-                                    ? "Conditional approval - Review comments from the advisor"
-                                    : userCompany.status === "did_not_pass"
-                                      ? "Not approved - Review comments and apply again"
-                                      : userCompany.status === "audit_completed"
-                                        ? "Congratulations! Peace Seal certified!"
-                                        : "Application completed and sent for review!"}
+              {/* Quick Actions */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ExternalLink className="w-5 h-5" />
+                    Quick Actions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <Button
+                      variant="outline"
+                      className="h-auto p-6 py-4 flex flex-col items-start gap-2 hover:bg-white hover:text-black hover:border-gray-300 transition-all duration-300"
+                      onClick={() => router.push("/peace-seal")}
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        <Award className="w-5 h-5 text-[#548281]" />
+                        <span className="font-medium">
+                          Learn About Peace Seal
                         </span>
                       </div>
-                    )}
-                  </div>
-
-                  {/* Application Details */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 mb-1">
-                        Started
+                      <p className="text-sm text-gray-500 text-left">
+                        Understand the benefits and requirements
                       </p>
-                      <p className="text-sm text-gray-700">
-                        {new Date(questionnaire.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-500 mb-1">
-                        Last Updated
-                      </p>
-                      <p className="text-sm text-gray-700">
-                        {new Date(questionnaire.updatedAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                /* No Application Started */
-                <div className="text-center py-12">
-                  <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <PlayCircle className="w-8 h-8 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Ready to Start Your Peace Seal Journey?
-                  </h3>
-                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
-                    Begin your Peace Seal certification by completing our
-                    comprehensive questionnaire. This process will help us
-                    understand your company&apos;s commitment to peace and
-                    sustainability.
-                  </p>
-                  <Button
-                    onClick={handleStartApplication}
-                    className="flex items-center gap-2 mx-auto"
-                    size="lg"
-                  >
-                    <PlayCircle className="w-5 h-5" />
-                    Start Peace Seal Application
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                    </Button>
 
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ExternalLink className="w-5 h-5" />
-                Quick Actions
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Button
-                  variant="outline"
-                  className="h-auto p-6 py-4 flex flex-col items-start gap-2 hover:bg-white hover:text-black hover:border-gray-300 transition-all duration-300"
-                  onClick={() => window.open("/peace-seal", "_blank")}
-                >
-                  <div className="flex items-center gap-2 w-full">
-                    <Award className="w-5 h-5 text-[#548281]" />
-                    <span className="font-medium">Learn About Peace Seal</span>
-                  </div>
-                  <p className="text-sm text-gray-500 text-left">
-                    Understand the benefits and requirements
-                  </p>
-                </Button>
+                    <Button
+                      variant="outline"
+                      className="h-auto p-6 py-4 flex flex-col items-start gap-2 hover:bg-white hover:text-black hover:border-gray-300 transition-all duration-300"
+                      onClick={() => window.open("/contact", "_blank")}
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        <Building className="w-5 h-5 text-[#548281]" />
+                        <span className="font-medium">Contact Support</span>
+                      </div>
+                      <p className="text-sm text-gray-500 text-left">
+                        Get help with your application
+                      </p>
+                    </Button>
 
-                <Button
-                  variant="outline"
-                  className="h-auto p-6 py-4 flex flex-col items-start gap-2 hover:bg-white hover:text-black hover:border-gray-300 transition-all duration-300"
-                  onClick={() => window.open("/contact", "_blank")}
-                >
-                  <div className="flex items-center gap-2 w-full">
-                    <Building className="w-5 h-5 text-[#548281]" />
-                    <span className="font-medium">Contact Support</span>
+                    <Button
+                      variant="outline"
+                      className="h-auto p-6 py-4 flex flex-col items-start gap-2 hover:bg-white hover:text-black hover:border-gray-300 transition-all duration-300"
+                      onClick={() => window.open("/campaigns", "_blank")}
+                    >
+                      <div className="flex items-center gap-2 w-full">
+                        <FileText className="w-5 h-5 text-[#548281]" />
+                        <span className="font-medium">Support Our Work</span>
+                      </div>
+                      <p className="text-sm text-gray-500 text-left">
+                        Support our work and help us achieve our mission
+                      </p>
+                    </Button>
                   </div>
-                  <p className="text-sm text-gray-500 text-left">
-                    Get help with your application
-                  </p>
-                </Button>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                <Button
-                  variant="outline"
-                  className="h-auto p-6 py-4 flex flex-col items-start gap-2 hover:bg-white hover:text-black hover:border-gray-300 transition-all duration-300"
-                  onClick={() => window.open("/campaigns", "_blank")}
-                >
-                  <div className="flex items-center gap-2 w-full">
-                    <FileText className="w-5 h-5 text-[#548281]" />
-                    <span className="font-medium">Support Our Work</span>
-                  </div>
-                  <p className="text-sm text-gray-500 text-left">
-                    Support our work and help us achieve our mission
-                  </p>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+            <TabsContent value="center" className="space-y-6">
+              <PeaceSealCenter />
+            </TabsContent>
+
+            <TabsContent value="renewal" className="space-y-6">
+              <RenewalDashboard companyId={userCompany.id} />
+            </TabsContent>
+
+            <TabsContent value="issues" className="space-y-6">
+              <CompanyIssuesDashboard companyId={userCompany.id} />
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

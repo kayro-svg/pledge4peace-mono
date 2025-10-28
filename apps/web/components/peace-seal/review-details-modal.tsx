@@ -270,7 +270,7 @@ export function ReviewDetailsModal({
       case "email":
         return "Email Verification";
       case "linkedin":
-        return "LinkedIn Connection";
+        return "LinkedIn Verification";
       case "document":
         return "Document Upload";
       case "receipt":

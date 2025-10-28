@@ -208,6 +208,8 @@ export default function QuestionnaireForm({
     updateField,
     uploadFile,
     deleteFile,
+    acceptAgreement,
+    deleteAgreement,
     saveProgress,
     goToSection,
     goToNextSection,
@@ -480,9 +482,11 @@ export default function QuestionnaireForm({
                     }
                     onFileUpload={uploadFile}
                     onFileDelete={deleteFile}
+                    onAgreementAccept={acceptAgreement}
                     sectionId={currentSection.id}
                     error={fieldErrors[field.id]}
                     disabled={isSaving || isCompleted}
+                    companyId={companyId}
                   />
                 );
               })}

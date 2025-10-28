@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +35,7 @@ import {
   type VerificationMethod,
 } from "@/lib/api/peace-seal";
 import { Upload, CheckCircle } from "lucide-react";
+import { LinkedInVerificationModal } from "@/components/peace-seal/linkedin-verification-modal";
 
 type CommunityReviewFlowProps = {
   companyId: string;
@@ -207,6 +208,14 @@ export function CommunityReviewFlow({
   const [signedDisclosure, setSignedDisclosure] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
 
+  // LinkedIn verification state
+  const [linkedinVerified, setLinkedinVerified] = useState(false);
+  const [linkedinIdToken, setLinkedinIdToken] = useState<string | null>(null);
+  const [linkedinAccessToken, setLinkedinAccessToken] = useState<string | null>(
+    null
+  );
+  const [linkedinModalOpen, setLinkedinModalOpen] = useState(false);
+
   const getAvailableSections = () => {
     if (!role) return [];
     const weights = ROLE_WEIGHTS[role as ReviewRole];
@@ -239,6 +248,252 @@ export function CommunityReviewFlow({
     setUploadedFile(file);
   };
 
+  // Get available verification methods based on role
+  const getVerificationMethods = useCallback(() => {
+    switch (role) {
+      case "employee":
+        return [
+          {
+            value: "email",
+            label: "Company Email Verification",
+            description:
+              "We'll send a verification link to your work email. Don't have one? Use your personal email.",
+          },
+          {
+            value: "linkedin",
+            label: "LinkedIn Verification",
+            description:
+              "Log in via LinkedIn, must have the company listed in work history.",
+          },
+          {
+            value: "none",
+            label: "No Verification",
+            description:
+              "Your review will be marked as unverified and will not affect the company's rating.",
+          },
+        ];
+      case "customer":
+        return [
+          {
+            value: "receipt",
+            label: "Upload Receipt/Invoice",
+            description:
+              "Upload a receipt or invoice that proves you have been a customer.",
+          },
+          {
+            value: "none",
+            label: "No Verification",
+            description:
+              "Your review will be marked as unverified and will not affect the company's rating.",
+          },
+        ];
+      case "investor":
+        return [
+          {
+            value: "document",
+            label: "Upload Investment Agreement",
+            description:
+              "Upload an agreement that proves you have been an investor.",
+          },
+          {
+            value: "none",
+            label: "No Verification",
+            description:
+              "Your review will be marked as unverified and will not affect the company's rating.",
+          },
+        ];
+      case "supplier":
+        return [
+          {
+            value: "document",
+            label: "Upload Supplier Agreement",
+            description:
+              "Upload an agreement that proves you have been a supplier.",
+          },
+          {
+            value: "none",
+            label: "No Verification",
+            description:
+              "Your review will be marked as unverified and will not affect the company's rating.",
+          },
+        ];
+      default:
+        return [
+          {
+            value: "none",
+            label: "No Verification",
+            description: "Review will be posted as unverified.",
+          },
+        ];
+    }
+  }, [role]);
+
+  // Restore form state after LinkedIn OAuth redirect
+  useEffect(() => {
+    const savedState = localStorage.getItem("communityReviewFormState");
+    if (savedState) {
+      try {
+        const state = JSON.parse(savedState);
+        setCurrentStep(state.currentStep);
+        setRole(state.role);
+        setVerificationMethod(state.verificationMethod);
+        setReviewerName(state.reviewerName);
+        setReviewerEmail(state.reviewerEmail);
+        setExperienceDescription(state.experienceDescription);
+        setAnswers(state.answers);
+        // Don't restore uploadedFile as it's a File object
+
+        // Clean up
+        localStorage.removeItem("communityReviewFormState");
+      } catch (error) {
+        console.error("Error restoring form state:", error);
+      }
+    }
+  }, []);
+
+  // Reset verification method when role changes (if current method is not available for new role)
+  useEffect(() => {
+    if (role && currentStep === "verification") {
+      const availableMethods = getVerificationMethods().map((m) => m.value);
+      if (!availableMethods.includes(verificationMethod)) {
+        // Reset to first available method
+        setVerificationMethod(availableMethods[0] as VerificationMethod);
+        // Reset verification state
+        setLinkedinVerified(false);
+        setLinkedinIdToken(null);
+        setLinkedinAccessToken(null);
+        setUploadedFile(null);
+      }
+    }
+  }, [role, currentStep, verificationMethod, getVerificationMethods]);
+
+  // Check for LinkedIn verification callback
+  useEffect(() => {
+    // Check URL parameters for LinkedIn verification result
+    const urlParams = new URLSearchParams(window.location.search);
+    const linkedinVerifiedParam = urlParams.get("linkedin_verified");
+    const linkedinEmailParam = urlParams.get("linkedin_email");
+    const linkedinError = urlParams.get("linkedin_error");
+
+    if (linkedinError) {
+      toast({
+        title: "LinkedIn verification failed",
+        description: `Error: ${linkedinError}. Please try again.`,
+        variant: "destructive",
+      });
+      // Clean up URL
+      const newUrl = new URL(window.location.href);
+      newUrl.searchParams.delete("linkedin_error");
+      window.history.replaceState({}, "", newUrl.toString());
+      localStorage.removeItem("reviewerEmailForLinkedIn");
+      return;
+    }
+
+    if (
+      linkedinVerifiedParam === "true" &&
+      linkedinEmailParam &&
+      verificationMethod === "linkedin" &&
+      !linkedinVerified
+    ) {
+      const expectedEmail = (
+        reviewerEmail ||
+        localStorage.getItem("reviewerEmailForLinkedIn") ||
+        ""
+      )
+        .trim()
+        .toLowerCase();
+      const actualEmail = linkedinEmailParam.trim().toLowerCase();
+
+      if (actualEmail === expectedEmail) {
+        // Extract tokens from URL hash
+        const hash = window.location.hash.substring(1);
+        const hashParams = new URLSearchParams(hash);
+        const idToken = hashParams.get("idToken") || "";
+        const accessToken = hashParams.get("accessToken") || "";
+
+        // Verification successful
+        setLinkedinVerified(true);
+        setLinkedinIdToken(idToken);
+        setLinkedinAccessToken(accessToken);
+        toast({
+          title: "LinkedIn verified",
+          description: "Your LinkedIn account has been verified successfully.",
+        });
+
+        // Clean up URL and localStorage
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete("linkedin_verified");
+        newUrl.searchParams.delete("linkedin_email");
+        newUrl.searchParams.delete("linkedin_sub");
+        newUrl.hash = "";
+        window.history.replaceState({}, "", newUrl.toString());
+        localStorage.removeItem("reviewerEmailForLinkedIn");
+      } else {
+        // Email mismatch
+        toast({
+          title: "Email mismatch",
+          description: `LinkedIn email (${linkedinEmailParam}) does not match the entered email.`,
+          variant: "destructive",
+        });
+
+        // Clean up URL and localStorage
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete("linkedin_verified");
+        newUrl.searchParams.delete("linkedin_email");
+        newUrl.searchParams.delete("linkedin_sub");
+        newUrl.hash = "";
+        window.history.replaceState({}, "", newUrl.toString());
+        localStorage.removeItem("reviewerEmailForLinkedIn");
+      }
+    }
+  }, [verificationMethod, reviewerEmail, linkedinVerified, toast]);
+
+  // Save form state before LinkedIn verification
+  const saveFormState = () => {
+    const state = {
+      currentStep,
+      role,
+      verificationMethod,
+      reviewerName,
+      reviewerEmail,
+      experienceDescription,
+      answers,
+    };
+    localStorage.setItem("communityReviewFormState", JSON.stringify(state));
+  };
+
+  const handleLinkedInVerify = () => {
+    if (!reviewerEmail.trim()) {
+      toast({
+        title: "Please enter your email first",
+        variant: "destructive",
+      });
+      return;
+    }
+    setLinkedinModalOpen(true);
+  };
+
+  const handleLinkedInVerificationComplete = (
+    idToken: string,
+    accessToken: string
+  ) => {
+    setLinkedinVerified(true);
+    setLinkedinIdToken(idToken);
+    setLinkedinAccessToken(accessToken);
+    toast({
+      title: "LinkedIn verified",
+      description: "Your LinkedIn account has been verified successfully.",
+    });
+  };
+
+  const handleLinkedInVerificationError = (error: string) => {
+    toast({
+      title: "LinkedIn verification failed",
+      description: error,
+      variant: "destructive",
+    });
+  };
+
   const handleNext = () => {
     switch (currentStep) {
       case "role":
@@ -265,6 +520,22 @@ export function CommunityReviewFlow({
             variant: "destructive",
           });
           return;
+        }
+        if (verificationMethod === "linkedin") {
+          if (!reviewerEmail.trim()) {
+            toast({
+              title: "Please enter your email for verification",
+              variant: "destructive",
+            });
+            return;
+          }
+          if (!linkedinVerified) {
+            toast({
+              title: "Please verify with LinkedIn first",
+              variant: "destructive",
+            });
+            return;
+          }
         }
         if (
           (verificationMethod === "document" ||
@@ -332,10 +603,11 @@ export function CommunityReviewFlow({
         formData.append("fieldId", "verification-document");
 
         const uploadResponse = await fetch(
-          "/api/peace-seal/reviews/upload-document",
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787/api"}/peace-seal/reviews/upload-document`,
           {
             method: "POST",
             body: formData,
+            // No authentication headers needed for anonymous community reviews
           }
         );
 
@@ -356,6 +628,13 @@ export function CommunityReviewFlow({
         signedDisclosure: true,
         answers,
         verificationDocumentUrl: uploadedFileUrl,
+        experienceDescription: experienceDescription.trim(),
+        ...(linkedinVerified &&
+          linkedinIdToken &&
+          linkedinAccessToken && {
+            oidcIdToken: linkedinIdToken,
+            oidcAccessToken: linkedinAccessToken,
+          }),
       };
 
       await createReview(reviewData);
@@ -452,7 +731,8 @@ export function CommunityReviewFlow({
             required
           />
           <p className="text-xs text-gray-500 mt-1">
-            Your name will not be shown publicly
+            Your name will not be shown publicly. This is required per the
+            anonymous disclosure agreement.
           </p>
         </div>
 
@@ -468,49 +748,90 @@ export function CommunityReviewFlow({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="email">Company Email Verification</SelectItem>
-              <SelectItem value="linkedin">
-                LinkedIn Connection (Optional)
-              </SelectItem>
-              <SelectItem value="document">Upload Document</SelectItem>
-              <SelectItem value="receipt">Upload Receipt/Invoice</SelectItem>
-              <SelectItem value="none">No Verification</SelectItem>
+              {getVerificationMethods().map((method) => (
+                <SelectItem key={method.value} value={method.value}>
+                  {method.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <p className="text-xs text-gray-500 mt-1">
-            {verificationMethod === "none" &&
-              "Your review will be marked as unverified"}
-            {verificationMethod === "email" &&
-              "We'll send a verification link to your email"}
-            {verificationMethod === "linkedin" &&
-              "Connect your LinkedIn account"}
-            {verificationMethod === "document" &&
-              "Upload a document proving your relationship"}
-            {verificationMethod === "receipt" && "Upload a receipt or invoice"}
+            {
+              getVerificationMethods().find(
+                (m) => m.value === verificationMethod
+              )?.description
+            }
           </p>
         </div>
 
-        {verificationMethod === "email" && (
+        {(verificationMethod === "email" ||
+          verificationMethod === "linkedin") && (
           <div>
-            <Label htmlFor="reviewerEmail">Email Address</Label>
+            <Label htmlFor="reviewerEmail">
+              {role === "employee" ? "Email Address" : "Your Email Address"}
+            </Label>
             <Input
               id="reviewerEmail"
               type="email"
               value={reviewerEmail}
               onChange={(e) => setReviewerEmail(e.target.value)}
-              placeholder="your.email@company.com"
+              placeholder={
+                role === "employee"
+                  ? "your.email@company.com"
+                  : "your.email@example.com"
+              }
               required
+              disabled={linkedinVerified}
             />
             <p className="text-xs text-gray-500 mt-1">
-              Don&apos;t have a work email? Use your personal email.
+              {verificationMethod === "email" && role === "employee"
+                ? "Use your company email if available. Don't have a work email? You can use your personal email."
+                : verificationMethod === "linkedin" && role === "employee"
+                  ? "We will verify that the LinkedIn account email matches the one you entered and that the company is listed in your work history."
+                  : "Enter the email address you want to use for verification."}
             </p>
+          </div>
+        )}
+
+        {verificationMethod === "linkedin" && (
+          <div>
+            <Label>LinkedIn Verification</Label>
+            {linkedinVerified ? (
+              <div className="border border-green-500 bg-green-50 rounded-lg p-4 flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <span className="text-sm text-green-800">
+                  LinkedIn account verified successfully
+                </span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Button
+                  type="button"
+                  onClick={handleLinkedInVerify}
+                  className="w-full bg-[#0077b5] hover:bg-[#005885]"
+                >
+                  Verify with LinkedIn
+                </Button>
+                <p className="text-xs text-gray-500">
+                  We will verify that the LinkedIn account email matches the one
+                  you entered. LinkedIn may not always share email; if that
+                  happens, please try again.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
         {(verificationMethod === "document" ||
           verificationMethod === "receipt") && (
           <div>
-            <Label>Upload Document</Label>
+            <Label>
+              {verificationMethod === "receipt"
+                ? "Upload Receipt/Invoice"
+                : role === "investor"
+                  ? "Upload Investment Agreement"
+                  : "Upload Supplier Agreement"}
+            </Label>
             <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
               <input
                 type="file"
@@ -527,9 +848,11 @@ export function CommunityReviewFlow({
                     : "Click to upload or drag and drop"}
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  {verificationMethod === "document"
-                    ? "Upload agreement, contract, or other document proving your relationship"
-                    : "Upload receipt, invoice, or other proof of business relationship"}
+                  {verificationMethod === "receipt"
+                    ? `Upload a receipt or invoice that proves you have been a customer of ${companyName}`
+                    : role === "investor"
+                      ? `Upload an agreement that proves you have been an investor at ${companyName}`
+                      : `Upload an agreement that proves you have been a supplier for ${companyName}`}
                 </p>
                 {uploadedFile && (
                   <p className="text-xs text-green-600 mt-2">
@@ -555,7 +878,8 @@ export function CommunityReviewFlow({
             required
           />
           <p className="text-xs text-gray-500 mt-1">
-            This helps provide context for your review
+            This helps provide context for your review. This is mandatory per
+            the requirements.
           </p>
         </div>
       </CardContent>
@@ -587,7 +911,9 @@ export function CommunityReviewFlow({
                 >
                   <AccordionTrigger className="px-4 py-3">
                     <div className="flex items-center justify-between w-full pr-4">
-                      <span className="font-semibold">{section.title}</span>
+                      <span className="font-semibold text-2xl">
+                        {section.title}
+                      </span>
                       <Badge variant="outline">
                         {Math.round(section.weight * 100)}% weight
                       </Badge>
@@ -659,6 +985,10 @@ export function CommunityReviewFlow({
             company&apos;s rating or score.{" "}
             <strong>I accept and would like to continue.</strong>
           </p>
+          <p className="text-xs text-gray-600 mt-2">
+            This is the mandatory anonymous disclosure agreement as specified in
+            the requirements.
+          </p>
         </div>
 
         <div className="flex items-start space-x-2">
@@ -671,6 +1001,7 @@ export function CommunityReviewFlow({
           />
           <label htmlFor="disclosure" className="text-sm leading-relaxed">
             I have read and agree to the anonymous disclosure agreement above.
+            This is required to submit the review.
           </label>
         </div>
       </CardContent>
@@ -693,7 +1024,8 @@ export function CommunityReviewFlow({
           <p className="text-sm text-green-800">
             Your review has been submitted and will be processed. If you
             provided verification information, you may receive an email to
-            confirm your relationship with {companyName}.
+            confirm your relationship with {companyName}. Your review will be
+            posted publicly as specified in the requirements.
           </p>
         </div>
 
@@ -784,6 +1116,16 @@ export function CommunityReviewFlow({
           </Button>
         </div>
       )}
+
+      {/* LinkedIn Verification Modal */}
+      <LinkedInVerificationModal
+        open={linkedinModalOpen}
+        onOpenChange={setLinkedinModalOpen}
+        expectedEmail={reviewerEmail}
+        onVerificationComplete={handleLinkedInVerificationComplete}
+        onVerificationError={handleLinkedInVerificationError}
+        onBeforeOAuth={saveFormState}
+      />
     </div>
   );
 }

@@ -23,12 +23,19 @@ import {
   Trash2,
   AlertCircle,
   Loader2,
+  CheckCircle2,
 } from "lucide-react";
 import {
   QuestionnaireField,
   FileUpload,
   UploadResponse,
+  AgreementAcceptance,
+  TemplateResource,
 } from "@/types/questionnaire";
+import AgreementModal from "./AgreementModal";
+import BeneficialOwnershipModal from "./BeneficialOwnershipModal";
+import { useEffect } from "react";
+import { getTemplates } from "@/lib/api/peace-seal";
 
 interface FormFieldProps {
   field: QuestionnaireField;
@@ -44,9 +51,16 @@ interface FormFieldProps {
     fieldId: string,
     fileId: string
   ) => Promise<boolean>;
+  onAgreementAccept?: (
+    sectionId: string,
+    fieldId: string,
+    templateId: string,
+    acceptanceData?: Record<string, any>
+  ) => Promise<void>;
   sectionId: string;
   error?: string;
   disabled?: boolean;
+  companyId?: string;
 }
 
 // File Upload Component
@@ -56,12 +70,19 @@ const FileUploadField = ({
   onChange,
   onFileUpload,
   onFileDelete,
+  onAgreementAccept,
   sectionId,
   error,
   disabled,
+  companyId,
 }: FormFieldProps) => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showAgreementModal, setShowAgreementModal] = useState(false);
+  const [showBeneficialModal, setShowBeneficialModal] = useState(false);
+  const [acceptingAgreement, setAcceptingAgreement] = useState(false);
+  const [template, setTemplate] = useState<TemplateResource | null>(null);
+  const [loadingTemplate, setLoadingTemplate] = useState(false);
 
   const handleFileSelect = useCallback(
     async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,7 +154,66 @@ const FileUploadField = ({
     }
   }, [value, onFileDelete, sectionId, field.id, onChange]);
 
+  const handleAgreementAccept = useCallback(async () => {
+    if (!onAgreementAccept || !field.templateId) return;
+
+    setAcceptingAgreement(true);
+    try {
+      await onAgreementAccept(sectionId, field.id, field.templateId);
+      setShowAgreementModal(false);
+      setShowBeneficialModal(false);
+    } catch (error) {
+      console.error("Error accepting agreement:", error);
+    } finally {
+      setAcceptingAgreement(false);
+    }
+  }, [onAgreementAccept, sectionId, field.id, field.templateId]);
+
+  const handleBeneficialOwnershipAccept = useCallback(
+    async (data: { numberOfOwners: number; owners: any[] }) => {
+      if (!onAgreementAccept || !field.templateId) return;
+
+      setAcceptingAgreement(true);
+      try {
+        await onAgreementAccept(sectionId, field.id, field.templateId, data);
+        setShowBeneficialModal(false);
+      } catch (error) {
+        console.error("Error accepting beneficial ownership agreement:", error);
+      } finally {
+        setAcceptingAgreement(false);
+      }
+    },
+    [onAgreementAccept, sectionId, field.id, field.templateId]
+  );
+
+  // Load template when modal opens
+  useEffect(() => {
+    const loadTemplate = async () => {
+      if (!field.templateId || (!showAgreementModal && !showBeneficialModal)) {
+        return;
+      }
+
+      setLoadingTemplate(true);
+      try {
+        const { templates } = await getTemplates({ resourceType: "template" });
+        const foundTemplate = templates.find((t) => t.id === field.templateId);
+        if (foundTemplate) {
+          setTemplate(foundTemplate);
+        }
+      } catch (error) {
+        console.error("Error loading template:", error);
+      } finally {
+        setLoadingTemplate(false);
+      }
+    };
+
+    loadTemplate();
+  }, [field.templateId, showAgreementModal, showBeneficialModal]);
+
+  // Check if value is a file upload or agreement acceptance
   const currentFile = value as FileUpload | null;
+  const currentAgreement = value as AgreementAcceptance | null;
+  const hasValue = currentFile || currentAgreement;
 
   return (
     <div className="space-y-2">
@@ -146,11 +226,11 @@ const FileUploadField = ({
         <p className="text-sm text-gray-600">{field.helpText}</p>
       )}
 
-      {!currentFile ? (
+      {!hasValue ? (
         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6">
-          <div className="text-center">
+          <div className="text-center space-y-3">
             <Upload className="mx-auto h-8 w-8 text-gray-400" />
-            <div className="mt-2">
+            <div className="flex flex-col items-center gap-2">
               <Label htmlFor={`${field.id}-upload`} className="cursor-pointer">
                 <span className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50">
                   {uploading ? (
@@ -174,6 +254,28 @@ const FileUploadField = ({
                   className="sr-only"
                 />
               </Label>
+
+              {field.hasTemplate && field.templateId && (
+                <>
+                  <span className="text-sm text-gray-500">or</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      if (field.templateType === "beneficial-ownership") {
+                        setShowBeneficialModal(true);
+                      } else {
+                        setShowAgreementModal(true);
+                      }
+                    }}
+                    disabled={disabled}
+                    className="text-green-600 border-green-600 hover:bg-green-50"
+                  >
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Use Our Template
+                  </Button>
+                </>
+              )}
             </div>
             {field.fileTypes && (
               <p className="text-xs text-gray-500 mt-1">
@@ -187,7 +289,7 @@ const FileUploadField = ({
             )}
           </div>
         </div>
-      ) : (
+      ) : currentFile ? (
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -212,13 +314,62 @@ const FileUploadField = ({
             </div>
           </CardContent>
         </Card>
-      )}
+      ) : currentAgreement ? (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <CheckCircle2 className="h-8 w-8 text-green-500" />
+                <div>
+                  <p className="font-medium text-sm">Agreement Accepted</p>
+                  <p className="text-xs text-gray-500">
+                    Accepted on{" "}
+                    {new Date(currentAgreement.acceptedAt).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onChange(null)}
+                disabled={disabled}
+                className="text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {(uploadError || error) && (
         <div className="flex items-center space-x-2 text-sm text-red-600">
           <AlertCircle className="h-4 w-4" />
           <span>{uploadError || error}</span>
         </div>
+      )}
+
+      {/* Modals */}
+      {field.hasTemplate && field.templateId && (
+        <>
+          {field.templateType === "beneficial-ownership" ? (
+            <BeneficialOwnershipModal
+              open={showBeneficialModal}
+              onOpenChange={setShowBeneficialModal}
+              template={template}
+              onAccept={handleBeneficialOwnershipAccept}
+              isAccepting={acceptingAgreement || loadingTemplate}
+            />
+          ) : (
+            <AgreementModal
+              open={showAgreementModal}
+              onOpenChange={setShowAgreementModal}
+              template={template}
+              onAccept={handleAgreementAccept}
+              isAccepting={acceptingAgreement || loadingTemplate}
+            />
+          )}
+        </>
       )}
     </div>
   );

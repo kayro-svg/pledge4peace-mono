@@ -42,7 +42,7 @@ const ALLOWED_REPORT_REASONS = Object.values(REPORT_REASONS);
 const ALLOWED_REPORT_STATUS = Object.values(REPORT_STATUS);
 
 function now() {
-  return new Date();
+  return Date.now(); // Return timestamp for D1 compatibility
 }
 
 export class ReportsService {

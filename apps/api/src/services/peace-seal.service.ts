@@ -5,6 +5,8 @@ import {
   peaceSealStatusHistory,
   peaceSealReports,
   peaceSealDocuments,
+  peaceSealAgreementAcceptances,
+  peaceSealCenterResources,
 } from "../db/schema/peace-seal";
 import { users } from "../db/schema/users";
 import type { DbClient } from "../types";
@@ -76,7 +78,7 @@ export interface CreateReportDTO {
 }
 
 function now() {
-  return new Date(); // Return Date object for Drizzle timestamp mode
+  return Date.now(); // Return timestamp for D1 compatibility
 }
 
 function ulid() {
@@ -1507,5 +1509,194 @@ export class PeaceSealService {
 
   private getNestedValue(obj: any, path: string): any {
     return path.split(".").reduce((current, key) => current?.[key], obj);
+  }
+
+  // Accept an agreement template
+  async acceptAgreement(data: {
+    companyId: string;
+    sectionId: string;
+    fieldId: string;
+    templateId: string;
+    userId: string;
+    acceptanceData?: Record<string, any>;
+  }) {
+    const {
+      companyId,
+      sectionId,
+      fieldId,
+      templateId,
+      userId,
+      acceptanceData,
+    } = data;
+
+    // Verify company ownership
+    const company = await this.db
+      .select({ createdByUserId: peaceSealCompanies.createdByUserId })
+      .from(peaceSealCompanies)
+      .where(eq(peaceSealCompanies.id, companyId))
+      .then((r) => r[0]);
+
+    if (!company || company.createdByUserId !== userId) {
+      throw new HTTPException(403, { message: "Not allowed" });
+    }
+
+    // Verify template exists
+    const template = await this.db
+      .select()
+      .from(peaceSealCenterResources)
+      .where(eq(peaceSealCenterResources.id, templateId))
+      .then((r) => r[0]);
+
+    if (!template) {
+      throw new HTTPException(404, { message: "Template not found" });
+    }
+
+    // Check if already accepted for this field
+    const existing = await this.db
+      .select()
+      .from(peaceSealAgreementAcceptances)
+      .where(
+        and(
+          eq(peaceSealAgreementAcceptances.companyId, companyId),
+          eq(peaceSealAgreementAcceptances.sectionId, sectionId),
+          eq(peaceSealAgreementAcceptances.fieldId, fieldId)
+        )
+      )
+      .then((r) => r[0]);
+
+    const acceptanceId = ulid();
+    const acceptedAt = now();
+
+    if (existing) {
+      // Update existing acceptance
+      await this.db
+        .update(peaceSealAgreementAcceptances)
+        .set({
+          templateId,
+          acceptanceData: acceptanceData
+            ? JSON.stringify(acceptanceData)
+            : null,
+          acceptedAt,
+        })
+        .where(eq(peaceSealAgreementAcceptances.id, existing.id));
+
+      return {
+        success: true,
+        acceptanceId: existing.id,
+        acceptedAt,
+      };
+    } else {
+      // Create new acceptance
+      await this.db.insert(peaceSealAgreementAcceptances).values({
+        id: acceptanceId,
+        companyId,
+        sectionId,
+        fieldId,
+        templateId,
+        acceptedByUserId: userId,
+        acceptanceData: acceptanceData ? JSON.stringify(acceptanceData) : null,
+        acceptedAt,
+      });
+
+      return {
+        success: true,
+        acceptanceId,
+        acceptedAt,
+      };
+    }
+  }
+
+  // Get agreement acceptances for a company
+  async getAgreementAcceptances(companyId: string) {
+    const acceptances = await this.db
+      .select({
+        id: peaceSealAgreementAcceptances.id,
+        sectionId: peaceSealAgreementAcceptances.sectionId,
+        fieldId: peaceSealAgreementAcceptances.fieldId,
+        templateId: peaceSealAgreementAcceptances.templateId,
+        acceptanceData: peaceSealAgreementAcceptances.acceptanceData,
+        acceptedAt: peaceSealAgreementAcceptances.acceptedAt,
+        templateTitle: peaceSealCenterResources.title,
+        templateDescription: peaceSealCenterResources.description,
+        templateUrl: peaceSealCenterResources.fileUrl,
+      })
+      .from(peaceSealAgreementAcceptances)
+      .leftJoin(
+        peaceSealCenterResources,
+        eq(
+          peaceSealAgreementAcceptances.templateId,
+          peaceSealCenterResources.id
+        )
+      )
+      .where(eq(peaceSealAgreementAcceptances.companyId, companyId));
+
+    return acceptances.map((acc) => ({
+      ...acc,
+      acceptanceData: acc.acceptanceData
+        ? JSON.parse(acc.acceptanceData)
+        : null,
+    }));
+  }
+
+  // Delete an agreement acceptance
+  async deleteAgreementAcceptance(
+    companyId: string,
+    acceptanceId: string,
+    userId: string
+  ) {
+    // Verify company ownership
+    const company = await this.db
+      .select({ createdByUserId: peaceSealCompanies.createdByUserId })
+      .from(peaceSealCompanies)
+      .where(eq(peaceSealCompanies.id, companyId))
+      .then((r) => r[0]);
+
+    if (!company || company.createdByUserId !== userId) {
+      throw new HTTPException(403, { message: "Not allowed" });
+    }
+
+    // Verify acceptance exists and belongs to company
+    const acceptance = await this.db
+      .select()
+      .from(peaceSealAgreementAcceptances)
+      .where(
+        and(
+          eq(peaceSealAgreementAcceptances.id, acceptanceId),
+          eq(peaceSealAgreementAcceptances.companyId, companyId)
+        )
+      )
+      .then((r) => r[0]);
+
+    if (!acceptance) {
+      throw new HTTPException(404, { message: "Acceptance not found" });
+    }
+
+    await this.db
+      .delete(peaceSealAgreementAcceptances)
+      .where(eq(peaceSealAgreementAcceptances.id, acceptanceId));
+
+    return { success: true };
+  }
+
+  // Get templates
+  async getTemplates(filters?: { category?: string; resourceType?: string }) {
+    const where: any[] = [];
+
+    if (filters?.category) {
+      where.push(eq(peaceSealCenterResources.category, filters.category));
+    }
+
+    if (filters?.resourceType) {
+      where.push(
+        eq(peaceSealCenterResources.resourceType, filters.resourceType)
+      );
+    }
+
+    const templates = await this.db
+      .select()
+      .from(peaceSealCenterResources)
+      .where(where.length > 0 ? and(...where) : undefined);
+
+    return templates;
   }
 }

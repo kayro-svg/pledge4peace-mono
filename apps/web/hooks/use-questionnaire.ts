@@ -5,12 +5,18 @@ import {
   SectionProgress,
   FileUpload,
   UploadResponse,
+  AgreementAcceptance,
 } from "@/types/questionnaire";
 import {
   getQuestionnaireSections,
   DOCUMENT_TYPE_MAPPING,
 } from "@/config/questionnaire-configs";
-import { saveQuestionnaire } from "@/lib/api/peace-seal";
+import {
+  saveQuestionnaire,
+  acceptAgreement,
+  getAgreementAcceptances,
+  deleteAgreementAcceptance,
+} from "@/lib/api/peace-seal";
 // import { apiClient } from "@/lib/api-client"; // Not used in this file
 
 // Initialize empty questionnaire
@@ -21,8 +27,9 @@ function initializeQuestionnaire(): PeaceSealQuestionnaire {
       website: "",
       contactEmail: "",
       contactPhone: "",
-      countryOfRegistration: "",
-      countryOfOperations: [],
+      contactName: "",
+      headquartersCountry: "",
+      countriesOfOperations: "",
       employeeCount: 0,
       annualRevenueRange: "",
     },
@@ -339,6 +346,66 @@ export function useQuestionnaire(
     [companyId, updateField]
   );
 
+  // Accept an agreement
+  const acceptAgreementHandler = useCallback(
+    async (
+      sectionId: string,
+      fieldId: string,
+      templateId: string,
+      acceptanceData?: Record<string, any>
+    ) => {
+      try {
+        const result = await acceptAgreement(companyId, {
+          sectionId,
+          fieldId,
+          templateId,
+          acceptanceData,
+        });
+
+        if (result.success) {
+          // Create an agreement acceptance object similar to FileUpload
+          const agreementAcceptance: AgreementAcceptance = {
+            id: result.acceptanceId,
+            sectionId,
+            fieldId,
+            templateId,
+            acceptedAt: new Date(result.acceptedAt).toISOString(),
+            acceptanceData,
+          };
+
+          // Update questionnaire with agreement acceptance
+          updateField(sectionId, fieldId, agreementAcceptance);
+          return true;
+        }
+        return false;
+      } catch (error) {
+        console.error("Agreement acceptance error:", error);
+        return false;
+      }
+    },
+    [companyId, updateField]
+  );
+
+  // Delete an agreement acceptance
+  const deleteAgreementHandler = useCallback(
+    async (sectionId: string, fieldId: string, acceptanceId: string) => {
+      try {
+        const success = await deleteAgreementAcceptance(
+          companyId,
+          acceptanceId
+        );
+        if (success) {
+          updateField(sectionId, fieldId, null);
+        }
+        return success;
+      } catch (error) {
+        console.error("Agreement delete error:", error);
+        return false;
+      }
+    },
+    [companyId, updateField]
+  );
+
   // Save questionnaire
   const saveProgress = useCallback(
     async (force = false, forceProgress?: number) => {
@@ -434,6 +501,60 @@ export function useQuestionnaire(
     }
   }, [companyId]); // Only depend on companyId to prevent infinite loops
 
+  // Load existing agreement acceptances on mount
+  useEffect(() => {
+    const loadExistingAgreements = async () => {
+      try {
+        const { getSession } = await import("next-auth/react");
+        const session = await getSession();
+
+        if (!session?.accessToken) {
+          console.warn(
+            "No authentication token available for loading agreements"
+          );
+          return;
+        }
+
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787/api"}/peace-seal/applications/${companyId}/agreements`,
+          {
+            headers: {
+              Authorization: `Bearer ${session.accessToken}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const { acceptances } = await response.json();
+
+          // Map agreement acceptances to questionnaire fields
+          setQuestionnaire((currentQuestionnaire) => {
+            const updatedQuestionnaire = { ...currentQuestionnaire };
+
+            acceptances.forEach((acceptance: AgreementAcceptance) => {
+              if (acceptance.sectionId && acceptance.fieldId) {
+                const sectionData = updatedQuestionnaire[
+                  acceptance.sectionId as keyof PeaceSealQuestionnaire
+                ] as unknown as Record<string, unknown>;
+                if (sectionData) {
+                  sectionData[acceptance.fieldId] = acceptance;
+                }
+              }
+            });
+
+            return updatedQuestionnaire;
+          });
+        }
+      } catch (error) {
+        console.error("Error loading existing agreements:", error);
+      }
+    };
+
+    if (companyId) {
+      loadExistingAgreements();
+    }
+  }, [companyId]);
+
   // Auto-save every 30 seconds if there are unsaved changes
   useEffect(() => {
     if (!hasUnsavedChanges) return;
@@ -498,6 +619,8 @@ export function useQuestionnaire(
     updateField,
     uploadFile,
     deleteFile,
+    acceptAgreement: acceptAgreementHandler,
+    deleteAgreement: deleteAgreementHandler,
     saveProgress,
 
     // Navigation

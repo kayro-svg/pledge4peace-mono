@@ -13,8 +13,9 @@ export interface CompanyInformation {
   website: string;
   contactEmail: string;
   contactPhone: string;
-  countryOfRegistration: string;
-  countryOfOperations: string[];
+  contactName: string;
+  headquartersCountry: string;
+  countriesOfOperations: string;
   employeeCount: number;
   annualRevenueRange: string;
 }
@@ -212,6 +213,9 @@ export interface QuestionnaireField {
   fileTypes?: string[];
   maxFileSize?: number; // in bytes
   multiple?: boolean;
+  hasTemplate?: boolean; // Whether field supports template acceptance
+  templateId?: string; // Template resource ID
+  templateType?: "simple" | "beneficial-ownership"; // Special handling needed
 }
 
 export interface SectionProgress {
@@ -264,4 +268,37 @@ export interface QuestionnaireScore {
   passThreshold: number;
   conditionalThreshold: number;
   status: "verified" | "conditional" | "did_not_pass";
+}
+
+// Agreement acceptance related types
+export interface AgreementAcceptance {
+  id: string;
+  sectionId: string;
+  fieldId: string;
+  templateId: string;
+  acceptedAt: string;
+  acceptanceData?: Record<string, any>;
+  templateTitle?: string;
+  templateDescription?: string;
+  templateUrl?: string;
+}
+
+export interface TemplateResource {
+  id: string;
+  title: string;
+  description: string;
+  resourceType: string;
+  fileUrl: string;
+  category: string;
+  isPublic: number;
+  accessLevel: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface AcceptAgreementRequest {
+  sectionId: string;
+  fieldId: string;
+  templateId: string;
+  acceptanceData?: Record<string, any>;
 }

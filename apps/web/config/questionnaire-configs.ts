@@ -45,8 +45,17 @@ const COMPANY_INFORMATION_SECTION: QuestionnaireSection = {
       placeholder: "+1 (555) 123-4567",
     },
     {
-      id: "countryOfRegistration",
-      label: "Country of Registration",
+      id: "contactName",
+      label: "Contact Name",
+      type: "text",
+      required: true,
+      placeholder: "Full name of person in charge",
+      helpText:
+        "Name of the person responsible for this Peace Seal application",
+    },
+    {
+      id: "headquartersCountry",
+      label: "Headquarters Country",
       type: "select",
       required: true,
       options: [
@@ -59,27 +68,33 @@ const COMPANY_INFORMATION_SECTION: QuestionnaireSection = {
         "Italy",
         "Australia",
         "Japan",
+        "Mexico",
+        "Brazil",
+        "Argentina",
+        "Chile",
+        "Colombia",
+        "Peru",
+        "China",
+        "India",
+        "South Korea",
+        "Singapore",
+        "Netherlands",
+        "Belgium",
+        "Switzerland",
+        "Sweden",
+        "Norway",
+        "Denmark",
         "Other",
       ],
     },
     {
-      id: "countryOfOperations",
-      label: "Countries of Operations",
-      type: "multiselect",
-      required: true,
-      options: [
-        "United States",
-        "Canada",
-        "United Kingdom",
-        "Germany",
-        "France",
-        "Spain",
-        "Italy",
-        "Australia",
-        "Japan",
-        "Other",
-      ],
-      helpText: "Select all countries where you operate",
+      id: "countriesOfOperations",
+      label: "Countries of Operations (Optional)",
+      type: "textarea",
+      required: false,
+      placeholder: "e.g., United States, Canada, Mexico, United Kingdom",
+      helpText:
+        "List all countries where your organization operates (comma-separated)",
     },
     {
       id: "employeeCount",
@@ -122,6 +137,9 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf"],
         maxFileSize: 5 * 1024 * 1024, // 5MB
         helpText: "Sign the Peace Pledge Declaration electronically",
+        hasTemplate: true,
+        templateId: "template_peace_pledge_declaration",
+        templateType: "simple",
       },
       {
         id: "hrHandbook",
@@ -132,6 +150,9 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload your HR handbook or use our sample template",
+        hasTemplate: true,
+        templateId: "template_hr_handbook_small",
+        templateType: "simple",
       },
       {
         id: "ownershipStructure",
@@ -154,6 +175,9 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf"],
         maxFileSize: 5 * 1024 * 1024, // 5MB
         helpText: "Upload supplier declaration or sign our template",
+        hasTemplate: true,
+        templateId: "template_supplier_self_declaration",
+        templateType: "simple",
       },
       {
         id: "companyValuesStatement",
@@ -197,6 +221,9 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Payroll summary or self-declaration",
+        hasTemplate: true,
+        templateId: "template_fair_wage_declaration",
+        templateType: "simple",
       },
       {
         id: "antiHarassmentPolicy",
@@ -206,6 +233,9 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf"],
         maxFileSize: 5 * 1024 * 1024, // 5MB
         helpText: "Upload your policy or sign our template",
+        hasTemplate: true,
+        templateId: "template_anti_harassment_policy",
+        templateType: "simple",
       },
       // Optional fields (+5%)
       {
@@ -258,6 +288,9 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf"],
         maxFileSize: 5 * 1024 * 1024, // 5MB
         helpText: "Upload your statement or sign our template",
+        hasTemplate: true,
+        templateId: "template_sustainable_sourcing",
+        templateType: "simple",
       },
       // Optional fields (+5%)
       {
@@ -358,6 +391,14 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         options: ["Yes", "No"],
         helpText: "In future audits",
       },
+      {
+        id: "externalReviewAgreement",
+        label: "Agree to External Review by Pledge4Peace on Request",
+        type: "select",
+        required: true,
+        options: ["Yes", "No"],
+        helpText: "Agreement to external review",
+      },
     ],
   },
   {
@@ -375,6 +416,9 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf"],
         maxFileSize: 5 * 1024 * 1024, // 5MB
         helpText: "Sign the declaration",
+        hasTemplate: true,
+        templateId: "template_no_arms_ties",
+        templateType: "simple",
       },
       // Optional fields (+5%)
       {
@@ -410,6 +454,9 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload process documentation or opt in to use our mediation",
+        hasTemplate: true,
+        templateId: "template_complaint_resolution",
+        templateType: "simple",
       },
     ],
   },
@@ -432,6 +479,9 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf"],
         maxFileSize: 5 * 1024 * 1024, // 5MB
         helpText: "Sign the Peace Pledge Declaration electronically",
+        hasTemplate: true,
+        templateId: "template_peace_pledge_declaration",
+        templateType: "simple",
       },
       {
         id: "boardApprovedPeacePolicy",
@@ -441,6 +491,9 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload your policy or use our sample template",
+        hasTemplate: true,
+        templateId: "template_board_peace_policy",
+        templateType: "simple",
       },
       {
         id: "beneficialOwnershipPolicy",
@@ -450,6 +503,9 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload your policy or use our template",
+        hasTemplate: true,
+        templateId: "template_beneficial_ownership",
+        templateType: "beneficial-ownership",
       },
       {
         id: "supplierVendorCodeOfConduct",
@@ -459,6 +515,9 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload your code of conduct or sign our template",
+        hasTemplate: true,
+        templateId: "template_supplier_code_of_conduct",
+        templateType: "simple",
       },
       {
         id: "companyValuesStatement",
@@ -476,6 +535,9 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf"],
         maxFileSize: 5 * 1024 * 1024, // 5MB
         helpText: "Upload your declaration or sign our template",
+        hasTemplate: true,
+        templateId: "template_no_lobbying",
+        templateType: "simple",
       },
       // Optional fields (+5%)
       {
@@ -503,6 +565,9 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload your policy or sign our template",
+        hasTemplate: true,
+        templateId: "template_equal_opportunity",
+        templateType: "simple",
       },
       {
         id: "whistleblowerProtectionPolicy",
@@ -512,6 +577,9 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload your policy or sign our template",
+        hasTemplate: true,
+        templateId: "template_whistleblower_protection",
+        templateType: "simple",
       },
       {
         id: "fairWagePractices",
@@ -593,6 +661,9 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 15 * 1024 * 1024, // 15MB
         helpText: "Upload your disclosure or sign our sustainability plan",
+        hasTemplate: true,
+        templateId: "template_sustainable_sourcing",
+        templateType: "simple",
       },
       // Optional fields (+5%)
       {
@@ -718,6 +789,9 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf"],
         maxFileSize: 5 * 1024 * 1024, // 5MB
         helpText: "Sign the declaration",
+        hasTemplate: true,
+        templateId: "template_no_arms_ties",
+        templateType: "simple",
       },
       {
         id: "peaceInitiativesSupport",
@@ -753,6 +827,9 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload process documentation or opt in to use our mediation",
+        hasTemplate: true,
+        templateId: "template_complaint_resolution",
+        templateType: "simple",
       },
       {
         id: "resolutionChannels",
@@ -793,6 +870,9 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf"],
         maxFileSize: 5 * 1024 * 1024, // 5MB
         helpText: "Sign the Peace Pledge Declaration electronically",
+        hasTemplate: true,
+        templateId: "template_peace_pledge_declaration",
+        templateType: "simple",
       },
       {
         id: "boardApprovedPeacePolicy",
@@ -802,6 +882,9 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload your policy or use our sample template",
+        hasTemplate: true,
+        templateId: "template_board_peace_policy",
+        templateType: "simple",
       },
       {
         id: "beneficialOwnershipPolicy",
@@ -811,6 +894,9 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload your policy or use our template",
+        hasTemplate: true,
+        templateId: "template_beneficial_ownership",
+        templateType: "beneficial-ownership",
       },
       {
         id: "supplierVendorCodeOfConduct",
@@ -820,6 +906,9 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload your code of conduct or sign our template",
+        hasTemplate: true,
+        templateId: "template_supplier_code_of_conduct",
+        templateType: "simple",
       },
       {
         id: "companyValuesStatement",
@@ -837,6 +926,9 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf"],
         maxFileSize: 5 * 1024 * 1024, // 5MB
         helpText: "Upload your declaration or sign our template",
+        hasTemplate: true,
+        templateId: "template_no_lobbying",
+        templateType: "simple",
       },
       // Optional fields (+5%)
       {
@@ -865,6 +957,9 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload your policy or sign our template",
+        hasTemplate: true,
+        templateId: "template_equal_opportunity",
+        templateType: "simple",
       },
       {
         id: "fairWagePractices",
@@ -874,6 +969,9 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Payroll summary or self-declaration",
+        hasTemplate: true,
+        templateId: "template_fair_wage_declaration",
+        templateType: "simple",
       },
       {
         id: "mentalHealthPrograms",
@@ -891,6 +989,9 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload your policy or sign our template",
+        hasTemplate: true,
+        templateId: "template_whistleblower_protection",
+        templateType: "simple",
       },
       // Optional fields (+5%)
       {
@@ -1109,6 +1210,9 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf"],
         maxFileSize: 5 * 1024 * 1024, // 5MB
         helpText: "Sign the declaration",
+        hasTemplate: true,
+        templateId: "template_no_arms_ties",
+        templateType: "simple",
       },
       {
         id: "peaceInitiativesSupport",
@@ -1144,6 +1248,9 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload process documentation or opt in to use our mediation",
+        hasTemplate: true,
+        templateId: "template_complaint_resolution",
+        templateType: "simple",
       },
       {
         id: "resolutionChannels",

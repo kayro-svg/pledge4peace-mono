@@ -120,8 +120,8 @@ export class DocumentsController {
         mimeType: file.type,
         sectionId,
         fieldId,
-        uploadedByUserId: user.id,
-        createdAt: new Date(),
+        uploadedByUserId: user.id === "community-review-user" ? null : user.id, // Null for anonymous community reviews
+        createdAt: Date.now(),
       });
 
       logger.log("Document uploaded successfully:", {

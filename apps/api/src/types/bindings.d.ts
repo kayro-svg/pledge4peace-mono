@@ -14,6 +14,8 @@ export interface Env {
   P4P_BACKEND_API_TOKEN: string;
   NOTIFICATIONS_BOT_TOKEN: string;
   WEBHOOK_AUTH_TOKEN: string;
+  LINKEDIN_CLIENT_ID: string;
+  LINKEDIN_CLIENT_SECRET: string;
 }
 
 declare module "hono" {

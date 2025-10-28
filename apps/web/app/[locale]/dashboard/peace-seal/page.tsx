@@ -15,8 +15,12 @@ import {
   getBadgeLevel,
   adminListReviews,
   adminVerifyReview,
+  getEvaluationsForAdvisor,
+  getCompanyIssues,
   type Report,
   type CommunityReview,
+  type ReviewEvaluation,
+  type CompanyIssue,
 } from "@/lib/api/peace-seal";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,8 +59,12 @@ import {
   MessageSquare,
 } from "lucide-react";
 import { ReviewDetailsModal } from "@/components/peace-seal/review-details-modal";
+import { EvaluationModal } from "@/components/peace-seal/evaluation-modal";
+import { CompanyResponseModal } from "@/components/peace-seal/company-response-modal";
+import { PeaceSealCenter } from "@/components/peace-seal/peace-seal-center";
 import { logger } from "@/lib/utils/logger";
 import { useToast } from "@/hooks/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type {
   ParsedQuestionnaireSection,
   ParsedQuestionnaireResponse,
@@ -360,9 +368,35 @@ export default function PeaceSealDashboard() {
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [reviewPage] = useState(1);
   const [, setReviewTotal] = useState(0);
-  const [reviewStatus, setReviewStatus] = useState("pending");
+  const [reviewStatus, setReviewStatus] = useState("all");
   const [selectedReviewId, setSelectedReviewId] = useState<string | null>(null);
   const [showReviewDetails, setShowReviewDetails] = useState(false);
+
+  // Advisor Evaluations state
+  const [evaluations, setEvaluations] = useState<ReviewEvaluation[]>([]);
+  const [loadingEvaluations, setLoadingEvaluations] = useState(false);
+  const [evaluationPage] = useState(1);
+  const [, setEvaluationTotal] = useState(0);
+  const [evaluationStatus, setEvaluationStatus] = useState("pending");
+  const [selectedReviewForEvaluation, setSelectedReviewForEvaluation] =
+    useState<{
+      id: string;
+      companyName: string;
+      role: string;
+      totalScore: number;
+      starRating: number;
+      createdAt: number;
+      answers: Record<string, string>;
+    } | null>(null);
+  const [showEvaluationModal, setShowEvaluationModal] = useState(false);
+
+  // Company Issues state
+  const [companyIssues, setCompanyIssues] = useState<CompanyIssue[]>([]);
+  const [, setLoadingIssues] = useState(false);
+  const [selectedEvaluationForResponse, setSelectedEvaluationForResponse] =
+    useState<ReviewEvaluation | null>(null);
+  const [showCompanyResponseModal, setShowCompanyResponseModal] =
+    useState(false);
 
   // Company states
   const [userCompany, setUserCompany] = useState<UserCompany | null>(null);
@@ -397,6 +431,8 @@ export default function PeaceSealDashboard() {
         page,
         limit: 20,
       });
+
+      console.log("Companies:", result.items);
       setCompanies(result.items);
       setTotal(result.total);
     } catch (error) {
@@ -457,14 +493,99 @@ export default function PeaceSealDashboard() {
     }
   }, [isAdvisor, reviewStatus, reviewPage, toast]);
 
+  // Load reviews for a specific company
+  const loadCompanyReviews = useCallback(
+    async (companyId: string) => {
+      setLoadingReviews(true);
+      try {
+        const result = await adminListReviews({
+          status: reviewStatus,
+          page: reviewPage,
+          limit: 20,
+        });
+
+        // Filter reviews by company ID
+        const companyReviews = result.items.filter(
+          (review) => review.companyId === companyId
+        );
+        setReviews(companyReviews);
+        setReviewTotal(companyReviews.length);
+      } catch (error) {
+        logger.error("Failed to load company reviews:", error);
+        toast({
+          title: "Failed to load company reviews",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingReviews(false);
+      }
+    },
+    [reviewStatus, reviewPage, toast]
+  );
+
+  // Advisor Evaluations functions
+  const loadEvaluations = useCallback(async () => {
+    if (!isAdvisor) return;
+
+    setLoadingEvaluations(true);
+    try {
+      const result = await getEvaluationsForAdvisor({
+        status: evaluationStatus,
+        page: evaluationPage,
+        limit: 20,
+      });
+
+      setEvaluations(result.items);
+      setEvaluationTotal(result.total);
+    } catch (error) {
+      logger.error("Failed to load evaluations:", error);
+      toast({
+        title: "Failed to load evaluations",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingEvaluations(false);
+    }
+  }, [isAdvisor, evaluationStatus, evaluationPage, toast]);
+
+  // Company Issues functions
+  const loadCompanyIssues = useCallback(
+    async (companyId: string) => {
+      setLoadingIssues(true);
+      try {
+        const result = await getCompanyIssues(companyId);
+        console.log("Company issues:", result);
+        setCompanyIssues(result.issues);
+      } catch (error) {
+        logger.error("Failed to load company issues:", error);
+        toast({
+          title: "Failed to load company issues",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingIssues(false);
+      }
+    },
+    [toast]
+  );
+
   useEffect(() => {
     if (isAdvisor) {
       loadCompanies();
       loadReviews();
+      loadEvaluations();
     } else if (isCompany) {
       loadUserCompanyData();
     }
-  }, [isAdvisor, isCompany, loadCompanies, loadUserCompanyData, loadReviews]);
+  }, [
+    isAdvisor,
+    isCompany,
+    loadCompanies,
+    loadUserCompanyData,
+    loadReviews,
+    loadEvaluations,
+    loadCompanyReviews,
+  ]);
 
   useEffect(() => {
     if (isAdvisor) {
@@ -472,16 +593,25 @@ export default function PeaceSealDashboard() {
     }
   }, [reviewStatus, reviewPage, isAdvisor, loadReviews]);
 
+  useEffect(() => {
+    if (isAdvisor) {
+      loadEvaluations();
+    }
+  }, [evaluationStatus, evaluationPage, isAdvisor, loadEvaluations]);
+
   const loadCompanyDetails = async (companyId: string) => {
     try {
       const result = await adminGetCompany(companyId);
+      console.log("Company details:", result);
       setSelectedCompany(result);
       setUpdateForm({
         status: result.company.status,
       });
 
-      // Load reports for this company
+      // Load reports, issues, and reviews for this company
       await loadCompanyReports(companyId);
+      await loadCompanyIssues(companyId);
+      await loadCompanyReviews(companyId);
     } catch (error) {
       logger.error("Failed to load company details:", error);
     }
@@ -645,6 +775,68 @@ export default function PeaceSealDashboard() {
   const handleCloseReviewDetails = () => {
     setShowReviewDetails(false);
     setSelectedReviewId(null);
+  };
+
+  // Evaluation handlers
+  const handleCreateEvaluation = (
+    review: CommunityReview & { companyName?: string }
+  ) => {
+    // Parse answers JSON string if it exists
+    let parsedAnswers = {};
+    if (review.answers) {
+      try {
+        parsedAnswers = JSON.parse(review.answers);
+      } catch (error) {
+        console.error("Error parsing review answers:", error);
+        parsedAnswers = {};
+      }
+    }
+
+    setSelectedReviewForEvaluation({
+      id: review.id,
+      companyName: review.companyName || "Unknown Company",
+      role: review.role,
+      totalScore: review.totalScore || 0,
+      starRating: review.starRating || 0,
+      createdAt:
+        typeof review.createdAt === "number"
+          ? review.createdAt
+          : parseInt(review.createdAt.toString()),
+      answers: parsedAnswers,
+    });
+    setShowEvaluationModal(true);
+  };
+
+  const handleEvaluationCreated = () => {
+    // Refresh evaluations list
+    loadEvaluations();
+    // Close modal
+    setShowEvaluationModal(false);
+    setSelectedReviewForEvaluation(null);
+  };
+
+  const handleCloseEvaluationModal = () => {
+    setShowEvaluationModal(false);
+    setSelectedReviewForEvaluation(null);
+  };
+
+  // Company response handlers
+  const handleCompanyResponse = (evaluation: ReviewEvaluation) => {
+    setSelectedEvaluationForResponse(evaluation);
+    setShowCompanyResponseModal(true);
+  };
+
+  const handleResponseSubmitted = () => {
+    // Refresh evaluations list
+    loadEvaluations();
+    // Close modal
+    setShowCompanyResponseModal(false);
+    setSelectedEvaluationForResponse(null);
+  };
+
+  const handleCloseCompanyResponseModal = () => {
+    setShowCompanyResponseModal(false);
+    setSelectedEvaluationForResponse(null);
   };
 
   if (!isAdvisor && !isCompany) {
@@ -913,1261 +1105,1663 @@ export default function PeaceSealDashboard() {
             </div>
           </div>
 
-          {/* Filters */}
-          <Card className="mb-6">
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <Label htmlFor="status">Status Filter</Label>
-                  <Select
-                    value={selectedStatus}
-                    onValueChange={setSelectedStatus}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Statuses" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="application_submitted">
-                        Submitted
-                      </SelectItem>
-                      <SelectItem value="audit_in_progress">
-                        In Progress
-                      </SelectItem>
-                      {/* <SelectItem value="audit_completed">Completed</SelectItem> */}
-                      <SelectItem value="did_not_pass">Failed</SelectItem>
-                      <SelectItem value="under_review">Under Review</SelectItem>
-                      <SelectItem value="conditional">Conditional</SelectItem>
-                      <SelectItem value="verified">Verified</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+          {/* Main Tabs */}
+          <Tabs defaultValue="companies" className="w-full mb-6">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="companies">
+                <Building className="w-4 h-4 mr-2" />
+                Companies
+              </TabsTrigger>
+              <TabsTrigger value="resources">
+                <FileText className="w-4 h-4 mr-2" />
+                Peace Seal Center
+              </TabsTrigger>
+            </TabsList>
 
-                <div>
-                  <Label htmlFor="community">Company Type </Label>
-                  <Select
-                    value={communityListed}
-                    onValueChange={setCommunityListed}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Companies" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Companies</SelectItem>
-                      <SelectItem value="true">Added by Community</SelectItem>
-                      <SelectItem value="false">
-                        Regular Applications
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+            <TabsContent value="companies" className="space-y-6">
+              {/* Filters */}
+              <Card className="mb-6">
+                <CardContent className="pt-6">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div>
+                      <Label htmlFor="status">Status Filter</Label>
+                      <Select
+                        value={selectedStatus}
+                        onValueChange={setSelectedStatus}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Statuses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Statuses</SelectItem>
+                          <SelectItem value="application_submitted">
+                            Submitted
+                          </SelectItem>
+                          <SelectItem value="audit_in_progress">
+                            In Progress
+                          </SelectItem>
+                          {/* <SelectItem value="audit_completed">Completed</SelectItem> */}
+                          <SelectItem value="did_not_pass">Failed</SelectItem>
+                          <SelectItem value="under_review">
+                            Under Review
+                          </SelectItem>
+                          <SelectItem value="conditional">
+                            Conditional
+                          </SelectItem>
+                          <SelectItem value="verified">Verified</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                {session?.user?.role === "advisor" && (
-                  <div className="flex items-end">
-                    <Button
-                      variant={assignedToMe ? "default" : "outline"}
-                      onClick={() => setAssignedToMe(!assignedToMe)}
-                      className="w-full"
-                    >
-                      {assignedToMe ? "Show All" : "Assigned to Me"}
-                    </Button>
+                    <div>
+                      <Label htmlFor="community">Company Type </Label>
+                      <Select
+                        value={communityListed}
+                        onValueChange={setCommunityListed}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="All Companies" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Companies</SelectItem>
+                          <SelectItem value="true">
+                            Added by Community
+                          </SelectItem>
+                          <SelectItem value="false">
+                            Regular Applications
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {session?.user?.role === "advisor" && (
+                      <div className="flex items-end">
+                        <Button
+                          variant={assignedToMe ? "default" : "outline"}
+                          onClick={() => setAssignedToMe(!assignedToMe)}
+                          className="w-full"
+                        >
+                          {assignedToMe ? "Show All" : "Assigned to Me"}
+                        </Button>
+                      </div>
+                    )}
+
+                    <div className="flex items-end">
+                      <Button onClick={loadCompanies} className="w-full">
+                        Refresh
+                      </Button>
+                    </div>
                   </div>
-                )}
+                </CardContent>
+              </Card>
 
-                <div className="flex items-end">
-                  <Button onClick={loadCompanies} className="w-full">
-                    Refresh
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Companies Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                Companies ({total})
-                <div className="text-sm font-normal text-gray-600">
-                  Page {page} of {Math.max(1, Math.ceil(total / 20))}
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#548281]"></div>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="border-b">
-                      <tr className="text-left">
-                        <th className="pb-2">Company</th>
-                        <th className="pb-2">Status</th>
-                        <th className="pb-2">Score</th>
-                        <th className="pb-2">Payment</th>
-                        <th className="pb-2">Created</th>
-                        <th className="pb-2">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {companies.map((company) => (
-                        <tr key={company.id} className="border-b">
-                          <td className="py-3">
-                            <div>
-                              <div className="font-medium flex items-center gap-2">
-                                {company.name}
-                                {company.communityListed && (
-                                  <Badge
-                                    variant="outline"
-                                    className="text-xs bg-blue-50 text-blue-700 border-blue-200"
-                                  >
-                                    Community
-                                  </Badge>
-                                )}
-                                {company.score && (
-                                  <Badge
-                                    variant={
-                                      getBadgeLevel(company.score) === "Gold"
-                                        ? "default"
-                                        : getBadgeLevel(company.score) ===
-                                            "Silver"
-                                          ? "secondary"
-                                          : "outline"
-                                    }
-                                    className={
-                                      getBadgeLevel(company.score) === "Gold"
-                                        ? "bg-yellow-500 text-white text-xs"
-                                        : getBadgeLevel(company.score) ===
-                                            "Silver"
-                                          ? "bg-gray-400 text-white text-xs"
-                                          : "bg-orange-500 text-white text-xs"
-                                    }
-                                  >
-                                    {getBadgeLevel(company.score)}
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="text-gray-500 text-xs">
-                                {company.country} • {company.industry}
-                                {company.rfqStatus && (
-                                  <span className="ml-2 text-blue-600">
-                                    • RFQ: {company.rfqStatus}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3">
-                            <Badge
-                              className={`${getStatusColor(company.status)} border`}
-                            >
-                              <div className="flex items-center gap-1">
-                                {getStatusIcon(company.status)}
-                                {getStatusLabel(company.status)}
-                              </div>
-                            </Badge>
-                          </td>
-                          <td className="py-3">
-                            {company.score !== null &&
-                            company.score !== undefined ? (
-                              <span className="font-medium">
-                                {company.score}/100
-                              </span>
-                            ) : (
-                              <span className="text-gray-400">—</span>
-                            )}
-                          </td>
-                          <td className="py-3">
-                            <Badge
-                              variant={
-                                company.paymentStatus === "paid"
-                                  ? "default"
-                                  : "secondary"
-                              }
-                            >
-                              {company.paymentStatus === "paid"
-                                ? "Paid"
-                                : "Pending"}
-                            </Badge>
-                          </td>
-                          <td className="py-3">
-                            {new Date(company.createdAt).toLocaleDateString()}
-                          </td>
-                          <td className="py-3">
-                            <Dialog>
-                              <DialogTrigger asChild>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => loadCompanyDetails(company.id)}
-                                >
-                                  <Eye className="w-4 h-4 mr-1" />
-                                  Review
-                                </Button>
-                              </DialogTrigger>
-                              <DialogContent className="w-full !max-w-7xl !h-[80vh] !overflow-y-auto">
-                                <DialogHeader>
-                                  <DialogTitle>
-                                    Company Review:{" "}
-                                    {selectedCompany?.company?.name}
-                                  </DialogTitle>
-                                </DialogHeader>
-
-                                {selectedCompany && (
-                                  <div className="space-y-6">
-                                    {/* Company Info */}
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                      <div>
-                                        <h4 className="font-medium mb-2">
-                                          Company Information
-                                        </h4>
-                                        <div className="space-y-1 text-sm">
-                                          <p>
-                                            <strong>Name:</strong>{" "}
-                                            {selectedCompany.company.name}
-                                            {selectedCompany.company.score && (
-                                              <span className="ml-2">
-                                                <Badge
-                                                  variant={
-                                                    getBadgeLevel(
-                                                      selectedCompany.company
-                                                        .score
-                                                    ) === "Gold"
-                                                      ? "default"
-                                                      : getBadgeLevel(
-                                                            selectedCompany
-                                                              .company.score
-                                                          ) === "Silver"
-                                                        ? "secondary"
-                                                        : "outline"
-                                                  }
-                                                  className={
-                                                    getBadgeLevel(
-                                                      selectedCompany.company
-                                                        .score
-                                                    ) === "Gold"
-                                                      ? "bg-yellow-500 text-white"
-                                                      : getBadgeLevel(
-                                                            selectedCompany
-                                                              .company.score
-                                                          ) === "Silver"
-                                                        ? "bg-gray-400 text-white"
-                                                        : "bg-orange-500 text-white"
-                                                  }
-                                                >
-                                                  {getBadgeLevel(
-                                                    selectedCompany.company
-                                                      .score
-                                                  )}{" "}
-                                                  (
-                                                  {
-                                                    selectedCompany.company
-                                                      .score
-                                                  }
-                                                  /100)
-                                                </Badge>
-                                              </span>
-                                            )}
-                                          </p>
-                                          <p>
-                                            <strong>Country:</strong>{" "}
-                                            {selectedCompany.company.country ||
-                                              "—"}
-                                          </p>
-                                          <p>
-                                            <strong>Industry:</strong>{" "}
-                                            {selectedCompany.company.industry ||
-                                              "—"}
-                                          </p>
-                                          <p>
-                                            <strong>Employees:</strong>{" "}
-                                            {selectedCompany.company
-                                              .employeeCount || "—"}
-                                          </p>
-                                          <p>
-                                            <strong>Website:</strong>{" "}
-                                            {selectedCompany.company.website ||
-                                              "—"}
-                                          </p>
-                                        </div>
-                                      </div>
-
-                                      <div>
-                                        <h4 className="font-medium mb-2">
-                                          Payment Information
-                                        </h4>
-                                        <div className="space-y-1 text-sm">
-                                          <p>
-                                            <strong>Status:</strong>{" "}
-                                            {
-                                              selectedCompany.company
-                                                .paymentStatus
-                                            }
-                                            {selectedCompany.company
-                                              .rfqStatus && (
-                                              <span className="ml-2">
-                                                • RFQ:{" "}
-                                                {
-                                                  selectedCompany.company
-                                                    .rfqStatus
-                                                }
-                                              </span>
-                                            )}
-                                          </p>
-                                          <p>
-                                            <strong>Amount:</strong> $
-                                            {(selectedCompany.company
-                                              .paymentAmountCents || 0) / 100}
-                                          </p>
-                                          <p>
-                                            <strong>Date:</strong>{" "}
-                                            {selectedCompany.company.paymentDate
-                                              ? new Date(
-                                                  selectedCompany.company.paymentDate
-                                                ).toLocaleDateString()
-                                              : "—"}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    </div>
-
-                                    {/* Questionnaire */}
-                                    {selectedCompany.questionnaire && (
-                                      <div>
-                                        <h4 className="font-medium mb-4 text-lg">
-                                          Peace Seal Questionnaire Responses
-                                        </h4>
-                                        <div className="bg-gray-50 p-4 rounded-lg mb-4">
-                                          <div className="flex items-center gap-4">
-                                            <div>
-                                              <strong>Progress:</strong>{" "}
-                                              <span className="text-lg font-semibold text-[#548281]">
-                                                {
-                                                  selectedCompany.questionnaire
-                                                    .progress
-                                                }
-                                                %
-                                              </span>
-                                            </div>
-                                            <div className="flex-1 bg-gray-200 rounded-full h-2">
-                                              <div
-                                                className="bg-[#548281] h-2 rounded-full transition-all duration-300"
-                                                style={{
-                                                  width: `${selectedCompany.questionnaire.progress}%`,
-                                                }}
-                                              ></div>
-                                            </div>
-                                          </div>
-                                          {selectedCompany.questionnaire
-                                            .stats && (
-                                            <div className="mt-3 text-sm text-gray-600">
-                                              <div className="flex gap-4">
-                                                <span>
-                                                  Questions Answered:{" "}
-                                                  {
-                                                    selectedCompany
-                                                      .questionnaire.stats
-                                                      .answeredQuestions
-                                                  }{" "}
-                                                  /{" "}
-                                                  {
-                                                    selectedCompany
-                                                      .questionnaire.stats
-                                                      .totalQuestions
-                                                  }
-                                                </span>
-                                                <span>
-                                                  Sections:{" "}
-                                                  {
-                                                    selectedCompany
-                                                      .questionnaire.stats
-                                                      .sectionsCount
-                                                  }
-                                                </span>
-                                              </div>
-                                            </div>
-                                          )}
-                                        </div>
-
-                                        {selectedCompany.questionnaire
-                                          .sections &&
-                                          selectedCompany.questionnaire.sections
-                                            .length > 0 && (
-                                            <div className="space-y-6">
-                                              {selectedCompany.questionnaire.sections.map(
-                                                (section) => (
-                                                  <div
-                                                    key={section.sectionTitle}
-                                                    className="border border-gray-200 rounded-lg"
-                                                  >
-                                                    <div className="bg-gray-100 px-4 py-3 border-b border-gray-200">
-                                                      <h5 className="font-semibold text-gray-900">
-                                                        {section.sectionTitle}
-                                                      </h5>
-                                                      <div className="text-xs text-gray-600 mt-1">
-                                                        {
-                                                          section.responses.filter(
-                                                            (r) => !r.isEmpty
-                                                          ).length
-                                                        }{" "}
-                                                        /{" "}
-                                                        {
-                                                          section.responses
-                                                            .length
-                                                        }{" "}
-                                                        questions answered
-                                                      </div>
-                                                    </div>
-                                                    <div className="p-4 space-y-4">
-                                                      {section.responses.map(
-                                                        (response) => (
-                                                          <div
-                                                            key={
-                                                              response.fieldId
-                                                            }
-                                                            className="border-b border-gray-100 pb-3 last:border-b-0 last:pb-0"
-                                                          >
-                                                            <div className="mb-2">
-                                                              <label className="text-sm font-bold text-gray-800">
-                                                                {
-                                                                  response.question
-                                                                }
-                                                              </label>
-                                                            </div>
-                                                            <div className="text-sm">
-                                                              {formatQuestionnaireValue(
-                                                                response
-                                                              )}
-                                                            </div>
-                                                          </div>
-                                                        )
-                                                      )}
-                                                    </div>
-                                                  </div>
-                                                )
-                                              )}
-                                            </div>
-                                          )}
-                                      </div>
+              {/* Companies Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    Companies ({total})
+                    <div className="text-sm font-normal text-gray-600">
+                      Page {page} of {Math.max(1, Math.ceil(total / 20))}
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#548281]"></div>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead className="border-b">
+                          <tr className="text-left">
+                            <th className="pb-2">Company</th>
+                            <th className="pb-2">Status</th>
+                            <th className="pb-2">Score</th>
+                            <th className="pb-2">Payment</th>
+                            <th className="pb-2">Created</th>
+                            <th className="pb-2">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {companies.map((company) => (
+                            <tr key={company.id} className="border-b">
+                              <td className="py-3">
+                                <div>
+                                  <div className="font-medium flex items-center gap-2">
+                                    <span className="text-gray-900">
+                                      {company.name}
+                                    </span>
+                                    {company.communityListed ? (
+                                      <Badge
+                                        variant="outline"
+                                        className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                                      >
+                                        Community
+                                      </Badge>
+                                    ) : null}
+                                    {company.score && (
+                                      <Badge
+                                        variant={
+                                          getBadgeLevel(company.score) ===
+                                          "Gold"
+                                            ? "default"
+                                            : getBadgeLevel(company.score) ===
+                                                "Silver"
+                                              ? "secondary"
+                                              : "outline"
+                                        }
+                                        className={
+                                          getBadgeLevel(company.score) ===
+                                          "Gold"
+                                            ? "bg-yellow-500 text-white text-xs"
+                                            : getBadgeLevel(company.score) ===
+                                                "Silver"
+                                              ? "bg-gray-400 text-white text-xs"
+                                              : "bg-orange-500 text-white text-xs"
+                                        }
+                                      >
+                                        {getBadgeLevel(company.score)}
+                                      </Badge>
                                     )}
+                                  </div>
+                                  <div className="text-gray-500 text-xs">
+                                    {company.country} • {company.industry}
+                                    {company.rfqStatus && (
+                                      <span className="ml-2 text-blue-600">
+                                        • RFQ: {company.rfqStatus}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-3">
+                                <Badge
+                                  className={`${getStatusColor(company.status)} border`}
+                                >
+                                  <div className="flex items-center gap-1">
+                                    {getStatusIcon(company.status)}
+                                    {getStatusLabel(company.status)}
+                                  </div>
+                                </Badge>
+                              </td>
+                              <td className="py-3">
+                                {company.score !== null &&
+                                company.score !== undefined ? (
+                                  <span className="font-medium">
+                                    {company.score}/100
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-400">—</span>
+                                )}
+                              </td>
+                              <td className="py-3">
+                                <Badge
+                                  variant={
+                                    company.paymentStatus === "paid"
+                                      ? "default"
+                                      : "secondary"
+                                  }
+                                >
+                                  {company.paymentStatus === "paid"
+                                    ? "Paid"
+                                    : "Pending"}
+                                </Badge>
+                              </td>
+                              <td className="py-3">
+                                {new Date(
+                                  company.createdAt
+                                ).toLocaleDateString()}
+                              </td>
+                              <td className="py-3">
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        loadCompanyDetails(company.id)
+                                      }
+                                    >
+                                      <Eye className="w-4 h-4 mr-1" />
+                                      Review
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="w-full !max-w-7xl !h-[80vh] !overflow-y-auto">
+                                    <DialogHeader>
+                                      <DialogTitle>
+                                        Company Review:{" "}
+                                        {selectedCompany?.company?.name}
+                                      </DialogTitle>
+                                    </DialogHeader>
 
-                                    {/* Documents Section */}
-                                    <div>
-                                      <h4 className="font-medium mb-4 text-lg">
-                                        Uploaded Documents
-                                      </h4>
-                                      <div className="bg-gray-50 p-4 rounded-lg">
-                                        <p className="text-sm text-gray-600 mb-4">
-                                          Documents uploaded by the company
-                                          during the application process.
-                                        </p>
-                                        {selectedCompany.documents &&
-                                        selectedCompany.documents.length > 0 ? (
-                                          <div className="space-y-3">
-                                            {selectedCompany.documents.map(
-                                              (doc) => (
-                                                <div
-                                                  key={doc.id}
-                                                  className="flex items-center justify-between p-3 bg-white rounded border border-gray-200"
-                                                >
-                                                  <div className="flex items-center gap-3">
-                                                    <FileText className="w-5 h-5 text-blue-600" />
-                                                    <div>
-                                                      <div className="font-medium text-gray-900">
-                                                        {doc.fileName}
-                                                      </div>
-                                                      <div className="text-sm text-gray-500">
-                                                        {doc.documentType}
-                                                        {doc.fileSize &&
-                                                          ` • ${(doc.fileSize / 1024).toFixed(1)} KB`}
-                                                        {doc.mimeType &&
-                                                          ` • ${doc.mimeType}`}
-                                                      </div>
-                                                      {doc.fieldId && (
-                                                        <div className="text-xs text-gray-400">
-                                                          Related to:{" "}
-                                                          {formatFieldName(
-                                                            doc.fieldId
-                                                          )}
-                                                        </div>
-                                                      )}
-                                                    </div>
-                                                  </div>
-                                                  <div className="flex items-center gap-2">
-                                                    <Button
-                                                      size="sm"
-                                                      variant="outline"
-                                                      className="h-8 px-3 text-xs"
-                                                      onClick={() =>
-                                                        window.open(
-                                                          doc.fileUrl,
-                                                          "_blank"
-                                                        )
-                                                      }
-                                                    >
-                                                      <ExternalLink className="w-3 h-3 mr-1" />
-                                                      View
-                                                    </Button>
-                                                    <div
-                                                      className={`w-2 h-2 rounded-full ${doc.verifiedByAdvisor ? "bg-green-500" : "bg-yellow-500"}`}
-                                                      title={
-                                                        doc.verifiedByAdvisor
-                                                          ? "Verified"
-                                                          : "Pending verification"
-                                                      }
-                                                    />
-                                                  </div>
-                                                </div>
-                                              )
-                                            )}
-                                          </div>
-                                        ) : (
-                                          <div className="text-center py-6 text-gray-500">
-                                            <Upload className="w-10 h-10 mx-auto mb-2 text-gray-400" />
-                                            <p className="text-sm">
-                                              No documents uploaded yet
-                                            </p>
-                                            <p className="text-xs text-gray-400 mt-1">
-                                              Files may be embedded in
-                                              questionnaire responses above
-                                            </p>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-
-                                    {/* Reports Section */}
-                                    <div>
-                                      <h4 className="font-medium mb-2 flex items-center gap-2">
-                                        <Flag className="w-4 h-4 text-red-500" />
-                                        Reports
-                                      </h4>
-                                      {loadingReports ? (
-                                        <div className="text-sm text-gray-500">
-                                          Loading reports...
-                                        </div>
-                                      ) : companyReports.length > 0 ? (
-                                        <div className="space-y-3">
-                                          {companyReports.map((report) => (
-                                            <div
-                                              key={report.id}
-                                              className="border rounded-lg p-3 bg-red-50"
-                                            >
-                                              <div className="flex justify-between items-start mb-2">
-                                                <div className="flex-1">
-                                                  <div className="flex items-center gap-2 mb-1">
-                                                    <span className="text-sm font-medium text-red-900">
-                                                      {report.reason
-                                                        .replace(/_/g, " ")
-                                                        .replace(/\b\w/g, (l) =>
-                                                          l.toUpperCase()
-                                                        )}
-                                                    </span>
-                                                    <span
-                                                      className={`px-2 py-1 text-xs rounded-full ${
-                                                        report.status ===
-                                                        "pending"
-                                                          ? "bg-yellow-100 text-yellow-800"
-                                                          : report.status ===
-                                                              "resolved"
-                                                            ? "bg-red-100 text-red-800"
-                                                            : report.status ===
-                                                                "dismissed"
-                                                              ? "bg-green-100 text-green-800"
-                                                              : "bg-gray-100 text-gray-800"
-                                                      }`}
-                                                    >
-                                                      {report.status}
-                                                    </span>
-                                                  </div>
-                                                  <p className="text-sm text-gray-700 mb-2">
-                                                    {report.description}
-                                                  </p>
-                                                  {report.evidence && (
-                                                    <p className="text-xs text-gray-600 mb-2">
-                                                      <strong>Evidence:</strong>{" "}
-                                                      {report.evidence}
-                                                    </p>
-                                                  )}
-                                                  <p className="text-xs text-gray-500">
-                                                    Reported:{" "}
-                                                    {new Date(
-                                                      report.createdAt
-                                                    ).toLocaleDateString()}
-                                                    {report.reporterName &&
-                                                      ` by ${report.reporterName}`}
-                                                  </p>
-                                                </div>
-                                              </div>
-
-                                              {/* Resolution Actions */}
-                                              {report.status === "pending" && (
-                                                <div className="flex gap-2 mt-3">
-                                                  <Button
-                                                    size="sm"
-                                                    variant="destructive"
-                                                    onClick={() =>
-                                                      handleResolveReport(
-                                                        report.id,
-                                                        "resolved"
-                                                      )
-                                                    }
-                                                    disabled={
-                                                      resolvingReport ===
-                                                      report.id
-                                                    }
-                                                  >
-                                                    {resolvingReport ===
-                                                    report.id
-                                                      ? "..."
-                                                      : "Confirm Issue"}
-                                                  </Button>
-                                                  <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    onClick={() =>
-                                                      handleResolveReport(
-                                                        report.id,
-                                                        "dismissed"
-                                                      )
-                                                    }
-                                                    disabled={
-                                                      resolvingReport ===
-                                                      report.id
-                                                    }
-                                                  >
-                                                    {resolvingReport ===
-                                                    report.id
-                                                      ? "..."
-                                                      : "Dismiss"}
-                                                  </Button>
-                                                </div>
-                                              )}
-
-                                              {/* Resolution Info */}
-                                              {(report.status === "resolved" ||
-                                                report.status ===
-                                                  "dismissed") && (
-                                                <div className="mt-2 pt-2 border-t border-red-200">
-                                                  <p className="text-xs text-gray-600">
-                                                    {report.status ===
-                                                    "resolved"
-                                                      ? "Issue confirmed"
-                                                      : "Report dismissed"}
-                                                    {report.resolvedAt &&
-                                                      ` on ${new Date(report.resolvedAt).toLocaleDateString()}`}
-                                                    {report.resolverName &&
-                                                      ` by ${report.resolverName}`}
-                                                  </p>
-                                                  {report.resolutionNotes && (
-                                                    <p className="text-xs text-gray-600 mt-1">
-                                                      <strong>Notes:</strong>{" "}
-                                                      {report.resolutionNotes}
-                                                    </p>
-                                                  )}
-                                                </div>
-                                              )}
-                                            </div>
-                                          ))}
-                                        </div>
-                                      ) : (
-                                        <div className="text-sm text-gray-500">
-                                          No reports for this company.
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {/* Community Reviews Section */}
-                                    <div className="border-t pt-4">
-                                      <h4 className="font-medium mb-4 flex items-center gap-2">
-                                        <MessageSquare className="w-4 h-4 text-blue-500" />
-                                        Community Reviews
-                                      </h4>
-
-                                      {/* Review Status Filter */}
-                                      <div className="mb-4">
-                                        <Select
-                                          value={reviewStatus}
-                                          onValueChange={setReviewStatus}
-                                        >
-                                          <SelectTrigger className="w-48">
-                                            <SelectValue placeholder="Filter by status" />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            <SelectItem value="pending">
-                                              Pending Review
-                                            </SelectItem>
-                                            <SelectItem value="verified">
-                                              Verified
-                                            </SelectItem>
-                                            <SelectItem value="unverified">
-                                              Unverified
-                                            </SelectItem>
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-
-                                      {loadingReviews ? (
-                                        <div className="text-sm text-gray-500">
-                                          Loading reviews...
-                                        </div>
-                                      ) : reviews.length > 0 ? (
-                                        <div className="space-y-3">
-                                          {reviews.map((review) => (
-                                            <div
-                                              key={review.id}
-                                              className="border rounded-lg p-3 bg-blue-50"
-                                            >
-                                              <div className="flex justify-between items-start mb-2">
-                                                <div className="flex-1">
-                                                  <div className="flex items-center gap-2 mb-1">
-                                                    <span className="text-sm font-medium text-blue-900">
-                                                      {review.companyName ||
-                                                        "Unknown Company"}
-                                                    </span>
+                                    {selectedCompany && (
+                                      <div className="space-y-6">
+                                        {/* Company Info */}
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                          <div>
+                                            <h4 className="font-medium mb-2">
+                                              Company Information
+                                            </h4>
+                                            <div className="space-y-1 text-sm">
+                                              <p>
+                                                <strong>Name:</strong>{" "}
+                                                {selectedCompany.company.name}
+                                                {selectedCompany.company
+                                                  .score && (
+                                                  <span className="ml-2">
                                                     <Badge
                                                       variant={
-                                                        review.verificationStatus ===
-                                                        "verified"
+                                                        getBadgeLevel(
+                                                          selectedCompany
+                                                            .company.score
+                                                        ) === "Gold"
                                                           ? "default"
-                                                          : review.verificationStatus ===
-                                                              "pending"
+                                                          : getBadgeLevel(
+                                                                selectedCompany
+                                                                  .company.score
+                                                              ) === "Silver"
                                                             ? "secondary"
                                                             : "outline"
                                                       }
+                                                      className={
+                                                        getBadgeLevel(
+                                                          selectedCompany
+                                                            .company.score
+                                                        ) === "Gold"
+                                                          ? "bg-yellow-500 text-white"
+                                                          : getBadgeLevel(
+                                                                selectedCompany
+                                                                  .company.score
+                                                              ) === "Silver"
+                                                            ? "bg-gray-400 text-white"
+                                                            : "bg-orange-500 text-white"
+                                                      }
                                                     >
-                                                      {review.verificationStatus ===
-                                                      "verified"
-                                                        ? "✓ Verified"
-                                                        : review.verificationStatus ===
-                                                            "pending"
-                                                          ? "Unverified"
-                                                          : "Pending"}
-                                                      {review.role}
+                                                      {getBadgeLevel(
+                                                        selectedCompany.company
+                                                          .score
+                                                      )}{" "}
+                                                      (
+                                                      {
+                                                        selectedCompany.company
+                                                          .score
+                                                      }
+                                                      /100)
                                                     </Badge>
-                                                  </div>
-                                                  <p className="text-sm text-gray-700 mb-2">
-                                                    Score:{" "}
-                                                    {review.totalScore || "N/A"}
-                                                    /100
-                                                    {review.starRating && (
-                                                      <span className="ml-2">
-                                                        ⭐ {review.starRating}/5
-                                                      </span>
-                                                    )}
-                                                  </p>
-                                                  <p className="text-xs text-gray-500">
-                                                    Created:{" "}
-                                                    {new Date(
-                                                      review.createdAt
-                                                    ).toLocaleDateString()}
-                                                  </p>
+                                                  </span>
+                                                )}
+                                              </p>
+                                              <p>
+                                                <strong>Country:</strong>{" "}
+                                                {selectedCompany.company
+                                                  .country || "—"}
+                                              </p>
+                                              <p>
+                                                <strong>Industry:</strong>{" "}
+                                                {selectedCompany.company
+                                                  .industry || "—"}
+                                              </p>
+                                              <p>
+                                                <strong>Employees:</strong>{" "}
+                                                {selectedCompany.company
+                                                  .employeeCount || "—"}
+                                              </p>
+                                              <p>
+                                                <strong>Website:</strong>{" "}
+                                                {selectedCompany.company
+                                                  .website || "—"}
+                                              </p>
+                                            </div>
+                                          </div>
+
+                                          <div>
+                                            <h4 className="font-medium mb-2">
+                                              Payment Information
+                                            </h4>
+                                            <div className="space-y-1 text-sm">
+                                              <p>
+                                                <strong>Status:</strong>{" "}
+                                                {
+                                                  selectedCompany.company
+                                                    .paymentStatus
+                                                }
+                                                {selectedCompany.company
+                                                  .rfqStatus && (
+                                                  <span className="ml-2">
+                                                    • RFQ:{" "}
+                                                    {
+                                                      selectedCompany.company
+                                                        .rfqStatus
+                                                    }
+                                                  </span>
+                                                )}
+                                              </p>
+                                              <p>
+                                                <strong>Amount:</strong> $
+                                                {(selectedCompany.company
+                                                  .paymentAmountCents || 0) /
+                                                  100}
+                                              </p>
+                                              <p>
+                                                <strong>Date:</strong>{" "}
+                                                {selectedCompany.company
+                                                  .paymentDate
+                                                  ? new Date(
+                                                      selectedCompany.company.paymentDate
+                                                    ).toLocaleDateString()
+                                                  : "—"}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+
+                                        {/* Questionnaire */}
+                                        {selectedCompany.questionnaire && (
+                                          <div>
+                                            <h4 className="font-medium mb-4 text-lg">
+                                              Peace Seal Questionnaire Responses
+                                            </h4>
+                                            <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                                              <div className="flex items-center gap-4">
+                                                <div>
+                                                  <strong>Progress:</strong>{" "}
+                                                  <span className="text-lg font-semibold text-[#548281]">
+                                                    {
+                                                      selectedCompany
+                                                        .questionnaire.progress
+                                                    }
+                                                    %
+                                                  </span>
+                                                </div>
+                                                <div className="flex-1 bg-gray-200 rounded-full h-2">
+                                                  <div
+                                                    className="bg-[#548281] h-2 rounded-full transition-all duration-300"
+                                                    style={{
+                                                      width: `${selectedCompany.questionnaire.progress}%`,
+                                                    }}
+                                                  ></div>
                                                 </div>
                                               </div>
+                                              {selectedCompany.questionnaire
+                                                .stats && (
+                                                <div className="mt-3 text-sm text-gray-600">
+                                                  <div className="flex gap-4">
+                                                    <span>
+                                                      Questions Answered:{" "}
+                                                      {
+                                                        selectedCompany
+                                                          .questionnaire.stats
+                                                          .answeredQuestions
+                                                      }{" "}
+                                                      /{" "}
+                                                      {
+                                                        selectedCompany
+                                                          .questionnaire.stats
+                                                          .totalQuestions
+                                                      }
+                                                    </span>
+                                                    <span>
+                                                      Sections:{" "}
+                                                      {
+                                                        selectedCompany
+                                                          .questionnaire.stats
+                                                          .sectionsCount
+                                                      }
+                                                    </span>
+                                                  </div>
+                                                </div>
+                                              )}
+                                            </div>
 
-                                              {/* Action Buttons */}
-                                              <div className="flex gap-2 mt-2">
-                                                <Button
-                                                  size="sm"
-                                                  variant="outline"
-                                                  onClick={() =>
-                                                    handleViewReviewDetails(
-                                                      review.id
+                                            {selectedCompany.questionnaire
+                                              .sections &&
+                                              selectedCompany.questionnaire
+                                                .sections.length > 0 && (
+                                                <div className="space-y-6">
+                                                  {selectedCompany.questionnaire.sections.map(
+                                                    (section) => (
+                                                      <div
+                                                        key={
+                                                          section.sectionTitle
+                                                        }
+                                                        className="border border-gray-200 rounded-lg"
+                                                      >
+                                                        <div className="bg-gray-100 px-4 py-3 border-b border-gray-200">
+                                                          <h5 className="font-semibold text-gray-900">
+                                                            {
+                                                              section.sectionTitle
+                                                            }
+                                                          </h5>
+                                                          <div className="text-xs text-gray-600 mt-1">
+                                                            {
+                                                              section.responses.filter(
+                                                                (r) =>
+                                                                  !r.isEmpty
+                                                              ).length
+                                                            }{" "}
+                                                            /{" "}
+                                                            {
+                                                              section.responses
+                                                                .length
+                                                            }{" "}
+                                                            questions answered
+                                                          </div>
+                                                        </div>
+                                                        <div className="p-4 space-y-4">
+                                                          {section.responses.map(
+                                                            (response) => (
+                                                              <div
+                                                                key={
+                                                                  response.fieldId
+                                                                }
+                                                                className="border-b border-gray-100 pb-3 last:border-b-0 last:pb-0"
+                                                              >
+                                                                <div className="mb-2">
+                                                                  <label className="text-sm font-bold text-gray-800">
+                                                                    {
+                                                                      response.question
+                                                                    }
+                                                                  </label>
+                                                                </div>
+                                                                <div className="text-sm">
+                                                                  {formatQuestionnaireValue(
+                                                                    response
+                                                                  )}
+                                                                </div>
+                                                              </div>
+                                                            )
+                                                          )}
+                                                        </div>
+                                                      </div>
                                                     )
-                                                  }
-                                                  disabled={loadingReviews}
-                                                >
-                                                  <Eye className="w-4 h-4 mr-1" />
-                                                  View Details
-                                                </Button>
-                                                {review.verificationStatus ===
-                                                  "pending" && (
-                                                  <>
-                                                    <Button
-                                                      size="sm"
-                                                      className="bg-green-600 hover:bg-green-700"
-                                                      onClick={() =>
-                                                        handleVerifyReview(
-                                                          review.id,
-                                                          "verify"
-                                                        )
-                                                      }
-                                                      disabled={loadingReviews}
+                                                  )}
+                                                </div>
+                                              )}
+                                          </div>
+                                        )}
+
+                                        {/* Documents Section */}
+                                        <div>
+                                          <h4 className="font-medium mb-4 text-lg">
+                                            {selectedCompany.company
+                                              .communityListed
+                                              ? "Review Evidence Documents"
+                                              : "Uploaded Documents"}
+                                          </h4>
+                                          <div className="bg-gray-50 p-4 rounded-lg">
+                                            <p className="text-sm text-gray-600 mb-4">
+                                              {selectedCompany.company
+                                                .communityListed
+                                                ? "Documents uploaded as evidence for community reviews. These are verification documents from reviewers."
+                                                : "Documents uploaded by the company during the application process."}
+                                            </p>
+                                            {selectedCompany.documents &&
+                                            selectedCompany.documents.length >
+                                              0 ? (
+                                              <div className="space-y-3">
+                                                {selectedCompany.documents.map(
+                                                  (doc) => (
+                                                    <div
+                                                      key={doc.id}
+                                                      className="flex items-center justify-between p-3 bg-white rounded border border-gray-200"
                                                     >
-                                                      Verify
-                                                    </Button>
-                                                    <Button
-                                                      size="sm"
-                                                      variant="outline"
-                                                      onClick={() =>
-                                                        handleVerifyReview(
-                                                          review.id,
-                                                          "dismiss"
-                                                        )
-                                                      }
-                                                      disabled={loadingReviews}
-                                                    >
-                                                      Dismiss
-                                                    </Button>
-                                                  </>
+                                                      <div className="flex items-center gap-3">
+                                                        <FileText className="w-5 h-5 text-blue-600" />
+                                                        <div>
+                                                          <div className="font-medium text-gray-900">
+                                                            {doc.fileName}
+                                                          </div>
+                                                          <div className="text-sm text-gray-500">
+                                                            {doc.documentType}
+                                                            {doc.fileSize &&
+                                                              ` • ${(doc.fileSize / 1024).toFixed(1)} KB`}
+                                                            {doc.mimeType &&
+                                                              ` • ${doc.mimeType}`}
+                                                          </div>
+                                                          {doc.fieldId && (
+                                                            <div className="text-xs text-gray-400">
+                                                              Related to:{" "}
+                                                              {formatFieldName(
+                                                                doc.fieldId
+                                                              )}
+                                                            </div>
+                                                          )}
+                                                        </div>
+                                                      </div>
+                                                      <div className="flex items-center gap-2">
+                                                        <Button
+                                                          size="sm"
+                                                          variant="outline"
+                                                          className="h-8 px-3 text-xs"
+                                                          onClick={() =>
+                                                            window.open(
+                                                              doc.fileUrl,
+                                                              "_blank"
+                                                            )
+                                                          }
+                                                        >
+                                                          <ExternalLink className="w-3 h-3 mr-1" />
+                                                          View
+                                                        </Button>
+                                                        <div
+                                                          className={`w-2 h-2 rounded-full ${doc.verifiedByAdvisor ? "bg-green-500" : "bg-yellow-500"}`}
+                                                          title={
+                                                            doc.verifiedByAdvisor
+                                                              ? "Verified"
+                                                              : "Pending verification"
+                                                          }
+                                                        />
+                                                      </div>
+                                                    </div>
+                                                  )
                                                 )}
                                               </div>
+                                            ) : (
+                                              <div className="text-center py-6 text-gray-500">
+                                                <Upload className="w-10 h-10 mx-auto mb-2 text-gray-400" />
+                                                <p className="text-sm">
+                                                  {selectedCompany.company
+                                                    .communityListed
+                                                    ? "No review evidence documents uploaded yet"
+                                                    : "No documents uploaded yet"}
+                                                </p>
+                                                <p className="text-xs text-gray-400 mt-1">
+                                                  {selectedCompany.company
+                                                    .communityListed
+                                                    ? "Reviewers can upload verification documents when submitting reviews"
+                                                    : "Files may be embedded in questionnaire responses above"}
+                                                </p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* Reports Section */}
+                                        <div>
+                                          <h4 className="font-medium mb-2 flex items-center gap-2">
+                                            <Flag className="w-4 h-4 text-red-500" />
+                                            Reports
+                                          </h4>
+                                          {loadingReports ? (
+                                            <div className="text-sm text-gray-500">
+                                              Loading reports...
                                             </div>
-                                          ))}
-                                        </div>
-                                      ) : (
-                                        <div className="text-sm text-gray-500">
-                                          No {reviewStatus} reviews found.
-                                        </div>
-                                      )}
-                                    </div>
+                                          ) : companyReports.length > 0 ? (
+                                            <div className="space-y-3">
+                                              {companyReports.map((report) => (
+                                                <div
+                                                  key={report.id}
+                                                  className="border rounded-lg p-3 bg-red-50"
+                                                >
+                                                  <div className="flex justify-between items-start mb-2">
+                                                    <div className="flex-1">
+                                                      <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-sm font-medium text-red-900">
+                                                          {report.reason
+                                                            .replace(/_/g, " ")
+                                                            .replace(
+                                                              /\b\w/g,
+                                                              (l) =>
+                                                                l.toUpperCase()
+                                                            )}
+                                                        </span>
+                                                        <span
+                                                          className={`px-2 py-1 text-xs rounded-full ${
+                                                            report.status ===
+                                                            "pending"
+                                                              ? "bg-yellow-100 text-yellow-800"
+                                                              : report.status ===
+                                                                  "resolved"
+                                                                ? "bg-red-100 text-red-800"
+                                                                : report.status ===
+                                                                    "dismissed"
+                                                                  ? "bg-green-100 text-green-800"
+                                                                  : "bg-gray-100 text-gray-800"
+                                                          }`}
+                                                        >
+                                                          {report.status}
+                                                        </span>
+                                                      </div>
+                                                      <p className="text-sm text-gray-700 mb-2">
+                                                        {report.description}
+                                                      </p>
+                                                      {report.evidence && (
+                                                        <p className="text-xs text-gray-600 mb-2">
+                                                          <strong>
+                                                            Evidence:
+                                                          </strong>{" "}
+                                                          {report.evidence}
+                                                        </p>
+                                                      )}
+                                                      <p className="text-xs text-gray-500">
+                                                        Reported:{" "}
+                                                        {new Date(
+                                                          report.createdAt
+                                                        ).toLocaleDateString()}
+                                                        {report.reporterName &&
+                                                          ` by ${report.reporterName}`}
+                                                      </p>
+                                                    </div>
+                                                  </div>
 
-                                    {/* Application Review & Management */}
-                                    <div className="border-t pt-4">
-                                      <h4 className="font-medium mb-4">
-                                        Application Review & Management
-                                      </h4>
+                                                  {/* Resolution Actions */}
+                                                  {report.status ===
+                                                    "pending" && (
+                                                    <div className="flex gap-2 mt-3">
+                                                      <Button
+                                                        size="sm"
+                                                        variant="destructive"
+                                                        onClick={() =>
+                                                          handleResolveReport(
+                                                            report.id,
+                                                            "resolved"
+                                                          )
+                                                        }
+                                                        disabled={
+                                                          resolvingReport ===
+                                                          report.id
+                                                        }
+                                                      >
+                                                        {resolvingReport ===
+                                                        report.id
+                                                          ? "..."
+                                                          : "Confirm Issue"}
+                                                      </Button>
+                                                      <Button
+                                                        size="sm"
+                                                        variant="outline"
+                                                        onClick={() =>
+                                                          handleResolveReport(
+                                                            report.id,
+                                                            "dismissed"
+                                                          )
+                                                        }
+                                                        disabled={
+                                                          resolvingReport ===
+                                                          report.id
+                                                        }
+                                                      >
+                                                        {resolvingReport ===
+                                                        report.id
+                                                          ? "..."
+                                                          : "Dismiss"}
+                                                      </Button>
+                                                    </div>
+                                                  )}
 
-                                      {/* Status Management - Always Available */}
-                                      <div className="mb-6">
-                                        <h5 className="text-sm font-medium text-gray-700 mb-3">
-                                          Status Management
-                                        </h5>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                          <div>
-                                            <Label htmlFor="update-status">
-                                              Application Status
-                                            </Label>
+                                                  {/* Resolution Info */}
+                                                  {(report.status ===
+                                                    "resolved" ||
+                                                    report.status ===
+                                                      "dismissed") && (
+                                                    <div className="mt-2 pt-2 border-t border-red-200">
+                                                      <p className="text-xs text-gray-600">
+                                                        {report.status ===
+                                                        "resolved"
+                                                          ? "Issue confirmed"
+                                                          : "Report dismissed"}
+                                                        {report.resolvedAt &&
+                                                          ` on ${new Date(report.resolvedAt).toLocaleDateString()}`}
+                                                        {report.resolverName &&
+                                                          ` by ${report.resolverName}`}
+                                                      </p>
+                                                      {report.resolutionNotes && (
+                                                        <p className="text-xs text-gray-600 mt-1">
+                                                          <strong>
+                                                            Notes:
+                                                          </strong>{" "}
+                                                          {
+                                                            report.resolutionNotes
+                                                          }
+                                                        </p>
+                                                      )}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <div className="text-sm text-gray-500">
+                                              No reports for this company.
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {/* Community Reviews Section */}
+                                        <div className="border-t pt-4">
+                                          <h4 className="font-medium mb-4 flex items-center gap-2">
+                                            <MessageSquare className="w-4 h-4 text-blue-500" />
+                                            Community Reviews
+                                          </h4>
+
+                                          {/* Review Status Filter */}
+                                          <div className="mb-4">
                                             <Select
-                                              value={updateForm.status}
-                                              onValueChange={(value) =>
-                                                setUpdateForm((prev) => ({
-                                                  ...prev,
-                                                  status: value,
-                                                }))
-                                              }
+                                              value={reviewStatus}
+                                              onValueChange={(value) => {
+                                                setReviewStatus(value);
+                                                // Reload reviews for the current company when filter changes
+                                                if (
+                                                  selectedCompany?.company?.id
+                                                ) {
+                                                  loadCompanyReviews(
+                                                    selectedCompany.company.id
+                                                  );
+                                                }
+                                              }}
                                             >
-                                              <SelectTrigger>
-                                                <SelectValue />
+                                              <SelectTrigger className="w-48">
+                                                <SelectValue placeholder="Filter by status" />
                                               </SelectTrigger>
                                               <SelectContent>
-                                                <SelectItem value="application_submitted">
-                                                  Submitted
+                                                <SelectItem value="all">
+                                                  All Reviews
                                                 </SelectItem>
-                                                <SelectItem value="audit_in_progress">
-                                                  In Progress
-                                                </SelectItem>
-                                                <SelectItem value="under_review">
-                                                  Under Review
+                                                <SelectItem value="pending">
+                                                  Pending Review
                                                 </SelectItem>
                                                 <SelectItem value="verified">
                                                   Verified
                                                 </SelectItem>
-                                                <SelectItem value="conditional">
-                                                  Conditional
-                                                </SelectItem>
-                                                <SelectItem value="did_not_pass">
-                                                  Failed
+                                                <SelectItem value="unverified">
+                                                  Unverified
                                                 </SelectItem>
                                               </SelectContent>
                                             </Select>
                                           </div>
 
-                                          <div className="flex items-end">
-                                            <Button
-                                              onClick={handleUpdate}
-                                              disabled={updating}
-                                              variant="outline"
-                                              className="w-full"
-                                            >
-                                              {updating
-                                                ? "Updating..."
-                                                : "Update Status"}
-                                            </Button>
-                                          </div>
+                                          {loadingReviews ? (
+                                            <div className="text-sm text-gray-500">
+                                              Loading reviews...
+                                            </div>
+                                          ) : reviews.length > 0 ? (
+                                            <div className="space-y-3">
+                                              {reviews.map((review) => (
+                                                <div
+                                                  key={review.id}
+                                                  className="border rounded-lg p-3 bg-blue-50"
+                                                >
+                                                  <div className="flex justify-between items-start mb-2">
+                                                    <div className="flex-1">
+                                                      <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-sm font-medium text-blue-900">
+                                                          {review.companyName ||
+                                                            "Unknown Company"}
+                                                        </span>
+                                                        <Badge
+                                                          variant={
+                                                            review.verificationStatus ===
+                                                            "verified"
+                                                              ? "default"
+                                                              : review.verificationStatus ===
+                                                                  "pending"
+                                                                ? "secondary"
+                                                                : "outline"
+                                                          }
+                                                        >
+                                                          {review.verificationStatus ===
+                                                          "verified"
+                                                            ? "✓ Verified"
+                                                            : review.verificationStatus ===
+                                                                "pending"
+                                                              ? "Unverified"
+                                                              : "Pending"}{" "}
+                                                          {review.role}
+                                                        </Badge>
+                                                      </div>
+                                                      <p className="text-sm text-gray-700 mb-2">
+                                                        Score:{" "}
+                                                        {review.totalScore ||
+                                                          "N/A"}
+                                                        /100
+                                                        {review.starRating && (
+                                                          <span className="ml-2">
+                                                            ⭐{" "}
+                                                            {review.starRating}
+                                                            /5
+                                                          </span>
+                                                        )}
+                                                      </p>
+                                                      <p className="text-xs text-gray-500">
+                                                        Created:{" "}
+                                                        {new Date(
+                                                          review.createdAt
+                                                        ).toLocaleDateString()}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+
+                                                  {/* Action Buttons */}
+                                                  <div className="flex gap-2 mt-2">
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() =>
+                                                        handleViewReviewDetails(
+                                                          review.id
+                                                        )
+                                                      }
+                                                      disabled={loadingReviews}
+                                                    >
+                                                      <Eye className="w-4 h-4 mr-1" />
+                                                      View Details
+                                                    </Button>
+                                                    <Button
+                                                      size="sm"
+                                                      className="bg-orange-600 hover:bg-orange-700"
+                                                      onClick={() =>
+                                                        handleCreateEvaluation(
+                                                          review
+                                                        )
+                                                      }
+                                                      disabled={loadingReviews}
+                                                    >
+                                                      <AlertTriangle className="w-4 h-4 mr-1" />
+                                                      Evaluate
+                                                    </Button>
+                                                    {review.verificationStatus ===
+                                                      "pending" && (
+                                                      <>
+                                                        <Button
+                                                          size="sm"
+                                                          className="bg-green-600 hover:bg-green-700"
+                                                          onClick={() =>
+                                                            handleVerifyReview(
+                                                              review.id,
+                                                              "verify"
+                                                            )
+                                                          }
+                                                          disabled={
+                                                            loadingReviews
+                                                          }
+                                                        >
+                                                          Verify
+                                                        </Button>
+                                                        <Button
+                                                          size="sm"
+                                                          variant="outline"
+                                                          onClick={() =>
+                                                            handleVerifyReview(
+                                                              review.id,
+                                                              "dismiss"
+                                                            )
+                                                          }
+                                                          disabled={
+                                                            loadingReviews
+                                                          }
+                                                        >
+                                                          Dismiss
+                                                        </Button>
+                                                      </>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <div className="text-sm text-gray-500">
+                                              No {reviewStatus} reviews found.
+                                            </div>
+                                          )}
                                         </div>
 
-                                        <p className="text-xs text-gray-500 mt-2">
-                                          For status changes only. Use the
-                                          review section below for scoring and
-                                          notes.
-                                        </p>
-                                      </div>
+                                        {/* Advisor Evaluations Section */}
+                                        <div className="border-t pt-4">
+                                          <h4 className="font-medium mb-4 flex items-center gap-2">
+                                            <AlertTriangle className="w-4 h-4 text-orange-500" />
+                                            Advisor Evaluations
+                                          </h4>
 
-                                      {/* Manual Review & Scoring - Only for Complete Questionnaires */}
-                                      {selectedCompany.questionnaire &&
-                                        selectedCompany.questionnaire.stats
-                                          .completionRate === 100 && (
-                                          <div className="p-4 border-2 border-green-200 rounded-lg bg-green-50">
-                                            <h5 className="font-medium mb-3 text-green-900">
-                                              🔍 Complete Review & Scoring
-                                            </h5>
+                                          {/* Evaluation Status Filter */}
+                                          <div className="mb-4">
+                                            <Select
+                                              value={evaluationStatus}
+                                              onValueChange={
+                                                setEvaluationStatus
+                                              }
+                                            >
+                                              <SelectTrigger className="w-48">
+                                                <SelectValue placeholder="Filter by status" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                <SelectItem value="pending">
+                                                  Pending
+                                                </SelectItem>
+                                                <SelectItem value="valid">
+                                                  Valid
+                                                </SelectItem>
+                                                <SelectItem value="invalid">
+                                                  Invalid
+                                                </SelectItem>
+                                                <SelectItem value="requires_company_response">
+                                                  Requires Response
+                                                </SelectItem>
+                                                <SelectItem value="resolved">
+                                                  Resolved
+                                                </SelectItem>
+                                                <SelectItem value="unresolved">
+                                                  Unresolved
+                                                </SelectItem>
+                                              </SelectContent>
+                                            </Select>
+                                          </div>
 
-                                            {/* Payment Status Check */}
-                                            {selectedCompany.company
-                                              .paymentStatus !== "paid" ? (
-                                              <div className="p-3 border border-orange-200 rounded-lg bg-orange-50 mb-4">
-                                                <div className="flex items-center gap-2 text-orange-800">
-                                                  <AlertTriangle className="w-4 h-4" />
-                                                  <span className="font-medium">
-                                                    Payment Required
-                                                  </span>
-                                                </div>
-                                                <p className="text-sm text-orange-700 mt-1">
-                                                  Payment must be completed
-                                                  before scoring can be
-                                                  finalized.
-                                                  {selectedCompany.company
-                                                    .rfqStatus && (
-                                                    <span className="block mt-1">
-                                                      RFQ Status:{" "}
-                                                      <Badge variant="outline">
-                                                        {
-                                                          selectedCompany
-                                                            .company.rfqStatus
-                                                        }
-                                                      </Badge>
-                                                    </span>
-                                                  )}
-                                                </p>
-                                              </div>
-                                            ) : (
-                                              <p className="text-sm text-green-800 mb-4">
-                                                The questionnaire is complete
-                                                and ready for scoring. Please
-                                                review all responses above and
-                                                provide your assessment.
-                                              </p>
-                                            )}
-
-                                            <div className="space-y-4">
-                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                  <Label
-                                                    htmlFor="manual-score"
-                                                    className="text-green-900 font-medium"
-                                                  >
-                                                    Score (0-100) *
-                                                  </Label>
-                                                  <Input
-                                                    id="manual-score"
-                                                    type="number"
-                                                    min="0"
-                                                    max="100"
-                                                    value={manualScore}
-                                                    onChange={(e) =>
-                                                      setManualScore(
-                                                        e.target.value
-                                                      )
-                                                    }
-                                                    placeholder="Enter score"
-                                                    className="bg-white border-green-300"
-                                                  />
-                                                  <p className="text-xs text-green-700 mt-1">
-                                                    Required: 0-100 based on
-                                                    your review
-                                                  </p>
-                                                </div>
-
-                                                <div className="flex items-center">
-                                                  <Button
-                                                    onClick={
-                                                      handleScoreQuestionnaire
-                                                    }
-                                                    disabled={
-                                                      scoring ||
-                                                      !manualScore ||
-                                                      selectedCompany.company
-                                                        .paymentStatus !==
-                                                        "paid"
-                                                    }
-                                                    className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
-                                                  >
-                                                    {scoring
-                                                      ? "Processing..."
-                                                      : selectedCompany.company
-                                                            .paymentStatus !==
-                                                          "paid"
-                                                        ? "Payment Required"
-                                                        : "Complete Review"}
-                                                  </Button>
-                                                </div>
-                                              </div>
-
-                                              <div>
-                                                <Label
-                                                  htmlFor="review-notes"
-                                                  className="text-green-900 font-medium"
+                                          {loadingEvaluations ? (
+                                            <div className="text-sm text-gray-500">
+                                              Loading evaluations...
+                                            </div>
+                                          ) : evaluations.length > 0 ? (
+                                            <div className="space-y-3">
+                                              {evaluations.map((evaluation) => (
+                                                <div
+                                                  key={evaluation.id}
+                                                  className="border rounded-lg p-3 bg-orange-50"
                                                 >
-                                                  Notes (Optional)
-                                                </Label>
-                                                <Textarea
-                                                  id="review-notes"
-                                                  value={notes}
-                                                  onChange={(e) =>
-                                                    setNotes(e.target.value)
-                                                  }
-                                                  placeholder="Add notes about your review and scoring rationale..."
-                                                  rows={3}
-                                                  className="bg-white border-green-300"
-                                                />
-                                                <p className="text-xs text-green-700 mt-1">
-                                                  Optional: Add notes about your
-                                                  assessment and scoring
-                                                  decision
-                                                </p>
-                                              </div>
+                                                  <div className="flex justify-between items-start mb-2">
+                                                    <div className="flex-1">
+                                                      <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-sm font-medium text-orange-900">
+                                                          {evaluation.companyName ||
+                                                            "Unknown Company"}
+                                                        </span>
+                                                        <Badge
+                                                          variant={
+                                                            evaluation.evaluationStatus ===
+                                                            "valid"
+                                                              ? "default"
+                                                              : evaluation.evaluationStatus ===
+                                                                  "invalid"
+                                                                ? "destructive"
+                                                                : evaluation.evaluationStatus ===
+                                                                    "requires_company_response"
+                                                                  ? "secondary"
+                                                                  : "outline"
+                                                          }
+                                                        >
+                                                          {evaluation.evaluationStatus ===
+                                                          "valid"
+                                                            ? "✓ Valid"
+                                                            : evaluation.evaluationStatus ===
+                                                                "invalid"
+                                                              ? "✗ Invalid"
+                                                              : evaluation.evaluationStatus ===
+                                                                  "requires_company_response"
+                                                                ? "⚠ Requires Response"
+                                                                : evaluation.evaluationStatus}
+                                                        </Badge>
+                                                      </div>
+                                                      <p className="text-sm text-gray-700 mb-2">
+                                                        {evaluation.reviewRole}{" "}
+                                                        Review - Score:{" "}
+                                                        {evaluation.reviewTotalScore ||
+                                                          "N/A"}
+                                                        /100
+                                                        {evaluation.reviewStarRating && (
+                                                          <span className="ml-2">
+                                                            ⭐{" "}
+                                                            {
+                                                              evaluation.reviewStarRating
+                                                            }
+                                                            /5
+                                                          </span>
+                                                        )}
+                                                      </p>
+                                                      {evaluation.evaluationNotes && (
+                                                        <p className="text-xs text-gray-600 mb-2">
+                                                          <strong>
+                                                            Notes:
+                                                          </strong>{" "}
+                                                          {
+                                                            evaluation.evaluationNotes
+                                                          }
+                                                        </p>
+                                                      )}
+                                                      <p className="text-xs text-gray-500">
+                                                        Created:{" "}
+                                                        {new Date(
+                                                          evaluation.createdAt
+                                                        ).toLocaleDateString()}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+
+                                                  {/* Action Buttons */}
+                                                  <div className="flex gap-2 mt-2">
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={() =>
+                                                        handleViewReviewDetails(
+                                                          evaluation.reviewId
+                                                        )
+                                                      }
+                                                      disabled={
+                                                        loadingEvaluations
+                                                      }
+                                                    >
+                                                      <Eye className="w-4 h-4 mr-1" />
+                                                      View Review
+                                                    </Button>
+                                                    {evaluation.evaluationStatus ===
+                                                      "requires_company_response" && (
+                                                      <Button
+                                                        size="sm"
+                                                        className="bg-blue-600 hover:bg-blue-700"
+                                                        onClick={() =>
+                                                          handleCompanyResponse(
+                                                            evaluation
+                                                          )
+                                                        }
+                                                        disabled={
+                                                          loadingEvaluations
+                                                        }
+                                                      >
+                                                        <MessageSquare className="w-4 h-4 mr-1" />
+                                                        Company Response
+                                                      </Button>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          ) : (
+                                            <div className="text-sm text-gray-500">
+                                              No {evaluationStatus} evaluations
+                                              found.
+                                            </div>
+                                          )}
+                                        </div>
+
+                                        {/* Company Issues Section */}
+                                        {companyIssues.length > 0 && (
+                                          <div className="border-t pt-4">
+                                            <h4 className="font-medium mb-4 flex items-center gap-2">
+                                              <Flag className="w-4 h-4 text-red-500" />
+                                              Company Issues (
+                                              {companyIssues.length})
+                                            </h4>
+                                            <div className="space-y-3">
+                                              {companyIssues.map((issue) => (
+                                                <div
+                                                  key={issue.id}
+                                                  className="border rounded-lg p-3 bg-red-50"
+                                                >
+                                                  <div className="flex justify-between items-start mb-2">
+                                                    <div className="flex-1">
+                                                      <div className="flex items-center gap-2 mb-1">
+                                                        <span className="text-sm font-medium text-red-900">
+                                                          {issue.issueType
+                                                            .replace(/_/g, " ")
+                                                            .replace(
+                                                              /\b\w/g,
+                                                              (l) =>
+                                                                l.toUpperCase()
+                                                            )}
+                                                        </span>
+                                                        <Badge
+                                                          variant={
+                                                            issue.severity ===
+                                                            "critical"
+                                                              ? "destructive"
+                                                              : issue.severity ===
+                                                                  "high"
+                                                                ? "secondary"
+                                                                : "outline"
+                                                          }
+                                                        >
+                                                          {issue.severity}{" "}
+                                                          severity
+                                                        </Badge>
+                                                        <Badge
+                                                          variant={
+                                                            issue.status ===
+                                                            "active"
+                                                              ? "secondary"
+                                                              : issue.status ===
+                                                                  "resolved"
+                                                                ? "default"
+                                                                : "outline"
+                                                          }
+                                                        >
+                                                          {issue.status}
+                                                        </Badge>
+                                                      </div>
+                                                      <p className="text-sm text-gray-700 mb-2">
+                                                        {issue.reviewRole}{" "}
+                                                        Review - Score:{" "}
+                                                        {issue.reviewTotalScore ||
+                                                          "N/A"}
+                                                        /100
+                                                        {issue.reviewStarRating && (
+                                                          <span className="ml-2">
+                                                            ⭐{" "}
+                                                            {
+                                                              issue.reviewStarRating
+                                                            }
+                                                            /5
+                                                          </span>
+                                                        )}
+                                                      </p>
+                                                      {issue.evaluationNotes && (
+                                                        <p className="text-xs text-gray-600 mb-2">
+                                                          <strong>
+                                                            Advisor Notes:
+                                                          </strong>{" "}
+                                                          {
+                                                            issue.evaluationNotes
+                                                          }
+                                                        </p>
+                                                      )}
+                                                      {issue.companyResponse && (
+                                                        <p className="text-xs text-gray-600 mb-2">
+                                                          <strong>
+                                                            Company Response:
+                                                          </strong>{" "}
+                                                          {
+                                                            issue.companyResponse
+                                                          }
+                                                        </p>
+                                                      )}
+                                                      <p className="text-xs text-gray-500">
+                                                        Created:{" "}
+                                                        {new Date(
+                                                          issue.createdAt
+                                                        ).toLocaleDateString()}
+                                                        {issue.resolvedAt && (
+                                                          <span className="ml-2">
+                                                            • Resolved:{" "}
+                                                            {new Date(
+                                                              issue.resolvedAt
+                                                            ).toLocaleDateString()}
+                                                          </span>
+                                                        )}
+                                                      </p>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                              ))}
                                             </div>
                                           </div>
                                         )}
 
-                                      {/* Admin Payment Confirmation */}
-                                      {["admin", "superAdmin"].includes(
-                                        session?.user?.role || ""
-                                      ) &&
-                                        selectedCompany.company.rfqStatus ===
-                                          "requested" &&
-                                        selectedCompany.company
-                                          .paymentStatus !== "paid" && (
-                                          <div className="p-4 border-2 border-blue-200 rounded-lg bg-blue-50 mt-4">
-                                            <h5 className="font-medium mb-3 text-blue-900">
-                                              💳 Admin Payment Confirmation
-                                            </h5>
-                                            <p className="text-sm text-blue-800 mb-4">
-                                              Confirm manual payment for this
-                                              company.
-                                            </p>
+                                        {/* Application Review & Management */}
+                                        <div className="border-t pt-4">
+                                          <h4 className="font-medium mb-4">
+                                            Application Review & Management
+                                          </h4>
 
-                                            <div className="space-y-4">
-                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                <div>
-                                                  <Label
-                                                    htmlFor="payment-amount"
-                                                    className="text-blue-900 font-medium"
-                                                  >
-                                                    Amount (cents) *
-                                                  </Label>
-                                                  {/* <Input
+                                          {/* Status Management - Always Available */}
+                                          <div className="mb-6">
+                                            <h5 className="text-sm font-medium text-gray-700 mb-3">
+                                              Status Management
+                                            </h5>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                              <div>
+                                                <Label htmlFor="update-status">
+                                                  Application Status
+                                                </Label>
+                                                <Select
+                                                  value={updateForm.status}
+                                                  onValueChange={(value) =>
+                                                    setUpdateForm((prev) => ({
+                                                      ...prev,
+                                                      status: value,
+                                                    }))
+                                                  }
+                                                >
+                                                  <SelectTrigger>
+                                                    <SelectValue />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    <SelectItem value="application_submitted">
+                                                      Submitted
+                                                    </SelectItem>
+                                                    <SelectItem value="audit_in_progress">
+                                                      In Progress
+                                                    </SelectItem>
+                                                    <SelectItem value="under_review">
+                                                      Under Review
+                                                    </SelectItem>
+                                                    <SelectItem value="verified">
+                                                      Verified
+                                                    </SelectItem>
+                                                    <SelectItem value="conditional">
+                                                      Conditional
+                                                    </SelectItem>
+                                                    <SelectItem value="did_not_pass">
+                                                      Failed
+                                                    </SelectItem>
+                                                  </SelectContent>
+                                                </Select>
+                                              </div>
+
+                                              <div className="flex items-end">
+                                                <Button
+                                                  onClick={handleUpdate}
+                                                  disabled={updating}
+                                                  variant="outline"
+                                                  className="w-full"
+                                                >
+                                                  {updating
+                                                    ? "Updating..."
+                                                    : "Update Status"}
+                                                </Button>
+                                              </div>
+                                            </div>
+
+                                            <p className="text-xs text-gray-500 mt-2">
+                                              For status changes only. Use the
+                                              review section below for scoring
+                                              and notes.
+                                            </p>
+                                          </div>
+
+                                          {/* Manual Review & Scoring - Only for Complete Questionnaires */}
+                                          {selectedCompany.questionnaire &&
+                                            selectedCompany.questionnaire.stats
+                                              .completionRate === 100 && (
+                                              <div className="p-4 border-2 border-green-200 rounded-lg bg-green-50">
+                                                <h5 className="font-medium mb-3 text-green-900">
+                                                  🔍 Complete Review & Scoring
+                                                </h5>
+
+                                                {/* Payment Status Check */}
+                                                {selectedCompany.company
+                                                  .paymentStatus !== "paid" ? (
+                                                  <div className="p-3 border border-orange-200 rounded-lg bg-orange-50 mb-4">
+                                                    <div className="flex items-center gap-2 text-orange-800">
+                                                      <AlertTriangle className="w-4 h-4" />
+                                                      <span className="font-medium">
+                                                        Payment Required
+                                                      </span>
+                                                    </div>
+                                                    <p className="text-sm text-orange-700 mt-1">
+                                                      Payment must be completed
+                                                      before scoring can be
+                                                      finalized.
+                                                      {selectedCompany.company
+                                                        .rfqStatus && (
+                                                        <span className="block mt-1">
+                                                          RFQ Status:{" "}
+                                                          <Badge variant="outline">
+                                                            {
+                                                              selectedCompany
+                                                                .company
+                                                                .rfqStatus
+                                                            }
+                                                          </Badge>
+                                                        </span>
+                                                      )}
+                                                    </p>
+                                                  </div>
+                                                ) : (
+                                                  <p className="text-sm text-green-800 mb-4">
+                                                    The questionnaire is
+                                                    complete and ready for
+                                                    scoring. Please review all
+                                                    responses above and provide
+                                                    your assessment.
+                                                  </p>
+                                                )}
+
+                                                <div className="space-y-4">
+                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                      <Label
+                                                        htmlFor="manual-score"
+                                                        className="text-green-900 font-medium"
+                                                      >
+                                                        Score (0-100) *
+                                                      </Label>
+                                                      <Input
+                                                        id="manual-score"
+                                                        type="number"
+                                                        min="0"
+                                                        max="100"
+                                                        value={manualScore}
+                                                        onChange={(e) =>
+                                                          setManualScore(
+                                                            e.target.value
+                                                          )
+                                                        }
+                                                        placeholder="Enter score"
+                                                        className="bg-white border-green-300"
+                                                      />
+                                                      <p className="text-xs text-green-700 mt-1">
+                                                        Required: 0-100 based on
+                                                        your review
+                                                      </p>
+                                                    </div>
+
+                                                    <div className="flex items-center">
+                                                      <Button
+                                                        onClick={
+                                                          handleScoreQuestionnaire
+                                                        }
+                                                        disabled={
+                                                          scoring ||
+                                                          !manualScore ||
+                                                          selectedCompany
+                                                            .company
+                                                            .paymentStatus !==
+                                                            "paid"
+                                                        }
+                                                        className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400"
+                                                      >
+                                                        {scoring
+                                                          ? "Processing..."
+                                                          : selectedCompany
+                                                                .company
+                                                                .paymentStatus !==
+                                                              "paid"
+                                                            ? "Payment Required"
+                                                            : "Complete Review"}
+                                                      </Button>
+                                                    </div>
+                                                  </div>
+
+                                                  <div>
+                                                    <Label
+                                                      htmlFor="review-notes"
+                                                      className="text-green-900 font-medium"
+                                                    >
+                                                      Notes (Optional)
+                                                    </Label>
+                                                    <Textarea
+                                                      id="review-notes"
+                                                      value={notes}
+                                                      onChange={(e) =>
+                                                        setNotes(e.target.value)
+                                                      }
+                                                      placeholder="Add notes about your review and scoring rationale..."
+                                                      rows={3}
+                                                      className="bg-white border-green-300"
+                                                    />
+                                                    <p className="text-xs text-green-700 mt-1">
+                                                      Optional: Add notes about
+                                                      your assessment and
+                                                      scoring decision
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                              </div>
+                                            )}
+
+                                          {/* Admin Payment Confirmation */}
+                                          {["admin", "superAdmin"].includes(
+                                            session?.user?.role || ""
+                                          ) &&
+                                            selectedCompany.company
+                                              .rfqStatus === "requested" &&
+                                            selectedCompany.company
+                                              .paymentStatus !== "paid" && (
+                                              <div className="p-4 border-2 border-blue-200 rounded-lg bg-blue-50 mt-4">
+                                                <h5 className="font-medium mb-3 text-blue-900">
+                                                  💳 Admin Payment Confirmation
+                                                </h5>
+                                                <p className="text-sm text-blue-800 mb-4">
+                                                  Confirm manual payment for
+                                                  this company.
+                                                </p>
+
+                                                <div className="space-y-4">
+                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                      <Label
+                                                        htmlFor="payment-amount"
+                                                        className="text-blue-900 font-medium"
+                                                      >
+                                                        Amount (cents) *
+                                                      </Label>
+                                                      {/* <Input
                                                     id="payment-amount"
                                                     type="number"
                                                     placeholder="e.g., 49900 for $499"
                                                     className="bg-white border-blue-300"
                                                   /> */}
-                                                  <MoneyInput
-                                                    id="payment-amount"
-                                                    valueCents={
-                                                      selectedCompany.company
-                                                        .paymentAmountCents ||
-                                                      null
-                                                    }
-                                                    onChangeCents={(cents) => {
-                                                      setUpdateForm((prev) => ({
-                                                        ...prev,
-                                                        paymentAmountCents:
-                                                          cents || null,
-                                                      }));
+                                                      <MoneyInput
+                                                        id="payment-amount"
+                                                        valueCents={
+                                                          selectedCompany
+                                                            .company
+                                                            .paymentAmountCents ||
+                                                          null
+                                                        }
+                                                        onChangeCents={(
+                                                          cents
+                                                        ) => {
+                                                          setUpdateForm(
+                                                            (prev) => ({
+                                                              ...prev,
+                                                              paymentAmountCents:
+                                                                cents || null,
+                                                            })
+                                                          );
+                                                        }}
+                                                      />
+                                                    </div>
+                                                    <div>
+                                                      <Label
+                                                        htmlFor="payment-tx-id"
+                                                        className="text-blue-900 font-medium"
+                                                      >
+                                                        Transaction ID
+                                                        (optional)
+                                                      </Label>
+                                                      <Input
+                                                        id="payment-tx-id"
+                                                        placeholder="External transaction reference"
+                                                        className="bg-white border-blue-300"
+                                                      />
+                                                    </div>
+                                                  </div>
+
+                                                  <Button
+                                                    className="w-full bg-blue-600 hover:bg-blue-700"
+                                                    onClick={async () => {
+                                                      const amountInput =
+                                                        document.getElementById(
+                                                          "payment-amount"
+                                                        ) as HTMLInputElement;
+                                                      const txIdInput =
+                                                        document.getElementById(
+                                                          "payment-tx-id"
+                                                        ) as HTMLInputElement;
+
+                                                      if (!amountInput.value) {
+                                                        toast({
+                                                          title: "Error",
+                                                          description:
+                                                            "Amount is required",
+                                                          variant:
+                                                            "destructive",
+                                                        });
+                                                        return;
+                                                      }
+
+                                                      try {
+                                                        await adminConfirmPayment(
+                                                          selectedCompany
+                                                            .company.id,
+                                                          {
+                                                            amountCents:
+                                                              parseInt(
+                                                                amountInput.value
+                                                              ),
+                                                            transactionId:
+                                                              txIdInput.value ||
+                                                              undefined,
+                                                          }
+                                                        );
+
+                                                        toast({
+                                                          title: "Success",
+                                                          description:
+                                                            "Payment confirmed successfully",
+                                                        });
+
+                                                        // Refresh company data
+                                                        await loadCompanyDetails(
+                                                          selectedCompany
+                                                            .company.id
+                                                        );
+                                                        amountInput.value = "";
+                                                        txIdInput.value = "";
+                                                      } catch {
+                                                        toast({
+                                                          title: "Error",
+                                                          description:
+                                                            "Failed to confirm payment",
+                                                          variant:
+                                                            "destructive",
+                                                        });
+                                                      }
                                                     }}
-                                                  />
-                                                </div>
-                                                <div>
-                                                  <Label
-                                                    htmlFor="payment-tx-id"
-                                                    className="text-blue-900 font-medium"
                                                   >
-                                                    Transaction ID (optional)
-                                                  </Label>
-                                                  <Input
-                                                    id="payment-tx-id"
-                                                    placeholder="External transaction reference"
-                                                    className="bg-white border-blue-300"
-                                                  />
+                                                    Confirm Payment
+                                                  </Button>
                                                 </div>
                                               </div>
+                                            )}
 
-                                              <Button
-                                                className="w-full bg-blue-600 hover:bg-blue-700"
-                                                onClick={async () => {
-                                                  const amountInput =
-                                                    document.getElementById(
-                                                      "payment-amount"
-                                                    ) as HTMLInputElement;
-                                                  const txIdInput =
-                                                    document.getElementById(
-                                                      "payment-tx-id"
-                                                    ) as HTMLInputElement;
-
-                                                  if (!amountInput.value) {
-                                                    toast({
-                                                      title: "Error",
-                                                      description:
-                                                        "Amount is required",
-                                                      variant: "destructive",
-                                                    });
-                                                    return;
+                                          {selectedCompany.questionnaire &&
+                                            selectedCompany.questionnaire.stats
+                                              .completionRate < 100 && (
+                                              <div className="mt-6 p-4 border-2 border-yellow-200 rounded-lg bg-yellow-50">
+                                                <h5 className="font-medium mb-2 text-yellow-900">
+                                                  ⏳ Questionnaire Incomplete
+                                                </h5>
+                                                <p className="text-sm text-yellow-800">
+                                                  The questionnaire is only{" "}
+                                                  {
+                                                    selectedCompany
+                                                      .questionnaire.stats
+                                                      .completionRate
                                                   }
+                                                  % complete. Scoring is not
+                                                  available until the company
+                                                  completes all required fields.
+                                                </p>
+                                              </div>
+                                            )}
 
-                                                  try {
-                                                    await adminConfirmPayment(
-                                                      selectedCompany.company
-                                                        .id,
-                                                      {
-                                                        amountCents: parseInt(
-                                                          amountInput.value
-                                                        ),
-                                                        transactionId:
-                                                          txIdInput.value ||
-                                                          undefined,
-                                                      }
-                                                    );
+                                          {!selectedCompany.questionnaire && (
+                                            <div className="mt-6 p-4 border-2 border-gray-200 rounded-lg bg-gray-50">
+                                              <h5 className="font-medium mb-2 text-gray-700">
+                                                📝 No Questionnaire
+                                              </h5>
+                                              <p className="text-sm text-gray-600">
+                                                The company has not started
+                                                their questionnaire yet.
+                                              </p>
+                                            </div>
+                                          )}
+                                        </div>
 
-                                                    toast({
-                                                      title: "Success",
-                                                      description:
-                                                        "Payment confirmed successfully",
-                                                    });
-
-                                                    // Refresh company data
-                                                    await loadCompanyDetails(
-                                                      selectedCompany.company.id
-                                                    );
-                                                    amountInput.value = "";
-                                                    txIdInput.value = "";
-                                                  } catch {
-                                                    toast({
-                                                      title: "Error",
-                                                      description:
-                                                        "Failed to confirm payment",
-                                                      variant: "destructive",
-                                                    });
-                                                  }
-                                                }}
-                                              >
-                                                Confirm Payment
-                                              </Button>
+                                        {/* History */}
+                                        {selectedCompany.history.length > 0 && (
+                                          <div>
+                                            <h4 className="font-medium mb-2">
+                                              Status History
+                                            </h4>
+                                            <div className="space-y-2">
+                                              {selectedCompany.history.map(
+                                                (entry) => (
+                                                  <div
+                                                    key={entry.id}
+                                                    className="bg-gray-50 p-3 rounded text-sm"
+                                                  >
+                                                    <div className="flex items-center justify-between">
+                                                      <span className="font-medium">
+                                                        {entry.status}
+                                                      </span>
+                                                      <span className="text-gray-500">
+                                                        {new Date(
+                                                          entry.createdAt
+                                                        ).toLocaleString()}
+                                                      </span>
+                                                    </div>
+                                                    {entry.score && (
+                                                      <p>
+                                                        Score: {entry.score}/100
+                                                      </p>
+                                                    )}
+                                                    {entry.notes && (
+                                                      <p className="text-gray-700 mt-1">
+                                                        {entry.notes}
+                                                      </p>
+                                                    )}
+                                                  </div>
+                                                )
+                                              )}
                                             </div>
                                           </div>
                                         )}
-
-                                      {selectedCompany.questionnaire &&
-                                        selectedCompany.questionnaire.stats
-                                          .completionRate < 100 && (
-                                          <div className="mt-6 p-4 border-2 border-yellow-200 rounded-lg bg-yellow-50">
-                                            <h5 className="font-medium mb-2 text-yellow-900">
-                                              ⏳ Questionnaire Incomplete
-                                            </h5>
-                                            <p className="text-sm text-yellow-800">
-                                              The questionnaire is only{" "}
-                                              {
-                                                selectedCompany.questionnaire
-                                                  .stats.completionRate
-                                              }
-                                              % complete. Scoring is not
-                                              available until the company
-                                              completes all required fields.
-                                            </p>
-                                          </div>
-                                        )}
-
-                                      {!selectedCompany.questionnaire && (
-                                        <div className="mt-6 p-4 border-2 border-gray-200 rounded-lg bg-gray-50">
-                                          <h5 className="font-medium mb-2 text-gray-700">
-                                            📝 No Questionnaire
-                                          </h5>
-                                          <p className="text-sm text-gray-600">
-                                            The company has not started their
-                                            questionnaire yet.
-                                          </p>
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {/* History */}
-                                    {selectedCompany.history.length > 0 && (
-                                      <div>
-                                        <h4 className="font-medium mb-2">
-                                          Status History
-                                        </h4>
-                                        <div className="space-y-2">
-                                          {selectedCompany.history.map(
-                                            (entry) => (
-                                              <div
-                                                key={entry.id}
-                                                className="bg-gray-50 p-3 rounded text-sm"
-                                              >
-                                                <div className="flex items-center justify-between">
-                                                  <span className="font-medium">
-                                                    {entry.status}
-                                                  </span>
-                                                  <span className="text-gray-500">
-                                                    {new Date(
-                                                      entry.createdAt
-                                                    ).toLocaleString()}
-                                                  </span>
-                                                </div>
-                                                {entry.score && (
-                                                  <p>
-                                                    Score: {entry.score}/100
-                                                  </p>
-                                                )}
-                                                {entry.notes && (
-                                                  <p className="text-gray-700 mt-1">
-                                                    {entry.notes}
-                                                  </p>
-                                                )}
-                                              </div>
-                                            )
-                                          )}
-                                        </div>
                                       </div>
                                     )}
-                                  </div>
-                                )}
-                              </DialogContent>
-                            </Dialog>
-                          </td>
-                        </tr>
-                      ))}
-                      {companies.length === 0 && (
-                        <tr>
-                          <td
-                            colSpan={6}
-                            className="py-8 text-center text-gray-500"
-                          >
-                            No companies found
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                                  </DialogContent>
+                                </Dialog>
+                              </td>
+                            </tr>
+                          ))}
+                          {companies.length === 0 && (
+                            <tr>
+                              <td
+                                colSpan={6}
+                                className="py-8 text-center text-gray-500"
+                              >
+                                No companies found
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
 
-              {/* Pagination */}
-              {total > 20 && (
-                <div className="flex items-center justify-between mt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page <= 1}
-                  >
-                    Previous
-                  </Button>
-                  <span className="text-sm text-gray-600">
-                    Page {page} of {Math.ceil(total / 20)}
-                  </span>
-                  <Button
-                    variant="outline"
-                    onClick={() => setPage((p) => p + 1)}
-                    disabled={page >= Math.ceil(total / 20)}
-                  >
-                    Next
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  {/* Pagination */}
+                  {total > 20 && (
+                    <div className="flex items-center justify-between mt-4">
+                      <Button
+                        variant="outline"
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
+                        disabled={page <= 1}
+                      >
+                        Previous
+                      </Button>
+                      <span className="text-sm text-gray-600">
+                        Page {page} of {Math.ceil(total / 20)}
+                      </span>
+                      <Button
+                        variant="outline"
+                        onClick={() => setPage((p) => p + 1)}
+                        disabled={page >= Math.ceil(total / 20)}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="resources" className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Peace Seal Center - Resource Management</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Manage resources available to certified companies in the
+                    Peace Seal Center. These resources help companies maintain
+                    their certification standards.
+                  </p>
+                  <PeaceSealCenter />
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
 
@@ -2178,6 +2772,23 @@ export default function PeaceSealDashboard() {
         onClose={handleCloseReviewDetails}
         onVerify={handleVerifyReview}
         isLoading={loadingReviews}
+      />
+
+      {/* Evaluation Modal */}
+      <EvaluationModal
+        reviewId={selectedReviewForEvaluation?.id || null}
+        reviewData={selectedReviewForEvaluation}
+        isOpen={showEvaluationModal}
+        onClose={handleCloseEvaluationModal}
+        onEvaluationCreated={handleEvaluationCreated}
+      />
+
+      {/* Company Response Modal */}
+      <CompanyResponseModal
+        evaluation={selectedEvaluationForResponse}
+        isOpen={showCompanyResponseModal}
+        onClose={handleCloseCompanyResponseModal}
+        onResponseSubmitted={handleResponseSubmitted}
       />
     </div>
   );

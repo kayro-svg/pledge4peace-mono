@@ -21,7 +21,9 @@
     "BREVO_API_KEY",
     "BREVO_FROM_EMAIL",
     "BREVO_FROM_NAME",
-    "NOTIFICATIONS_BOT_TOKEN"
+    "NOTIFICATIONS_BOT_TOKEN",
+    "LINKEDIN_CLIENT_ID",
+    "LINKEDIN_CLIENT_SECRET"
   ],
   "tasks": {
     "build": {

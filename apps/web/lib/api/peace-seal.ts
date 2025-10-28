@@ -1,4 +1,9 @@
 import { apiClient } from "../api-client";
+import type {
+  AgreementAcceptance,
+  TemplateResource,
+  AcceptAgreementRequest,
+} from "@/types/questionnaire";
 
 export type DirectoryItem = {
   id: string;
@@ -440,12 +445,15 @@ export type VerificationStatus = "pending" | "verified" | "unverified";
 
 export type CommunityReview = {
   id: string;
+  companyId: string; // Include companyId for filtering
   role: ReviewRole;
   verificationStatus: VerificationStatus;
   totalScore?: number | null;
   starRating?: number | null;
   createdAt: number | string;
   verifiedAt?: number | string | null;
+  answers?: string; // JSON string of answers
+  experienceDescription?: string | null;
 };
 
 export type CreateCompanyData = {
@@ -464,6 +472,9 @@ export type CreateReviewData = {
   signedDisclosure: boolean;
   answers: Record<string, unknown>;
   verificationDocumentUrl?: string;
+  experienceDescription?: string;
+  oidcIdToken?: string;
+  oidcAccessToken?: string;
 };
 
 // Community Reviews API Functions
@@ -584,5 +595,318 @@ export async function adminVerifyReview(
       action,
       notes,
     }
+  );
+}
+
+// Advisor Evaluation Types
+export type EvaluationStatus =
+  | "pending"
+  | "valid"
+  | "invalid"
+  | "requires_company_response"
+  | "resolved"
+  | "unresolved"
+  | "dismissed";
+export type IssueSeverity = "low" | "medium" | "high" | "critical";
+export type IssueStatus = "active" | "resolved" | "dismissed";
+export type SealStatus = "active" | "suspended" | "revoked";
+
+export type ReviewEvaluation = {
+  id: string;
+  reviewId: string;
+  advisorUserId: string;
+  evaluationStatus: EvaluationStatus;
+  evaluationNotes?: string;
+  companyNotifiedAt?: number;
+  companyResponseDeadline?: number;
+  companyResponse?: string;
+  companyRespondedAt?: number;
+  finalResolution?: string;
+  finalResolutionNotes?: string;
+  createdAt: number;
+  updatedAt: number;
+  // Additional fields from joins
+  reviewRole?: string;
+  reviewTotalScore?: number;
+  reviewStarRating?: number;
+  reviewCreatedAt?: number;
+  companyName?: string;
+  companyId?: string;
+  companyStatus?: string;
+  companySealStatus?: SealStatus;
+};
+
+export type CompanyIssue = {
+  id: string;
+  evaluationId: string;
+  issueType: string;
+  severity: IssueSeverity;
+  status: IssueStatus;
+  createdAt: number;
+  resolvedAt?: number;
+  evaluationStatus?: EvaluationStatus;
+  evaluationNotes?: string;
+  companyResponse?: string;
+  companyRespondedAt?: number;
+  finalResolution?: string;
+  reviewRole?: string;
+  reviewTotalScore?: number;
+  reviewStarRating?: number;
+};
+
+// Advisor Evaluation API Functions
+export async function createEvaluation(data: {
+  reviewId: string;
+  evaluationStatus: "valid" | "invalid" | "requires_company_response";
+  evaluationNotes?: string;
+}) {
+  return apiClient.post<{ evaluation: ReviewEvaluation }>(
+    "/peace-seal/advisor/evaluations",
+    data
+  );
+}
+
+export async function updateEvaluation(
+  evaluationId: string,
+  data: {
+    evaluationStatus?: EvaluationStatus;
+    evaluationNotes?: string;
+    companyResponse?: string;
+    finalResolutionNotes?: string;
+  }
+) {
+  return apiClient.put<{ evaluation: ReviewEvaluation }>(
+    `/peace-seal/advisor/evaluations/${evaluationId}`,
+    data
+  );
+}
+
+export async function getEvaluationsForAdvisor(filters?: {
+  status?: string;
+  page?: number;
+  limit?: number;
+}) {
+  const qs = new URLSearchParams();
+  if (filters?.status) qs.set("status", filters.status);
+  if (filters?.page) qs.set("page", filters.page.toString());
+  if (filters?.limit) qs.set("limit", filters.limit.toString());
+
+  return apiClient.get<{
+    items: ReviewEvaluation[];
+    total: number;
+    page: number;
+    limit: number;
+  }>(`/peace-seal/advisor/evaluations?${qs}`);
+}
+
+export async function getCompanyIssues(companyId: string) {
+  return apiClient.get<{ issues: CompanyIssue[] }>(
+    `/peace-seal/companies/${companyId}/issues`
+  );
+}
+
+export async function companyRespondToEvaluation(
+  evaluationId: string,
+  companyResponse: string
+) {
+  return apiClient.post<{ evaluation: ReviewEvaluation }>(
+    `/peace-seal/evaluations/${evaluationId}/respond`,
+    { companyResponse }
+  );
+}
+
+// Peace Seal Renewal Types
+export type RenewalStatus = "pending" | "paid" | "failed" | "refunded";
+export type BadgeLevel = "bronze" | "silver" | "gold" | null;
+export type RewardType =
+  | "digital_badge"
+  | "physical_badge"
+  | "certificate"
+  | "brand_toolkit"
+  | "network_access"
+  | "survey_access";
+export type RewardStatus = "pending" | "delivered" | "used" | "expired";
+export type ResourceType =
+  | "document"
+  | "template"
+  | "guide"
+  | "tool"
+  | "survey";
+export type ResourceCategory =
+  | "hr_policies"
+  | "supplier_codes"
+  | "peace_statements"
+  | "political_guidelines"
+  | "compliance";
+
+export type PeaceSealRenewal = {
+  id: string;
+  companyId: string;
+  renewalYear: number;
+  amountCents: number;
+  paymentStatus: RenewalStatus;
+  paymentTransactionId?: string;
+  paymentDate?: number;
+  expiresAt: number;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type PeaceSealReward = {
+  id: string;
+  companyId: string;
+  rewardType: RewardType;
+  status: RewardStatus;
+  deliveredAt?: number;
+  expiresAt?: number;
+  metadata?: Record<string, any>;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type PeaceSealCenterResource = {
+  id: string;
+  title: string;
+  description?: string;
+  resourceType: ResourceType;
+  fileUrl?: string;
+  category: ResourceCategory;
+  isPublic: boolean;
+  accessLevel: string;
+  createdAt: number;
+  updatedAt: number;
+};
+
+// Peace Seal Renewal API Functions
+export async function createRenewal(data: {
+  companyId: string;
+  renewalYear: number;
+  amountCents: number;
+  paymentTransactionId?: string;
+  paymentDate?: number;
+}) {
+  return apiClient.post<{ renewal: PeaceSealRenewal }>(
+    "/peace-seal/renewals",
+    data
+  );
+}
+
+export async function getCompanyRenewals(companyId: string) {
+  return apiClient.get<{ renewals: PeaceSealRenewal[] }>(
+    `/peace-seal/companies/${companyId}/renewals`
+  );
+}
+
+export async function getCompanyRewards(companyId: string) {
+  return apiClient.get<{ rewards: PeaceSealReward[] }>(
+    `/peace-seal/companies/${companyId}/rewards`
+  );
+}
+
+export async function updateBadgeLevel(companyId: string, score: number) {
+  return apiClient.post<{ badgeLevel: BadgeLevel; score: number }>(
+    `/peace-seal/companies/${companyId}/badge-level`,
+    { score }
+  );
+}
+
+export async function requestPhysicalBadge(companyId: string) {
+  return apiClient.post<{ success: boolean }>(
+    `/peace-seal/companies/${companyId}/physical-badge`
+  );
+}
+
+export async function generateDigitalBadge(companyId: string) {
+  return apiClient.get<{
+    badgeUrl: string;
+    company: {
+      name: string;
+      badgeLevel: BadgeLevel;
+      score: number;
+      status: string;
+    };
+  }>(`/peace-seal/companies/${companyId}/digital-badge`);
+}
+
+export async function processRenewalPayment(data: {
+  companyId: string;
+  renewalYear: number;
+  paymentTransactionId: string;
+  paymentDate?: number;
+}) {
+  return apiClient.post<{ success: boolean }>(
+    "/peace-seal/renewals/payment",
+    data
+  );
+}
+
+export async function getExpiringRenewals(daysAhead?: number) {
+  const qs = new URLSearchParams();
+  if (daysAhead) qs.set("daysAhead", daysAhead.toString());
+
+  return apiClient.get<{ expiringRenewals: any[] }>(
+    `/peace-seal/renewals/expiring?${qs}`
+  );
+}
+
+// Peace Seal Center API Functions
+export async function getPeaceSealCenterResources() {
+  return apiClient.get<{ resources: PeaceSealCenterResource[] }>(
+    "/peace-seal/peace-seal-center/resources"
+  );
+}
+
+export async function addPeaceSealCenterResource(data: {
+  title: string;
+  description?: string;
+  resourceType: ResourceType;
+  fileUrl?: string;
+  category: ResourceCategory;
+  isPublic?: boolean;
+  accessLevel?: string;
+}) {
+  return apiClient.post<{ resource: PeaceSealCenterResource }>(
+    "/peace-seal/peace-seal-center/resources",
+    data
+  );
+}
+
+// Agreement API Functions
+export async function acceptAgreement(
+  companyId: string,
+  data: AcceptAgreementRequest
+) {
+  return apiClient.post<{
+    success: boolean;
+    acceptanceId: string;
+    acceptedAt: number;
+  }>(`/peace-seal/applications/${companyId}/agreements/accept`, data);
+}
+
+export async function getAgreementAcceptances(companyId: string) {
+  return apiClient.get<{ acceptances: AgreementAcceptance[] }>(
+    `/peace-seal/applications/${companyId}/agreements`
+  );
+}
+
+export async function deleteAgreementAcceptance(
+  companyId: string,
+  acceptanceId: string
+) {
+  return apiClient.delete<{ success: boolean }>(
+    `/peace-seal/applications/${companyId}/agreements/${acceptanceId}`
+  );
+}
+
+export async function getTemplates(filters?: {
+  category?: string;
+  resourceType?: string;
+}) {
+  const qs = new URLSearchParams();
+  if (filters?.category) qs.set("category", filters.category);
+  if (filters?.resourceType) qs.set("resourceType", filters.resourceType);
+
+  return apiClient.get<{ templates: TemplateResource[] }>(
+    `/peace-seal/templates?${qs}`
   );
 }

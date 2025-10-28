@@ -10,7 +10,10 @@ export class CommunityReviewsController {
   createOrFindCompany = async (c: Context) => {
     try {
       const db = createDb(c.env.DB);
-      const communityReviewsService = new CommunityReviewsService(db);
+      const communityReviewsService = new CommunityReviewsService(
+        db,
+        c.env.LINKEDIN_CLIENT_ID
+      );
       const user = c.get("user");
 
       // Check if user is authenticated
@@ -50,7 +53,10 @@ export class CommunityReviewsController {
   searchCompanies = async (c: Context) => {
     try {
       const db = createDb(c.env.DB);
-      const communityReviewsService = new CommunityReviewsService(db);
+      const communityReviewsService = new CommunityReviewsService(
+        db,
+        c.env.LINKEDIN_CLIENT_ID
+      );
       const url = new URL(c.req.url);
       const query = url.searchParams.get("q") || "";
       const limit = parseInt(url.searchParams.get("limit") || "10");
@@ -75,13 +81,14 @@ export class CommunityReviewsController {
   createReview = async (c: Context) => {
     try {
       const db = createDb(c.env.DB);
-      const communityReviewsService = new CommunityReviewsService(db);
+      const communityReviewsService = new CommunityReviewsService(
+        db,
+        c.env.LINKEDIN_CLIENT_ID
+      );
       const user = c.get("user");
 
-      // Check if user is authenticated
-      if (!user) {
-        throw new HTTPException(401, { message: "Authentication required" });
-      }
+      // Community reviews support anonymous submissions per requirements
+      // If no user is authenticated, we'll create an anonymous review
 
       const {
         companyId,
@@ -92,6 +99,9 @@ export class CommunityReviewsController {
         signedDisclosure,
         answers,
         verificationDocumentUrl,
+        experienceDescription,
+        oidcIdToken,
+        oidcAccessToken,
       } = await c.req.json().catch(() => ({}));
 
       if (!companyId || !role || !signedDisclosure || !answers) {
@@ -110,7 +120,7 @@ export class CommunityReviewsController {
 
       const review = await communityReviewsService.createReview({
         companyId,
-        userId: user.id,
+        userId: user?.id || null, // Allow null for anonymous reviews
         role,
         verificationMethod,
         reviewerName,
@@ -118,12 +128,16 @@ export class CommunityReviewsController {
         signedDisclosure: Boolean(signedDisclosure),
         answers,
         verificationDocumentUrl,
+        experienceDescription,
+        oidcIdToken,
+        oidcAccessToken,
       });
 
       return c.json({ review });
     } catch (error) {
       if (error instanceof HTTPException) throw error;
       logger.error("Error creating review:", error);
+      console.error("Detailed error:", error);
       throw new HTTPException(500, { message: "Error creating review" });
     }
   };
@@ -132,7 +146,10 @@ export class CommunityReviewsController {
   confirmVerification = async (c: Context) => {
     try {
       const db = createDb(c.env.DB);
-      const communityReviewsService = new CommunityReviewsService(db);
+      const communityReviewsService = new CommunityReviewsService(
+        db,
+        c.env.LINKEDIN_CLIENT_ID
+      );
       const token = c.req.param("token");
 
       if (!token) {
@@ -154,7 +171,10 @@ export class CommunityReviewsController {
   listCompanyReviews = async (c: Context) => {
     try {
       const db = createDb(c.env.DB);
-      const communityReviewsService = new CommunityReviewsService(db);
+      const communityReviewsService = new CommunityReviewsService(
+        db,
+        c.env.LINKEDIN_CLIENT_ID
+      );
       const companyId = c.req.param("id");
       const url = new URL(c.req.url);
 
@@ -179,7 +199,10 @@ export class CommunityReviewsController {
   adminListReviews = async (c: Context) => {
     try {
       const db = createDb(c.env.DB);
-      const communityReviewsService = new CommunityReviewsService(db);
+      const communityReviewsService = new CommunityReviewsService(
+        db,
+        c.env.LINKEDIN_CLIENT_ID
+      );
       const user = c.get("user");
 
       // Check permissions
@@ -189,7 +212,7 @@ export class CommunityReviewsController {
 
       const url = new URL(c.req.url);
       const filters = {
-        status: url.searchParams.get("status") || "pending",
+        status: url.searchParams.get("status") || "all",
         page: parseInt(url.searchParams.get("page") || "1"),
         limit: parseInt(url.searchParams.get("limit") || "20"),
       };
@@ -207,7 +230,10 @@ export class CommunityReviewsController {
   getMyReviews = async (c: Context) => {
     try {
       const db = createDb(c.env.DB);
-      const communityReviewsService = new CommunityReviewsService(db);
+      const communityReviewsService = new CommunityReviewsService(
+        db,
+        c.env.LINKEDIN_CLIENT_ID
+      );
       const user = c.get("user");
 
       // Check if user is authenticated
@@ -237,7 +263,10 @@ export class CommunityReviewsController {
   adminGetReviewDetails = async (c: Context) => {
     try {
       const db = createDb(c.env.DB);
-      const communityReviewsService = new CommunityReviewsService(db);
+      const communityReviewsService = new CommunityReviewsService(
+        db,
+        c.env.LINKEDIN_CLIENT_ID
+      );
       const reviewId = c.req.param("id");
       const user = c.get("user");
 
@@ -260,7 +289,10 @@ export class CommunityReviewsController {
   adminVerifyReview = async (c: Context) => {
     try {
       const db = createDb(c.env.DB);
-      const communityReviewsService = new CommunityReviewsService(db);
+      const communityReviewsService = new CommunityReviewsService(
+        db,
+        c.env.LINKEDIN_CLIENT_ID
+      );
       const reviewId = c.req.param("id");
       const { action, notes } = await c.req.json().catch(() => ({}));
       const user = c.get("user");
@@ -302,11 +334,14 @@ export class CommunityReviewsController {
       const file = formData.get("file") as File;
       const companyId = formData.get("companyId") as string;
       const documentType = formData.get("documentType") as string;
+      const sectionId = formData.get("sectionId") as string;
+      const fieldId = formData.get("fieldId") as string;
 
       // Validate required fields
-      if (!file || !companyId || !documentType) {
+      if (!file || !companyId || !documentType || !sectionId || !fieldId) {
         throw new HTTPException(400, {
-          message: "Missing required fields: file, companyId, documentType",
+          message:
+            "Missing required fields: file, companyId, documentType, sectionId, fieldId",
         });
       }
 
@@ -319,6 +354,7 @@ export class CommunityReviewsController {
 
       // Set a temporary user ID for community review documents
       // This allows the document upload to work without authentication
+      // The uploadedByUserId will be set to null in the documents controller for anonymous uploads
       c.set("user", {
         id: "community-review-user",
         email: "community-review@example.com",

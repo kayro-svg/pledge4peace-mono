@@ -30,7 +30,7 @@ export function useNotificationsStream(accessToken?: string | null) {
   useEffect(() => {
     (async () => {
       try {
-        const resp = await fetch(`/${locale}/api/campaign-slugs`, {
+        const resp = await fetch(`${API_URL}/campaign-slugs`, {
           next: { revalidate: 3600 },
         });
         if (resp.ok) {
@@ -67,7 +67,7 @@ export function useNotificationsStream(accessToken?: string | null) {
           fetchingSlugRef.current.add(campaignId);
           (async () => {
             try {
-              const resp = await fetch(`/${locale}/api/campaign-slugs`, {
+              const resp = await fetch(`${API_URL}/campaign-slugs`, {
                 next: { revalidate: 3600 },
               });
               let newSlug: string | undefined;
