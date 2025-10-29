@@ -54,10 +54,10 @@
       "kv_namespaces": [
         {
           "binding": "KV",
-          // "id": "725495fb08f642848f85463d9cf65240",
+          "id": "725495fb08f642848f85463d9cf65240",
           // development use only
-          "id": "c6bf24de3ea846f9b69772819581163a",
-          "preview_id": "725495fb08f642848f85463d9cf65240",
+          // "id": "c6bf24de3ea846f9b69772819581163a",
+          // "preview_id": "725495fb08f642848f85463d9cf65240",
         },
       ],
       "vars": {

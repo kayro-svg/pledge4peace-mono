@@ -219,12 +219,34 @@ function formatQuestionnaireValue(
   }
 
   if (typeof answer === "object" && answer !== null) {
+    const answerObj = answer as Record<string, unknown>;
+
+    // Handle agreement objects
+    if ("type" in answerObj && answerObj.type === "agreement") {
+      const agreementObj = answerObj as {
+        type: string;
+        templateId: string;
+        acceptedAt: string;
+        id?: string | null;
+      };
+
+      return (
+        <div className="flex items-center gap-2 p-3 bg-green-50 rounded border border-green-200">
+          <CheckCircle className="w-4 h-4 text-green-600" />
+          <div>
+            <div className="text-green-800 font-medium">Agreement Accepted</div>
+            <div className="text-xs text-green-600">
+              Accepted on{" "}
+              {new Date(agreementObj.acceptedAt).toLocaleDateString()}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // Handle file objects
-    if (
-      "type" in answer &&
-      (answer as Record<string, unknown>).type === "file"
-    ) {
-      const fileObj = answer as {
+    if ("type" in answerObj && answerObj.type === "file") {
+      const fileObj = answerObj as {
         type: string;
         name: string;
         size?: number | null;
@@ -838,6 +860,8 @@ export default function PeaceSealDashboard() {
     setShowCompanyResponseModal(false);
     setSelectedEvaluationForResponse(null);
   };
+
+  console.log("userCompany", selectedCompany);
 
   if (!isAdvisor && !isCompany) {
     return (
@@ -2357,10 +2381,12 @@ export default function PeaceSealDashboard() {
                                             </p>
                                           </div>
 
-                                          {/* Manual Review & Scoring - Only for Complete Questionnaires */}
+                                          {/* Manual Review & Scoring - Only for Submitted Questionnaires */}
                                           {selectedCompany.questionnaire &&
-                                            selectedCompany.questionnaire.stats
-                                              .completionRate === 100 && (
+                                            (selectedCompany.questionnaire
+                                              .completedAt ||
+                                              selectedCompany.questionnaire
+                                                .progress === 100) && (
                                               <div className="p-4 border-2 border-green-200 rounded-lg bg-green-50">
                                                 <h5 className="font-medium mb-3 text-green-900">
                                                   🔍 Complete Review & Scoring
@@ -2397,8 +2423,8 @@ export default function PeaceSealDashboard() {
                                                   </div>
                                                 ) : (
                                                   <p className="text-sm text-green-800 mb-4">
-                                                    The questionnaire is
-                                                    complete and ready for
+                                                    The questionnaire has been
+                                                    submitted and is ready for
                                                     scoring. Please review all
                                                     responses above and provide
                                                     your assessment.
@@ -2626,22 +2652,24 @@ export default function PeaceSealDashboard() {
                                             )}
 
                                           {selectedCompany.questionnaire &&
-                                            selectedCompany.questionnaire.stats
-                                              .completionRate < 100 && (
+                                            !selectedCompany.questionnaire
+                                              .completedAt &&
+                                            selectedCompany.questionnaire
+                                              .progress < 100 && (
                                               <div className="mt-6 p-4 border-2 border-yellow-200 rounded-lg bg-yellow-50">
                                                 <h5 className="font-medium mb-2 text-yellow-900">
-                                                  ⏳ Questionnaire Incomplete
+                                                  ⏳ Questionnaire Not Submitted
                                                 </h5>
                                                 <p className="text-sm text-yellow-800">
-                                                  The questionnaire is only{" "}
+                                                  The questionnaire has not been
+                                                  submitted yet (
                                                   {
                                                     selectedCompany
-                                                      .questionnaire.stats
-                                                      .completionRate
+                                                      .questionnaire.progress
                                                   }
-                                                  % complete. Scoring is not
+                                                  % progress). Scoring is not
                                                   available until the company
-                                                  completes all required fields.
+                                                  submits the application.
                                                 </p>
                                               </div>
                                             )}

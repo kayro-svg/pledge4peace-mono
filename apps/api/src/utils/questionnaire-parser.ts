@@ -1,6 +1,7 @@
 import {
   fieldToQuestionMap,
   fieldToSectionMap,
+  QUESTIONNAIRE_SECTIONS,
 } from "../config/questionnaire-config";
 
 export interface ParsedQuestionnaireResponse {
@@ -37,23 +38,46 @@ export function parseQuestionnaireResponses(
   // Group responses by section
   const sectionGroups: Record<string, ParsedQuestionnaireResponse[]> = {};
 
-  Object.entries(responses).forEach(([fieldId, answer]) => {
-    const question = fieldToQuestionMap[fieldId] || formatFieldName(fieldId);
-    const section = fieldToSectionMap[fieldId] || "Other Information";
-    const isEmpty = isEmptyAnswer(answer);
-
-    const parsedResponse: ParsedQuestionnaireResponse = {
-      fieldId,
-      question,
-      answer: formatAnswer(answer),
-      section,
-      isEmpty,
-    };
-
-    if (!sectionGroups[section]) {
-      sectionGroups[section] = [];
+  // Iterate over sections (top-level keys in responses)
+  Object.entries(responses).forEach(([sectionId, sectionData]) => {
+    // Skip if sectionData is not an object
+    if (
+      typeof sectionData !== "object" ||
+      sectionData === null ||
+      Array.isArray(sectionData)
+    ) {
+      return;
     }
-    sectionGroups[section].push(parsedResponse);
+
+    // Get section title from config by finding the section with matching ID
+    const sectionConfig = QUESTIONNAIRE_SECTIONS.find(
+      (s) => s.id === sectionId
+    );
+    const sectionTitle = sectionConfig?.title || formatFieldName(sectionId);
+
+    // Initialize section group if it doesn't exist
+    if (!sectionGroups[sectionTitle]) {
+      sectionGroups[sectionTitle] = [];
+    }
+
+    // Iterate over fields within this section
+    Object.entries(sectionData as Record<string, unknown>).forEach(
+      ([fieldId, answer]) => {
+        const question =
+          fieldToQuestionMap[fieldId] || formatFieldName(fieldId);
+        const isEmpty = isEmptyAnswer(answer);
+
+        const parsedResponse: ParsedQuestionnaireResponse = {
+          fieldId,
+          question,
+          answer: formatAnswer(answer),
+          section: sectionTitle,
+          isEmpty,
+        };
+
+        sectionGroups[sectionTitle].push(parsedResponse);
+      }
+    );
   });
 
   // Convert to array format
@@ -99,37 +123,49 @@ function formatAnswer(answer: unknown): unknown {
   }
 
   if (typeof answer === "object" && answer !== null) {
-    // Debug log to see what we're getting
-    console.log("Processing object:", JSON.stringify(answer, null, 2));
+    const answerObj = answer as Record<string, unknown>;
+
+    // Check if it's an agreement object (has acceptedAt, templateId, sectionId, fieldId)
+    const isAgreement =
+      "acceptedAt" in answerObj &&
+      "templateId" in answerObj &&
+      "sectionId" in answerObj &&
+      "fieldId" in answerObj;
+
+    if (isAgreement) {
+      // Format agreement object for display
+      return {
+        type: "agreement",
+        templateId: answerObj.templateId,
+        acceptedAt: answerObj.acceptedAt,
+        id: answerObj.id || null,
+      };
+    }
 
     // Only convert to file if it has CLEAR file indicators
     // Must have a name/filename AND at least one other file property
-    const hasFileName = "name" in answer || "fileName" in answer;
-    const hasFileUrl = "url" in answer || "fileUrl" in answer;
-    const hasFileSize = "size" in answer || "fileSize" in answer;
-    const hasMimeType = "mimeType" in answer;
-    const hasFileId = "id" in answer || "fileId" in answer;
+    const hasFileName = "name" in answerObj || "fileName" in answerObj;
+    const hasFileUrl = "url" in answerObj || "fileUrl" in answerObj;
+    const hasFileSize = "size" in answerObj || "fileSize" in answerObj;
+    const hasMimeType = "mimeType" in answerObj;
+    const hasFileId = "id" in answerObj || "fileId" in answerObj;
 
     // Only convert if it has a filename AND at least one other file property
     if (
       hasFileName &&
       (hasFileUrl || hasFileSize || hasMimeType || hasFileId)
     ) {
-      const fileName = (answer as any).name || (answer as any).fileName;
-
-      console.log("Converting to file object:", fileName);
+      const fileName = answerObj.name || answerObj.fileName;
 
       return {
         type: "file",
         name: fileName,
-        size: (answer as any).size || (answer as any).fileSize || null,
-        url: (answer as any).url || (answer as any).fileUrl || null,
-        id: (answer as any).id || (answer as any).fileId || null,
-        mimeType: (answer as any).mimeType || null,
+        size: answerObj.size || answerObj.fileSize || null,
+        url: answerObj.url || answerObj.fileUrl || null,
+        id: answerObj.id || answerObj.fileId || null,
+        mimeType: answerObj.mimeType || null,
       };
     }
-
-    console.log("Keeping as regular object with keys:", Object.keys(answer));
 
     // For all other objects, return as-is (they will be handled as regular objects in frontend)
     return answer;
