@@ -1,0 +1,461 @@
+import type { AgreementText } from "./small-business-agreements";
+
+export const LARGE_AGREEMENT_TEXTS: Record<string, AgreementText> = {
+  template_peace_pledge_declaration: {
+    title: "Peace Pledge Declaration",
+    body: `# Peace Pledge Declaration
+
+I, as the CEO, Owner, or an authorized representative of this organization (with permission from leadership), hereby solemnly pledge the following commitments. By checking this box, I affirm that we will uphold and strive to embody these values — not as optional ideals, but as guiding principles in how our organization operates, treats people, and engages with the world.
+
+## Foundational Values
+
+I commit this organization to a foundation rooted in dignity, justice, equality, and respect for every human life, regardless of creed or origin.
+
+## Non-Violence & Respect for Life
+
+I pledge that our organization will prioritize non-violent methods in conflict resolution, reject violence in all its forms, and ensure our operations protect life rather than endanger it.
+
+## Justice & Stability
+
+I commit to practices that promote fairness, trust, transparency, and stable social systems within our organization and broader community — not just avoiding harm, but contributing positively to social well-being.
+
+## Education for Peace
+
+I pledge to support education, training, dialogue, and awareness efforts within the organization and beyond to cultivate empathy, mutual understanding, and long-term peace-minded perspectives.
+
+## Ethical Integrity in Action
+
+I promise that our decisions — in hiring, procurement, partnerships, and operations — will reflect impartiality, integrity, transparency, and respect for all stakeholders.
+
+## Rejection of Hate & Extremism
+
+I unequivocally reject hate, violence, terrorism, and the spread of dehumanizing rhetoric. We will actively resist narratives of division and despair, including online.
+
+## International Law & Cooperation
+
+Where our operations or partnerships cross borders, I commit to abiding by international conventions, treaties, and collaborative diplomacy rather than unilateral force.
+
+## Human-Centered Development
+
+I commit to placing people at the center of our mission — supporting the health, dignity, opportunity, and well-being of employees, communities, and the environment, rather than pursuing profits at any human cost.
+
+## Declaration Statement
+
+By checking this box and submitting this pledge, I affirm that these statements reflect the convictions of this organization's leadership. I understand that the Peace Seal evaluation process will hold us to these commitments, encourage accountability, and offer guidance for continuous improvement.`,
+    signatureFields: {
+      signatoryName: true,
+      signatoryTitle: true,
+      onBehalfOf: true,
+    },
+  },
+
+  template_board_peace_policy: {
+    title: "Peace & Human Rights Policy",
+    body: `# Peace & Human Rights Policy
+
+## Purpose
+
+This Peace & Human Rights Policy affirms our organization's commitment to uphold the dignity, equality, and rights of all people. As a business, we recognize that sustainable growth and long-term success can only exist when rooted in respect for human rights, nonviolence, ethical governance, and peaceful coexistence.
+
+## Scope
+
+This policy applies to all employees, contractors, suppliers, and partners of our organization, across all locations and operations.
+
+## Our Commitments
+
+1. Respect for Life and Nonviolence
+We pledge to respect and protect human life in all its forms. Our organization rejects all forms of violence, hate, or discrimination, whether in our operations, supply chains, or communities.
+
+2. Equality and Non-Discrimination
+We are committed to creating an inclusive workplace and business environment free from discrimination on the basis of race, religion, ethnicity, gender, sexual orientation, age, disability, or political belief.
+
+3. Fair Treatment of Workers
+We uphold the right to fair wages, safe working conditions, freedom of association, and access to grievance mechanisms. We will not tolerate forced labor, child labor, or exploitative practices.
+
+4. No Ties to Arms or Conflict Industries
+Our organization affirms it has no financial or business ties with arms manufacturing, sanctioned regimes, or conflict-related industries. We commit to reviewing our investments and supply chains regularly to uphold this standard.
+
+5. Ethical Business Practices
+We commit to transparency, anti-corruption measures, and accountability in all governance practices. Our values and ethics code will remain publicly accessible.
+
+6. Peace and Community Engagement
+We support peacebuilding and community-strengthening efforts where we operate. This includes encouraging dialogue, supporting humanitarian initiatives, and participating in programs that promote justice and reconciliation.
+
+## Implementation
+
+- This policy is reviewed and approved by our Board of Directors.
+- All staff and suppliers are required to comply with these commitments.
+- Regular audits and grievance channels will be maintained to ensure accountability.
+
+By accepting this policy, I, as the CEO or an authorized representative of this organization, confirm that our Board has approved this Peace & Human Rights Policy and agree to its implementation across our operations.`,
+    signatureFields: {
+      signatoryName: true,
+      signatoryTitle: true,
+    },
+  },
+
+  template_beneficial_ownership: {
+    title: "Anti-Corruption: Company Beneficial Ownership Policy",
+    body: `# Anti-Corruption: Company Beneficial Ownership Policy
+
+## Purpose
+
+This policy affirms our organization's commitment to transparency, ethical governance, and the fight against corruption. By clearly declaring and disclosing beneficial ownership, we aim to prevent hidden interests, promote accountability, and align our business practices with international standards of integrity.
+
+## Scope
+
+This policy applies to the organization's leadership, board members, shareholders, subsidiaries, and any related entities with ownership stakes. It also informs our partners, investors, suppliers, and customers of our transparency commitments.
+
+## Our Commitments
+
+1. Full Transparency of Ownership
+We pledge to disclose the names and percentage interests of all ultimate beneficial owners (UBOs) of the organization. UBOs are individuals who directly or indirectly own or control a percentage of the company's shares, voting rights, or decision-making power.
+
+2. Anti-Corruption Standards
+We strictly prohibit concealed ownership structures or the use of anonymous shell companies to obscure ownership. Any attempt to hide ownership for purposes of corruption, tax evasion, or conflict of interest is against our values and practices.
+
+3. Public Access to Information
+We commit to making our beneficial ownership information accessible to regulators, auditors, and stakeholders. Where legally permissible, we will publish key ownership details on our website or annual reports.
+
+4. Regular Updates and Verification
+Beneficial ownership information will be reviewed and updated at least annually, and immediately upon changes in ownership or control. This ensures accuracy and reliability in all public and internal disclosures.
+
+5. Compliance with Laws and International Standards
+We will comply with all relevant national laws and global standards regarding beneficial ownership transparency, anti-money laundering (AML), and anti-corruption (UNCAC, OECD guidelines).
+
+6. Accountability and Oversight
+The Board of Directors will oversee compliance with this policy. Any violations or discrepancies will be investigated, and corrective measures taken, including termination of relationships with non-compliant shareholders or partners.
+
+## Implementation
+
+- This policy is reviewed and approved by our Board of Directors.
+- Disclosures will be filed with appropriate government or regulatory authorities as required.
+- All business partners and stakeholders may request verification of our ownership records at any time.
+
+By accepting this policy, I, as the CEO or an authorized representative of this organization, confirm that our Board has approved this Anti-Corruption: Beneficial Ownership Policy and agree to its implementation across our operations.`,
+    signatureFields: {
+      signatoryName: true,
+      signatoryTitle: true,
+    },
+  },
+
+  template_no_arms_ties: {
+    title: "Declaration of No Ties with Arms Industries or Sanctioned Regimes",
+    body: `# Declaration of No Ties with Arms Industries or Sanctioned Regimes
+
+## Purpose
+
+Our organization affirms its commitment to peace, human rights, and ethical business practices. As part of this commitment, we declare that we maintain no direct or indirect ties to arms industries, sanctioned regimes, or entities that profit from war, conflict, or human rights abuses.
+
+## Scope
+
+This declaration applies to all operations, investments, partnerships, suppliers, and business dealings conducted by the organization.
+
+## Commitments
+
+1. No Involvement with Arms Industries
+- We do not engage in the production, sale, or distribution of weapons, military equipment, or defense technologies used in armed conflict.
+- We do not provide services or financial support to businesses that profit primarily from war or militarization.
+
+2. No Partnerships with Sanctioned Regimes
+- We do not enter into contracts, partnerships, or financial dealings with governments, entities, or individuals under international sanctions related to conflict, human rights violations, or terrorism.
+- We actively review our supply chains and partnerships to ensure compliance with international sanctions lists.
+
+3. Transparency & Due Diligence
+- We will disclose relevant ownership structures, suppliers, and investment practices to ensure ongoing compliance.
+- If any violation or oversight is discovered, we commit to corrective action within a reasonable timeframe.
+
+4. Commitment to Peaceful Business Practices
+- Our business will prioritize investments, partnerships, and practices that promote peace, human dignity, and sustainable development.
+- We will align our operations with global standards for ethical business, including the UN Global Compact and international human rights principles.
+
+By accepting this declaration, I, as the CEO or an authorized representative of this organization, confirm that our Board has approved this Declaration of No Ties with Arms Industries or Sanctioned Regimes and agree to implement it across all levels of the organization.`,
+    signatureFields: {
+      signatoryName: true,
+      signatoryTitle: true,
+    },
+  },
+
+  template_no_lobbying: {
+    title: "Declaration of No Lobbying for War or Conflict Policies",
+    body: `# Declaration of No Lobbying for War or Conflict Policies
+
+## Purpose
+
+Our organization believes that business has a responsibility to foster peace, stability, and ethical governance. This declaration affirms that we will not engage in, support, or finance lobbying activities that promote war, militarization, or conflict-driven policies.
+
+## Scope
+
+This declaration applies to:
+- The organization, its board, executives, and employees.
+- Any agents, consultants, or representatives acting on behalf of the organization.
+
+## Commitments
+
+1. No Lobbying for War or Conflict
+We will not participate in lobbying efforts that advocate for military interventions, arms escalation, or policies that contribute to war and armed conflict.
+
+2. Peace-Driven Advocacy
+Our advocacy efforts will align with principles of peace, diplomacy, nonviolence, and the protection of human rights.
+
+3. Transparency in Public Policy Engagement
+- We will ensure all lobbying, public policy, or advocacy activities are disclosed transparently and comply with legal requirements.
+- We will not channel resources (direct or indirect) toward organizations, lobbyists, or policymakers that promote war-related agendas.
+
+4. Accountability
+- We commit to periodic internal reviews of our lobbying and advocacy activities to ensure compliance with this declaration.
+- Violations of this policy may result in disciplinary action internally and termination of partnerships externally.
+
+By accepting this declaration, I, as the CEO or an authorized representative of this organization, confirm that our Board has approved this Declaration of No Lobbying for War or Conflict Policies and agree to implement it across all operations and engagements.`,
+    signatureFields: {
+      signatoryName: true,
+      signatoryTitle: true,
+    },
+  },
+
+  template_equal_opportunity: {
+    title: "Equal Opportunity Employment (EOE) Policy",
+    body: `# Equal Opportunity Employment (EOE) Policy
+
+## Purpose
+
+Our organization is committed to fostering a workplace built on dignity, respect, and fairness. This declaration affirms that we will provide equal opportunity in all aspects of employment and will actively work to eliminate discrimination, bias, and inequity in our practices.
+
+## Scope
+
+This policy applies to all employees, job applicants, contractors, and representatives of the organization, across all levels and functions.
+
+## Commitments
+
+1. Non-Discrimination
+We do not and will not discriminate against any individual based on race, color, religion, gender, sexual orientation, gender identity, marital status, age, disability, national origin, veteran status, or any other status protected by law.
+
+2. Fair Hiring & Advancement
+All hiring, promotion, compensation, and training decisions will be based on merit, qualifications, and performance, ensuring fairness in every process.
+
+3. Inclusive Workplace
+We are dedicated to creating a safe and inclusive workplace where all employees feel valued, respected, and able to thrive.
+
+4. Workplace Harassment
+We strictly prohibit harassment, intimidation, or retaliation in any form. Clear channels for reporting grievances will be maintained and acted upon fairly.
+
+5. Ongoing Accountability
+We will conduct regular reviews of our employment practices to ensure compliance with this policy and uphold the principles of equality and inclusion.
+
+By accepting this policy, I, as the CEO or an authorized representative of this organization, confirm that our Board has approved this Equal Opportunity Employment Policy and agree to implement it across all employment and workplace practices.`,
+    signatureFields: {
+      signatoryName: true,
+      signatoryTitle: true,
+    },
+  },
+
+  template_fair_wage_declaration: {
+    title: "Declaration of Fair Wage Practices",
+    body: `# Declaration of Fair Wage Practices
+
+As an organization, we recognize that fair wages are essential to dignity, equality, and peace in the workplace. By adopting this declaration, we commit to ensuring that our employees are compensated fairly and treated with respect, regardless of role, background, or identity.
+
+## Our Commitments
+
+1. Living Wage Commitment
+We will ensure that all employees receive wages that meet or exceed the local living wage standard, not just the legal minimum wage.
+
+2. Equal Pay for Equal Work
+We will provide equal compensation for equal work, free from discrimination based on gender, race, ethnicity, or any other protected status.
+
+3. Transparency in Pay
+We will maintain clear and accessible wage and compensation policies, and communicate any changes openly with employees.
+
+4. Benefits and Worker Protections
+We will provide all legally required benefits, and where possible, offer additional supports to promote employee well-being.
+
+5. Zero Tolerance for Exploitation
+We will not engage in wage theft, exploitative labor practices, or any form of unfair compensation.
+
+By accepting this declaration, I, the CEO/Owner or authorized representative of this organization, confirm that we will implement this Declaration of Fair Wage Practices into our business moving forward.`,
+    signatureFields: {
+      signatoryName: true,
+      signatoryTitle: true,
+    },
+  },
+
+  template_whistleblower_protection: {
+    title: "Whistleblower Protection Policy",
+    body: `# Whistleblower Protection Policy
+
+## Purpose
+
+Our organization is committed to integrity, accountability, and peace-driven practices. To achieve this, we must empower employees, contractors, and stakeholders to raise concerns about misconduct without fear of retaliation. This Whistleblower Protection Policy ensures a safe, transparent, and fair process for reporting concerns.
+
+## Scope
+
+This policy applies to all employees, officers, contractors, vendors, and representatives of the organization.
+
+## Commitments
+
+1. Protected Reporting
+- Individuals may report concerns related to violations of law, company policy, corruption, harassment, discrimination, unethical conduct, or threats to public safety.
+- Reports may be made anonymously, where permitted, and will be treated with confidentiality to the fullest extent possible.
+
+2. Non-Retaliation Guarantee
+- Retaliation of any kind (including demotion, dismissal, harassment, intimidation, or discrimination) against whistleblowers is strictly prohibited.
+- Any attempt at retaliation will be grounds for disciplinary action, up to and including termination.
+
+3. Reporting Channels
+Concerns may be reported through established internal channels such as:
+- HR or compliance officer
+- Anonymous reporting system (if applicable)
+- Designated email or hotline monitored by the organization's board or compliance team
+
+4. Fair & Timely Investigation
+- All reports will be promptly reviewed and investigated with impartiality.
+- Findings will be documented, and corrective action will be taken where necessary.
+
+5. Awareness & Training
+- Employees will be informed of their rights under this policy.
+- Periodic training will ensure all staff understand how to identify, report, and escalate concerns safely.
+
+6. Accountability & Oversight
+- The board or an appointed ethics committee will oversee whistleblower cases and ensure adherence to this policy.
+
+By signing this declaration, we affirm our organization's commitment to protecting whistleblowers, upholding transparency, and ensuring accountability, consistent with human rights and peace-centered values.
+
+By accepting this policy, I, as the CEO or an authorized representative of this organization, confirm that our Board has approved this Whistleblower Protection Policy and agree to implement it across all levels of the organization.`,
+    signatureFields: {
+      signatoryName: true,
+      signatoryTitle: true,
+    },
+  },
+
+  template_complaint_resolution: {
+    title: "Complaint Resolution Policy & Documentation",
+    body: `# Complaint Resolution Policy & Documentation
+
+As an organization committed to peace, fairness, and ethical practices, we recognize that handling complaints transparently and respectfully is essential to building trust with employees, customers, suppliers, and the community. This Complaint Resolution Policy establishes a clear process to ensure every voice is heard and addressed fairly.
+
+## Our Commitments
+
+1. Accessibility
+- Complaints can be submitted by employees, customers, suppliers, or stakeholders through any of the following: written form, email, or verbal report to management.
+- All complaints will be acknowledged promptly and recorded in writing for accountability.
+
+2. Fairness & Non-Retaliation
+- Every complaint will be reviewed objectively, without bias or retaliation against the complainant.
+- Confidentiality will be respected, and personal details will be protected where possible.
+
+3. Resolution Process
+- Step 1: Acknowledge receipt of the complaint within 5 business days.
+- Step 2: Assign a responsible manager or owner to investigate the issue.
+- Step 3: Collect facts, listen to all parties involved, and document findings.
+- Step 4: Provide a proposed resolution within 15 business days, or explain if more time is needed.
+- Step 5: Implement corrective action if required and record the resolution.
+
+4. Escalation
+- If the complainant feels unsatisfied, they may request review by a higher-level manager, the CEO/Owner, or an external mediator, such as Pledge4Peace.
+- Escalated complaints will be reviewed within 10 additional business days.
+
+5. Documentation
+A Complaint Log will be maintained with the following details:
+- Date of complaint
+- Name of complainant (or noted as anonymous if requested)
+- Description of issue
+- Steps taken to investigate
+- Final resolution and date closed
+- This log will be reviewed periodically to identify patterns and areas for organizational improvement.
+
+6. Continuous Improvement
+- Lessons learned from complaints will inform policy updates, training, and better practices.
+- The organization commits to fostering an environment where feedback is valued as a tool for growth and peacebuilding.
+
+By accepting this policy, I, the CEO/Owner or authorized representative of this organization, confirm that we will implement this Complaint Resolution Policy & Documentation into our business moving forward.`,
+    signatureFields: {
+      signatoryName: true,
+      signatoryTitle: true,
+    },
+  },
+
+  template_supplier_code_of_conduct: {
+    title: "Supplier & Vendor Code of Conduct",
+    body: `# Supplier & Vendor Code of Conduct
+
+## Purpose
+
+Our organization is committed to conducting business in a manner that promotes peace, integrity, and sustainability. This Supplier & Vendor Code of Conduct sets out the minimum standards we require from all suppliers and vendors to ensure that business practices across our supply chain reflect ethical, responsible, and peace-driven values.
+
+## Scope
+
+This Code applies to all suppliers, contractors, subcontractors, and vendors who provide goods or services to our organization.
+
+## Our Expectations of Suppliers/Vendors
+
+1. Ethical Business Practices
+- Conduct business honestly, free from bribery, corruption, extortion, or embezzlement.
+- Avoid conflicts of interest and ensure transparent dealings at all times.
+
+2. Human Rights & Fair Labor
+- Respect the dignity, rights, and freedoms of all employees.
+- Prohibit forced labor, child labor, human trafficking, or any form of exploitation.
+- Ensure fair wages, benefits, and working hours in compliance with local laws and international standards.
+- Guarantee a workplace free of harassment, discrimination, or abuse.
+
+3. Health, Safety, and Well-Being
+- Provide safe and healthy working conditions.
+- Implement systems to prevent workplace injuries, hazards, or unsafe practices.
+
+4. Environmental Responsibility
+- Minimize environmental impact by reducing waste, emissions, and resource consumption.
+- Support sustainable sourcing and environmental peacebuilding initiatives.
+
+5. Conflict-Free Operations
+- Avoid sourcing materials or services linked to armed conflicts, sanctioned regimes, or arms-related industries.
+- Maintain a supply chain free of "conflict resources" such as blood diamonds or war metals.
+
+6. Accountability & Transparency
+- Maintain accurate business records and allow audits or assessments when requested.
+- Report any violations of this Code or unethical practices immediately.
+
+7. Commitment to Peace & Community Engagement
+- Support inclusive communities, fair treatment, and peace-driven practices.
+- Engage in initiatives that uplift workers, communities, and society at large.
+
+## Implementation & Monitoring
+
+- Suppliers/vendors must communicate this Code to their employees and subcontractors.
+- Our organization reserves the right to monitor compliance and terminate relationships if serious violations occur.
+
+By accepting this code of conduct, I, as the CEO or an authorized representative of this organization, confirm that our Board has approved this Supplier & Vendor Code of Conduct and agree to its implementation across our supply chain.`,
+    signatureFields: {
+      signatoryName: true,
+      signatoryTitle: true,
+    },
+  },
+
+  template_sustainable_sourcing: {
+    title: "Sustainable Sourcing & Waste Management Policy",
+    body: `# Sustainable Sourcing & Waste Management Policy
+
+As an organization, we recognize that protecting the environment is an essential part of building peace and justice for future generations. Our business practices must minimize harm, support sustainable development, and ensure that our operations contribute positively to people and the planet.
+
+## Our Commitments
+
+1. Sustainable Sourcing
+- We will prioritize suppliers and materials that align with ethical, conflict-free, and environmentally responsible standards.
+- We will actively avoid sourcing from industries linked to conflict, exploitation, or environmental destruction.
+- Whenever possible, we will choose local, fair-trade, or certified sustainable products and partners.
+
+2. Waste Reduction & Management
+- We will reduce waste at its source by adopting efficient processes, minimizing single-use items, and encouraging reuse and recycling.
+- We will dispose of waste responsibly, following local regulations and environmental guidelines.
+- We will seek opportunities to repurpose materials and reduce our carbon footprint through smart resource use.
+
+3. Continuous Improvement
+- We will regularly review our sourcing and waste practices to improve sustainability.
+- We will encourage employees, partners, and suppliers to share ideas that further reduce waste and improve environmental responsibility.
+
+By accepting this policy, I, the CEO/Owner or authorized representative of this organization, confirm that we will implement this Sustainable Sourcing & Waste Management Policy into our business moving forward.`,
+    signatureFields: {
+      signatoryName: true,
+      signatoryTitle: true,
+    },
+  },
+};

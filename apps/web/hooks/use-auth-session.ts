@@ -3,9 +3,10 @@ import { useEffect, useState, useCallback } from "react";
 import { toast } from "@/hooks/use-toast";
 import { apiClient } from "@/lib/api-client";
 import { API_ENDPOINTS } from "@/lib/config";
+import { Session } from "next-auth";
 
 interface AuthSessionReturn {
-  session: any;
+  session: Session;
   status: "loading" | "authenticated" | "unauthenticated";
   isAuthenticated: boolean;
   isTokenValid: boolean;
@@ -106,7 +107,7 @@ export function useAuthSession(): AuthSessionReturn {
   }, [status, checkTokenValidity, handleAuthError]);
 
   return {
-    session,
+    session: session as Session,
     status,
     isAuthenticated: status === "authenticated" && isTokenValid,
     isTokenValid,

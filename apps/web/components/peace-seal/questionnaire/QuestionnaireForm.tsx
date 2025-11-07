@@ -227,6 +227,66 @@ export default function QuestionnaireForm({
 
     if (!field.required) return true;
 
+    // Handle multi-input fields (composite values)
+    if (field.inputModes && field.inputModes.length > 0) {
+      // Check if value is a composite value
+      if (
+        value &&
+        typeof value === "object" &&
+        ("text" in value ||
+          "url" in value ||
+          "file" in value ||
+          "agreement" in value)
+      ) {
+        const composite = value as any;
+        const completionMode = field.completionMode || "any";
+
+        if (completionMode === "all") {
+          // All modes must have values
+          return field.inputModes.every((mode: any) => {
+            if (mode.kind === "text" || mode.kind === "textarea")
+              return !!composite.text;
+            if (mode.kind === "url") return !!composite.url;
+            if (mode.kind === "file")
+              return !!(composite.file || composite.agreement);
+            return false;
+          });
+        } else {
+          // Any mode can have a value (default)
+          return field.inputModes.some((mode: any) => {
+            if (mode.kind === "text" || mode.kind === "textarea") {
+              return (
+                composite.text &&
+                typeof composite.text === "string" &&
+                composite.text.trim().length > 0
+              );
+            }
+            if (mode.kind === "url") {
+              return (
+                composite.url &&
+                typeof composite.url === "string" &&
+                composite.url.trim().length > 0
+              );
+            }
+            if (mode.kind === "file") {
+              return !!(composite.file || composite.agreement);
+            }
+            return false;
+          });
+        }
+      }
+      // Legacy: if it's a string or file, check normally
+      if (typeof value === "string") return value.trim().length > 0;
+      if (
+        value &&
+        typeof value === "object" &&
+        ("fileName" in value || "templateId" in value)
+      )
+        return true;
+      return false;
+    }
+
+    // Handle single-input fields
     switch (field.type) {
       case "boolean":
         return value !== undefined && value !== null;
@@ -483,6 +543,7 @@ export default function QuestionnaireForm({
                     onFileUpload={uploadFile}
                     onFileDelete={deleteFile}
                     onAgreementAccept={acceptAgreement}
+                    onAgreementDelete={deleteAgreement}
                     sectionId={currentSection.id}
                     error={fieldErrors[field.id]}
                     disabled={isSaving || isCompleted}

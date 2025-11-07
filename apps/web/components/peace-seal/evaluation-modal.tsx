@@ -15,15 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { createEvaluation, type ReviewEvaluation } from "@/lib/api/peace-seal";
-import {
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  Clock,
-  Star,
-  User,
-  Calendar,
-} from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Clock, Star } from "lucide-react";
 
 interface EvaluationModalProps {
   reviewId: string | null;
@@ -66,7 +58,7 @@ export function EvaluationModal({
       });
 
       toast({
-        title: "Evaluation created successfully",
+        title: "Evaluation saved successfully",
         description: `Review marked as ${evaluationStatus === "valid" ? "valid" : evaluationStatus === "invalid" ? "invalid" : "requiring company response"}`,
       });
 
@@ -78,7 +70,7 @@ export function EvaluationModal({
       setEvaluationNotes("");
     } catch (error: unknown) {
       toast({
-        title: "Error creating evaluation",
+        title: "Error saving evaluation",
         description: (error as Error).message || "Please try again later.",
         variant: "destructive",
       });
@@ -100,19 +92,6 @@ export function EvaluationModal({
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "valid":
-        return "bg-green-50 text-green-700 border-green-200";
-      case "invalid":
-        return "bg-red-50 text-red-700 border-red-200";
-      case "requires_company_response":
-        return "bg-orange-50 text-orange-700 border-orange-200";
-      default:
-        return "bg-gray-50 text-gray-700 border-gray-200";
-    }
-  };
-
   const getStatusDescription = (status: string) => {
     switch (status) {
       case "valid":
@@ -130,7 +109,7 @@ export function EvaluationModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] overflow-hidden w-full">
+      <DialogContent className="!w-[700px] !max-w-none h-[70vh] max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-orange-600" />
@@ -224,7 +203,14 @@ export function EvaluationModal({
                           ? "border-[#548281] bg-[#548281]/5"
                           : "hover:bg-gray-50"
                       }`}
-                      onClick={() => setEvaluationStatus(option.value as any)}
+                      onClick={() =>
+                        setEvaluationStatus(
+                          option.value as
+                            | "valid"
+                            | "invalid"
+                            | "requires_company_response"
+                        )
+                      }
                     >
                       <div className="flex items-center gap-3">
                         {getStatusIcon(option.value)}
@@ -267,7 +253,7 @@ export function EvaluationModal({
             disabled={isSubmitting}
             className="bg-[#548281] hover:bg-[#2F4858]"
           >
-            {isSubmitting ? "Creating..." : "Create Evaluation"}
+            {isSubmitting ? "Saving..." : "Save Evaluation"}
           </Button>
         </div>
       </DialogContent>

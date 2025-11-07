@@ -11,8 +11,43 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, ArrowRight, CheckCircle } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  ArrowLeft,
+  ArrowRight,
+  CheckCircle,
+  Check,
+  ChevronsUpDown,
+} from "lucide-react";
 import Link from "next/link";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import { cn } from "@/lib/utils";
+import {
+  COUNTRIES,
+  PEACE_SEAL_INDUSTRIES,
+  BUSINESS_SIZE_OPTIONS,
+  businessSizeToNumber,
+  requiresRFQ,
+  type BusinessSize,
+} from "@/lib/utils/peace-seal-utils";
 
 type Step = 1 | 2 | 3;
 
@@ -21,13 +56,16 @@ interface CompanyForm {
   country: string;
   website: string;
   industry: string;
-  employeeCount: number;
+  businessSize: BusinessSize | "";
 }
 
 export default function ApplyPage() {
-  const { status } = useAuthSession();
+  const { status, session } = useAuthSession();
+  const user = session?.user;
+  const userEmail = user?.email;
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
+  const [countryPopoverOpen, setCountryPopoverOpen] = useState(false);
 
   // Form data
   const [companyForm, setCompanyForm] = useState<CompanyForm>({
@@ -35,7 +73,7 @@ export default function ApplyPage() {
     country: "",
     website: "",
     industry: "",
-    employeeCount: 0,
+    businessSize: "",
   });
 
   const [application, setApplication] = useState<{
@@ -44,14 +82,28 @@ export default function ApplyPage() {
   } | null>(null);
   const [paymentCompleted, setPaymentCompleted] = useState(false);
 
-  // Calculate price based on employee count
+  // Calculate price based on business size
   const price = useMemo(() => {
-    const count = Number(companyForm.employeeCount);
-    if (count <= 0) return 99; // Default to small company
-    if (count <= 20) return 99;
-    if (count <= 50) return 499;
-    return null; // RFQ for >50 employees
-  }, [companyForm.employeeCount]);
+    if (!companyForm.businessSize) return 99; // Default to small company
+    if (companyForm.businessSize === "small") return 99;
+    if (companyForm.businessSize === "medium") return 499;
+    return null; // RFQ for large businesses
+  }, [companyForm.businessSize]);
+
+  // Check if all required fields are filled
+  const isStep1Valid = useMemo(() => {
+    return (
+      companyForm.name.trim() !== "" &&
+      companyForm.country !== "" &&
+      companyForm.industry !== "" &&
+      companyForm.businessSize !== ""
+    );
+  }, [
+    companyForm.name,
+    companyForm.country,
+    companyForm.industry,
+    companyForm.businessSize,
+  ]);
 
   // Redirect if not authenticated
   if (status === "loading") {
@@ -83,19 +135,23 @@ export default function ApplyPage() {
   }
 
   const handleStep1Submit = async () => {
-    if (!companyForm.name.trim()) {
-      alert("Company name is required");
+    if (!isStep1Valid) {
+      alert("Please fill in all required fields");
       return;
     }
 
     setLoading(true);
     try {
+      // Convert business size to numeric value for backend compatibility
+      const employeeCount = businessSizeToNumber(companyForm.businessSize);
+
       const result = await startApplication({
         name: companyForm.name,
         country: companyForm.country || undefined,
         website: companyForm.website || undefined,
         industry: companyForm.industry || undefined,
-        employeeCount: companyForm.employeeCount || undefined,
+        employeeCount: employeeCount || undefined,
+        businessSize: companyForm.businessSize || undefined,
       });
 
       setApplication(result);
@@ -136,14 +192,16 @@ export default function ApplyPage() {
     console.log("Questionnaire completed:", data);
     // Here you could redirect to a success page or show a completion message
     alert(
-      "Questionnaire completed successfully! Your application is now under review."
+      "Application submitted successfully! Your questionnaire has been sent for review. Scoring will begin automatically once payment is completed."
     );
   };
 
   const handleRequestQuote = async () => {
     if (!application) return;
     try {
-      await requestQuote(application.id, companyForm.employeeCount);
+      const employeeCount =
+        businessSizeToNumber(companyForm.businessSize) || 100;
+      await requestQuote(application.id, employeeCount);
       setLoading(true);
       setStep(3);
     } catch (error) {
@@ -239,32 +297,81 @@ export default function ApplyPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="country">Country</Label>
-                  <Input
-                    id="country"
-                    value={companyForm.country}
-                    onChange={(e) =>
-                      setCompanyForm((prev) => ({
-                        ...prev,
-                        country: e.target.value,
-                      }))
-                    }
-                    placeholder="e.g., United States"
-                  />
+                  <Label htmlFor="country">
+                    Country of Registration & Operations
+                  </Label>
+                  <Popover
+                    open={countryPopoverOpen}
+                    onOpenChange={setCountryPopoverOpen}
+                  >
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        role="combobox"
+                        aria-expanded={countryPopoverOpen}
+                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#548281] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {companyForm.country || "Select country..."}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Search country..." />
+                        <CommandList>
+                          <CommandEmpty>No country found.</CommandEmpty>
+                          <CommandGroup>
+                            {COUNTRIES.map((country) => (
+                              <CommandItem
+                                key={country}
+                                value={country}
+                                onSelect={() => {
+                                  setCompanyForm((prev) => ({
+                                    ...prev,
+                                    country: country,
+                                  }));
+                                  setCountryPopoverOpen(false);
+                                }}
+                              >
+                                <Check
+                                  className={cn(
+                                    "mr-2 h-4 w-4",
+                                    companyForm.country === country
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  )}
+                                />
+                                {country}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div>
                   <Label htmlFor="industry">Industry</Label>
-                  <Input
-                    id="industry"
+                  <Select
                     value={companyForm.industry}
-                    onChange={(e) =>
+                    onValueChange={(value) =>
                       setCompanyForm((prev) => ({
                         ...prev,
-                        industry: e.target.value,
+                        industry: value,
                       }))
                     }
-                    placeholder="e.g., Technology"
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select industry..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PEACE_SEAL_INDUSTRIES.map((industry) => (
+                        <SelectItem key={industry} value={industry}>
+                          {industry}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -285,27 +392,34 @@ export default function ApplyPage() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="employeeCount">Number of Employees</Label>
-                  <Input
-                    id="employeeCount"
-                    type="number"
-                    min="1"
-                    value={companyForm.employeeCount || ""}
-                    onChange={(e) =>
+                  <Label htmlFor="businessSize">Business Size *</Label>
+                  <Select
+                    value={companyForm.businessSize}
+                    onValueChange={(value) =>
                       setCompanyForm((prev) => ({
                         ...prev,
-                        employeeCount: Number(e.target.value) || 0,
+                        businessSize: value as BusinessSize,
                       }))
                     }
-                    placeholder="e.g., 25"
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select business size..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BUSINESS_SIZE_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
               <div className="flex justify-end pt-4">
                 <Button
                   onClick={handleStep1Submit}
-                  disabled={loading || !companyForm.name.trim()}
+                  disabled={loading || !isStep1Valid}
                   className="flex items-center gap-2"
                 >
                   {loading ? "Creating..." : "Continue to Payment"}
@@ -319,7 +433,7 @@ export default function ApplyPage() {
         {/* Step 2: Payment */}
         {step === 2 && application && (
           <div className="space-y-4">
-            {companyForm.employeeCount > 50 ? (
+            {requiresRFQ(companyForm.businessSize) ? (
               <QuoteNotice onRequestQuote={handleRequestQuote} />
             ) : (
               <PaymentForm
@@ -367,13 +481,17 @@ export default function ApplyPage() {
             <QuestionnaireForm
               companyId={application?.id || ""}
               onComplete={handleQuestionnaireComplete}
-              employeeCount={companyForm.employeeCount}
+              employeeCount={
+                businessSizeToNumber(companyForm.businessSize) || 0
+              }
               initialData={{
                 companyInformation: {
                   organizationName: companyForm.name,
                   website: companyForm.website,
                   headquartersCountry: companyForm.country,
-                  employeeCount: companyForm.employeeCount,
+                  employeeCount:
+                    businessSizeToNumber(companyForm.businessSize) || 0,
+                  contactEmail: userEmail,
                   // Note: industry field may need to be mapped to appropriate field in questionnaire
                 },
               }}

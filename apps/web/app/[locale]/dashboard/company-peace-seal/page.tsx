@@ -35,12 +35,11 @@ import {
   ArrowLeft,
   Home,
   HelpCircle,
-  Star,
 } from "lucide-react";
 import { logger } from "@/lib/utils/logger";
 import QuestionnaireForm from "@/components/peace-seal/questionnaire/QuestionnaireForm";
 import { toast } from "@/hooks/use-toast";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 type UserCompany = {
   id: string;
@@ -151,6 +150,7 @@ function getStatusDescription(status: string): string {
 export default function CompanyPeaceSealDashboard() {
   const { session } = useAuthSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [userCompany, setUserCompany] = useState<UserCompany | null>(null);
   const [questionnaire, setQuestionnaire] = useState<QuestionnaireData | null>(
     null
@@ -162,8 +162,24 @@ export default function CompanyPeaceSealDashboard() {
   const [isCommunityListedCompany, setIsCommunityListedCompany] =
     useState(false);
 
+  // Get initial tab from URL params
+  const initialTab =
+    searchParams.get("tab") === "center" ? "center" : "overview";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Update tab when URL params change
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    if (tabParam === "center") {
+      setActiveTab("center");
+    } else if (tabParam === "issues") {
+      setActiveTab("issues");
+    }
+  }, [searchParams]);
+
   // Check if user is a company (will be determined after loading company data)
   const isUser = session?.user?.role === "user";
+  const userEmail = session?.user?.email;
 
   const loadUserCompanyData = useCallback(async () => {
     if (!isUser) return;
@@ -435,26 +451,65 @@ export default function CompanyPeaceSealDashboard() {
             </div>
 
             {/* Questionnaire Form */}
-            <QuestionnaireForm
-              companyId={userCompany.id}
-              initialData={
-                questionnaire?.responses
-                  ? (() => {
-                      try {
-                        return JSON.parse(questionnaire.responses);
-                      } catch (error) {
-                        logger.error(
-                          "Error parsing questionnaire responses:",
-                          error
-                        );
-                        return undefined;
-                      }
-                    })()
-                  : undefined
+            {(() => {
+              // Compute effective employee count
+              let parsedEmployeeCount: number | undefined;
+              if (questionnaire?.responses) {
+                try {
+                  const parsed = JSON.parse(questionnaire.responses);
+                  parsedEmployeeCount =
+                    parsed.companyInformation?.employeeCount;
+                } catch {
+                  // Ignore parsing errors, will use fallback
+                }
               }
-              onComplete={handleQuestionnaireComplete}
-              isCompleted={isCompleted}
-            />
+              const effectiveEmployeeCount =
+                userCompany.employeeCount ?? parsedEmployeeCount ?? 0;
+
+              return (
+                <QuestionnaireForm
+                  companyId={userCompany.id}
+                  initialData={
+                    questionnaire?.responses
+                      ? (() => {
+                          try {
+                            const parsed = JSON.parse(questionnaire.responses);
+                            // Ensure contactEmail is set if not already in saved data
+                            if (
+                              !parsed.companyInformation?.contactEmail &&
+                              userEmail
+                            ) {
+                              return {
+                                ...parsed,
+                                companyInformation: {
+                                  ...parsed.companyInformation,
+                                  contactEmail: userEmail,
+                                },
+                              };
+                            }
+                            return parsed;
+                          } catch (error) {
+                            logger.error(
+                              "Error parsing questionnaire responses:",
+                              error
+                            );
+                            return undefined;
+                          }
+                        })()
+                      : userEmail
+                        ? {
+                            companyInformation: {
+                              contactEmail: userEmail,
+                            },
+                          }
+                        : undefined
+                  }
+                  onComplete={handleQuestionnaireComplete}
+                  isCompleted={isCompleted}
+                  employeeCount={effectiveEmployeeCount}
+                />
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -569,8 +624,12 @@ export default function CompanyPeaceSealDashboard() {
           </Card>
 
           {/* Main Content Tabs */}
-          <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="overview">
                 <Home className="w-4 h-4 mr-2" />
                 Overview
@@ -579,10 +638,10 @@ export default function CompanyPeaceSealDashboard() {
                 <HelpCircle className="w-4 h-4 mr-2" />
                 Peace Seal Center
               </TabsTrigger>
-              <TabsTrigger value="renewal">
+              {/* <TabsTrigger value="renewal">
                 <Star className="w-4 h-4 mr-2" />
                 Renewal & Rewards
-              </TabsTrigger>
+              </TabsTrigger> */}
               <TabsTrigger value="issues">
                 <AlertTriangle className="w-4 h-4 mr-2" />
                 Issues
@@ -599,7 +658,7 @@ export default function CompanyPeaceSealDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="flex flex-row gap-4 justify-around">
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
                         <Globe className="w-4 h-4" />
@@ -620,7 +679,7 @@ export default function CompanyPeaceSealDashboard() {
                       </p>
                     </div>
 
-                    <div className="space-y-2">
+                    {/* <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-gray-500">
                         <Users className="w-4 h-4" />
                         Employees
@@ -628,7 +687,7 @@ export default function CompanyPeaceSealDashboard() {
                       <p className="text-lg">
                         {userCompany.employeeCount || "Not specified"}
                       </p>
-                    </div>
+                    </div> */}
 
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-sm font-medium text-gray-500">

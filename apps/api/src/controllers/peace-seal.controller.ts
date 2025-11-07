@@ -5,10 +5,12 @@ import { PeaceSealService } from "../services/peace-seal.service";
 import { DocumentService } from "../services/document.service";
 import { ReportsService } from "../services/reports.service";
 import { DocumentsController } from "./documents.controller";
+import { EmailService } from "../services/email.service";
 import {
   peaceSealCompanies,
   peaceSealQuestionnaires,
 } from "../db/schema/peace-seal";
+import { users } from "../db/schema/users";
 import { eq } from "drizzle-orm";
 import { logger } from "../utils/logger";
 
@@ -58,12 +60,34 @@ export class PeaceSealController {
     try {
       const db = createDb(c.env.DB);
       const peaceSealService = new PeaceSealService(db);
-      const { name, country, website, industry, employeeCount } = await c.req
-        .json()
-        .catch(() => ({}));
+      const { name, country, website, industry, employeeCount, businessSize } =
+        await c.req.json().catch(() => ({}));
 
       if (!name) {
         throw new HTTPException(400, { message: "Company name is required" });
+      }
+
+      // Convert businessSize to employeeCount if provided, otherwise use employeeCount directly
+      let finalEmployeeCount: number | undefined;
+      if (businessSize) {
+        // Convert business size string to representative number
+        switch (businessSize) {
+          case "small":
+            finalEmployeeCount = 10; // Representative of 1-20 range
+            break;
+          case "medium":
+            finalEmployeeCount = 35; // Representative of 21-50 range
+            break;
+          case "large":
+            finalEmployeeCount = 100; // Representative of 50+ range
+            break;
+          default:
+            finalEmployeeCount = employeeCount
+              ? Number(employeeCount)
+              : undefined;
+        }
+      } else {
+        finalEmployeeCount = employeeCount ? Number(employeeCount) : undefined;
       }
 
       const user = c.get("user");
@@ -72,7 +96,7 @@ export class PeaceSealController {
         country,
         website,
         industry,
-        employeeCount: employeeCount ? Number(employeeCount) : undefined,
+        employeeCount: finalEmployeeCount,
         createdByUserId: user.id,
       });
 
@@ -792,6 +816,7 @@ export class PeaceSealController {
       const company = await db
         .select({
           id: peaceSealCompanies.id,
+          name: peaceSealCompanies.name,
           createdByUserId: peaceSealCompanies.createdByUserId,
           paymentStatus: peaceSealCompanies.paymentStatus,
         })
@@ -801,6 +826,21 @@ export class PeaceSealController {
 
       if (!company) {
         throw new HTTPException(404, { message: "Company not found" });
+      }
+
+      // Get user details for email
+      const user = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+        })
+        .from(users)
+        .where(eq(users.id, company.createdByUserId as string))
+        .then((r) => r[0]);
+
+      if (!user) {
+        throw new HTTPException(404, { message: "User not found" });
       }
 
       // Call the service method using the company owner's ID
@@ -820,6 +860,35 @@ export class PeaceSealController {
             notes: `Subscription ID: ${subscriptionId}`,
           })
           .where(eq(peaceSealCompanies.id, companyId));
+      }
+
+      // Send confirmation email to the user
+      try {
+        const emailService = new EmailService({
+          apiKey: c.env.BREVO_API_KEY as string,
+          fromEmail: c.env.BREVO_FROM_EMAIL as string,
+          fromName: c.env.BREVO_FROM_NAME as string,
+        });
+
+        const baseUrl = c.env.BASE_URL || "https://www.pledge4peace.org";
+
+        await emailService.sendPeaceSealPaymentConfirmation(
+          user.email,
+          user.name,
+          company.name,
+          baseUrl
+        );
+
+        logger.log("Peace Seal payment confirmation email sent:", {
+          userEmail: user.email,
+          companyName: company.name,
+        });
+      } catch (emailError) {
+        logger.error(
+          "Failed to send peace seal payment confirmation email:",
+          emailError
+        );
+        // Don't fail the payment confirmation if email fails
       }
 
       logger.log("Webhook payment confirmation successful:", {

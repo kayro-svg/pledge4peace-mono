@@ -867,4 +867,254 @@ export class EmailService {
 
     return await response.json();
   }
+
+  async sendCommunityReviewVerificationEmail(
+    to: string,
+    token: string,
+    baseUrl: string
+  ) {
+    const verificationLink = `${baseUrl}/verify-review?token=${token}`;
+
+    const body = {
+      sender: { name: this.fromName, email: this.fromEmail },
+      to: [{ email: to, name: to.split("@")[0] }],
+      subject: "Verify your review – Pledge4Peace",
+      htmlContent: `
+        <h1>Thank you for your review!</h1>
+        <p>Hello,</p>
+        <p>We've received your review and want to thank you for taking the time to share your experience. Your feedback is valuable in helping us maintain transparency and accountability in the business community.</p>
+        <p><strong>What happens next?</strong></p>
+        <p>Our team will review your submission to ensure it meets our community guidelines. Once verified, your review will be published and contribute to the company's overall rating.</p>
+        <p>To verify your email address and complete the review submission process, please click the button below:</p>
+        <p>
+          <a href="${verificationLink}"
+             style="
+               background-color: #548281;
+               color: white;
+               padding: 10px 20px;
+               text-decoration: none;
+               border-radius: 5px;
+               display: inline-block;
+               margin: 10px 0;
+             ">
+            Verify Your Review
+          </a>
+        </p>
+        <p>This verification link will expire in 24 hours.</p>
+        <p>If you didn't submit a review, please ignore this email or contact us if you have any concerns.</p>
+        <p>Thank you for supporting our mission to promote peace and ethical business practices!</p>
+        <br>
+        <p>Best regards,<br>The Pledge4Peace Team</p>
+        <p><small>This is an automated email. Please do not reply to this message.</small></p>
+      `,
+    };
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error(
+        "Brevo sendCommunityReviewVerificationEmail error:",
+        response.status,
+        text
+      );
+      throw new Error("Failed to send community review verification email");
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Envía confirmación de pago exitoso para Peace Seal al usuario
+   */
+  async sendPeaceSealPaymentConfirmation(to: string, userName: string, companyName: string, baseUrl: string) {
+    const dashboardLink = `${baseUrl}/dashboard/company-peace-seal`;
+
+    const body = {
+      sender: {
+        name: this.fromName,
+        email: this.fromEmail,
+      },
+      to: [
+        {
+          email: to,
+          name: userName,
+        },
+      ],
+      subject: `Welcome to Peace Seal Certification - ${companyName}`,
+      htmlContent: `
+        <h1>Payment Confirmed - Welcome to Peace Seal!</h1>
+        <p>Hello ${userName},</p>
+        <p>Congratulations! Your payment for the Peace Seal certification has been successfully processed for <strong>${companyName}</strong>.</p>
+
+        <div style="background-color: #f0f9f0; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #548281;">
+          <h3 style="color: #2F4858; margin-top: 0;">What's Next?</h3>
+          <p>Your company is now officially part of the global Peace Seal network. Here's what you can expect:</p>
+          <ul>
+            <li><strong>Certification Process:</strong> Our team will begin the comprehensive ethical practices audit</li>
+            <li><strong>Peace Seal Badge:</strong> You'll receive your official Peace Seal badge and certificate</li>
+            <li><strong>Dashboard Access:</strong> Monitor your certification progress and manage your profile</li>
+            <li><strong>Community Benefits:</strong> Access to exclusive networking opportunities and peace initiatives</li>
+          </ul>
+        </div>
+
+        <p>Check your Peace Seal dashboard to view your certification status, upload required documents, and track your progress:</p>
+        <p>
+          <a href="${dashboardLink}"
+             style="
+               background-color: #548281;
+               color: white;
+               padding: 12px 24px;
+               text-decoration: none;
+               border-radius: 6px;
+               display: inline-block;
+               font-weight: bold;
+             ">
+            View Your Peace Seal Dashboard
+          </a>
+        </p>
+
+        <p>If you have any questions about the certification process or need assistance, please don't hesitate to contact our support team.</p>
+
+        <p>Thank you for choosing to be part of the Peace Seal movement and for your commitment to ethical business practices.</p>
+
+        <br>
+        <p>Best regards,<br>The Pledge4Peace Team</p>
+        <p><small>This is an automated confirmation. Your annual certification fee has been processed successfully.</small></p>
+      `,
+    };
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error("Brevo sendPeaceSealPaymentConfirmation error:", response.status, text);
+      throw new Error("Failed to send peace seal payment confirmation email");
+    }
+
+    return await response.json();
+  }
+
+  /**
+   * Envía notificación a la empresa cuando se requiere respuesta a una evaluación de review
+   */
+  async sendCompanyIssueNotificationEmail(
+    to: string,
+    userName: string,
+    companyName: string,
+    reviewRole: string,
+    reviewScore: number | null,
+    reviewStarRating: number | null,
+    evaluationNotes: string | null,
+    deadlineDate: number,
+    baseUrl: string
+  ) {
+    const dashboardLink = `${baseUrl}/dashboard/company-peace-seal`;
+    const deadlineFormatted = new Date(deadlineDate).toLocaleDateString();
+    const daysUntilDeadline = Math.ceil(
+      (deadlineDate - Date.now()) / (1000 * 60 * 60 * 24)
+    );
+
+    const body = {
+      sender: {
+        name: this.fromName,
+        email: this.fromEmail,
+      },
+      to: [
+        {
+          email: to,
+          name: userName,
+        },
+      ],
+      subject: `Action Required: Response Needed for Community Review - ${companyName}`,
+      htmlContent: `
+        <h1>Action Required: Response Needed for Community Review</h1>
+        <p>Hello ${userName},</p>
+        <p>A community review for <strong>${companyName}</strong> requires your response.</p>
+
+        <div style="background-color: #fff3cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #ffc107;">
+          <h3 style="color: #856404; margin-top: 0;">Review Details</h3>
+          <ul style="margin: 0; padding-left: 20px;">
+            <li><strong>Reviewer Role:</strong> ${reviewRole}</li>
+            ${reviewScore !== null ? `<li><strong>Score:</strong> ${reviewScore}/100</li>` : ""}
+            ${reviewStarRating !== null ? `<li><strong>Rating:</strong> ${reviewStarRating}/5 stars</li>` : ""}
+          </ul>
+          ${evaluationNotes ? `
+            <div style="margin-top: 15px; padding: 10px; background-color: #fff; border-radius: 4px;">
+              <strong>Advisor Notes:</strong>
+              <p style="margin: 5px 0 0 0;">${evaluationNotes}</p>
+            </div>
+          ` : ""}
+        </div>
+
+        <div style="background-color: #f8d7da; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc3545;">
+          <h3 style="color: #721c24; margin-top: 0;">⚠️ Response Deadline</h3>
+          <p style="margin: 0; font-size: 18px; font-weight: bold;">
+            ${daysUntilDeadline > 0 
+              ? `You have ${daysUntilDeadline} day${daysUntilDeadline !== 1 ? "s" : ""} to respond`
+              : "⚠️ Deadline has passed - Please respond immediately"
+            }
+          </p>
+          <p style="margin: 10px 0 0 0; color: #721c24;">
+            Response due by: <strong>${deadlineFormatted}</strong>
+          </p>
+        </div>
+
+        <p>Please log in to your Peace Seal dashboard to view the full review details and submit your response:</p>
+        <p>
+          <a href="${dashboardLink}"
+             style="
+               background-color: #548281;
+               color: white;
+               padding: 12px 24px;
+               text-decoration: none;
+               border-radius: 6px;
+               display: inline-block;
+               font-weight: bold;
+             ">
+            Respond to Review
+          </a>
+        </p>
+
+        <p>Your response will be reviewed by our advisors and may be shared publicly if appropriate. Please provide a detailed response addressing the concerns raised in the review.</p>
+
+        <p>If you have any questions or need assistance, please contact our support team.</p>
+
+        <br>
+        <p>Best regards,<br>The Pledge4Peace Team</p>
+        <p><small>This is an automated notification. Please respond promptly to maintain your Peace Seal certification status.</small></p>
+      `,
+    };
+
+    const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "api-key": this.apiKey,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const text = await response.text();
+      logger.error("Brevo sendCompanyIssueNotificationEmail error:", response.status, text);
+      throw new Error("Failed to send company issue notification email");
+    }
+
+    return await response.json();
+  }
 }

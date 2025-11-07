@@ -10,6 +10,7 @@ interface AuthContainerProps {
   isModal?: boolean;
   isLogin?: boolean;
   preSelectedUserType?: string;
+  onLoadingChange?: (isLoading: boolean) => void;
 }
 
 export default function AuthContainer({
@@ -17,8 +18,10 @@ export default function AuthContainer({
   isModal,
   isLogin = false,
   preSelectedUserType,
+  onLoadingChange,
 }: AuthContainerProps) {
   const [isLoginView, setIsLoginView] = useState(isLogin);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSwitchToRegister = () => {
     setIsLoginView(false);
@@ -26,6 +29,11 @@ export default function AuthContainer({
 
   const handleSwitchToLogin = () => {
     setIsLoginView(true);
+  };
+
+  const handleLoadingChange = (loading: boolean) => {
+    setIsLoading(loading);
+    onLoadingChange?.(loading);
   };
 
   return (
@@ -39,6 +47,7 @@ export default function AuthContainer({
         <LoginForm
           onSwitchToRegister={handleSwitchToRegister}
           onLoginSuccess={onLoginSuccess}
+          onLoadingChange={handleLoadingChange}
         />
       ) : (
         <RegisterForm
@@ -46,6 +55,7 @@ export default function AuthContainer({
           isModal={isModal}
           onRegisterSuccess={onLoginSuccess}
           preSelectedUserType={preSelectedUserType}
+          onLoadingChange={handleLoadingChange}
         />
       )}
     </div>

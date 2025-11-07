@@ -28,6 +28,7 @@ type UserReview = {
   verificationStatus: "pending" | "verified" | "unverified";
   verificationMethod?: string;
   totalScore?: number | null;
+  experienceDescription?: string | null;
   starRating?: number | null;
   createdAt: number | string;
   verifiedAt?: number | string | null;
@@ -35,6 +36,13 @@ type UserReview = {
   companySlug?: string;
   companyCountry?: string;
   companyIndustry?: string;
+  // Evaluation data (if review has been evaluated)
+  evaluationId?: string | null;
+  evaluationStatus?: string | null;
+  companyResponse?: string | null;
+  companyRespondedAt?: number | string | null;
+  finalResolution?: string | null; // resolved|unresolved|dismissed
+  finalResolutionNotes?: string | null;
 };
 
 function getVerificationIcon(status: string) {
@@ -132,6 +140,8 @@ export default function MyReviewsDashboard() {
         limit: 10,
       });
 
+      console.log("result my reviews", result);
+
       if (page === 1) {
         setReviews(result.items);
       } else {
@@ -156,6 +166,8 @@ export default function MyReviewsDashboard() {
       setLoading(false);
     }
   }, [isUser, page]);
+
+  console.log("reviews", reviews);
 
   useEffect(() => {
     loadReviews();
@@ -276,13 +288,38 @@ export default function MyReviewsDashboard() {
                   <CardContent className="p-6">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {review.companyName}
-                          </h3>
-                          <Badge variant="outline" className="text-xs">
-                            {getRoleLabel(review.role)}
-                          </Badge>
+                        <div className="flex items-cente justify-between w-full gap-3 mb-2">
+                          <div className="flex gap-4">
+                            <h3 className="text-lg font-semibold text-gray-900">
+                              {review.companyName}
+                            </h3>
+                            {/* <Badge variant="outline" className="text-xs">
+                              {getRoleLabel(review.role)}
+                            </Badge> */}
+                            <div className="flex items-center gap-2">
+                              {getVerificationIcon(review.verificationStatus)}
+                              <Badge
+                                className={`${getVerificationColor(review.verificationStatus)} border text-xs px-2 py-1`}
+                              >
+                                {getVerificationLabel(
+                                  review.verificationStatus
+                                )}
+                              </Badge>
+                            </div>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              window.open(
+                                `/peace-seal/company/${review.companySlug}`,
+                                "_blank"
+                              )
+                            }
+                          >
+                            <ExternalLink className="w-4 h-4 mr-1" />
+                            View Company
+                          </Button>
                         </div>
 
                         <div className="flex items-center gap-4 text-sm text-gray-600 mb-3">
@@ -306,54 +343,99 @@ export default function MyReviewsDashboard() {
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            {getVerificationIcon(review.verificationStatus)}
+                        <div className="flex flex-row items-center justify-between gap-4">
+                          <div className="flex flex-col gap-4 flex-1">
                             <Badge
-                              className={`${getVerificationColor(review.verificationStatus)} border text-xs px-2 py-1`}
+                              variant="outline"
+                              className="text-xs flex-shrink w-[fit-content]"
                             >
-                              {getVerificationLabel(review.verificationStatus)}
+                              {getRoleLabel(review.role)}
                             </Badge>
+                            {review.experienceDescription && (
+                              <div className="text-sm text-gray-600">
+                                {review.experienceDescription}
+                              </div>
+                            )}
+
+                            {/* Company Response Section */}
+                            {review.companyResponse && (
+                              <div className="mt-2 pt-2 border-t border-gray-200">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Building className="w-4 h-4 text-blue-600" />
+                                  <p className="text-sm font-medium text-gray-900">
+                                    Company Response
+                                  </p>
+                                  {review.companyRespondedAt && (
+                                    <span className="text-xs text-gray-500">
+                                      (
+                                      {new Date(
+                                        review.companyRespondedAt
+                                      ).toLocaleDateString()}
+                                      )
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                                    {review.companyResponse}
+                                  </p>
+                                </div>
+
+                                {/* Final Resolution */}
+                                {review.finalResolution === "resolved" && (
+                                  <div className="mt-2 flex items-center gap-2">
+                                    <CheckCircle className="w-4 h-4 text-green-600" />
+                                    <Badge
+                                      variant="default"
+                                      className="bg-green-100 text-green-800 text-xs"
+                                    >
+                                      Resolved
+                                    </Badge>
+                                    {review.finalResolutionNotes && (
+                                      <p className="text-xs text-gray-600">
+                                        {review.finalResolutionNotes}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+
+                                {review.finalResolution === "dismissed" && (
+                                  <div className="mt-2 flex items-center gap-2">
+                                    <XCircle className="w-4 h-4 text-gray-600" />
+                                    <Badge
+                                      variant="outline"
+                                      className="bg-gray-100 text-gray-800 text-xs"
+                                    >
+                                      Dismissed
+                                    </Badge>
+                                    {review.finalResolutionNotes && (
+                                      <p className="text-xs text-gray-600">
+                                        {review.finalResolutionNotes}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            )}
                           </div>
 
                           {review.starRating && (
                             <StarRating rating={review.starRating} />
                           )}
-
-                          {review.totalScore && (
-                            <div className="text-sm text-gray-600">
-                              Score:{" "}
-                              <span className="font-medium">
-                                {review.totalScore}/100
-                              </span>
-                            </div>
-                          )}
                         </div>
                       </div>
-
+                      {/* 
                       <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() =>
-                            window.open(
-                              `/peace-seal/company/${review.companySlug}`,
-                              "_blank"
-                            )
-                          }
-                        >
-                          <ExternalLink className="w-4 h-4 mr-1" />
-                          View Company
-                        </Button>
-                      </div>
+                      
+                      </div> */}
                     </div>
 
-                    {review.verifiedAt && (
+                    {/* {review.verifiedAt && (
                       <div className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
                         ✓ Verified on{" "}
                         {new Date(review.verifiedAt).toLocaleDateString()}
                       </div>
-                    )}
+                    )} */}
                   </CardContent>
                 </Card>
               ))}

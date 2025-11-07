@@ -1,4 +1,5 @@
 import { QuestionnaireSection } from "@/types/questionnaire";
+import { COUNTRIES } from "@/lib/utils/peace-seal-utils";
 
 // Helper function to determine company size
 export function getCompanySize(
@@ -58,34 +59,7 @@ const COMPANY_INFORMATION_SECTION: QuestionnaireSection = {
       label: "Headquarters Country",
       type: "select",
       required: true,
-      options: [
-        "United States",
-        "Canada",
-        "United Kingdom",
-        "Germany",
-        "France",
-        "Spain",
-        "Italy",
-        "Australia",
-        "Japan",
-        "Mexico",
-        "Brazil",
-        "Argentina",
-        "Chile",
-        "Colombia",
-        "Peru",
-        "China",
-        "India",
-        "South Korea",
-        "Singapore",
-        "Netherlands",
-        "Belgium",
-        "Switzerland",
-        "Sweden",
-        "Norway",
-        "Denmark",
-        "Other",
-      ],
+      options: COUNTRIES,
     },
     {
       id: "countriesOfOperations",
@@ -140,6 +114,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_peace_pledge_declaration",
         templateType: "simple",
+        tooltipText:
+          "By checking this box, you confirm that you are an authorized representative (CEO, Owner, or approved delegate) and that your organization formally commits to the Peace Seal values, including non-violence, justice, equality, ethical integrity, and human-centered practices. This declaration is a moral and operational commitment to lead responsibly and will guide your Peace Seal evaluation.",
       },
       {
         id: "hrHandbook",
@@ -153,6 +129,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_hr_handbook_small",
         templateType: "simple",
+        tooltipText:
+          "By checking this box or providing this information, you confirm that your organization has implemented, or will implement, an Employee Handbook that promotes fairness, safety, and inclusion. This handbook should reflect the Peace Seal values: respect, non-violence, integrity, equal opportunity, and community responsibility.",
       },
       {
         id: "ownershipStructure",
@@ -162,8 +140,13 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         options: [
           "Sole Proprietorship (single owner)",
           "Partnership (two or more owners)",
+          "Limited Partnership (LP)",
+          "Limited Liability Partnership (LLP)",
           "Corporation (owners are shareholders with limited liability)",
           "Limited Liability Company (LLC) (blend of partnership and corporate features)",
+          "Nonprofit Corporation",
+          "Cooperative",
+          "Other",
         ],
       },
       {
@@ -178,14 +161,42 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_supplier_self_declaration",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, you confirm that your organization requires all suppliers to follow ethical, non-violent, and transparent business practices. This includes avoiding any ties to arms manufacturing, conflict-linked industries, sanctioned entities, or unethical sourcing.",
       },
       {
         id: "companyValuesStatement",
         label: "Public Statement of Company Values",
-        type: "textarea",
+        type: "file", // Keep for backward compatibility
         required: true,
-        placeholder: "Provide your public statement of company values...",
-        helpText: "From website, brochure, or press release",
+        fileTypes: [".pdf", ".doc", ".docx", ".jpg", ".png"],
+        hasTemplate: false,
+        maxFileSize: 10 * 1024 * 1024, // 10MB
+        helpText: "Upload your public statement of values or provide text",
+        tooltipText:
+          "Upload or link to your organization's public statement of values showing your commitment to ethics, inclusion, peace, and social responsibility.",
+        inputModes: [
+          {
+            kind: "textarea",
+            label: "Text",
+            placeholder: "Provide your public statement of company values...",
+            helpText: "From website, brochure, or press release",
+          },
+          {
+            kind: "file",
+            label: "Upload",
+            fileTypes: [".pdf", ".doc", ".docx", ".jpg", ".png"],
+            maxFileSize: 10 * 1024 * 1024,
+            helpText: "Upload your public statement of values",
+          },
+          {
+            kind: "url",
+            label: "Link",
+            placeholder: "https://example.com/values",
+            helpText: "Link to your public statement of values",
+          },
+        ],
+        completionMode: "any",
       },
       // Optional fields (+5%)
       {
@@ -196,14 +207,37 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".jpg", ".png"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload up to 3 donation receipts",
+        tooltipText:
+          "Provide a brief overview of your team’s diversity — such as gender, age, or other relevant representation data. This helps assess inclusion and equity within your organization while supporting transparency in workplace diversity. Only general, non-personal data is required. ",
       },
       {
         id: "diversityBreakdown",
         label: "Simple Diversity Breakdown (Optional)",
-        type: "textarea",
+        type: "file", // Keep for backward compatibility
         required: false,
-        placeholder: "Describe your workforce diversity...",
-        helpText: "Gender, age, etc. breakdown or upload documentation",
+        fileTypes: [".pdf", ".doc", ".docx", ".jpg", ".png"],
+        maxFileSize: 10 * 1024 * 1024, // 10MB
+        helpText: "Upload your diversity breakdown or describe it",
+        tooltipText:
+          "Provide a brief overview of your team's diversity — such as gender, age, or other relevant representation data. This helps assess inclusion and equity within your organization while supporting transparency in workplace diversity. Only general, non-personal data is required. ",
+        tooltipLink: "https://www.pledge4peace.org/diversity-breakdown",
+        inputModes: [
+          {
+            kind: "textarea",
+            label: "Text",
+            placeholder: "Describe your team's diversity breakdown...",
+            helpText:
+              "Provide a brief overview of your team's diversity — such as gender, age, or other relevant representation data",
+          },
+          {
+            kind: "file",
+            label: "Upload",
+            fileTypes: [".pdf", ".doc", ".docx", ".jpg", ".png"],
+            maxFileSize: 10 * 1024 * 1024,
+            helpText: "Upload your diversity breakdown",
+          },
+        ],
+        completionMode: "any",
       },
     ],
   },
@@ -224,6 +258,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_fair_wage_declaration",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, you confirm your organization’s commitment to fair and ethical pay. This includes a living wage, ensuring equal pay for equal work, maintaining transparency in compensation, offering fair benefits, and rejecting all forms of labor exploitation. This declaration supports dignity, justice, and peace in the workplace.",
       },
       {
         id: "antiHarassmentPolicy",
@@ -236,6 +272,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_anti_harassment_policy",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, you confirm that your organization upholds a zero-tolerance policy for harassment and discrimination. This includes providing equal opportunity for all, ensuring a safe and respectful work environment, protecting employees who report misconduct, and taking prompt action to prevent and address violations.",
       },
       // Optional fields (+5%)
       {
@@ -246,6 +284,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload survey summary or use our survey tool",
+        tooltipText:
+          "This survey helps your employees share honest, anonymous feedback about their workplace experience. It measures satisfaction, fairness, and culture, and sends them a secure link to rate your organization’s Peace Seal profile.",
       },
     ],
   },
@@ -262,6 +302,24 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: true,
         placeholder: "Describe at least one community contribution...",
         helpText: "Local donation, volunteering initiative, etc.",
+        tooltipText:
+          "Provide proof of at least one community contribution, such as a local donation, volunteering initiative, or partnership that supports social good. This can be a description with links to your initiatives or images that serve as proof.",
+        inputModes: [
+          {
+            kind: "textarea",
+            label: "Text",
+            placeholder: "Describe your community contribution...",
+            helpText: "Describe your community contribution...",
+          },
+          {
+            kind: "file",
+            label: "Upload",
+            fileTypes: [".pdf", ".doc", ".docx", ".jpg", ".png"],
+            maxFileSize: 10 * 1024 * 1024,
+            helpText: "Upload your community contribution proof",
+          },
+        ],
+        completionMode: "any",
       },
       // Optional fields (+5%)
       {
@@ -271,6 +329,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: false,
         placeholder: "Describe volunteer hours and program initiatives...",
         helpText: "Employee volunteer mandatory hours or programs",
+        tooltipText:
+          "Describe your organization’s employee volunteer program, including any required service hours or community initiatives staff participate in. This highlights how your company fosters civic responsibility, teamwork, and social impact through organized volunteer engagement.",
       },
     ],
   },
@@ -291,6 +351,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_sustainable_sourcing",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, your organization commits to sourcing materials responsibly and managing waste sustainably. This includes using ethical, conflict-free suppliers, reducing single-use items, promoting recycling, and minimizing environmental harm.",
       },
       // Optional fields (+5%)
       {
@@ -301,6 +363,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: false,
         placeholder: "Describe your recycling and renewable energy programs...",
         helpText: "Local recycling/renewable initiatives",
+        tooltipText:
+          "Describe any recycling, renewable energy, or environmental initiatives your organization participates in locally, such as community clean-ups, renewable energy partnerships, or recycling programs.",
       },
     ],
   },
@@ -318,6 +382,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our commitment to universal values is...",
         helpText:
           "Share how your organization upholds universal values such as human dignity, justice, equality, and protection of human rights",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "respectLifeNonViolence",
@@ -327,6 +393,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our pledge to respect life and non-violence is...",
         helpText:
           "Describe how your company ensures respect for life and promotes non-violence in operations, policies, and workplace culture",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "justStableSocieties",
@@ -336,6 +404,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our role in fostering just and stable societies is...",
         helpText:
           "Explain how your business contributes to fairness, trust, and stability through just laws, equitable structures, and practices",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "educationForPeace",
@@ -345,6 +415,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our efforts in education for peace are...",
         helpText:
           "Detail how your company invests in education, training, or awareness that promotes tolerance, cross-cultural understanding, and sustainable development",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "ethicalConductInAction",
@@ -354,6 +426,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our ethical conduct in practice is...",
         helpText:
           "Provide examples of how your organization upholds ethical standards in everyday operations",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "rejectionViolenceHate",
@@ -363,6 +437,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our commitment to reject violence and hate is...",
         helpText:
           "Confirm that your business explicitly rejects violence, terrorism, and hate speech",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "internationalCooperationLaw",
@@ -372,6 +448,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our approach to international cooperation and law is...",
         helpText:
           "Explain how your company respects international law and engages in cooperation to resolve disputes peacefully",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "humanCenteredDevelopment",
@@ -381,16 +459,10 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our focus on human-centered development is...",
         helpText:
           "Share how your business prioritizes people's well-being, opportunities, and inclusion over profit alone",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       // Optional fields (+5%)
-      {
-        id: "thirdPartyPeerReview",
-        label: "Willingness to Allow Third-Party Peer Review (Optional)",
-        type: "select",
-        required: false,
-        options: ["Yes", "No"],
-        helpText: "In future audits",
-      },
       {
         id: "externalReviewAgreement",
         label: "Agree to External Review by Pledge4Peace on Request",
@@ -419,15 +491,20 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_no_arms_ties",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, your organization confirms it does not engage in or support the arms industry, conflict-related trade, or any partnerships with sanctioned regimes involved in human rights violations.",
       },
       // Optional fields (+5%)
       {
         id: "peaceInitiativesSupport",
         label: "Evidence of Support for Peace Initiatives (Optional)",
-        type: "textarea",
+        type: "file",
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024, // 10MB
         required: false,
-        placeholder: "Describe your support for peace initiatives...",
         helpText: "Local or international peace initiatives",
+        tooltipText:
+          "Describe any local or international peace initiatives your organization has supported, such as donations, partnerships, sponsorships, or participation in campaigns promoting dialogue, reconciliation, or humanitarian aid.",
       },
     ],
   },
@@ -444,6 +521,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: true,
         placeholder: "https://google.com/maps/yourcompany",
         helpText: "Provide link to your Google Reviews or website reviews",
+        tooltipText:
+          "Provide a link to your organization’s public feedback or review page, such as Google Reviews, a feedback form, or a website comment portal.",
       },
       // Optional fields (+5%)
       {
@@ -457,6 +536,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_complaint_resolution",
         templateType: "simple",
+        tooltipText:
+          "Provide documentation that your organization has a clear and fair process for handling complaints from employees, customers, or partners. Describe how complaints are received, reviewed, and resolved, including steps for documentation, timelines, and escalation. ",
       },
     ],
   },
@@ -482,6 +563,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_peace_pledge_declaration",
         templateType: "simple",
+        tooltipText:
+          "By checking this box, you confirm that you are an authorized representative (CEO, Owner, or approved delegate) and that your organization formally commits to the Peace Seal values, including non-violence, justice, equality, ethical integrity, and human-centered practices. This declaration is a moral and operational commitment to lead responsibly and will guide your Peace Seal evaluation.",
       },
       {
         id: "boardApprovedPeacePolicy",
@@ -494,6 +577,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_board_peace_policy",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, your organization commits to protect human rights, promote nonviolence, and uphold ethical business practices. Upload the policies describing how your company integrates peace, justice, and community engagement into its operations and governance.",
       },
       {
         id: "beneficialOwnershipPolicy",
@@ -506,6 +591,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_beneficial_ownership",
         templateType: "beneficial-ownership",
+        tooltipText:
+          "Upload your company’s policy outlining transparency in ownership and anti-corruption practices. This confirms that your organization discloses who owns or controls it, ensuring ethical governance and accountability. Or use our template by completing the pop-up form with ownership details. All listed individuals must review and agree to the policy before submission.",
       },
       {
         id: "supplierVendorCodeOfConduct",
@@ -518,14 +605,42 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_supplier_code_of_conduct",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, you confirm that your organization requires all suppliers to follow ethical, non-violent, and transparent business practices. This includes avoiding any ties to arms manufacturing, conflict-linked industries, sanctioned entities, or unethical sourcing.",
       },
       {
         id: "companyValuesStatement",
         label: "Public Statement of Company Values",
-        type: "textarea",
+        type: "file", // Keep for backward compatibility
         required: true,
-        placeholder: "Provide your public statement of company values...",
-        helpText: "From website, brochure, or press release",
+        fileTypes: [".pdf", ".doc", ".docx", ".jpg", ".png"],
+        hasTemplate: false,
+        maxFileSize: 10 * 1024 * 1024, // 10MB
+        helpText: "Upload your public statement of values or provide text",
+        tooltipText:
+          "Upload or link to your organization's public statement of values showing your commitment to ethics, inclusion, peace, and social responsibility.",
+        inputModes: [
+          {
+            kind: "textarea",
+            label: "Text",
+            placeholder: "Provide your public statement of company values...",
+            helpText: "From website, brochure, or press release",
+          },
+          {
+            kind: "file",
+            label: "Upload",
+            fileTypes: [".pdf", ".doc", ".docx", ".jpg", ".png"],
+            maxFileSize: 10 * 1024 * 1024,
+            helpText: "Upload your public statement of values",
+          },
+          {
+            kind: "url",
+            label: "Link",
+            placeholder: "https://example.com/values",
+            helpText: "Link to your public statement of values",
+          },
+        ],
+        completionMode: "any",
       },
       {
         id: "noLobbyingDeclaration",
@@ -538,6 +653,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_no_lobbying",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, you confirm that your organization requires all suppliers to follow ethical, non-violent, and transparent business practices. This includes avoiding any ties to arms manufacturing, conflict-linked industries, sanctioned entities, or unethical sourcing. ",
       },
       // Optional fields (+5%)
       {
@@ -548,6 +665,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 20 * 1024 * 1024, // 20MB
         helpText: "Upload your ESG report or corporate ethics statement",
+        tooltipText:
+          "Upload your organization’s ESG (Environmental, Social, and Governance) report or a corporate ethics statement. This document should outline your company’s commitments to sustainability, ethical conduct, human rights, and transparent governance.",
       },
     ],
   },
@@ -568,6 +687,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_equal_opportunity",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, you confirm your organization’s commitment to fair and ethical pay. This includes a living wage, ensuring equal pay for equal work, maintaining transparency in compensation, offering fair benefits, and rejecting all forms of labor exploitation. This declaration supports dignity, justice, and peace in the workplace.",
       },
       {
         id: "whistleblowerProtectionPolicy",
@@ -580,6 +701,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_whistleblower_protection",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, your organization ensures that it protects anyone who reports misconduct, corruption, or unethical behavior from retaliation. It guarantees confidentiality, fair investigation, and accountability while fostering a transparent, peace-centered work culture.",
       },
       {
         id: "fairWagePractices",
@@ -589,6 +712,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Payroll summary or self-declaration",
+        tooltipText:
+          "This declaration should confirm your organization’s commitment to pay all employees fairly and ethically. It ensures wages meet or exceed living standards, promotes equal pay for equal work, and prohibits exploitation or wage discrimination.",
       },
       // Optional fields (+5%)
       {
@@ -599,6 +724,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: false,
         placeholder: "Describe your mental health programs...",
         helpText: "Mental health program or conflict resolution training",
+        tooltipText:
+          "Describe any programs your organization offers to support employees’ mental health or train them in peaceful conflict resolution. This can include workshops, counseling services, mindfulness sessions, mediation training, or partnerships with mental health professionals. ",
       },
       {
         id: "employeeSatisfactionSurvey",
@@ -608,6 +735,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload survey summary or use our survey tool",
+        tooltipText:
+          "This survey helps your employees share honest, anonymous feedback about their workplace experience. It measures satisfaction, fairness, and culture, and sends them a secure link to rate your organization’s Peace Seal profile.",
       },
     ],
   },
@@ -626,6 +755,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Describe your NGO partnerships and donations...",
         helpText:
           "At least one donation or partnership with NGO/community organization",
+        tooltipText:
+          "Provide proof of at least one community contribution, such as a local donation, volunteering initiative, or partnership that supports social good. This can be a description with links to your initiatives or images that serve as proof. ",
       },
       {
         id: "employeeVolunteerPrograms",
@@ -634,6 +765,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: true,
         placeholder: "Describe volunteer hours and program initiatives...",
         helpText: "Employee volunteer mandatory hours or programs",
+        tooltipText:
+          "Describe your organization’s employee volunteer program, including any required service hours or community initiatives staff participate in. This highlights how your company fosters civic responsibility, teamwork, and social impact through organized volunteer engagement.",
       },
       // Optional fields (+5%)
       {
@@ -644,6 +777,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 20 * 1024 * 1024, // 20MB
         helpText: "Basic acceptable CSR report",
+        tooltipText:
+          "Upload your organization’s Corporate Social Responsibility (CSR) report or any document summarizing your community, environmental, or ethical initiatives. A basic version can include information on sustainability actions, donations, employee welfare, or volunteer programs.",
       },
     ],
   },
@@ -664,6 +799,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_sustainable_sourcing",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, your organization commits to sourcing materials responsibly and managing waste sustainably. This includes using ethical, conflict-free suppliers, reducing single-use items, promoting recycling, and minimizing environmental harm.",
       },
       // Optional fields (+5%)
       {
@@ -674,6 +811,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".jpg", ".png"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload your green business certification",
+        tooltipText:
+          "Upload any environmental or ethical certification your organization has earned, such as Green Business, B Corp, Fair Trade, LEED, or similar programs.",
       },
     ],
   },
@@ -691,6 +830,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our commitment to universal values is...",
         helpText:
           "Share how your organization upholds universal values such as human dignity, justice, equality, and protection of human rights",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "respectLifeNonViolence",
@@ -700,6 +841,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our pledge to respect life and non-violence is...",
         helpText:
           "Describe how your company ensures respect for life and promotes non-violence in operations, policies, and workplace culture",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "justStableSocieties",
@@ -709,6 +852,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our role in fostering just and stable societies is...",
         helpText:
           "Explain how your business contributes to fairness, trust, and stability through just laws, equitable structures, and practices",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "educationForPeace",
@@ -718,6 +863,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our efforts in education for peace are...",
         helpText:
           "Detail how your company invests in education, training, or awareness that promotes tolerance, cross-cultural understanding, and sustainable development",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "ethicalConductInAction",
@@ -727,6 +874,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our ethical conduct in practice is...",
         helpText:
           "Provide examples of how your organization upholds ethical standards in everyday operations",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "rejectionViolenceHate",
@@ -736,6 +885,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our commitment to reject violence and hate is...",
         helpText:
           "Confirm that your business explicitly rejects violence, terrorism, and hate speech",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "internationalCooperationLaw",
@@ -745,6 +896,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our approach to international cooperation and law is...",
         helpText:
           "Explain how your company respects international law and engages in cooperation to resolve disputes peacefully",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "humanCenteredDevelopment",
@@ -754,6 +907,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our focus on human-centered development is...",
         helpText:
           "Share how your business prioritizes people's well-being, opportunities, and inclusion over profit alone",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "externalReviewAgreement",
@@ -762,15 +917,6 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: true,
         options: ["Yes", "No"],
         helpText: "Agreement to external review",
-      },
-      // Optional fields (+5%)
-      {
-        id: "thirdPartyPeerReview",
-        label: "Willingness to Allow Third-Party Peer Review (Optional)",
-        type: "select",
-        required: false,
-        options: ["Yes", "No"],
-        helpText: "In future audits",
       },
     ],
   },
@@ -792,6 +938,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_no_arms_ties",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, your organization confirms it does not engage in or support the arms industry, conflict-related trade, or any partnerships with sanctioned regimes involved in human rights violations.",
       },
       {
         id: "peaceInitiativesSupport",
@@ -800,6 +948,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: true,
         placeholder: "Describe your support for peace initiatives...",
         helpText: "Local or international peace initiatives",
+        tooltipText:
+          "Describe any local or international peace initiatives your organization has supported, such as donations, partnerships, sponsorships, or participation in campaigns promoting dialogue, reconciliation, or humanitarian aid.",
       },
       // Optional fields (+5%)
       {
@@ -810,6 +960,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: false,
         placeholder: "Describe your peacebuilding and mediation advocacy...",
         helpText: "Add links to publications",
+        tooltipText:
+          "Describe or upload evidence of your organization’s public advocacy for peacebuilding or mediation efforts. This can include articles, press releases, social media campaigns, public statements, or partnerships promoting dialogue, reconciliation, or conflict prevention.",
       },
     ],
   },
@@ -830,6 +982,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_complaint_resolution",
         templateType: "simple",
+        tooltipText:
+          "Provide documentation that your organization has a clear and fair process for handling complaints from employees, customers, or partners. Describe how complaints are received, reviewed, and resolved, including steps for documentation, timelines, and escalation.",
       },
       {
         id: "resolutionChannels",
@@ -839,6 +993,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: true,
         placeholder: "Provide links to your resolution channels...",
         helpText: "Add any link where you display your resolution channels",
+        tooltipText:
+          "Provide links or details about your organization’s public resolution channels, where employees, customers, or community members can raise concerns, file complaints, or seek mediation. This may include online forms, contact pages, grievance portals, or published procedures outlining how conflicts or complaints are handled transparently.",
       },
       // Optional fields (+5%)
       {
@@ -848,6 +1004,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: false,
         placeholder: "https://google.com/maps/yourcompany",
         helpText: "Provide link to your Google Reviews or website reviews",
+        tooltipText:
+          "Provide a link to your organization’s public feedback or review page, such as Google Reviews, a feedback form, or a website comment portal. This demonstrates transparency and allows the public or customers to share their experiences and hold the organization accountable.",
       },
     ],
   },
@@ -873,6 +1031,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_peace_pledge_declaration",
         templateType: "simple",
+        tooltipText:
+          "By checking this box, you confirm that you are an authorized representative (CEO, Owner, or approved delegate) and that your organization formally commits to the Peace Seal values, including non-violence, justice, equality, ethical integrity, and human-centered practices. This declaration is a moral and operational commitment to lead responsibly and will guide your Peace Seal evaluation.",
       },
       {
         id: "boardApprovedPeacePolicy",
@@ -885,6 +1045,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_board_peace_policy",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, your organization commits to protect human rights, promote nonviolence, and uphold ethical business practices. Upload the policies describing how your company integrates peace, justice, and community engagement into its operations and governance.",
       },
       {
         id: "beneficialOwnershipPolicy",
@@ -897,6 +1059,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_beneficial_ownership",
         templateType: "beneficial-ownership",
+        tooltipText:
+          "Upload your company’s policy outlining transparency in ownership and anti-corruption practices. This confirms that your organization discloses who owns or controls it, ensuring ethical governance and accountability. Or use our template by completing the pop-up form with ownership details. All listed individuals must review and agree to the policy before submission.",
       },
       {
         id: "supplierVendorCodeOfConduct",
@@ -909,14 +1073,42 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_supplier_code_of_conduct",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, you confirm that your organization requires all suppliers to follow ethical, non-violent, and transparent business practices. This includes avoiding any ties to arms manufacturing, conflict-linked industries, sanctioned entities, or unethical sourcing.",
       },
       {
         id: "companyValuesStatement",
         label: "Public Statement of Company Values",
-        type: "textarea",
+        type: "file", // Keep for backward compatibility
         required: true,
-        placeholder: "Provide your public statement of company values...",
-        helpText: "From website, brochure, or press release",
+        fileTypes: [".pdf", ".doc", ".docx", ".jpg", ".png"],
+        hasTemplate: false,
+        maxFileSize: 10 * 1024 * 1024, // 10MB
+        helpText: "Upload your public statement of values or provide text",
+        tooltipText:
+          "Upload or link to your organization's public statement of values showing your commitment to ethics, inclusion, peace, and social responsibility.",
+        inputModes: [
+          {
+            kind: "textarea",
+            label: "Text",
+            placeholder: "Provide your public statement of company values...",
+            helpText: "From website, brochure, or press release",
+          },
+          {
+            kind: "file",
+            label: "Upload",
+            fileTypes: [".pdf", ".doc", ".docx", ".jpg", ".png"],
+            maxFileSize: 10 * 1024 * 1024,
+            helpText: "Upload your public statement of values",
+          },
+          {
+            kind: "url",
+            label: "Link",
+            placeholder: "https://example.com/values",
+            helpText: "Link to your public statement of values",
+          },
+        ],
+        completionMode: "any",
       },
       {
         id: "noLobbyingDeclaration",
@@ -929,6 +1121,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_no_lobbying",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, you confirm that your organization requires all suppliers to follow ethical, non-violent, and transparent business practices. This includes avoiding any ties to arms manufacturing, conflict-linked industries, sanctioned entities, or unethical sourcing.",
       },
       // Optional fields (+5%)
       {
@@ -940,6 +1134,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         maxFileSize: 50 * 1024 * 1024, // 50MB
         helpText:
           "Upload your full ESG or CSR report with third-party validation",
+        tooltipText:
+          "Upload your organization’s ESG (Environmental, Social, and Governance) report or a corporate ethics statement. This document should outline your company’s commitments to sustainability, ethical conduct, human rights, and transparent governance.",
       },
     ],
   },
@@ -960,6 +1156,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_equal_opportunity",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, you confirm your organization’s commitment to fair and ethical pay. This includes a living wage, ensuring equal pay for equal work, maintaining transparency in compensation, offering fair benefits, and rejecting all forms of labor exploitation. This declaration supports dignity, justice, and peace in the workplace.",
       },
       {
         id: "fairWagePractices",
@@ -972,6 +1170,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_fair_wage_declaration",
         templateType: "simple",
+        tooltipText:
+          "This declaration should confirm your organization’s commitment to pay all employees fairly and ethically. It ensures wages meet or exceed living standards, promotes equal pay for equal work, and prohibits exploitation or wage discrimination.",
       },
       {
         id: "mentalHealthPrograms",
@@ -980,6 +1180,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: true,
         placeholder: "Describe your mental health programs...",
         helpText: "Mental health program or conflict resolution training",
+        tooltipText:
+          "By providing this information, your organization ensures that it protects anyone who reports misconduct, corruption, or unethical behavior from retaliation. It guarantees confidentiality, fair investigation, and accountability while fostering a transparent, peace-centered work culture.",
       },
       {
         id: "whistleblowerProtectionPolicy",
@@ -992,6 +1194,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_whistleblower_protection",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, your organization ensures that it protects anyone who reports misconduct, corruption, or unethical behavior from retaliation. It guarantees confidentiality, fair investigation, and accountability while fostering a transparent, peace-centered work culture.",
       },
       // Optional fields (+5%)
       {
@@ -1001,6 +1205,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: false,
         placeholder: "Describe your internal mediation programs...",
         helpText: "Internal mediation or peace education program",
+        tooltipText:
+          "Describe your organization’s internal mediation or peace education program, initiatives that help employees resolve conflicts peacefully or learn about communication, empathy, and nonviolent problem-solving. Include details such as training sessions, workshops, peer mediation systems, or educational activities that promote a culture of peace within your workplace.",
       },
       {
         id: "employeeSatisfactionSurvey",
@@ -1010,6 +1216,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload survey summary or use our survey tool",
+        tooltipText:
+          "This survey helps your employees share honest, anonymous feedback about their workplace experience. It measures satisfaction, fairness, and culture, and sends them a secure link to rate your organization’s Peace Seal profile.",
       },
     ],
   },
@@ -1027,6 +1235,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 30 * 1024 * 1024, // 30MB
         helpText: "Upload your annual CSR or impact report",
+        tooltipText:
+          "Upload your organization’s annual social impact or community engagement report. This document should summarize your initiatives, partnerships, and measurable outcomes that positively impact society, such as volunteering, donations, sustainability projects, or inclusion programs. If no formal report exists, you may upload a summary outlining your key community contributions for the year.",
       },
       {
         id: "humanitarianDonations",
@@ -1035,6 +1245,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: true,
         placeholder: "Describe your humanitarian donations and initiatives...",
         helpText: "Records of donations to humanitarian/peace initiatives",
+        tooltipText:
+          "Provide proof of at least one community contribution, such as a local donation, volunteering initiative, or partnership that supports social good. This can be a description with links to your initiatives or images that serve as proof.",
       },
       {
         id: "employeeVolunteerPrograms",
@@ -1043,6 +1255,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: true,
         placeholder: "Describe volunteer hours and program initiatives...",
         helpText: "Employee volunteer mandatory hours or programs",
+        tooltipText:
+          "Describe your organization’s employee volunteer program, including any required service hours or community initiatives staff participate in. This highlights how your company fosters civic responsibility, teamwork, and social impact through organized volunteer engagement.",
       },
       // Optional fields (+5%)
       {
@@ -1052,6 +1266,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: false,
         placeholder: "Describe your peacebuilding NGO partnerships...",
         helpText: "Partnerships with peacebuilding NGOs",
+        tooltipText:
+          "Describe any partnerships or collaborations your organization has with peacebuilding, humanitarian, or social justice NGOs. This may include joint initiatives, donations, awareness campaigns, employee volunteer projects, or long-term cooperation agreements that promote dialogue, inclusion, or conflict resolution. You may also upload supporting documents or partnership proofs.",
       },
     ],
   },
@@ -1069,6 +1285,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 15 * 1024 * 1024, // 15MB
         helpText: "Upload your disclosure or sign our sustainability plan",
+        tooltipText:
+          "By providing this information, your organization commits to sourcing materials responsibly and managing waste sustainably. This includes using ethical, conflict-free suppliers, reducing single-use items, promoting recycling, and minimizing environmental harm.",
       },
       // Optional fields (+5%)
       {
@@ -1078,6 +1296,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: false,
         placeholder: "Describe your peace-linked environmental initiatives...",
         helpText: "e.g., indigenous land protection",
+        tooltipText:
+          "Describe your organization’s environmental initiatives that contribute to peace and social stability, such as protecting indigenous lands, supporting climate justice, conserving natural resources, or promoting sustainable practices that reduce conflict over the environment. Explain how these efforts foster harmony between communities and nature.",
       },
       {
         id: "greenBusinessCertification",
@@ -1087,6 +1307,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".jpg", ".png"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Upload your green business certification",
+        tooltipText:
+          "Upload any environmental or ethical certification your organization has earned, such as Green Business, B Corp, Fair Trade, LEED, or similar programs.",
       },
     ],
   },
@@ -1104,6 +1326,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our commitment to universal values is...",
         helpText:
           "Share how your organization upholds universal values such as human dignity, justice, equality, and protection of human rights",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "respectLifeNonViolence",
@@ -1113,6 +1337,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our pledge to respect life and non-violence is...",
         helpText:
           "Describe how your company ensures respect for life and promotes non-violence in operations, policies, and workplace culture",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "justStableSocieties",
@@ -1122,6 +1348,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our role in fostering just and stable societies is...",
         helpText:
           "Explain how your business contributes to fairness, trust, and stability through just laws, equitable structures, and practices",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "educationForPeace",
@@ -1131,6 +1359,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our efforts in education for peace are...",
         helpText:
           "Detail how your company invests in education, training, or awareness that promotes tolerance, cross-cultural understanding, and sustainable development",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "ethicalConductInAction",
@@ -1140,6 +1370,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our ethical conduct in practice is...",
         helpText:
           "Provide examples of how your organization upholds ethical standards in everyday operations",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "rejectionViolenceHate",
@@ -1149,6 +1381,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our commitment to reject violence and hate is...",
         helpText:
           "Confirm that your business explicitly rejects violence, terrorism, and hate speech",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "internationalCooperationLaw",
@@ -1158,6 +1392,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our approach to international cooperation and law is...",
         helpText:
           "Explain how your company respects international law and engages in cooperation to resolve disputes peacefully",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "humanCenteredDevelopment",
@@ -1167,6 +1403,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         placeholder: "Our focus on human-centered development is...",
         helpText:
           "Share how your business prioritizes people's well-being, opportunities, and inclusion over profit alone",
+        tooltipText:
+          "Complete all this eight short text fields (values, non-violence, justice, education, ethics, rejection of hate, cooperation, human-centered development). Each response 2–3 sentences, concrete examples preferred.",
       },
       {
         id: "transparentFundingDisclosures",
@@ -1175,6 +1413,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: true,
         placeholder: "Describe your transparent funding disclosures...",
         helpText: "Transparent funding disclosures",
+        tooltipText:
+          "Explain how your organization ensures financial transparency, including how funding sources, donors, or sponsors are disclosed to the public. You can mention whether this information is available in annual reports, websites, or official filings, and how you guarantee that funds are used ethically and responsibly.",
       },
       {
         id: "externalReviewAgreement",
@@ -1192,6 +1432,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: false,
         placeholder: "List your public audits...",
         helpText: "Independent third-party audits published publicly",
+        tooltipText:
+          "Provide details about any independent financial or operational audits conducted by accredited third parties and made available to the public. Include links or references to published audit reports, summaries, or websites where stakeholders can review the findings.",
       },
     ],
   },
@@ -1213,6 +1455,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_no_arms_ties",
         templateType: "simple",
+        tooltipText:
+          "By providing this information, your organization confirms it does not engage in or support the arms industry, conflict-related trade, or any partnerships with sanctioned regimes involved in human rights violations.",
       },
       {
         id: "peaceInitiativesSupport",
@@ -1221,6 +1465,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: true,
         placeholder: "Describe your support for peace initiatives...",
         helpText: "Local or international peace initiatives",
+        tooltipText:
+          "Describe any local or international peace initiatives your organization has supported, such as donations, partnerships, sponsorships, or participation in campaigns promoting dialogue, reconciliation, or humanitarian aid.",
       },
       // Optional fields (+5%)
       {
@@ -1231,6 +1477,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: false,
         placeholder: "Describe your peacebuilding and mediation advocacy...",
         helpText: "Add public links to publications",
+        tooltipText:
+          "Describe or upload evidence of your organization’s public advocacy for peacebuilding or mediation efforts. This can include articles, press releases, social media campaigns, public statements, or partnerships promoting dialogue, reconciliation, or conflict prevention.",
       },
     ],
   },
@@ -1251,6 +1499,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         hasTemplate: true,
         templateId: "template_complaint_resolution",
         templateType: "simple",
+        tooltipText:
+          "Provide documentation that your organization has a clear and fair process for handling complaints from employees, customers, or partners. Describe how complaints are received, reviewed, and resolved, including steps for documentation, timelines, and escalation.",
       },
       {
         id: "resolutionChannels",
@@ -1260,6 +1510,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: true,
         placeholder: "Provide links to your resolution channels...",
         helpText: "Add any link where you display your resolution channels",
+        tooltipText:
+          "Provide links or details about your organization’s public resolution channels, where employees, customers, or community members can raise concerns, file complaints, or seek mediation. This may include online forms, contact pages, grievance portals, or published procedures outlining how conflicts or complaints are handled transparently.",
       },
       // Optional fields (+5%)
       {
@@ -1269,6 +1521,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         required: false,
         placeholder: "https://google.com/maps/yourcompany",
         helpText: "Provide link to your Google Reviews or website reviews",
+        tooltipText:
+          "Provide a link to your organization’s public feedback or review page, such as Google Reviews, a feedback form, or a website comment portal. This demonstrates transparency and allows the public or customers to share their experiences and hold the organization accountable.",
       },
     ],
   },

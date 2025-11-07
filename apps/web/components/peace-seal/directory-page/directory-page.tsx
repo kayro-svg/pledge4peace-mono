@@ -19,9 +19,10 @@ import {
   createOrFindCompany,
   type CreateCompanyData,
 } from "@/lib/api/peace-seal";
-import { Star, Loader2 } from "lucide-react";
+import { Star, Loader2, ArrowRight, FileCheck, Plus } from "lucide-react";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import AuthContainer from "@/components/login/auth-container";
+import { formatTimestampDate } from "@/lib/utils/peace-seal-utils";
 
 type DirectoryPageProps = {
   items: DirectoryItem[];
@@ -101,6 +102,8 @@ export function DirectoryPage({
   country,
   status,
 }: DirectoryPageProps) {
+  console.log("items", items);
+
   const [isAddCompanyOpen, setIsAddCompanyOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -166,7 +169,7 @@ export function DirectoryPage({
       </div>
 
       {/* Search and Filter Form */}
-      <form method="GET" className="mb-8 bg-gray-50 p-6 rounded-lg">
+      <form method="GET" className="bg-gray-50 p-6 rounded-lg">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
             <label
@@ -239,6 +242,154 @@ export function DirectoryPage({
         </div>
       </form>
 
+      <div className="space-y-8 mb-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <Button
+          onClick={() => {
+            if (!isAuthenticated) {
+              setShowLoginModal(true);
+            } else {
+              router.push("/peace-seal/apply");
+            }
+          }}
+          className="group flex mt-8 items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 transition-all hover:border-[#6B9B7C] hover:bg-[#6B9B7C]/5 hover:shadow-sm"
+        >
+          <FileCheck className="h-4 w-4 text-[#6B9B7C] flex-shrink-0" />
+          <div className="flex items-center gap-1.5 text-sm">
+            <span className="text-[#5A6B66]">
+              Add your company to the directory.
+            </span>
+            <span className="font-medium text-[#6B9B7C] group-hover:text-[#5A8A6B]">
+              Apply for a Peace Seal certification
+            </span>
+            <ArrowRight className="h-3.5 w-3.5 text-[#6B9B7C] transition-transform group-hover:translate-x-0.5" />
+          </div>
+        </Button>
+        <Dialog
+          open={isAddCompanyOpen}
+          onOpenChange={(open) => {
+            if (!isAuthenticated) {
+              setAddForCommunityReview(true);
+              setShowLoginModal(true);
+            } else {
+              setIsAddCompanyOpen(open);
+            }
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button className="group items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 transition-all hover:border-[#6B9B7C] hover:bg-[#6B9B7C]/5 hover:shadow-sm">
+              <Plus className="h-4 w-4 text-[#6B9B7C] flex-shrink-0" />
+              <div className="flex items-center gap-1.5 text-sm">
+                <span className="text-[#5A6B66]">
+                  Can&apos;t find the company you work for?
+                </span>
+                <span className="font-medium text-[#6B9B7C] group-hover:text-[#5A8A6B]">
+                  Add them to the directory
+                </span>
+                <ArrowRight className="h-3.5 w-3.5 text-[#6B9B7C] transition-transform group-hover:translate-x-0.5" />
+              </div>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl h-[60vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add Company to Directory</DialogTitle>
+            </DialogHeader>
+            {isSubmitting ? (
+              <div className="flex flex-col items-center justify-center py-8 space-y-4">
+                <Loader2 className="h-8 w-8 animate-spin text-[#548281]" />
+                <div className="text-center">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Adding Company...
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Please wait while we add the company to the directory and
+                    prepare your review.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleAddCompany} className="space-y-4">
+                <div>
+                  <Label htmlFor="name">Company Name *</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    required
+                    placeholder="Enter company name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="website">Website</Label>
+                  <Input
+                    id="website"
+                    name="website"
+                    type="url"
+                    placeholder="https://example.com"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    name="country"
+                    placeholder="United States"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="industry">Industry</Label>
+                  <Input
+                    id="industry"
+                    name="industry"
+                    placeholder="Technology, Healthcare, etc."
+                  />
+                </div>
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsAddCompanyOpen(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="flex-1 bg-[#548281] hover:bg-[#2F4858]"
+                  >
+                    {isSubmitting ? "Adding..." : "Add Company"}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
+        <DialogContent className="max-w-lg w-full h-[80vh] md:h-[fit-content]">
+          <DialogHeader>
+            <DialogTitle>
+              <p className="text-lg font-semibold mb-4 text-center">
+                To apply for a Peace Seal you must login
+              </p>
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center">
+            <AuthContainer
+              onLoginSuccess={() => {
+                setShowLoginModal(false);
+                if (addForCommunityReview) {
+                  setIsAddCompanyOpen(true);
+                } else {
+                  router.push("/peace-seal/apply");
+                }
+              }}
+              isModal
+              preSelectedUserType="organization"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
       {/* Results Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
@@ -288,13 +439,13 @@ export function DirectoryPage({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {item.lastReviewedAt
-                      ? new Date(item.lastReviewedAt).toLocaleDateString()
+                      ? formatTimestampDate(item.lastReviewedAt)
                       : "Pending"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <StarRating
-                      rating={item.employeeRatingAvg}
-                      count={item.employeeRatingAvg}
+                      rating={item.overallRatingAvg}
+                      count={item.overallRatingCount}
                     />
                   </td>
                 </tr>
@@ -319,151 +470,6 @@ export function DirectoryPage({
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* Footer Info */}
-      <div className="mt-8 text-center text-gray-600">
-        <p className="text-sm">
-          Add your company to the directory.
-          <Link
-            href="#"
-            onClick={() => {
-              if (!isAuthenticated) {
-                setShowLoginModal(true);
-              } else {
-                router.push("/peace-seal/apply");
-              }
-            }}
-            className="ml-2 text-[#548281] hover:underline"
-          >
-            Apply for a Peace Seal certification →
-          </Link>
-        </p>
-      </div>
-      {/* Footer Info */}
-      <div className="mt-8 text-center text-gray-600">
-        <p className="text-sm">
-          Can&apos;t find the company you work for?
-          <Dialog
-            open={isAddCompanyOpen}
-            onOpenChange={(open) => {
-              if (!isAuthenticated) {
-                setAddForCommunityReview(true);
-                setShowLoginModal(true);
-              } else {
-                setIsAddCompanyOpen(open);
-              }
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button
-                variant="link"
-                className="ml-2 text-[#548281] hover:underline p-0 h-auto"
-              >
-                Add them to the directory →
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl h-[60vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Add Company to Directory</DialogTitle>
-              </DialogHeader>
-              {isSubmitting ? (
-                <div className="flex flex-col items-center justify-center py-8 space-y-4">
-                  <Loader2 className="h-8 w-8 animate-spin text-[#548281]" />
-                  <div className="text-center">
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">
-                      Adding Company...
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      Please wait while we add the company to the directory and
-                      prepare your review.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <form onSubmit={handleAddCompany} className="space-y-4">
-                  <div>
-                    <Label htmlFor="name">Company Name *</Label>
-                    <Input
-                      id="name"
-                      name="name"
-                      required
-                      placeholder="Enter company name"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="website">Website</Label>
-                    <Input
-                      id="website"
-                      name="website"
-                      type="url"
-                      placeholder="https://example.com"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="country">Country</Label>
-                    <Input
-                      id="country"
-                      name="country"
-                      placeholder="United States"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="industry">Industry</Label>
-                    <Input
-                      id="industry"
-                      name="industry"
-                      placeholder="Technology, Healthcare, etc."
-                    />
-                  </div>
-                  <div className="flex gap-2 pt-4">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setIsAddCompanyOpen(false)}
-                      className="flex-1"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="flex-1 bg-[#548281] hover:bg-[#2F4858]"
-                    >
-                      {isSubmitting ? "Adding..." : "Add Company"}
-                    </Button>
-                  </div>
-                </form>
-              )}
-            </DialogContent>
-          </Dialog>
-          <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
-            {/* <DialogContent className="max-w-lg w-full max-h-[80vh] md:max-h-[85%]"> */}
-            <DialogContent className="max-w-lg w-full h-[80vh] md:h-[fit-content]">
-              <DialogHeader>
-                <DialogTitle>
-                  <p className="text-lg font-semibold mb-4 text-center">
-                    To apply for a Peace Seal you must login
-                  </p>
-                </DialogTitle>
-              </DialogHeader>
-              <div className="flex flex-col items-center">
-                <AuthContainer
-                  onLoginSuccess={() => {
-                    setShowLoginModal(false);
-                    if (addForCommunityReview) {
-                      setIsAddCompanyOpen(true);
-                    } else {
-                      router.push("/peace-seal/apply");
-                    }
-                  }}
-                  isModal
-                  preSelectedUserType="organization"
-                />
-              </div>
-            </DialogContent>
-          </Dialog>
-        </p>
       </div>
     </div>
   );

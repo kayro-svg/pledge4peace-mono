@@ -61,6 +61,7 @@ import {
 import { ReviewDetailsModal } from "@/components/peace-seal/review-details-modal";
 import { EvaluationModal } from "@/components/peace-seal/evaluation-modal";
 import { CompanyResponseModal } from "@/components/peace-seal/company-response-modal";
+import { ResolutionModal } from "@/components/peace-seal/resolution-modal";
 import { PeaceSealCenter } from "@/components/peace-seal/peace-seal-center";
 import { logger } from "@/lib/utils/logger";
 import { useToast } from "@/hooks/use-toast";
@@ -69,7 +70,12 @@ import type {
   ParsedQuestionnaireSection,
   ParsedQuestionnaireResponse,
 } from "@/lib/api/peace-seal";
+import { updateEvaluation, approveCompanyResponse } from "@/lib/api/peace-seal";
 import { MoneyInput } from "@/components/money-input/money-input";
+import {
+  formatTimestampDate,
+  formatTimestampDateTime,
+} from "@/lib/utils/peace-seal-utils";
 
 type CompanyItem = {
   id: string;
@@ -236,8 +242,7 @@ function formatQuestionnaireValue(
           <div>
             <div className="text-green-800 font-medium">Agreement Accepted</div>
             <div className="text-xs text-green-600">
-              Accepted on{" "}
-              {new Date(agreementObj.acceptedAt).toLocaleDateString()}
+              Accepted on {formatTimestampDate(agreementObj.acceptedAt)}
             </div>
           </div>
         </div>
@@ -419,6 +424,13 @@ export default function PeaceSealDashboard() {
     useState<ReviewEvaluation | null>(null);
   const [showCompanyResponseModal, setShowCompanyResponseModal] =
     useState(false);
+  // Resolution modal state
+  const [selectedEvaluationForResolution, setSelectedEvaluationForResolution] =
+    useState<ReviewEvaluation | null>(null);
+  const [showResolutionModal, setShowResolutionModal] = useState(false);
+  const [resolutionType, setResolutionType] = useState<
+    "resolved" | "dismissed" | null
+  >(null);
 
   // Company states
   const [userCompany, setUserCompany] = useState<UserCompany | null>(null);
@@ -435,7 +447,7 @@ export default function PeaceSealDashboard() {
   );
 
   // Check if user is a company
-  const isCompany = session?.user?.role === "user" && session?.user?.companyId;
+  const isCompany = session?.user?.role === "user" && userCompany?.id !== null;
 
   const loadCompanies = useCallback(async () => {
     setLoading(true);
@@ -630,6 +642,13 @@ export default function PeaceSealDashboard() {
         status: result.company.status,
       });
 
+      // Prefill manual score with existing score (auto or prior manual)
+      setManualScore(
+        result.company.score !== null && result.company.score !== undefined
+          ? String(result.company.score)
+          : ""
+      );
+
       // Load reports, issues, and reviews for this company
       await loadCompanyReports(companyId);
       await loadCompanyIssues(companyId);
@@ -720,8 +739,8 @@ export default function PeaceSealDashboard() {
       await loadCompanies();
       await loadCompanyDetails(selectedCompany.company.id);
 
-      // Clear form
-      setManualScore("");
+      // Keep the saved score in the input (don't clear it)
+      setManualScore(String(result.score));
       setNotes("");
     } catch (error) {
       logger.error("Failed to score questionnaire:", error);
@@ -829,9 +848,11 @@ export default function PeaceSealDashboard() {
     setShowEvaluationModal(true);
   };
 
-  const handleEvaluationCreated = () => {
+  const handleEvaluationCreated = async () => {
     // Refresh evaluations list
     loadEvaluations();
+    // Refresh reviews list to show updated verification status
+    await loadReviews();
     // Close modal
     setShowEvaluationModal(false);
     setSelectedReviewForEvaluation(null);
@@ -859,6 +880,101 @@ export default function PeaceSealDashboard() {
   const handleCloseCompanyResponseModal = () => {
     setShowCompanyResponseModal(false);
     setSelectedEvaluationForResponse(null);
+  };
+
+  // Resolution handlers
+  const handleResolveEvaluation = (
+    evaluation: ReviewEvaluation,
+    type: "resolved" | "dismissed"
+  ) => {
+    setSelectedEvaluationForResolution(evaluation);
+    setResolutionType(type);
+    setShowResolutionModal(true);
+  };
+
+  const handleResolutionSubmitted = async (finalResolutionNotes: string) => {
+    if (!selectedEvaluationForResolution || !resolutionType) return;
+
+    try {
+      await updateEvaluation(selectedEvaluationForResolution.id, {
+        evaluationStatus: resolutionType,
+        finalResolutionNotes: finalResolutionNotes.trim() || undefined,
+      });
+
+      toast({
+        title: `Evaluation marked as ${resolutionType}`,
+        description: "The evaluation has been updated successfully.",
+      });
+
+      // Refresh evaluations list
+      loadEvaluations();
+      // Close modal
+      setShowResolutionModal(false);
+      setSelectedEvaluationForResolution(null);
+      setResolutionType(null);
+    } catch (error) {
+      logger.error("Error updating evaluation:", error);
+      toast({
+        title: "Error updating evaluation",
+        description: (error as Error).message || "Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCloseResolutionModal = () => {
+    setShowResolutionModal(false);
+    setSelectedEvaluationForResolution(null);
+    setResolutionType(null);
+  };
+
+  // Company response approval handlers
+  const handleApproveResponse = async (issue: CompanyIssue, notes?: string) => {
+    try {
+      await approveCompanyResponse(issue.evaluationId, "approve", notes);
+
+      toast({
+        title: "Response approved",
+        description:
+          "The company response has been approved and the issue marked as resolved.",
+      });
+
+      // Refresh company issues if viewing a company
+      if (selectedCompany) {
+        await loadCompanyIssues(selectedCompany.company.id);
+      }
+    } catch (error) {
+      logger.error("Error approving response:", error);
+      toast({
+        title: "Error approving response",
+        description: (error as Error).message || "Please try again later.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRejectResponse = async (issue: CompanyIssue, notes?: string) => {
+    try {
+      await approveCompanyResponse(issue.evaluationId, "reject", notes);
+
+      toast({
+        title: "Response rejected",
+        description:
+          "The company response has been rejected. The company can submit a new response.",
+      });
+
+      // Refresh company issues if viewing a company
+      if (selectedCompany) {
+        await loadCompanyIssues(selectedCompany.company.id);
+      }
+    } catch (error) {
+      logger.error("Error rejecting response:", error);
+      toast({
+        title: "Error rejecting response",
+        description: (error as Error).message || "Please try again later.",
+        variant: "destructive",
+      });
+    }
   };
 
   console.log("userCompany", selectedCompany);
@@ -973,11 +1089,7 @@ export default function PeaceSealDashboard() {
                           Valid Until
                         </Label>
                         <div className="text-sm">
-                          {userCompany.expiresAt ? (
-                            new Date(userCompany.expiresAt).toLocaleDateString()
-                          ) : (
-                            <span className="text-gray-400">—</span>
-                          )}
+                          {formatTimestampDate(userCompany.expiresAt)}
                         </div>
                       </div>
                     </div>
@@ -1025,9 +1137,7 @@ export default function PeaceSealDashboard() {
                               <CheckCircle className="w-4 h-4" />
                               <span className="text-sm">
                                 Completed on{" "}
-                                {new Date(
-                                  questionnaire.completedAt
-                                ).toLocaleDateString()}
+                                {formatTimestampDate(questionnaire.completedAt)}
                               </span>
                             </div>
                           ) : null}
@@ -1131,15 +1241,15 @@ export default function PeaceSealDashboard() {
 
           {/* Main Tabs */}
           <Tabs defaultValue="companies" className="w-full mb-6">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-1">
               <TabsTrigger value="companies">
                 <Building className="w-4 h-4 mr-2" />
                 Companies
               </TabsTrigger>
-              <TabsTrigger value="resources">
+              {/* <TabsTrigger value="resources">
                 <FileText className="w-4 h-4 mr-2" />
                 Peace Seal Center
-              </TabsTrigger>
+              </TabsTrigger> */}
             </TabsList>
 
             <TabsContent value="companies" className="space-y-6">
@@ -1333,9 +1443,7 @@ export default function PeaceSealDashboard() {
                                 </Badge>
                               </td>
                               <td className="py-3">
-                                {new Date(
-                                  company.createdAt
-                                ).toLocaleDateString()}
+                                {formatTimestampDate(company.createdAt)}
                               </td>
                               <td className="py-3">
                                 <Dialog>
@@ -1368,7 +1476,7 @@ export default function PeaceSealDashboard() {
                                               Company Information
                                             </h4>
                                             <div className="space-y-1 text-sm">
-                                              <p>
+                                              <div>
                                                 <strong>Name:</strong>{" "}
                                                 {selectedCompany.company.name}
                                                 {selectedCompany.company
@@ -1415,7 +1523,7 @@ export default function PeaceSealDashboard() {
                                                     </Badge>
                                                   </span>
                                                 )}
-                                              </p>
+                                              </div>
                                               <p>
                                                 <strong>Country:</strong>{" "}
                                                 {selectedCompany.company
@@ -1469,12 +1577,10 @@ export default function PeaceSealDashboard() {
                                               </p>
                                               <p>
                                                 <strong>Date:</strong>{" "}
-                                                {selectedCompany.company
-                                                  .paymentDate
-                                                  ? new Date(
-                                                      selectedCompany.company.paymentDate
-                                                    ).toLocaleDateString()
-                                                  : "—"}
+                                                {formatTimestampDate(
+                                                  selectedCompany.company
+                                                    .paymentDate
+                                                )}
                                               </p>
                                             </div>
                                           </div>
@@ -1760,9 +1866,9 @@ export default function PeaceSealDashboard() {
                                                       )}
                                                       <p className="text-xs text-gray-500">
                                                         Reported:{" "}
-                                                        {new Date(
+                                                        {formatTimestampDate(
                                                           report.createdAt
-                                                        ).toLocaleDateString()}
+                                                        )}
                                                         {report.reporterName &&
                                                           ` by ${report.reporterName}`}
                                                       </p>
@@ -1826,7 +1932,7 @@ export default function PeaceSealDashboard() {
                                                           ? "Issue confirmed"
                                                           : "Report dismissed"}
                                                         {report.resolvedAt &&
-                                                          ` on ${new Date(report.resolvedAt).toLocaleDateString()}`}
+                                                          ` on ${formatTimestampDate(report.resolvedAt)}`}
                                                         {report.resolverName &&
                                                           ` by ${report.resolverName}`}
                                                       </p>
@@ -1949,9 +2055,9 @@ export default function PeaceSealDashboard() {
                                                       </p>
                                                       <p className="text-xs text-gray-500">
                                                         Created:{" "}
-                                                        {new Date(
+                                                        {formatTimestampDate(
                                                           review.createdAt
-                                                        ).toLocaleDateString()}
+                                                        )}
                                                       </p>
                                                     </div>
                                                   </div>
@@ -1985,40 +2091,47 @@ export default function PeaceSealDashboard() {
                                                       Evaluate
                                                     </Button>
                                                     {review.verificationStatus ===
-                                                      "pending" && (
-                                                      <>
-                                                        <Button
-                                                          size="sm"
-                                                          className="bg-green-600 hover:bg-green-700"
-                                                          onClick={() =>
-                                                            handleVerifyReview(
-                                                              review.id,
-                                                              "verify"
-                                                            )
-                                                          }
-                                                          disabled={
-                                                            loadingReviews
-                                                          }
-                                                        >
-                                                          Verify
-                                                        </Button>
-                                                        <Button
-                                                          size="sm"
-                                                          variant="outline"
-                                                          onClick={() =>
-                                                            handleVerifyReview(
-                                                              review.id,
-                                                              "dismiss"
-                                                            )
-                                                          }
-                                                          disabled={
-                                                            loadingReviews
-                                                          }
-                                                        >
-                                                          Dismiss
-                                                        </Button>
-                                                      </>
-                                                    )}
+                                                      "pending" &&
+                                                      [
+                                                        "admin",
+                                                        "superAdmin",
+                                                      ].includes(
+                                                        session?.user?.role ||
+                                                          ""
+                                                      ) && (
+                                                        <>
+                                                          <Button
+                                                            size="sm"
+                                                            className="bg-green-600 hover:bg-green-700"
+                                                            onClick={() =>
+                                                              handleVerifyReview(
+                                                                review.id,
+                                                                "verify"
+                                                              )
+                                                            }
+                                                            disabled={
+                                                              loadingReviews
+                                                            }
+                                                          >
+                                                            Verify
+                                                          </Button>
+                                                          <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            onClick={() =>
+                                                              handleVerifyReview(
+                                                                review.id,
+                                                                "dismiss"
+                                                              )
+                                                            }
+                                                            disabled={
+                                                              loadingReviews
+                                                            }
+                                                          >
+                                                            Dismiss
+                                                          </Button>
+                                                        </>
+                                                      )}
                                                   </div>
                                                 </div>
                                               ))}
@@ -2141,17 +2254,87 @@ export default function PeaceSealDashboard() {
                                                           }
                                                         </p>
                                                       )}
+
+                                                      {/* Company Response Display */}
+                                                      {evaluation.companyResponse && (
+                                                        <div className="mt-3 pt-3 border-t border-orange-200">
+                                                          <div className="flex items-center gap-2 mb-2">
+                                                            <Building className="w-4 h-4 text-blue-600" />
+                                                            <p className="text-xs font-medium text-gray-900">
+                                                              Company Response
+                                                            </p>
+                                                            {evaluation.companyRespondedAt && (
+                                                              <span className="text-xs text-gray-500">
+                                                                (
+                                                                {formatTimestampDate(
+                                                                  evaluation.companyRespondedAt
+                                                                )}
+                                                                )
+                                                              </span>
+                                                            )}
+                                                          </div>
+                                                          <div className="bg-blue-50 border border-blue-200 rounded-md p-2 mb-2">
+                                                            <p className="text-xs text-gray-700 whitespace-pre-wrap">
+                                                              {
+                                                                evaluation.companyResponse
+                                                              }
+                                                            </p>
+                                                          </div>
+
+                                                          {/* Final Resolution Status */}
+                                                          {evaluation.finalResolution ===
+                                                            "resolved" && (
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                              <CheckCircle className="w-4 h-4 text-green-600" />
+                                                              <Badge
+                                                                variant="default"
+                                                                className="bg-green-100 text-green-800 text-xs"
+                                                              >
+                                                                Resolved
+                                                              </Badge>
+                                                              {evaluation.finalResolutionNotes && (
+                                                                <p className="text-xs text-gray-600">
+                                                                  {
+                                                                    evaluation.finalResolutionNotes
+                                                                  }
+                                                                </p>
+                                                              )}
+                                                            </div>
+                                                          )}
+
+                                                          {evaluation.finalResolution ===
+                                                            "dismissed" && (
+                                                            <div className="flex items-center gap-2 mb-2">
+                                                              <XCircle className="w-4 h-4 text-gray-600" />
+                                                              <Badge
+                                                                variant="outline"
+                                                                className="bg-gray-100 text-gray-800 text-xs"
+                                                              >
+                                                                Dismissed
+                                                              </Badge>
+                                                              {evaluation.finalResolutionNotes && (
+                                                                <p className="text-xs text-gray-600">
+                                                                  {
+                                                                    evaluation.finalResolutionNotes
+                                                                  }
+                                                                </p>
+                                                              )}
+                                                            </div>
+                                                          )}
+                                                        </div>
+                                                      )}
+
                                                       <p className="text-xs text-gray-500">
                                                         Created:{" "}
-                                                        {new Date(
+                                                        {formatTimestampDate(
                                                           evaluation.createdAt
-                                                        ).toLocaleDateString()}
+                                                        )}
                                                       </p>
                                                     </div>
                                                   </div>
 
                                                   {/* Action Buttons */}
-                                                  <div className="flex gap-2 mt-2">
+                                                  <div className="flex gap-2 mt-2 flex-wrap">
                                                     <Button
                                                       size="sm"
                                                       variant="outline"
@@ -2168,23 +2351,64 @@ export default function PeaceSealDashboard() {
                                                       View Review
                                                     </Button>
                                                     {evaluation.evaluationStatus ===
-                                                      "requires_company_response" && (
-                                                      <Button
-                                                        size="sm"
-                                                        className="bg-blue-600 hover:bg-blue-700"
-                                                        onClick={() =>
-                                                          handleCompanyResponse(
-                                                            evaluation
-                                                          )
-                                                        }
-                                                        disabled={
-                                                          loadingEvaluations
-                                                        }
-                                                      >
-                                                        <MessageSquare className="w-4 h-4 mr-1" />
-                                                        Company Response
-                                                      </Button>
-                                                    )}
+                                                      "requires_company_response" &&
+                                                      !evaluation.companyResponse && (
+                                                        <Button
+                                                          size="sm"
+                                                          className="bg-blue-600 hover:bg-blue-700"
+                                                          onClick={() =>
+                                                            handleCompanyResponse(
+                                                              evaluation
+                                                            )
+                                                          }
+                                                          disabled={
+                                                            loadingEvaluations
+                                                          }
+                                                        >
+                                                          <MessageSquare className="w-4 h-4 mr-1" />
+                                                          Company Response
+                                                        </Button>
+                                                      )}
+
+                                                    {/* Resolution buttons - show when company has responded */}
+                                                    {evaluation.companyResponse &&
+                                                      !evaluation.finalResolution && (
+                                                        <>
+                                                          <Button
+                                                            size="sm"
+                                                            className="bg-green-600 hover:bg-green-700"
+                                                            onClick={() =>
+                                                              handleResolveEvaluation(
+                                                                evaluation,
+                                                                "resolved"
+                                                              )
+                                                            }
+                                                            disabled={
+                                                              loadingEvaluations
+                                                            }
+                                                          >
+                                                            <CheckCircle className="w-4 h-4 mr-1" />
+                                                            Mark Resolved
+                                                          </Button>
+                                                          <Button
+                                                            size="sm"
+                                                            variant="outline"
+                                                            className="border-gray-300 hover:bg-gray-100"
+                                                            onClick={() =>
+                                                              handleResolveEvaluation(
+                                                                evaluation,
+                                                                "dismissed"
+                                                              )
+                                                            }
+                                                            disabled={
+                                                              loadingEvaluations
+                                                            }
+                                                          >
+                                                            <XCircle className="w-4 h-4 mr-1" />
+                                                            Dismiss
+                                                          </Button>
+                                                        </>
+                                                      )}
                                                   </div>
                                                 </div>
                                               ))}
@@ -2243,12 +2467,24 @@ export default function PeaceSealDashboard() {
                                                             "active"
                                                               ? "secondary"
                                                               : issue.status ===
-                                                                  "resolved"
+                                                                  "pending_review"
                                                                 ? "default"
-                                                                : "outline"
+                                                                : issue.status ===
+                                                                    "resolved"
+                                                                  ? "default"
+                                                                  : "outline"
+                                                          }
+                                                          className={
+                                                            issue.status ===
+                                                            "pending_review"
+                                                              ? "bg-yellow-500 text-white"
+                                                              : ""
                                                           }
                                                         >
-                                                          {issue.status}
+                                                          {issue.status ===
+                                                          "pending_review"
+                                                            ? "Pending Review"
+                                                            : issue.status}
                                                         </Badge>
                                                       </div>
                                                       <p className="text-sm text-gray-700 mb-2">
@@ -2278,31 +2514,74 @@ export default function PeaceSealDashboard() {
                                                         </p>
                                                       )}
                                                       {issue.companyResponse && (
-                                                        <p className="text-xs text-gray-600 mb-2">
-                                                          <strong>
+                                                        <div className="mb-2">
+                                                          <p className="text-xs font-medium text-gray-700 mb-1">
                                                             Company Response:
-                                                          </strong>{" "}
-                                                          {
-                                                            issue.companyResponse
-                                                          }
-                                                        </p>
+                                                          </p>
+                                                          <div className="p-2 bg-blue-50 border border-blue-200 rounded text-xs text-gray-700 whitespace-pre-wrap">
+                                                            {
+                                                              issue.companyResponse
+                                                            }
+                                                          </div>
+                                                          {issue.companyRespondedAt && (
+                                                            <p className="text-xs text-gray-500 mt-1">
+                                                              Responded:{" "}
+                                                              {formatTimestampDate(
+                                                                issue.companyRespondedAt
+                                                              )}
+                                                            </p>
+                                                          )}
+                                                        </div>
                                                       )}
                                                       <p className="text-xs text-gray-500">
                                                         Created:{" "}
-                                                        {new Date(
+                                                        {formatTimestampDate(
                                                           issue.createdAt
-                                                        ).toLocaleDateString()}
+                                                        )}
                                                         {issue.resolvedAt && (
                                                           <span className="ml-2">
                                                             • Resolved:{" "}
-                                                            {new Date(
+                                                            {formatTimestampDate(
                                                               issue.resolvedAt
-                                                            ).toLocaleDateString()}
+                                                            )}
                                                           </span>
                                                         )}
                                                       </p>
                                                     </div>
                                                   </div>
+
+                                                  {/* Action buttons for pending_review status */}
+                                                  {issue.status ===
+                                                    "pending_review" &&
+                                                    issue.companyResponse && (
+                                                      <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
+                                                        <Button
+                                                          size="sm"
+                                                          className="bg-green-600 hover:bg-green-700"
+                                                          onClick={() =>
+                                                            handleApproveResponse(
+                                                              issue
+                                                            )
+                                                          }
+                                                        >
+                                                          <CheckCircle className="w-4 h-4 mr-1" />
+                                                          Approve Response
+                                                        </Button>
+                                                        <Button
+                                                          size="sm"
+                                                          variant="outline"
+                                                          className="border-red-300 text-red-700 hover:bg-red-50"
+                                                          onClick={() =>
+                                                            handleRejectResponse(
+                                                              issue
+                                                            )
+                                                          }
+                                                        >
+                                                          <XCircle className="w-4 h-4 mr-1" />
+                                                          Reject Response
+                                                        </Button>
+                                                      </div>
+                                                    )}
                                                 </div>
                                               ))}
                                             </div>
@@ -2705,9 +2984,9 @@ export default function PeaceSealDashboard() {
                                                         {entry.status}
                                                       </span>
                                                       <span className="text-gray-500">
-                                                        {new Date(
+                                                        {formatTimestampDateTime(
                                                           entry.createdAt
-                                                        ).toLocaleString()}
+                                                        )}
                                                       </span>
                                                     </div>
                                                     {entry.score && (
@@ -2817,6 +3096,15 @@ export default function PeaceSealDashboard() {
         isOpen={showCompanyResponseModal}
         onClose={handleCloseCompanyResponseModal}
         onResponseSubmitted={handleResponseSubmitted}
+      />
+
+      {/* Resolution Modal */}
+      <ResolutionModal
+        evaluation={selectedEvaluationForResolution}
+        resolutionType={resolutionType}
+        isOpen={showResolutionModal}
+        onClose={handleCloseResolutionModal}
+        onResolutionSubmitted={handleResolutionSubmitted}
       />
     </div>
   );

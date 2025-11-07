@@ -10,7 +10,6 @@ import AuthContainer from "@/components/login/auth-container";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/hooks/use-auth-session";
@@ -107,7 +106,6 @@ export default function HeroPeaceSeal({ data }: HeroPeaceSealProps) {
       </section>
 
       <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
-        {/* <DialogContent className="max-w-lg w-full max-h-[80vh] md:max-h-[85%]"> */}
         <DialogContent className="max-w-lg w-full h-[80vh] md:h-[fit-content]">
           <DialogHeader>
             <DialogTitle>

@@ -18,6 +18,7 @@ import { logger } from "@/lib/utils/logger";
 
 type VerifyResponse = {
   message: string;
+  userType?: string | null;
 };
 
 export default function VerifyEmailPage() {
@@ -28,6 +29,7 @@ export default function VerifyEmailPage() {
     "loading"
   );
   const [message, setMessage] = useState<string>("");
+  const [userType, setUserType] = useState<string | null>(null);
 
   useEffect(() => {
     if (!token) {
@@ -88,13 +90,16 @@ export default function VerifyEmailPage() {
             setMessage(
               data.message || "Your email has been verified successfully!"
             );
+            setUserType(data.userType || null);
           } catch {
             // Si recibimos 200 pero sin JSON válido, mostramos mensaje genérico
             setMessage("Your email has been verified successfully!");
+            setUserType(null);
           }
         } else {
           // Caso improbable, pero cubrimos la posibilidad de recibir 200 sin JSON
           setMessage("Your email has been verified successfully!");
+          setUserType(null);
         }
         setStatus("success");
       } catch (err) {
@@ -154,50 +159,110 @@ export default function VerifyEmailPage() {
               </div>
 
               <div className="px-8 py-8 text-center">
-                <h2 className="text-xl font-semibold text-gray-900 mb-3">
-                  Now that you&apos;re in, it&apos;s time to do what matters
-                  most
-                </h2>
-                <p className="text-gray-600 mb-2 leading-relaxed">{message}</p>
-                <p className="text-gray-600 mb-8 leading-relaxed">
-                  Vote for real, actionable solutions to the world&apos;s most
-                  pressing conflicts. Start voting now and be the reason peace
-                  becomes possible.
-                </p>
+                {userType === "organization" ? (
+                  <>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-3">
+                      Welcome to Pledge4Peace!
+                    </h2>
+                    <p className="text-gray-600 mb-2 leading-relaxed">
+                      {message}
+                    </p>
+                    <p className="text-gray-600 mb-4 leading-relaxed">
+                      As an organization, you can demonstrate your commitment to
+                      ethical practices, nonviolence, and social impact by
+                      applying for the Peace Seal certification.
+                    </p>
+                    <p className="text-gray-600 mb-8 leading-relaxed">
+                      The Peace Seal recognizes businesses that uphold the
+                      highest standards of peace, ethics, and social
+                      responsibility. Join other certified organizations making
+                      a positive impact.
+                    </p>
 
-                <div className="flex flex-col gap-4">
-                  <Button
-                    className="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-lg font-medium transition-colors duration-200"
-                    size="lg"
-                    onClick={() => router.push("/")}
-                  >
-                    <Home className="w-4 h-4 mr-2" />
-                    Go to Home
-                  </Button>
+                    <div className="flex flex-col gap-4">
+                      <Link href="/peace-seal/apply">
+                        <Button
+                          className="w-full bg-[#548281] hover:bg-[#2F4858] text-white py-3 rounded-lg font-medium transition-colors duration-200"
+                          size="lg"
+                        >
+                          Apply for Peace Seal Certification
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
+                      </Link>
 
-                  <Link href="/#projects-section" scroll={false}>
-                    <Button
-                      variant="outline"
-                      className="w-full border-teal-200 text-teal-700 hover:bg-[#008080] py-3 rounded-lg font-medium transition-colors duration-200"
-                      size="lg"
-                    >
-                      Make Your First Pledge
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </Link>
-                </div>
+                      <Button
+                        variant="outline"
+                        className="w-full border-teal-200 text-teal-700 hover:bg-teal-50 py-3 rounded-lg font-medium transition-colors duration-200"
+                        size="lg"
+                        onClick={() => router.push("/")}
+                      >
+                        <Home className="w-4 h-4 mr-2" />
+                        Go to Home
+                      </Button>
+                    </div>
 
-                <div className="mt-8 pt-6 border-t border-gray-100">
-                  <p className="text-sm text-gray-500">
-                    Want to know more about Pledge4Peace?{" "}
-                    <a
-                      href="/about"
-                      className="text-teal-600 hover:text-teal-700 font-medium"
-                    >
-                      Learn more
-                    </a>
-                  </p>
-                </div>
+                    <div className="mt-8 pt-6 border-t border-gray-100">
+                      <p className="text-sm text-gray-500">
+                        Learn more about the Peace Seal certification{" "}
+                        <Link
+                          href="/peace-seal"
+                          className="text-teal-600 hover:text-teal-700 font-medium"
+                        >
+                          here
+                        </Link>
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="text-xl font-semibold text-gray-900 mb-3">
+                      Now that you&apos;re in, it&apos;s time to do what matters
+                      most
+                    </h2>
+                    <p className="text-gray-600 mb-2 leading-relaxed">
+                      {message}
+                    </p>
+                    <p className="text-gray-600 mb-8 leading-relaxed">
+                      Vote for real, actionable solutions to the world&apos;s
+                      most pressing conflicts. Start voting now and be the
+                      reason peace becomes possible.
+                    </p>
+
+                    <div className="flex flex-col gap-4">
+                      <Button
+                        className="w-full bg-teal-600 hover:bg-teal-700 text-white py-3 rounded-lg font-medium transition-colors duration-200"
+                        size="lg"
+                        onClick={() => router.push("/")}
+                      >
+                        <Home className="w-4 h-4 mr-2" />
+                        Go to Home
+                      </Button>
+
+                      <Link href="/#projects-section" scroll={false}>
+                        <Button
+                          variant="outline"
+                          className="w-full border-teal-200 text-teal-700 hover:bg-[#008080] py-3 rounded-lg font-medium transition-colors duration-200"
+                          size="lg"
+                        >
+                          Make Your First Pledge
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </Button>
+                      </Link>
+                    </div>
+
+                    <div className="mt-8 pt-6 border-t border-gray-100">
+                      <p className="text-sm text-gray-500">
+                        Want to know more about Pledge4Peace?{" "}
+                        <Link
+                          href="/about"
+                          className="text-teal-600 hover:text-teal-700 font-medium"
+                        >
+                          Learn more
+                        </Link>
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -254,12 +319,12 @@ export default function VerifyEmailPage() {
                 <div className="mt-8 pt-6 border-t border-gray-100">
                   <p className="text-sm text-gray-500">
                     Still having trouble?{" "}
-                    <a
+                    <Link
                       href="/contact"
                       className="text-teal-600 hover:text-teal-700 font-medium"
                     >
                       Contact support
-                    </a>
+                    </Link>
                   </p>
                 </div>
               </div>

@@ -192,6 +192,28 @@ export interface QuestionnaireSection {
   fields: QuestionnaireField[];
 }
 
+// Multi-input support types
+export interface CompositeValue {
+  text?: string;
+  url?: string;
+  file?: FileUpload;
+  agreement?: AgreementAcceptance;
+}
+
+export type InputKind = "text" | "textarea" | "url" | "file";
+
+export interface InputModeConfig {
+  kind: InputKind;
+  label?: string;
+  placeholder?: string;
+  helpText?: string;
+  fileTypes?: string[];
+  maxFileSize?: number;
+  hasTemplate?: boolean;
+  templateId?: string;
+  templateType?: "simple" | "beneficial-ownership";
+}
+
 export interface QuestionnaireField {
   id: string;
   label: string;
@@ -210,12 +232,17 @@ export interface QuestionnaireField {
   placeholder?: string;
   helpText?: string;
   options?: string[];
+  tooltipText?: string;
+  tooltipLink?: string;
   fileTypes?: string[];
   maxFileSize?: number; // in bytes
   multiple?: boolean;
   hasTemplate?: boolean; // Whether field supports template acceptance
   templateId?: string; // Template resource ID
   templateType?: "simple" | "beneficial-ownership"; // Special handling needed
+  inputModes?: InputModeConfig[]; // When present, treat as multi-input field
+  completionMode?: "any" | "all"; // Default "any" - field complete if any mode has value
+  learnMoreTopicId?: string; // Topic ID for Learn More deep-link (defaults to field.id)
 }
 
 export interface SectionProgress {

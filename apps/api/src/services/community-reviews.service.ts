@@ -3,9 +3,11 @@ import {
   peaceSealCompanies,
   peaceSealReviews,
   peaceSealReviewVerifications,
+  peaceSealReviewEvaluations,
 } from "../db/schema/peace-seal";
 import type { DbClient } from "../types";
 import { HTTPException } from "hono/http-exception";
+import { EmailService } from "./email.service";
 // LinkedIn verification is done via userinfo endpoint, no JWT verification needed
 
 export interface CreateCompanyDTO {
@@ -117,7 +119,8 @@ const SECTION_QUESTIONS = {
 export class CommunityReviewsService {
   constructor(
     private db: DbClient,
-    private linkedinClientId: string
+    // private linkedinClientId: string,
+    private emailService: EmailService
   ) {}
 
   // Create or find company for community listing
@@ -214,6 +217,7 @@ export class CommunityReviewsService {
     // Determine verification status
     let verificationStatus: "pending" | "verified" | "unverified";
     let verifiedAt: number | null = null;
+    let shouldAutoVerify = false;
 
     if (verificationMethod === "email" && reviewerEmail) {
       verificationStatus = "pending";
@@ -241,7 +245,23 @@ export class CommunityReviewsService {
         });
       }
     } else if (verificationMethod === "none") {
-      verificationStatus = "unverified";
+      // Auto-verification logic based on review rating
+      // Positive reviews (starRating >= 4 or totalScore >= 60) are auto-verified
+      // Negative reviews (starRating <= 2 or totalScore < 40) require advisor evaluation
+      const isPositiveReview =
+        (starRating && starRating >= 4) || (totalScore && totalScore >= 60);
+      const isNegativeReview =
+        (starRating && starRating <= 2) || (totalScore && totalScore < 40);
+
+      if (isPositiveReview) {
+        verificationStatus = "verified";
+        verifiedAt = now();
+        shouldAutoVerify = true;
+      } else if (isNegativeReview) {
+        verificationStatus = "pending"; // Require advisor evaluation
+      } else {
+        verificationStatus = "unverified"; // Neutral reviews remain unverified
+      }
     } else {
       verificationStatus = "unverified";
     }
@@ -286,7 +306,8 @@ export class CommunityReviewsService {
       await this.sendVerificationEmail(reviewId, reviewerEmail);
     }
 
-    // Company aggregates will be updated when verification is completed
+    // Update company aggregates - always recalculate to include all reviews
+    await this.recalcAggregates(companyId);
 
     return review[0];
   }
@@ -360,9 +381,12 @@ export class CommunityReviewsService {
       createdAt: now(),
     });
 
-    // TODO: Integrate with email service
-    console.log(
-      `Verification email would be sent to ${email} with token ${token}`
+    const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+
+    await this.emailService.sendCommunityReviewVerificationEmail(
+      email,
+      token,
+      baseUrl
     );
   }
 
@@ -439,9 +463,11 @@ export class CommunityReviewsService {
     if (verifiedOnly)
       where.push(eq(peaceSealReviews.verificationStatus, "verified"));
 
+    // Get reviews with optional evaluation data (LEFT JOIN)
     const reviews = await this.db
       .select({
         id: peaceSealReviews.id,
+        companyId: peaceSealReviews.companyId,
         role: peaceSealReviews.role,
         verificationStatus: peaceSealReviews.verificationStatus,
         totalScore: peaceSealReviews.totalScore,
@@ -450,9 +476,20 @@ export class CommunityReviewsService {
         verifiedAt: peaceSealReviews.verifiedAt,
         answers: peaceSealReviews.answers,
         experienceDescription: peaceSealReviews.experienceDescription,
+        // Evaluation data (if exists)
+        evaluationId: peaceSealReviewEvaluations.id,
+        evaluationStatus: peaceSealReviewEvaluations.evaluationStatus,
+        companyResponse: peaceSealReviewEvaluations.companyResponse,
+        companyRespondedAt: peaceSealReviewEvaluations.companyRespondedAt,
+        finalResolution: peaceSealReviewEvaluations.finalResolution,
+        finalResolutionNotes: peaceSealReviewEvaluations.finalResolutionNotes,
         // Never expose PII
       })
       .from(peaceSealReviews)
+      .leftJoin(
+        peaceSealReviewEvaluations,
+        eq(peaceSealReviews.id, peaceSealReviewEvaluations.reviewId)
+      )
       .where(where.length ? (and as any)(...where) : undefined)
       .orderBy(desc(peaceSealReviews.createdAt))
       .limit(Math.min(limit, 100))
@@ -528,6 +565,7 @@ export class CommunityReviewsService {
     const { page = 1, limit = 20 } = filters;
     const offset = (page - 1) * Math.min(limit, 100);
 
+    // Get reviews with optional evaluation data (LEFT JOIN)
     const reviews = await this.db
       .select({
         id: peaceSealReviews.id,
@@ -539,16 +577,28 @@ export class CommunityReviewsService {
         starRating: peaceSealReviews.starRating,
         createdAt: peaceSealReviews.createdAt,
         verifiedAt: peaceSealReviews.verifiedAt,
+        experienceDescription: peaceSealReviews.experienceDescription,
         // Include company info
         companyName: peaceSealCompanies.name,
         companySlug: peaceSealCompanies.slug,
         companyCountry: peaceSealCompanies.country,
         companyIndustry: peaceSealCompanies.industry,
+        // Evaluation data (if exists)
+        evaluationId: peaceSealReviewEvaluations.id,
+        evaluationStatus: peaceSealReviewEvaluations.evaluationStatus,
+        companyResponse: peaceSealReviewEvaluations.companyResponse,
+        companyRespondedAt: peaceSealReviewEvaluations.companyRespondedAt,
+        finalResolution: peaceSealReviewEvaluations.finalResolution,
+        finalResolutionNotes: peaceSealReviewEvaluations.finalResolutionNotes,
       })
       .from(peaceSealReviews)
       .leftJoin(
         peaceSealCompanies,
         eq(peaceSealReviews.companyId, peaceSealCompanies.id)
+      )
+      .leftJoin(
+        peaceSealReviewEvaluations,
+        eq(peaceSealReviews.id, peaceSealReviewEvaluations.reviewId)
       )
       .where(eq(peaceSealReviews.userId, userId))
       .orderBy(desc(peaceSealReviews.createdAt))
@@ -586,6 +636,7 @@ export class CommunityReviewsService {
         createdAt: peaceSealReviews.createdAt,
         updatedAt: peaceSealReviews.updatedAt,
         verifiedAt: peaceSealReviews.verifiedAt,
+        experienceDescription: peaceSealReviews.experienceDescription,
         // Include company name for admin view
         companyName: peaceSealCompanies.name,
       })
@@ -651,19 +702,14 @@ export class CommunityReviewsService {
 
   // Recalculate company rating aggregates
   async recalcAggregates(companyId: string) {
-    // Get all verified reviews
+    // Get all reviews (not just verified) to show all reviews in directory
     const reviews = await this.db
       .select({
         role: peaceSealReviews.role,
         starRating: peaceSealReviews.starRating,
       })
       .from(peaceSealReviews)
-      .where(
-        and(
-          eq(peaceSealReviews.companyId, companyId),
-          eq(peaceSealReviews.verificationStatus, "verified")
-        )
-      );
+      .where(eq(peaceSealReviews.companyId, companyId));
 
     // Calculate employee rating
     const employeeReviews = reviews.filter((r) => r.role === "employee");

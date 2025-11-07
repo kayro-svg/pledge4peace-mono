@@ -210,6 +210,7 @@ export class AuthService {
 
     return {
       message: "Email verified successfully",
+      userType: user.userType || null,
     };
   }
 

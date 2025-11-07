@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   Flag,
   Star,
+  XCircle,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { CommunityReviewButton } from "@/components/peace-seal/community-review-button";
@@ -29,6 +30,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { formatTimestampDate } from "@/lib/utils/peace-seal-utils";
 
 type PublicCompanyProfileProps = {
   company: Company;
@@ -71,26 +73,28 @@ function StarRating({
 
 function ReviewItem({ review }: { review: CommunityReview }) {
   const isVerified = review.verificationStatus === "verified";
-  const isPending = review.verificationStatus === "unverified";
+  const isPending = review.verificationStatus === "pending";
+  const hasCompanyResponse = Boolean(review.companyResponse);
+  const isResolved = review.finalResolution === "resolved";
+  const isDismissed = review.finalResolution === "dismissed";
 
   console.log("review", review);
 
+  const getStatusBadge = () => {
+    if (isVerified) {
+      return <Badge variant="default">✓ Verified {review.role}</Badge>;
+    } else if (isPending) {
+      return <Badge variant="secondary">⏳ Pending Review {review.role}</Badge>;
+    } else {
+      return <Badge variant="outline">Unverified {review.role}</Badge>;
+    }
+  };
+
   return (
-    <div className="border rounded-lg p-4 space-y-2">
+    <div className="border rounded-lg p-4 space-y-3">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Badge
-            variant={
-              isVerified ? "default" : isPending ? "secondary" : "outline"
-            }
-          >
-            {isVerified
-              ? "✓ Verified"
-              : isPending
-                ? "Unverified"
-                : "Unverified"}{" "}
-            {review.role}
-          </Badge>
+          {getStatusBadge()}
           {review.starRating && (
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((star) => (
@@ -115,12 +119,60 @@ function ReviewItem({ review }: { review: CommunityReview }) {
       )}
       {review.experienceDescription && (
         <div className="mt-2">
-          <p className="text-sm font-medium text-gray-700">
-            Comment from reviewer:
-          </p>
           <p className="text-sm text-gray-600 mt-1">
             {review.experienceDescription}
           </p>
+        </div>
+      )}
+
+      {/* Company Response Section */}
+      {hasCompanyResponse && (
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="flex items-center gap-2 mb-2">
+            <Building className="w-4 h-4 text-blue-600" />
+            <p className="text-sm font-medium text-gray-900">
+              Company Response
+            </p>
+            {review.companyRespondedAt && (
+              <span className="text-xs text-gray-500">
+                ({new Date(review.companyRespondedAt).toLocaleDateString()})
+              </span>
+            )}
+          </div>
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">
+              {review.companyResponse}
+            </p>
+          </div>
+
+          {/* Final Resolution */}
+          {isResolved && (
+            <div className="mt-2 flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-green-600" />
+              <Badge variant="default" className="bg-green-100 text-green-800">
+                Resolved
+              </Badge>
+              {review.finalResolutionNotes && (
+                <p className="text-xs text-gray-600">
+                  {review.finalResolutionNotes}
+                </p>
+              )}
+            </div>
+          )}
+
+          {isDismissed && (
+            <div className="mt-2 flex items-center gap-2">
+              <XCircle className="w-4 h-4 text-gray-600" />
+              <Badge variant="outline" className="bg-gray-100 text-gray-800">
+                Dismissed
+              </Badge>
+              {review.finalResolutionNotes && (
+                <p className="text-xs text-gray-600">
+                  {review.finalResolutionNotes}
+                </p>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -189,8 +241,8 @@ export default function PublicCompanyProfile({
                 )}
                 {company.employeeCount && (
                   <div className="flex items-center gap-1">
-                    <Users className="w-4 h-4" />
-                    {company.employeeCount} employees
+                    <Users className="w-4 h-4" />+{company.employeeCount}{" "}
+                    employees
                   </div>
                 )}
               </div>
@@ -310,9 +362,7 @@ export default function PublicCompanyProfile({
                             <>
                               {" · "}Last review:{" "}
                               <strong>
-                                {new Date(
-                                  company.lastReviewedAt
-                                ).toLocaleDateString()}
+                                {formatTimestampDate(company.lastReviewedAt)}
                               </strong>
                             </>
                           )}
@@ -380,7 +430,7 @@ export default function PublicCompanyProfile({
                       </label>
                       <div className="flex items-center text-gray-900">
                         <Calendar className="w-4 h-4 mr-2 text-gray-500" />
-                        {new Date(company.lastReviewedAt).toLocaleDateString()}
+                        {formatTimestampDate(company.lastReviewedAt)}
                       </div>
                     </div>
                   )}
@@ -489,7 +539,7 @@ export default function PublicCompanyProfile({
                     </h3>
                     <StarRating
                       rating={company.overallRatingAvg}
-                      count={company.employeeRatingAvg}
+                      count={company.overallRatingCount}
                     />
                   </div>
                 </div>

@@ -152,24 +152,100 @@ export function useQuestionnaire(
 
             // Check if field is completed based on type
             let isCompleted = false;
-            switch (field.type) {
-              case "boolean":
-                isCompleted = typeof fieldValue === "boolean";
-                break;
-              case "array":
-                isCompleted =
-                  Array.isArray(fieldValue) && fieldValue.length > 0;
-                break;
-              case "file":
-                isCompleted = !!fieldValue; // FileUpload object exists
-                break;
-              case "number":
-                isCompleted = typeof fieldValue === "number" && fieldValue > 0;
-                break;
-              default:
-                isCompleted =
-                  typeof fieldValue === "string" &&
-                  fieldValue.trim().length > 0;
+
+            // Handle multi-input fields (composite values)
+            if (field.inputModes && field.inputModes.length > 0) {
+              // Check if value is a composite value
+              if (
+                fieldValue &&
+                typeof fieldValue === "object" &&
+                ("text" in fieldValue ||
+                  "url" in fieldValue ||
+                  "file" in fieldValue ||
+                  "agreement" in fieldValue)
+              ) {
+                const composite = fieldValue as any;
+                const completionMode = field.completionMode || "any";
+
+                if (completionMode === "all") {
+                  // All modes must have values
+                  isCompleted = field.inputModes.every((mode) => {
+                    if (mode.kind === "text" || mode.kind === "textarea") {
+                      return (
+                        composite.text &&
+                        typeof composite.text === "string" &&
+                        composite.text.trim().length > 0
+                      );
+                    }
+                    if (mode.kind === "url") {
+                      return (
+                        composite.url &&
+                        typeof composite.url === "string" &&
+                        composite.url.trim().length > 0
+                      );
+                    }
+                    if (mode.kind === "file") {
+                      return !!(composite.file || composite.agreement);
+                    }
+                    return false;
+                  });
+                } else {
+                  // Any mode can have a value (default)
+                  isCompleted = field.inputModes.some((mode) => {
+                    if (mode.kind === "text" || mode.kind === "textarea") {
+                      return (
+                        composite.text &&
+                        typeof composite.text === "string" &&
+                        composite.text.trim().length > 0
+                      );
+                    }
+                    if (mode.kind === "url") {
+                      return (
+                        composite.url &&
+                        typeof composite.url === "string" &&
+                        composite.url.trim().length > 0
+                      );
+                    }
+                    if (mode.kind === "file") {
+                      return !!(composite.file || composite.agreement);
+                    }
+                    return false;
+                  });
+                }
+              } else {
+                // Legacy: check if it's a string or file (backward compatibility)
+                if (typeof fieldValue === "string") {
+                  isCompleted = fieldValue.trim().length > 0;
+                } else if (
+                  fieldValue &&
+                  typeof fieldValue === "object" &&
+                  ("fileName" in fieldValue || "templateId" in fieldValue)
+                ) {
+                  isCompleted = true;
+                }
+              }
+            } else {
+              // Handle single-input fields
+              switch (field.type) {
+                case "boolean":
+                  isCompleted = typeof fieldValue === "boolean";
+                  break;
+                case "array":
+                  isCompleted =
+                    Array.isArray(fieldValue) && fieldValue.length > 0;
+                  break;
+                case "file":
+                  isCompleted = !!fieldValue; // FileUpload object exists
+                  break;
+                case "number":
+                  isCompleted =
+                    typeof fieldValue === "number" && fieldValue > 0;
+                  break;
+                default:
+                  isCompleted =
+                    typeof fieldValue === "string" &&
+                    fieldValue.trim().length > 0;
+              }
             }
 
             if (isCompleted) completedFields++;
@@ -353,7 +429,7 @@ export function useQuestionnaire(
       fieldId: string,
       templateId: string,
       acceptanceData?: Record<string, any>
-    ) => {
+    ): Promise<void> => {
       try {
         const result = await acceptAgreement(companyId, {
           sectionId,
@@ -375,12 +451,12 @@ export function useQuestionnaire(
 
           // Update questionnaire with agreement acceptance
           updateField(sectionId, fieldId, agreementAcceptance);
-          return true;
+        } else {
+          throw new Error("Agreement acceptance failed");
         }
-        return false;
       } catch (error) {
         console.error("Agreement acceptance error:", error);
-        return false;
+        throw error;
       }
     },
     [companyId, updateField]
@@ -390,10 +466,8 @@ export function useQuestionnaire(
   const deleteAgreementHandler = useCallback(
     async (sectionId: string, fieldId: string, acceptanceId: string) => {
       try {
-        const success = await deleteAgreementAcceptance(
-          companyId,
-          acceptanceId
-        );
+        const result = await deleteAgreementAcceptance(companyId, acceptanceId);
+        const success = result.success;
         if (success) {
           updateField(sectionId, fieldId, null);
         }
@@ -473,7 +547,8 @@ export function useQuestionnaire(
                   doc.sectionId as keyof PeaceSealQuestionnaire
                 ] as unknown as Record<string, unknown>;
                 if (sectionData) {
-                  sectionData[doc.fieldId as string] = {
+                  const fieldId = doc.fieldId as string;
+                  const fileUpload = {
                     id: doc.id,
                     fileName: doc.fileName,
                     fileUrl: doc.fileUrl,
@@ -481,6 +556,37 @@ export function useQuestionnaire(
                     uploadedAt: doc.createdAt,
                     documentType: doc.documentType,
                   };
+
+                  // Check if this field supports multi-input (has inputModes)
+                  const section = questionnaireSections.find(
+                    (s) => s.id === doc.sectionId
+                  );
+                  const field = section?.fields.find((f) => f.id === fieldId);
+
+                  if (field?.inputModes && field.inputModes.length > 0) {
+                    // Store as composite value with file
+                    const existingValue = sectionData[fieldId];
+                    if (
+                      existingValue &&
+                      typeof existingValue === "object" &&
+                      ("text" in existingValue ||
+                        "url" in existingValue ||
+                        "file" in existingValue ||
+                        "agreement" in existingValue)
+                    ) {
+                      // Merge with existing composite value
+                      sectionData[fieldId] = {
+                        ...(existingValue as any),
+                        file: fileUpload,
+                      };
+                    } else {
+                      // Create new composite value
+                      sectionData[fieldId] = { file: fileUpload };
+                    }
+                  } else {
+                    // Single-input field: store directly
+                    sectionData[fieldId] = fileUpload;
+                  }
                 }
               }
             });
@@ -499,7 +605,7 @@ export function useQuestionnaire(
     if (companyId) {
       loadExistingDocuments();
     }
-  }, [companyId]); // Only depend on companyId to prevent infinite loops
+  }, [companyId, questionnaireSections]); // Include questionnaireSections to check for multi-input fields
 
   // Load existing agreement acceptances on mount
   useEffect(() => {
@@ -537,7 +643,38 @@ export function useQuestionnaire(
                   acceptance.sectionId as keyof PeaceSealQuestionnaire
                 ] as unknown as Record<string, unknown>;
                 if (sectionData) {
-                  sectionData[acceptance.fieldId] = acceptance;
+                  const fieldId = acceptance.fieldId;
+
+                  // Check if this field supports multi-input (has inputModes)
+                  const section = questionnaireSections.find(
+                    (s) => s.id === acceptance.sectionId
+                  );
+                  const field = section?.fields.find((f) => f.id === fieldId);
+
+                  if (field?.inputModes && field.inputModes.length > 0) {
+                    // Store as composite value with agreement
+                    const existingValue = sectionData[fieldId];
+                    if (
+                      existingValue &&
+                      typeof existingValue === "object" &&
+                      ("text" in existingValue ||
+                        "url" in existingValue ||
+                        "file" in existingValue ||
+                        "agreement" in existingValue)
+                    ) {
+                      // Merge with existing composite value
+                      sectionData[fieldId] = {
+                        ...(existingValue as any),
+                        agreement: acceptance,
+                      };
+                    } else {
+                      // Create new composite value
+                      sectionData[fieldId] = { agreement: acceptance };
+                    }
+                  } else {
+                    // Single-input field: store directly
+                    sectionData[fieldId] = acceptance;
+                  }
                 }
               }
             });
@@ -553,7 +690,7 @@ export function useQuestionnaire(
     if (companyId) {
       loadExistingAgreements();
     }
-  }, [companyId]);
+  }, [companyId, questionnaireSections]); // Include questionnaireSections to check for multi-input fields
 
   // Auto-save every 30 seconds if there are unsaved changes
   useEffect(() => {

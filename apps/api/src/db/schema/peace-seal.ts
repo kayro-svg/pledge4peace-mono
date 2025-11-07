@@ -9,7 +9,7 @@ export const peaceSealCompanies = sqliteTable("peace_seal_companies", {
   website: text("website"),
   industry: text("industry"),
   employeeCount: integer("employee_count"),
-  status: text("status").notNull().default("application_submitted"), // application_submitted|audit_in_progress|audit_completed|did_not_pass|under_review|conditional
+  status: text("status").notNull().default("draft"), // draft|application_submitted|audit_in_progress|audit_completed|did_not_pass|under_review|conditional
   score: integer("score"), // 0-100
   badgeLevel: text("badge_level"), // bronze|silver|gold|null
   lastReviewedAt: integer("last_reviewed_at"),
@@ -194,7 +194,7 @@ export const peaceSealCompanyIssues = sqliteTable("peace_seal_company_issues", {
     .references(() => peaceSealReviewEvaluations.id),
   issueType: text("issue_type").notNull(), // review_complaint|policy_violation|other
   severity: text("severity").notNull().default("medium"), // low|medium|high|critical
-  status: text("status").notNull().default("active"), // active|resolved|dismissed
+  status: text("status").notNull().default("active"), // active|pending_review|resolved|dismissed
   createdAt: integer("created_at").notNull(),
   resolvedAt: integer("resolved_at"),
 });

@@ -57,10 +57,13 @@ export function CompanyIssuesDashboard({
       id: issue.evaluationId,
       evaluationStatus: issue.evaluationStatus,
       evaluationNotes: issue.evaluationNotes,
-      companyResponseDeadline: issue.createdAt + 30 * 24 * 60 * 60 * 1000, // 30 days
+      companyResponseDeadline: issue.companyResponseDeadline
+        ? issue.companyResponseDeadline
+        : issue.createdAt + 30 * 24 * 60 * 60 * 1000, // Fallback to 30 days from creation
       reviewRole: issue.reviewRole,
       reviewTotalScore: issue.reviewTotalScore,
       reviewStarRating: issue.reviewStarRating,
+      reviewExperienceDescription: issue.reviewExperienceDescription,
     };
 
     setSelectedEvaluation(evaluation);
@@ -207,9 +210,12 @@ export function CompanyIssuesDashboard({
           <CardContent>
             <div className="space-y-4">
               {activeIssues.map((issue) => {
+                // Use companyResponseDeadline from backend if available, otherwise calculate 30 days from creation
+                const deadlineTimestamp = issue.companyResponseDeadline
+                  ? issue.companyResponseDeadline
+                  : issue.createdAt + 30 * 24 * 60 * 60 * 1000;
                 const daysUntilDeadline = Math.ceil(
-                  (issue.createdAt + 30 * 24 * 60 * 60 * 1000 - Date.now()) /
-                    (1000 * 60 * 60 * 24)
+                  (deadlineTimestamp - Date.now()) / (1000 * 60 * 60 * 24)
                 );
                 const isOverdue = daysUntilDeadline < 0;
 

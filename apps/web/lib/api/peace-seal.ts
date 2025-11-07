@@ -94,6 +94,7 @@ export async function startApplication(data: {
   website?: string;
   industry?: string;
   employeeCount?: number;
+  businessSize?: string;
 }) {
   return apiClient.post<{ id: string; slug: string }>(
     "/peace-seal/applications",
@@ -454,6 +455,13 @@ export type CommunityReview = {
   verifiedAt?: number | string | null;
   answers?: string; // JSON string of answers
   experienceDescription?: string | null;
+  // Evaluation data (if review has been evaluated)
+  evaluationId?: string | null;
+  evaluationStatus?: string | null;
+  companyResponse?: string | null;
+  companyRespondedAt?: number | string | null;
+  finalResolution?: string | null; // resolved|unresolved|dismissed
+  finalResolutionNotes?: string | null;
 };
 
 export type CreateCompanyData = {
@@ -514,6 +522,7 @@ export async function adminGetReviewDetails(reviewId: string) {
       reviewerEmail?: string;
       verificationDocumentUrl?: string;
       signedDisclosure: boolean;
+      experienceDescription?: string;
     };
   }>(`/peace-seal/admin/reviews/${reviewId}`);
 }
@@ -608,7 +617,11 @@ export type EvaluationStatus =
   | "unresolved"
   | "dismissed";
 export type IssueSeverity = "low" | "medium" | "high" | "critical";
-export type IssueStatus = "active" | "resolved" | "dismissed";
+export type IssueStatus =
+  | "active"
+  | "pending_review"
+  | "resolved"
+  | "dismissed";
 export type SealStatus = "active" | "suspended" | "revoked";
 
 export type ReviewEvaluation = {
@@ -630,6 +643,7 @@ export type ReviewEvaluation = {
   reviewTotalScore?: number;
   reviewStarRating?: number;
   reviewCreatedAt?: number;
+  reviewExperienceDescription?: string | null;
   companyName?: string;
   companyId?: string;
   companyStatus?: string;
@@ -647,11 +661,13 @@ export type CompanyIssue = {
   evaluationStatus?: EvaluationStatus;
   evaluationNotes?: string;
   companyResponse?: string;
+  companyResponseDeadline?: number;
   companyRespondedAt?: number;
   finalResolution?: string;
   reviewRole?: string;
   reviewTotalScore?: number;
   reviewStarRating?: number;
+  reviewExperienceDescription?: string | null;
 };
 
 // Advisor Evaluation API Functions
@@ -712,6 +728,17 @@ export async function companyRespondToEvaluation(
   return apiClient.post<{ evaluation: ReviewEvaluation }>(
     `/peace-seal/evaluations/${evaluationId}/respond`,
     { companyResponse }
+  );
+}
+
+export async function approveCompanyResponse(
+  evaluationId: string,
+  action: "approve" | "reject",
+  notes?: string
+) {
+  return apiClient.post<{ success: boolean }>(
+    `/peace-seal/evaluations/${evaluationId}/approve-response`,
+    { action, notes }
   );
 }
 

@@ -68,7 +68,7 @@ export type ReportReason = (typeof REPORT_REASONS)[keyof typeof REPORT_REASONS];
 // Status transition rules
 export const STATUS_TRANSITIONS: Record<PeaceSealStatus, PeaceSealStatus[]> = {
   [PEACE_SEAL_STATUS.DRAFT]: [
-    PEACE_SEAL_STATUS.APPLICATION_SUBMITTED, // After payment is completed
+    PEACE_SEAL_STATUS.APPLICATION_SUBMITTED, // After questionnaire submission (progress 100)
   ],
   [PEACE_SEAL_STATUS.APPLICATION_SUBMITTED]: [
     PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS,

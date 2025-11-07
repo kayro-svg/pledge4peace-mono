@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,8 +24,15 @@ import {
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthSession } from "@/hooks/use-auth-session";
+import { useSearchParams } from "next/navigation";
 import {
   getPeaceSealCenterResources,
   addPeaceSealCenterResource,
@@ -33,6 +40,10 @@ import {
   type ResourceType,
   type ResourceCategory,
 } from "@/lib/api/peace-seal";
+import {
+  getLearnMoreTopic,
+  LEARN_MORE_TOPICS,
+} from "@/config/learn-more-content";
 import {
   Download,
   FileText,
@@ -45,7 +56,6 @@ import {
   Calendar,
   Tag,
   HelpCircle,
-  MessageSquare,
   BarChart3,
   AlertCircle,
   CheckCircle,
@@ -57,19 +67,21 @@ import {
 
 export function PeaceSealCenter() {
   const { session } = useAuthSession();
+  const searchParams = useSearchParams();
+  const topicParam = searchParams.get("topic");
   const [resources, setResources] = useState<PeaceSealCenterResource[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddResource, setShowAddResource] = useState(false);
   const { toast } = useToast();
+  const topicRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-  // Check if user is admin, advisor, or recruiter
+  // Check if user is admin or advisor
   const isAdmin =
     session?.user?.role === "admin" || session?.user?.role === "superAdmin";
   const isAdvisor = session?.user?.role === "advisor";
-  const isRecruiter = session?.user?.role === "recruiter";
 
-  // Can manage resources: admin, superAdmin, advisor, recruiter
-  const canManageResources = isAdmin || isAdvisor || isRecruiter;
+  // Can manage resources: admin, superAdmin, advisor
+  const canManageResources = isAdmin || isAdvisor;
 
   const loadResources = useCallback(async () => {
     setLoading(true);
@@ -91,6 +103,178 @@ export function PeaceSealCenter() {
   useEffect(() => {
     loadResources();
   }, [loadResources]);
+
+  // Auto-scroll to specific topic accordion when topic is provided
+  useEffect(() => {
+    if (!topicParam) return;
+
+    // Wait for content to render, then scroll
+    // Use multiple attempts to ensure DOM is ready and tabs are switched
+    const scrollToTopic = () => {
+      // Try to find element by ref first
+      let element = topicRefs.current[topicParam];
+
+      // Fallback: try to find element by ID from hash or direct DOM lookup
+      if (!element) {
+        const hashId = `topic-${topicParam}`;
+        element = document.getElementById(hashId) as HTMLDivElement | null;
+        if (element) {
+          // Store it in refs for future use
+          topicRefs.current[topicParam] = element;
+        }
+      }
+
+      if (element) {
+        // Check if element is actually visible (not hidden by tabs)
+        const style = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+
+        // Element might be hidden if tab is not active - check if it's visible
+        if (style.display === "none" || style.visibility === "hidden") {
+          return false; // Element exists but not visible, wait
+        }
+
+        // Element found and visible - scroll to it
+        // Scroll the window first
+        const yOffset = -100; // Offset for sticky headers/navigation
+        const y = rect.top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+
+        // Also try to scroll within the scrollable container if it exists
+        let parent = element.parentElement;
+        while (parent && parent !== document.body) {
+          const parentStyle = window.getComputedStyle(parent);
+          if (
+            parentStyle.overflowY === "auto" ||
+            parentStyle.overflowY === "scroll"
+          ) {
+            const containerRect = parent.getBoundingClientRect();
+            const scrollTop =
+              rect.top - containerRect.top + parent.scrollTop - 20;
+            parent.scrollTo({
+              top: Math.max(0, scrollTop),
+              behavior: "smooth",
+            });
+            break;
+          }
+          parent = parent.parentElement;
+        }
+        return true; // Element found and scrolled
+      }
+      return false; // Element not found yet
+    };
+
+    // Use requestAnimationFrame to wait for next paint cycle
+    const attemptScroll = () => {
+      requestAnimationFrame(() => {
+        scrollToTopic();
+      });
+    };
+
+    // Try immediately (in case component was already mounted)
+    attemptScroll();
+
+    // Multiple attempts with increasing delays to handle different load scenarios
+    // These delays account for: tab switching, component mounting, DOM rendering
+    const timeouts: NodeJS.Timeout[] = [];
+
+    // Try after various delays to catch different render timings
+    [100, 300, 500, 800, 1200, 2000, 3000].forEach((delay) => {
+      const timeout = setTimeout(() => {
+        scrollToTopic();
+      }, delay);
+      timeouts.push(timeout);
+    });
+
+    // Cleanup
+    return () => {
+      timeouts.forEach(clearTimeout);
+    };
+  }, [topicParam]);
+
+  // Also handle hash-based scrolling when component mounts or hash changes
+  // This handles the case when URL is loaded directly with hash
+  useEffect(() => {
+    // Get topic from hash if topicParam is not available
+    const hash = window.location.hash;
+    const topicIdFromHash = hash?.startsWith("#topic-")
+      ? hash.replace("#topic-", "")
+      : null;
+    const targetTopicId = topicParam || topicIdFromHash;
+
+    if (!targetTopicId) return;
+
+    const scrollToHashElement = () => {
+      // Try to find element by ID first (direct DOM lookup)
+      let element = document.getElementById(
+        `topic-${targetTopicId}`
+      ) as HTMLDivElement | null;
+
+      // Also check refs
+      if (!element) {
+        element = topicRefs.current[targetTopicId];
+      }
+
+      if (element) {
+        // Verify element is actually visible (not hidden by tabs)
+        const style = window.getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+
+        // Check if element is hidden
+        if (style.display === "none" || style.visibility === "hidden") {
+          return false; // Element exists but not visible, wait
+        }
+
+        // Element found and visible - scroll to it
+        const yOffset = -100;
+        const y = rect.top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
+
+        // Also try scrolling within scrollable containers
+        let parent = element.parentElement;
+        while (parent && parent !== document.body) {
+          const parentStyle = window.getComputedStyle(parent);
+          if (
+            parentStyle.overflowY === "auto" ||
+            parentStyle.overflowY === "scroll"
+          ) {
+            const containerRect = parent.getBoundingClientRect();
+            const scrollTop =
+              rect.top - containerRect.top + parent.scrollTop - 20;
+            parent.scrollTo({
+              top: Math.max(0, scrollTop),
+              behavior: "smooth",
+            });
+            break;
+          }
+          parent = parent.parentElement;
+        }
+        return true;
+      }
+      return false;
+    };
+
+    // Try immediately
+    if (scrollToHashElement()) return;
+
+    // Retry with delays if element not found initially
+    // These delays ensure tab is active and content is rendered
+    const attempts = [200, 500, 1000, 1500, 2500, 4000];
+    const timeouts = attempts.map((delay) =>
+      setTimeout(() => scrollToHashElement(), delay)
+    );
+
+    // Listen for hash changes
+    const handleHashChange = () => {
+      setTimeout(scrollToHashElement, 100);
+    };
+    window.addEventListener("hashchange", handleHashChange);
+
+    return () => {
+      timeouts.forEach(clearTimeout);
+      window.removeEventListener("hashchange", handleHashChange);
+    };
+  }, [topicParam]); // Run when topicParam changes or on mount
 
   const getResourceIcon = (type: ResourceType) => {
     switch (type) {
@@ -185,7 +369,7 @@ export function PeaceSealCenter() {
         )}
       </div>
 
-      {/* Quick Access Cards */}
+      {/* Quick Access Cards
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card
           className="cursor-pointer hover:shadow-md transition-shadow"
@@ -252,22 +436,22 @@ export function PeaceSealCenter() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </div> */}
 
       {/* Tabs */}
       <Tabs defaultValue="resources" className="w-full">
         <TabsList
-          className={`grid w-full ${canManageResources ? "grid-cols-5" : "grid-cols-2"}`}
+          className={`grid w-full ${canManageResources ? "grid-cols-1" : "grid-cols-1"}`}
         >
           <TabsTrigger value="resources">Resources</TabsTrigger>
-          {canManageResources && (
+          {/* {canManageResources && (
             <>
               <TabsTrigger value="surveys">Surveys</TabsTrigger>
               <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
               <TabsTrigger value="compliance">Compliance</TabsTrigger>
             </>
-          )}
-          <TabsTrigger value="support">Support</TabsTrigger>
+          )} */}
+          {/* <TabsTrigger value="support">Support</TabsTrigger> */}
         </TabsList>
 
         <TabsContent value="resources" className="space-y-4">
@@ -284,7 +468,34 @@ export function PeaceSealCenter() {
             </AlertDescription>
           </Alert>
 
-          {/* Resources Grid */}
+          {/* Learn More Accordions - Show all topics */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 mb-4">
+              <HelpCircle className="w-5 h-5 text-[#548281]" />
+              <h2 className="text-xl font-bold text-[#2F4858]">
+                Learn More About Requirements
+              </h2>
+            </div>
+            <div className="overflow-y-auto max-h-[700px] gap-4">
+              {Object.values(LEARN_MORE_TOPICS).map((topic) => (
+                <div
+                  key={topic.topicId}
+                  ref={(el) => {
+                    topicRefs.current[topic.topicId] = el;
+                  }}
+                  className="scroll-mt-4 mb-4"
+                  id={`topic-${topic.topicId}`}
+                >
+                  <LearnMoreAccordion
+                    topicId={topic.topicId}
+                    isHighlighted={topicParam === topic.topicId}
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Resources Grid
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {resources.map((resource) => (
               <Card
@@ -335,7 +546,7 @@ export function PeaceSealCenter() {
                 </CardContent>
               </Card>
             ))}
-          </div>
+          </div> */}
 
           {/* Empty State */}
           {resources.length === 0 && (
@@ -470,7 +681,7 @@ export function PeaceSealCenter() {
           </TabsContent>
         )}
 
-        <TabsContent value="support" className="space-y-4">
+        {/* <TabsContent value="support" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -516,7 +727,7 @@ export function PeaceSealCenter() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
 
         {canManageResources && (
           <TabsContent value="compliance" className="space-y-4">
@@ -581,6 +792,67 @@ export function PeaceSealCenter() {
         )}
       </Tabs>
     </div>
+  );
+}
+
+// Learn More Accordion Component
+function LearnMoreAccordion({
+  topicId,
+  isHighlighted = false,
+}: {
+  topicId: string;
+  isHighlighted?: boolean;
+}) {
+  const topic = getLearnMoreTopic(topicId);
+
+  if (!topic) {
+    return null;
+  }
+
+  // Create default open value for all items (auto-expand all)
+  const defaultValues = topic.qnas.map((_, index) => `item-${index}`);
+
+  return (
+    <Card
+      className={`border-2 ${
+        isHighlighted
+          ? "border-[#548281] shadow-lg ring-2 ring-[#548281]/20"
+          : "border-gray-200"
+      } transition-all`}
+    >
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <HelpCircle className="w-5 h-5 text-[#548281]" />
+          {topic.title}
+        </CardTitle>
+        {topic.description && (
+          <p className="text-sm text-gray-600 mt-2">{topic.description}</p>
+        )}
+      </CardHeader>
+      <CardContent>
+        {/* Show full content if available, otherwise show Q&A */}
+        {topic.fullContent ? (
+          <div className="prose prose-sm max-w-none">
+            <div className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+              {topic.fullContent}
+            </div>
+          </div>
+        ) : (
+          <Accordion type="multiple" className="w-full">
+            {topic.qnas.map((qna, index) => (
+              <AccordionItem key={index} value={`item-${index}`}>
+                <AccordionTrigger className="text-left font-semibold text-lg">
+                  {qna.question}
+                </AccordionTrigger>
+                <AccordionContent className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                  {qna.answer}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 

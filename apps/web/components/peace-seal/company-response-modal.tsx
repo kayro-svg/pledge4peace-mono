@@ -18,14 +18,7 @@ import {
   companyRespondToEvaluation,
   type ReviewEvaluation,
 } from "@/lib/api/peace-seal";
-import {
-  AlertTriangle,
-  Clock,
-  Star,
-  Calendar,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
+import { AlertTriangle, Clock, Star, XCircle } from "lucide-react";
 
 interface CompanyResponseModalProps {
   evaluation: ReviewEvaluation | null;
@@ -103,7 +96,7 @@ export function CompanyResponseModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="!w-[700px] !max-w-none h-[70vh] max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-orange-600" />
@@ -166,6 +159,19 @@ export function CompanyResponseModal({
                     </p>
                   </div>
                 </div>
+
+                {evaluation.reviewExperienceDescription && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">
+                      Reviewer Experience
+                    </p>
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                        {evaluation.reviewExperienceDescription}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {evaluation.evaluationNotes && (
                   <div className="space-y-2">

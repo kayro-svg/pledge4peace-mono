@@ -21,11 +21,13 @@ interface LoginFormData {
 interface LoginFormProps {
   onSwitchToRegister: () => void;
   onLoginSuccess?: () => void;
+  onLoadingChange?: (isLoading: boolean) => void;
 }
 
 export default function LoginForm({
   onSwitchToRegister,
   onLoginSuccess,
+  onLoadingChange,
 }: LoginFormProps) {
   const form = useForm<LoginFormData>();
   const router = useRouter();
@@ -46,6 +48,7 @@ export default function LoginForm({
 
     try {
       setIsLoading(true);
+      onLoadingChange?.(true);
       const result = await signIn("credentials", {
         email: data.email,
         password: data.password,
@@ -62,6 +65,7 @@ export default function LoginForm({
       toast.error("An error occurred during login");
     } finally {
       setIsLoading(false);
+      onLoadingChange?.(false);
     }
   };
 

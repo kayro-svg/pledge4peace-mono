@@ -14,10 +14,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthSession } from "@/hooks/use-auth-session";
 import { adminGetReviewDetails } from "@/lib/api/peace-seal";
 import {
   FileText,
-  Download,
   ExternalLink,
   CheckCircle,
   XCircle,
@@ -26,7 +26,6 @@ import {
   Mail,
   Shield,
   Star,
-  Calendar,
 } from "lucide-react";
 
 interface ReviewDetailsModalProps {
@@ -169,6 +168,7 @@ interface ReviewDetails {
   createdAt: string;
   updatedAt: string;
   verifiedAt?: string;
+  experienceDescription?: string;
 }
 
 export function ReviewDetailsModal({
@@ -183,6 +183,10 @@ export function ReviewDetailsModal({
   );
   const [loadingDetails, setLoadingDetails] = useState(false);
   const { toast } = useToast();
+  const { session } = useAuthSession();
+
+  // Only show Verify/Dismiss buttons for admin/superAdmin
+  const canVerify = ["admin", "superAdmin"].includes(session?.user?.role || "");
 
   useEffect(() => {
     if (isOpen && reviewId) {
@@ -196,6 +200,8 @@ export function ReviewDetailsModal({
     setLoadingDetails(true);
     try {
       const response = await adminGetReviewDetails(reviewId);
+
+      console.log("response review details", response);
       setReviewDetails(response.review as unknown as ReviewDetails);
     } catch (error) {
       toast({
@@ -285,45 +291,114 @@ export function ReviewDetailsModal({
   const renderAnswers = () => {
     if (!reviewDetails) return null;
 
-    const sections = Object.keys(reviewDetails.sectionScores || {});
+    const experienceDescription = reviewDetails.experienceDescription;
+
+    // Create sections array
+    const sections = Object.keys(reviewDetails.sectionScores || {}).map(
+      (sectionKey) => {
+        return {
+          sectionKey,
+          sectionName:
+            SECTION_NAMES[sectionKey as keyof typeof SECTION_NAMES] ||
+            sectionKey,
+          questions:
+            PEACE_SEAL_QUESTIONS[
+              sectionKey as keyof typeof PEACE_SEAL_QUESTIONS
+            ] || [],
+          sectionScore: reviewDetails.sectionScores[sectionKey],
+        };
+      }
+    );
+
+    // Define card types
+    type ExperienceCard = {
+      type: "experience";
+      key: string;
+      title: string;
+      content: string;
+    };
+
+    type SectionCard = {
+      type: "section";
+      key: string;
+      title: string;
+      score: number;
+      questions: Array<{ id: string; question: string }>;
+    };
+
+    type ReviewCard = ExperienceCard | SectionCard;
+
+    // Create cards array: experience description first (if exists), then sections
+    const cards: ReviewCard[] = [];
+
+    // Add experience description card at the beginning if it exists
+    if (experienceDescription && experienceDescription.trim()) {
+      cards.push({
+        type: "experience",
+        key: "experience-description",
+        title: "Experience Description",
+        content: experienceDescription,
+      });
+    }
+
+    // Add section cards
+    sections.forEach((section) => {
+      cards.push({
+        type: "section",
+        key: section.sectionKey,
+        title: section.sectionName,
+        score: section.sectionScore,
+        questions: section.questions,
+      });
+    });
 
     return (
       <div className="space-y-4">
-        {sections.map((sectionKey) => {
-          const sectionName =
-            SECTION_NAMES[sectionKey as keyof typeof SECTION_NAMES] ||
-            sectionKey;
-          const questions =
-            PEACE_SEAL_QUESTIONS[
-              sectionKey as keyof typeof PEACE_SEAL_QUESTIONS
-            ] || [];
-          const sectionScore = reviewDetails.sectionScores[sectionKey];
-
-          return (
-            <Card key={sectionKey}>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center justify-between">
-                  <span>{sectionName}</span>
-                  <Badge variant="outline">{sectionScore}/100</Badge>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {questions.map((question) => {
-                  const answer = reviewDetails.answers[question.id];
-                  return (
-                    <div key={question.id} className="space-y-1">
-                      <p className="text-sm text-gray-700">
-                        {question.question}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        {formatAnswer(answer)}
+        {cards.map((card) => {
+          if (card.type === "experience") {
+            // Experience description card
+            return (
+              <Card key={card.key}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium">
+                    {card.title}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                    {card.content}
+                  </p>
+                </CardContent>
+              </Card>
+            );
+          } else {
+            // Section card
+            return (
+              <Card key={card.key}>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium flex items-center justify-between">
+                    <span>{card.title}</span>
+                    <Badge variant="outline">{card.score}/100</Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {card.questions.map((question) => {
+                    const answer = reviewDetails.answers[question.id];
+                    return (
+                      <div key={question.id} className="space-y-1">
+                        <p className="text-sm text-gray-700">
+                          {question.question}
+                        </p>
+                        <div className="flex items-center gap-2">
+                          {formatAnswer(answer)}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          );
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            );
+          }
         })}
       </div>
     );
@@ -333,7 +408,7 @@ export function ReviewDetailsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="!w-[700px] !max-w-none h-[70vh] max-h-[90vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5" />
@@ -514,23 +589,27 @@ export function ReviewDetailsModal({
             <Button variant="outline" onClick={onClose} disabled={isLoading}>
               Close
             </Button>
-            <Button
-              variant="outline"
-              onClick={() => onVerify(reviewDetails.id, "dismiss")}
-              disabled={isLoading}
-              className="text-red-600 hover:text-red-700 hover:bg-red-50"
-            >
-              <XCircle className="w-4 h-4 mr-2" />
-              Dismiss
-            </Button>
-            <Button
-              onClick={() => onVerify(reviewDetails.id, "verify")}
-              disabled={isLoading}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Verify
-            </Button>
+            {canVerify && (
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => onVerify(reviewDetails.id, "dismiss")}
+                  disabled={isLoading}
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Dismiss
+                </Button>
+                <Button
+                  onClick={() => onVerify(reviewDetails.id, "verify")}
+                  disabled={isLoading}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Verify
+                </Button>
+              </>
+            )}
           </div>
         )}
       </DialogContent>

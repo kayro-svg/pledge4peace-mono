@@ -24,6 +24,8 @@ import {
   AlertCircle,
   Loader2,
   CheckCircle2,
+  HelpCircle,
+  ExternalLink,
 } from "lucide-react";
 import {
   QuestionnaireField,
@@ -31,11 +33,20 @@ import {
   UploadResponse,
   AgreementAcceptance,
   TemplateResource,
+  CompositeValue,
 } from "@/types/questionnaire";
 import AgreementModal from "./AgreementModal";
 import BeneficialOwnershipModal from "./BeneficialOwnershipModal";
 import { useEffect } from "react";
 import { getTemplates } from "@/lib/api/peace-seal";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { useLocale } from "next-intl";
+import { hasLearnMoreTopic } from "@/config/learn-more-content";
 
 interface FormFieldProps {
   field: QuestionnaireField;
@@ -57,10 +68,77 @@ interface FormFieldProps {
     templateId: string,
     acceptanceData?: Record<string, any>
   ) => Promise<void>;
+  onAgreementDelete?: (
+    sectionId: string,
+    fieldId: string,
+    acceptanceId: string
+  ) => Promise<boolean>;
   sectionId: string;
   error?: string;
   disabled?: boolean;
   companyId?: string;
+}
+
+// Hook to generate Learn More URL
+function useLearnMoreUrl(field: QuestionnaireField): string | null {
+  const locale = useLocale();
+  const topicId = field.learnMoreTopicId ?? field.id;
+
+  // Only generate URL if topic exists in our content
+  if (hasLearnMoreTopic(topicId)) {
+    // Build URL path with hash to scroll to specific accordion
+    // For target="_blank", we need full URL, so construct it manually
+    const path = `/dashboard/company-peace-seal`;
+    const query = `tab=center&topic=${encodeURIComponent(topicId)}`;
+    const hash = `#topic-${topicId}`;
+
+    // With localePrefix: "as-needed", "en" doesn't need prefix, "es" does
+    if (locale === "en") {
+      return `${path}?${query}${hash}`;
+    } else {
+      return `/${locale}${path}?${query}${hash}`;
+    }
+  }
+
+  // Fallback to external tooltipLink if provided
+  return field.tooltipLink || null;
+}
+
+// Reusable Label with Learn More link component
+function FieldLabelWithLearnMore({ field }: { field: QuestionnaireField }) {
+  const learnMoreUrl = useLearnMoreUrl(field);
+
+  return (
+    <div className="flex items-center gap-2">
+      <Label htmlFor={field.id} className="flex items-center gap-2">
+        {field.label}
+        {field.required && <span className="text-red-500">*</span>}
+      </Label>
+      {field.tooltipText && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger>
+              <HelpCircle className="w-4 h-4 text-gray-500 hover:text-gray-700 cursor-pointer" />
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs max-h-64 overflow-y-auto">
+              <p className="text-sm text-gray-600">{field.tooltipText}</p>
+              {learnMoreUrl && (
+                <a
+                  href={learnMoreUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-500 hover:text-blue-700 flex items-center gap-1 mt-2"
+                >
+                  Learn more
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              )}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+    </div>
+  );
 }
 
 // File Upload Component
@@ -71,6 +149,7 @@ const FileUploadField = ({
   onFileUpload,
   onFileDelete,
   onAgreementAccept,
+  onAgreementDelete,
   sectionId,
   error,
   disabled,
@@ -154,20 +233,28 @@ const FileUploadField = ({
     }
   }, [value, onFileDelete, sectionId, field.id, onChange]);
 
-  const handleAgreementAccept = useCallback(async () => {
-    if (!onAgreementAccept || !field.templateId) return;
+  const handleAgreementAccept = useCallback(
+    async (acceptanceData?: Record<string, any>) => {
+      if (!onAgreementAccept || !field.templateId) return;
 
-    setAcceptingAgreement(true);
-    try {
-      await onAgreementAccept(sectionId, field.id, field.templateId);
-      setShowAgreementModal(false);
-      setShowBeneficialModal(false);
-    } catch (error) {
-      console.error("Error accepting agreement:", error);
-    } finally {
-      setAcceptingAgreement(false);
-    }
-  }, [onAgreementAccept, sectionId, field.id, field.templateId]);
+      setAcceptingAgreement(true);
+      try {
+        await onAgreementAccept(
+          sectionId,
+          field.id,
+          field.templateId,
+          acceptanceData
+        );
+        setShowAgreementModal(false);
+        setShowBeneficialModal(false);
+      } catch (error) {
+        console.error("Error accepting agreement:", error);
+      } finally {
+        setAcceptingAgreement(false);
+      }
+    },
+    [onAgreementAccept, sectionId, field.id, field.templateId]
+  );
 
   const handleBeneficialOwnershipAccept = useCallback(
     async (data: { numberOfOwners: number; owners: any[] }) => {
@@ -210,17 +297,33 @@ const FileUploadField = ({
     loadTemplate();
   }, [field.templateId, showAgreementModal, showBeneficialModal]);
 
-  // Check if value is a file upload or agreement acceptance
-  const currentFile = value as FileUpload | null;
-  const currentAgreement = value as AgreementAcceptance | null;
+  // Check if value is a file upload or agreement acceptance using discriminant checks
+  const isFile =
+    value && typeof value === "object" && "fileName" in (value as any);
+  const isAgreement =
+    value && typeof value === "object" && "templateId" in (value as any);
+  const currentFile = isFile ? (value as FileUpload) : null;
+  const currentAgreement = isAgreement ? (value as AgreementAcceptance) : null;
   const hasValue = currentFile || currentAgreement;
+
+  const handleAgreementRemove = useCallback(async () => {
+    if (currentAgreement && onAgreementDelete) {
+      const success = await onAgreementDelete(
+        sectionId,
+        field.id,
+        currentAgreement.id
+      );
+      if (success) {
+        onChange(null);
+      }
+    } else {
+      onChange(null);
+    }
+  }, [currentAgreement, onAgreementDelete, sectionId, field.id, onChange]);
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={field.id} className="flex items-center gap-2">
-        {field.label}
-        {field.required && <span className="text-red-500">*</span>}
-      </Label>
+      <FieldLabelWithLearnMore field={field} />
 
       {field.helpText && (
         <p className="text-sm text-gray-600">{field.helpText}</p>
@@ -269,7 +372,7 @@ const FileUploadField = ({
                       }
                     }}
                     disabled={disabled}
-                    className="text-green-600 border-green-600 hover:bg-green-50"
+                    className="text-green-600 border-green-600 hover:bg-green-600 hover:text-white"
                   >
                     <CheckCircle2 className="w-4 h-4 mr-2" />
                     Use Our Template
@@ -331,7 +434,7 @@ const FileUploadField = ({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onChange(null)}
+                onClick={handleAgreementRemove}
                 disabled={disabled}
                 className="text-red-600 hover:text-red-700"
               >
@@ -357,6 +460,7 @@ const FileUploadField = ({
               open={showBeneficialModal}
               onOpenChange={setShowBeneficialModal}
               template={template}
+              templateId={field.templateId}
               onAccept={handleBeneficialOwnershipAccept}
               isAccepting={acceptingAgreement || loadingTemplate}
             />
@@ -365,7 +469,10 @@ const FileUploadField = ({
               open={showAgreementModal}
               onOpenChange={setShowAgreementModal}
               template={template}
-              onAccept={handleAgreementAccept}
+              templateId={field.templateId}
+              onAccept={(acceptanceData) =>
+                handleAgreementAccept(acceptanceData)
+              }
               isAccepting={acceptingAgreement || loadingTemplate}
             />
           )}
@@ -402,10 +509,7 @@ const ArrayField = ({
 
   return (
     <div className="space-y-2">
-      <Label htmlFor={field.id} className="flex items-center gap-2">
-        {field.label}
-        {field.required && <span className="text-red-500">*</span>}
-      </Label>
+      <FieldLabelWithLearnMore field={field} />
 
       {field.helpText && (
         <p className="text-sm text-gray-600">{field.helpText}</p>
@@ -463,9 +567,235 @@ const ArrayField = ({
   );
 };
 
+// Multi-Input Field Component
+const MultiInputField = ({
+  field,
+  value,
+  onChange,
+  onFileUpload,
+  onFileDelete,
+  onAgreementAccept,
+  onAgreementDelete,
+  sectionId,
+  error,
+  disabled,
+  companyId,
+}: FormFieldProps) => {
+  const [selectedMode, setSelectedMode] = useState<string | null>(null);
+
+  // Normalize value to CompositeValue
+  const compositeValue: CompositeValue = (() => {
+    if (!value) return {};
+
+    // If it's already a CompositeValue, return it
+    if (
+      typeof value === "object" &&
+      ("text" in value ||
+        "url" in value ||
+        "file" in value ||
+        "agreement" in value)
+    ) {
+      return value as CompositeValue;
+    }
+
+    // If it's a string (legacy), convert to composite with text
+    if (typeof value === "string") {
+      return { text: value };
+    }
+
+    // If it's a FileUpload (legacy), convert to composite with file
+    if (value && typeof value === "object" && "fileName" in value) {
+      return { file: value as FileUpload };
+    }
+
+    // If it's an AgreementAcceptance (legacy), convert to composite with agreement
+    if (value && typeof value === "object" && "templateId" in value) {
+      return { agreement: value as AgreementAcceptance };
+    }
+
+    return {};
+  })();
+
+  // Initialize selected mode if not set
+  useEffect(() => {
+    if (!selectedMode && field.inputModes && field.inputModes.length > 0) {
+      // Prefer first mode with existing value, otherwise first mode
+      const modeWithValue = field.inputModes.find((mode) => {
+        if (mode.kind === "text" || mode.kind === "textarea")
+          return !!compositeValue.text;
+        if (mode.kind === "url") return !!compositeValue.url;
+        if (mode.kind === "file")
+          return !!compositeValue.file || !!compositeValue.agreement;
+        return false;
+      });
+      setSelectedMode(modeWithValue?.kind || field.inputModes[0].kind);
+    }
+  }, [field.inputModes, compositeValue, selectedMode]);
+
+  const updateCompositeValue = useCallback(
+    (updates: Partial<CompositeValue>) => {
+      onChange({
+        ...compositeValue,
+        ...updates,
+      });
+    },
+    [compositeValue, onChange]
+  );
+
+  const handleModeChange = useCallback((modeKind: string) => {
+    setSelectedMode(modeKind);
+  }, []);
+
+  const currentMode = field.inputModes?.find((m) => m.kind === selectedMode);
+
+  if (!field.inputModes || field.inputModes.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-3">
+      <FieldLabelWithLearnMore field={field} />
+
+      {field.helpText && (
+        <p className="text-sm text-gray-600">{field.helpText}</p>
+      )}
+
+      {/* Mode selector */}
+      <div className="flex gap-2 border rounded-lg p-1 bg-gray-50">
+        {field.inputModes.map((mode) => {
+          const hasValue =
+            ((mode.kind === "text" || mode.kind === "textarea") &&
+              !!compositeValue.text) ||
+            (mode.kind === "url" && !!compositeValue.url) ||
+            (mode.kind === "file" &&
+              (!!compositeValue.file || !!compositeValue.agreement));
+
+          return (
+            <button
+              key={mode.kind}
+              type="button"
+              onClick={() => handleModeChange(mode.kind)}
+              disabled={disabled}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                selectedMode === mode.kind
+                  ? "bg-white text-blue-600 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              } ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
+            >
+              <div className="flex items-center justify-center gap-2">
+                {mode.label ||
+                  mode.kind.charAt(0).toUpperCase() + mode.kind.slice(1)}
+                {hasValue && (
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Helper text */}
+      <p className="text-xs text-gray-500 italic">
+        Choose one method; you can switch anytime.
+      </p>
+
+      {/* Render appropriate input based on selected mode */}
+      {currentMode && (
+        <div className="mt-2">
+          {currentMode.kind === "text" || currentMode.kind === "textarea" ? (
+            <div className="space-y-2">
+              {currentMode.helpText && (
+                <p className="text-sm text-gray-600">{currentMode.helpText}</p>
+              )}
+              <Textarea
+                id={`${field.id}-${currentMode.kind}`}
+                value={compositeValue.text || ""}
+                onChange={(e) => updateCompositeValue({ text: e.target.value })}
+                placeholder={currentMode.placeholder || field.placeholder}
+                rows={4}
+                disabled={disabled}
+                className={error ? "border-red-500" : ""}
+              />
+            </div>
+          ) : currentMode.kind === "url" ? (
+            <div className="space-y-2">
+              {currentMode.helpText && (
+                <p className="text-sm text-gray-600">{currentMode.helpText}</p>
+              )}
+              <Input
+                id={`${field.id}-${currentMode.kind}`}
+                type="url"
+                value={compositeValue.url || ""}
+                onChange={(e) => updateCompositeValue({ url: e.target.value })}
+                placeholder={currentMode.placeholder || field.placeholder}
+                disabled={disabled}
+                className={error ? "border-red-500" : ""}
+              />
+            </div>
+          ) : currentMode.kind === "file" ? (
+            <FileUploadField
+              field={{
+                ...field,
+                type: "file",
+                fileTypes: currentMode.fileTypes || field.fileTypes,
+                maxFileSize: currentMode.maxFileSize || field.maxFileSize,
+                hasTemplate: currentMode.hasTemplate || field.hasTemplate,
+                templateId: currentMode.templateId || field.templateId,
+                templateType: currentMode.templateType || field.templateType,
+                helpText: currentMode.helpText || field.helpText,
+              }}
+              value={compositeValue.file || compositeValue.agreement || null}
+              onChange={(newValue) => {
+                if (newValue && typeof newValue === "object") {
+                  if ("templateId" in newValue) {
+                    updateCompositeValue({
+                      agreement: newValue as AgreementAcceptance,
+                      file: undefined,
+                    });
+                  } else if ("fileName" in newValue) {
+                    updateCompositeValue({
+                      file: newValue as FileUpload,
+                      agreement: undefined,
+                    });
+                  }
+                } else {
+                  updateCompositeValue({
+                    file: undefined,
+                    agreement: undefined,
+                  });
+                }
+              }}
+              onFileUpload={onFileUpload}
+              onFileDelete={onFileDelete}
+              onAgreementAccept={onAgreementAccept}
+              onAgreementDelete={onAgreementDelete}
+              sectionId={sectionId}
+              error={error}
+              disabled={disabled}
+              companyId={companyId}
+            />
+          ) : null}
+        </div>
+      )}
+
+      {error && (
+        <div className="flex items-center space-x-2 text-sm text-red-600">
+          <AlertCircle className="h-4 w-4" />
+          <span>{error}</span>
+        </div>
+      )}
+    </div>
+  );
+};
+
 // Main FormField Component
 export default function FormField(props: FormFieldProps) {
   const { field, value, onChange, error, disabled } = props;
+
+  // Check if this is a multi-input field
+  if (field.inputModes && field.inputModes.length > 0) {
+    return <MultiInputField {...props} />;
+  }
 
   const commonProps = {
     id: field.id,
@@ -477,11 +807,7 @@ export default function FormField(props: FormFieldProps) {
     case "textarea":
       return (
         <div className="space-y-2">
-          <Label htmlFor={field.id} className="flex items-center gap-2">
-            {field.label}
-            {field.required && <span className="text-red-500">*</span>}
-          </Label>
-
+          <FieldLabelWithLearnMore field={field} />
           {field.helpText && (
             <p className="text-sm text-gray-600">{field.helpText}</p>
           )}
@@ -538,10 +864,7 @@ export default function FormField(props: FormFieldProps) {
     case "select":
       return (
         <div className="space-y-2">
-          <Label htmlFor={field.id} className="flex items-center gap-2">
-            {field.label}
-            {field.required && <span className="text-red-500">*</span>}
-          </Label>
+          <FieldLabelWithLearnMore field={field} />
 
           {field.helpText && (
             <p className="text-sm text-gray-600">{field.helpText}</p>
@@ -577,14 +900,11 @@ export default function FormField(props: FormFieldProps) {
         </div>
       );
 
-    case "multiselect":
+    case "multiselect": {
       const selectedValues = (value as string[]) || [];
       return (
         <div className="space-y-2">
-          <Label className="flex items-center gap-2">
-            {field.label}
-            {field.required && <span className="text-red-500">*</span>}
-          </Label>
+          <FieldLabelWithLearnMore field={field} />
 
           {field.helpText && (
             <p className="text-sm text-gray-600">{field.helpText}</p>
@@ -629,6 +949,7 @@ export default function FormField(props: FormFieldProps) {
           )}
         </div>
       );
+    }
 
     case "file":
       return <FileUploadField {...props} />;
@@ -639,10 +960,7 @@ export default function FormField(props: FormFieldProps) {
     case "number":
       return (
         <div className="space-y-2">
-          <Label htmlFor={field.id} className="flex items-center gap-2">
-            {field.label}
-            {field.required && <span className="text-red-500">*</span>}
-          </Label>
+          <FieldLabelWithLearnMore field={field} />
 
           {field.helpText && (
             <p className="text-sm text-gray-600">{field.helpText}</p>
@@ -669,10 +987,7 @@ export default function FormField(props: FormFieldProps) {
     default: // text, email, url
       return (
         <div className="space-y-2">
-          <Label htmlFor={field.id} className="flex items-center gap-2">
-            {field.label}
-            {field.required && <span className="text-red-500">*</span>}
-          </Label>
+          <FieldLabelWithLearnMore field={field} />
 
           {field.helpText && (
             <p className="text-sm text-gray-600">{field.helpText}</p>

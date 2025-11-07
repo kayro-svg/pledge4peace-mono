@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,16 @@ import {
   Trash2,
 } from "lucide-react";
 import type { TemplateResource } from "@/types/questionnaire";
+import { AGREEMENT_TEXTS as SMALL_AGREEMENTS } from "@/config/templates/small-business-agreements";
+import { MEDIUM_AGREEMENT_TEXTS } from "@/config/templates/medium-business-agreements";
+import { LARGE_AGREEMENT_TEXTS } from "@/config/templates/large-business-agreements";
+
+// Merge small, medium, and large agreement texts
+const ALL_AGREEMENT_TEXTS = {
+  ...SMALL_AGREEMENTS,
+  ...MEDIUM_AGREEMENT_TEXTS,
+  ...LARGE_AGREEMENT_TEXTS,
+};
 
 interface OwnerInfo {
   name: string;
@@ -32,6 +42,7 @@ interface BeneficialOwnershipModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   template: TemplateResource | null;
+  templateId?: string; // Fallback template ID if template is not loaded from API
   onAccept: (data: { numberOfOwners: number; owners: OwnerInfo[] }) => void;
   isAccepting?: boolean;
 }
@@ -40,6 +51,7 @@ export default function BeneficialOwnershipModal({
   open,
   onOpenChange,
   template,
+  templateId,
   onAccept,
   isAccepting = false,
 }: BeneficialOwnershipModalProps) {
@@ -47,6 +59,16 @@ export default function BeneficialOwnershipModal({
   const [numberOfOwners, setNumberOfOwners] = useState(1);
   const [owners, setOwners] = useState<OwnerInfo[]>([{ name: "", email: "" }]);
   const [allOwnersAgree, setAllOwnersAgree] = useState(false);
+
+  // Get agreement text for this template - use templateId as fallback
+  const agreementText = useMemo(() => {
+    const idToUse =
+      template?.id || templateId || "template_beneficial_ownership";
+    return ALL_AGREEMENT_TEXTS[idToUse] || null;
+  }, [template, templateId]);
+
+  // Use agreement text title if available, otherwise use template from API
+  const displayTitle = agreementText?.title || template?.title || "Loading...";
 
   const handleClose = () => {
     setStep(1);
@@ -109,43 +131,107 @@ export default function BeneficialOwnershipModal({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="!max-w-5xl w-[95vw] h-[95vh] max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CheckCircle2 className="w-5 h-5 text-blue-600" />
-            {template?.title || "Loading..."}
+            {displayTitle}
           </DialogTitle>
           <DialogDescription>
-            {template?.description || "Loading agreement template..."}
+            {template?.description ||
+              "Please review the policy and provide ownership information"}
           </DialogDescription>
         </DialogHeader>
 
-        {/* Step 1: Number of owners */}
+        {/* Step 1: Policy content and number of owners */}
         {step === 1 && (
           <div className="space-y-4">
-            <div className="bg-gray-50 rounded-lg p-4 border-2 border-dashed border-gray-300">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-sm">View Policy</p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Please review the policy document
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    template && window.open(template.fileUrl, "_blank")
-                  }
-                  disabled={!template}
-                >
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                  Open Document
-                </Button>
+            {/* Policy Text Viewer */}
+            <div className="space-y-2">
+              <div>
+                <p className="font-medium text-sm">View Policy</p>
+                <p className="text-xs text-gray-600 mt-1">
+                  Please review the policy document before proceeding
+                </p>
               </div>
+              {agreementText && (
+                <div className="border rounded-lg bg-white p-6 max-h-[500px] overflow-y-auto">
+                  <div className="prose prose-sm max-w-none">
+                    {agreementText.body
+                      .split("\n")
+                      .map((line: string, idx: number) => {
+                        if (line.startsWith("# ")) {
+                          return (
+                            <h1
+                              key={idx}
+                              className="text-xl font-bold mt-4 mb-2"
+                            >
+                              {line.substring(2)}
+                            </h1>
+                          );
+                        }
+                        if (line.startsWith("## ")) {
+                          return (
+                            <h2
+                              key={idx}
+                              className="text-lg font-semibold mt-3 mb-2"
+                            >
+                              {line.substring(3)}
+                            </h2>
+                          );
+                        }
+                        if (line.startsWith("### ")) {
+                          return (
+                            <h3
+                              key={idx}
+                              className="text-md font-medium mt-2 mb-1"
+                            >
+                              {line.substring(4)}
+                            </h3>
+                          );
+                        }
+                        if (line.startsWith("- ")) {
+                          return (
+                            <li key={idx} className="ml-4 mb-1">
+                              {line.substring(2)}
+                            </li>
+                          );
+                        }
+                        if (line.trim() === "") {
+                          return <br key={idx} />;
+                        }
+                        return (
+                          <p key={idx} className="mb-2 text-sm leading-relaxed">
+                            {line}
+                          </p>
+                        );
+                      })}
+                  </div>
+                </div>
+              )}
+              {!agreementText && template?.fileUrl && (
+                <div className="bg-gray-50 rounded-lg p-4 border-2 border-dashed border-gray-300">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">View Policy</p>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Please review the policy document
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(template.fileUrl, "_blank")}
+                    >
+                      <ExternalLink className="w-4 h-4 mr-2" />
+                      Open Document
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-2 border-t pt-4">
               <Label htmlFor="owner-count">
                 How many individuals own or have control over the organization?
               </Label>
@@ -267,12 +353,12 @@ export default function BeneficialOwnershipModal({
               </label>
             </div>
 
-            <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+            {/* <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
               <p className="text-sm text-amber-800">
                 You can email these policies to all parties involved later from
                 your dashboard.
               </p>
-            </div>
+            </div> */}
           </div>
         )}
 

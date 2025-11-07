@@ -64,9 +64,13 @@ peaceSeal.post("/applications/:id/confirm-payment", (c) =>
 peaceSeal.post("/applications/:id/questionnaire/save", (c) =>
   controller.saveQuestionnaire(c)
 );
-peaceSeal.post("/applications/:id/questionnaire/validate", (c) =>
-  controller.validateQuestionnaire(c)
-);
+// Validation endpoint disabled - frontend handles validation only
+peaceSeal.post("/applications/:id/questionnaire/validate", (c) => {
+  return c.json(
+    { error: "Validation endpoint disabled. Use frontend validation." },
+    410
+  );
+});
 
 // Agreement routes for applications (already covered by /applications/* middleware)
 peaceSeal.post("/applications/:companyId/agreements/accept", (c) =>
@@ -164,8 +168,13 @@ peaceSeal.use("/companies/:companyId/issues", authMiddleware);
 peaceSeal.get("/companies/:companyId/issues", (c) =>
   advisorEvaluationController.getCompanyIssues(c)
 );
+peaceSeal.use("/evaluations/:id/respond", authMiddleware);
 peaceSeal.post("/evaluations/:id/respond", (c) =>
   advisorEvaluationController.companyRespondToEvaluation(c)
+);
+peaceSeal.use("/evaluations/:id/approve-response", authMiddleware);
+peaceSeal.post("/evaluations/:id/approve-response", (c) =>
+  advisorEvaluationController.approveCompanyResponse(c)
 );
 
 // Peace Seal Renewal routes

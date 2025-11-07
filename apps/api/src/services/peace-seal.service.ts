@@ -7,6 +7,7 @@ import {
   peaceSealDocuments,
   peaceSealAgreementAcceptances,
   peaceSealCenterResources,
+  peaceSealReviews,
 } from "../db/schema/peace-seal";
 import { users } from "../db/schema/users";
 import type { DbClient } from "../types";
@@ -27,6 +28,8 @@ import {
   parseQuestionnaireResponses,
   getQuestionnaireStats,
 } from "../utils/questionnaire-parser";
+import { getScoringManifest } from "../config/scoring-manifest";
+import { calculateWeightedScore } from "../utils/questionnaire-scoring";
 
 export interface CreateApplicationDTO {
   name: string;
@@ -140,7 +143,63 @@ export class PeaceSealService {
       .limit(Math.min(limit, 100))
       .offset(offset);
 
-    return { items };
+    // Calculate real-time aggregates for each company if stored values are null/0
+    const itemsWithRealTimeRatings = await Promise.all(
+      items.map(async (item) => {
+        // If aggregates are missing or 0, calculate from reviews
+        if (
+          !item.overallRatingAvg ||
+          item.overallRatingCount === 0 ||
+          !item.overallRatingCount
+        ) {
+          const reviews = await this.db
+            .select({
+              role: peaceSealReviews.role,
+              starRating: peaceSealReviews.starRating,
+            })
+            .from(peaceSealReviews)
+            .where(eq(peaceSealReviews.companyId, item.id));
+
+          if (reviews.length > 0) {
+            // Calculate overall rating
+            const overallRatingAvg = Math.round(
+              reviews.reduce((sum, r) => sum + (r.starRating || 0), 0) /
+                reviews.length
+            );
+            const overallRatingCount = reviews.length;
+
+            // Calculate employee rating
+            const employeeReviews = reviews.filter(
+              (r) => r.role === "employee"
+            );
+            const employeeRatingAvg =
+              employeeReviews.length > 0
+                ? Math.round(
+                    employeeReviews.reduce(
+                      (sum, r) => sum + (r.starRating || 0),
+                      0
+                    ) / employeeReviews.length
+                  )
+                : null;
+            const employeeRatingCount = employeeReviews.length;
+
+            return {
+              ...item,
+              overallRatingAvg,
+              overallRatingCount,
+              employeeRatingAvg: employeeRatingAvg || item.employeeRatingAvg,
+              employeeRatingCount:
+                employeeRatingCount > 0
+                  ? employeeRatingCount
+                  : item.employeeRatingCount,
+            };
+          }
+        }
+        return item;
+      })
+    );
+
+    return { items: itemsWithRealTimeRatings };
   }
 
   // Get company by slug (public)
@@ -191,7 +250,7 @@ export class PeaceSealService {
     return { ...application[0], expectedPaymentAmount: expectedAmount };
   }
 
-  // Confirm payment and assign advisor
+  // Confirm payment - only updates payment status, does NOT change application status or assign advisor
   async confirmPayment(
     companyId: string,
     transactionId: string,
@@ -204,6 +263,7 @@ export class PeaceSealService {
         createdByUserId: peaceSealCompanies.createdByUserId,
         employeeCount: peaceSealCompanies.employeeCount,
         paymentStatus: peaceSealCompanies.paymentStatus,
+        status: peaceSealCompanies.status,
       })
       .from(peaceSealCompanies)
       .where(eq(peaceSealCompanies.id, companyId))
@@ -253,8 +313,9 @@ export class PeaceSealService {
     expiresAt.setDate(
       expiresAt.getDate() + BUSINESS_RULES.CERTIFICATION_DURATION_DAYS
     );
+    const expiresAtTs = expiresAt.getTime(); // Convert to timestamp
 
-    // Update payment status and change application status to submitted
+    // Update payment status ONLY - do NOT change application status or assign advisor
     await this.db
       .update(peaceSealCompanies)
       .set({
@@ -262,14 +323,51 @@ export class PeaceSealService {
         paymentAmountCents: amountCents,
         paymentTransactionId: transactionId,
         paymentDate: nowTs,
-        expiresAt,
-        status: PEACE_SEAL_STATUS.APPLICATION_SUBMITTED, // Change from DRAFT to APPLICATION_SUBMITTED
+        expiresAt: expiresAtTs,
         updatedAt: nowTs,
       })
       .where(eq(peaceSealCompanies.id, companyId));
 
-    // Assign advisor automatically
-    await this.assignAdvisorAutomatically(companyId, userId);
+    // If questionnaire is already submitted (status is APPLICATION_SUBMITTED), calculate auto-score
+    if (company.status === PEACE_SEAL_STATUS.APPLICATION_SUBMITTED) {
+      // Get questionnaire to calculate score
+      const questionnaire = await this.db
+        .select({
+          responses: peaceSealQuestionnaires.responses,
+          progress: peaceSealQuestionnaires.progress,
+        })
+        .from(peaceSealQuestionnaires)
+        .where(eq(peaceSealQuestionnaires.companyId, companyId))
+        .then((r) => r[0]);
+
+      if (questionnaire && questionnaire.progress >= 100) {
+        // Calculate auto-score
+        const autoScore = this.calculateScore(
+          questionnaire.responses,
+          company.employeeCount
+        );
+
+        // Update score
+        await this.db
+          .update(peaceSealCompanies)
+          .set({
+            score: autoScore,
+            updatedAt: nowTs,
+          })
+          .where(eq(peaceSealCompanies.id, companyId));
+
+        // Record in history
+        await this.db.insert(peaceSealStatusHistory).values({
+          id: ulid(),
+          companyId,
+          status: company.status,
+          score: autoScore,
+          notes: `Payment confirmed - Auto-score calculated: ${autoScore}/100`,
+          changedByUserId: userId,
+          createdAt: nowTs,
+        });
+      }
+    }
 
     return { success: true };
   }
@@ -299,7 +397,7 @@ export class PeaceSealService {
     return company;
   }
 
-  // Admin: Confirm manual payment for RFQ companies
+  // Admin: Confirm manual payment for RFQ companies - only updates payment status
   async adminConfirmPayment(
     companyId: string,
     amountCents: number,
@@ -308,7 +406,11 @@ export class PeaceSealService {
   ) {
     // Get company details
     const company = await this.db
-      .select()
+      .select({
+        status: peaceSealCompanies.status,
+        employeeCount: peaceSealCompanies.employeeCount,
+        paymentStatus: peaceSealCompanies.paymentStatus,
+      })
       .from(peaceSealCompanies)
       .where(eq(peaceSealCompanies.id, companyId))
       .then((r) => r[0]);
@@ -329,8 +431,9 @@ export class PeaceSealService {
     expiresAt.setDate(
       expiresAt.getDate() + BUSINESS_RULES.CERTIFICATION_DURATION_DAYS
     );
+    const expiresAtTs = expiresAt.getTime(); // Convert to timestamp
 
-    // Update payment status
+    // Update payment status ONLY - do NOT change application status or assign advisor
     await this.db
       .update(peaceSealCompanies)
       .set({
@@ -338,20 +441,59 @@ export class PeaceSealService {
         paymentAmountCents: amountCents,
         paymentTransactionId: transactionId,
         paymentDate: nowTs,
-        expiresAt,
-        status: PEACE_SEAL_STATUS.APPLICATION_SUBMITTED,
+        expiresAt: expiresAtTs,
         updatedAt: nowTs,
       })
       .where(eq(peaceSealCompanies.id, companyId));
 
-    // Assign advisor automatically
-    await this.assignAdvisorAutomatically(companyId, adminUserId);
+    // If questionnaire is already submitted (status is APPLICATION_SUBMITTED), calculate auto-score
+    if (company.status === PEACE_SEAL_STATUS.APPLICATION_SUBMITTED) {
+      // Get questionnaire to calculate score
+      const questionnaire = await this.db
+        .select({
+          responses: peaceSealQuestionnaires.responses,
+          progress: peaceSealQuestionnaires.progress,
+        })
+        .from(peaceSealQuestionnaires)
+        .where(eq(peaceSealQuestionnaires.companyId, companyId))
+        .then((r) => r[0]);
+
+      if (questionnaire && questionnaire.progress >= 100) {
+        // Calculate auto-score
+        const autoScore = this.calculateScore(
+          questionnaire.responses,
+          company.employeeCount
+        );
+
+        // Update score
+        await this.db
+          .update(peaceSealCompanies)
+          .set({
+            score: autoScore,
+            updatedAt: nowTs,
+          })
+          .where(eq(peaceSealCompanies.id, companyId));
+
+        // Record in history
+        await this.db.insert(peaceSealStatusHistory).values({
+          id: ulid(),
+          companyId,
+          status: company.status,
+          score: autoScore,
+          notes: `Payment confirmed manually by admin - Auto-score calculated: ${autoScore}/100 - Amount: $${amountCents / 100}`,
+          changedByUserId: adminUserId,
+          createdAt: nowTs,
+        });
+
+        return { success: true };
+      }
+    }
 
     // Record in history
     await this.db.insert(peaceSealStatusHistory).values({
       id: ulid(),
       companyId,
-      status: PEACE_SEAL_STATUS.APPLICATION_SUBMITTED,
+      status: company.status,
       notes: `Payment confirmed manually by admin - Amount: $${amountCents / 100}`,
       changedByUserId: adminUserId,
       createdAt: nowTs,
@@ -360,7 +502,7 @@ export class PeaceSealService {
     return { success: true };
   }
 
-  // Auto-assign advisor to company
+  // Auto-assign advisor to company (does NOT change status - status should be APPLICATION_SUBMITTED)
   private async assignAdvisorAutomatically(
     companyId: string,
     fallbackUserId: string
@@ -380,7 +522,7 @@ export class PeaceSealService {
         peaceSealCompanies,
         and(
           eq(peaceSealCompanies.advisorUserId, users.id),
-          inArray(peaceSealCompanies.status, activeStatuses) // ← correcto
+          inArray(peaceSealCompanies.status, activeStatuses)
         )
       )
       .where(eq(users.role, "advisor"))
@@ -389,48 +531,39 @@ export class PeaceSealService {
       .orderBy(sql`count(${peaceSealCompanies.advisorUserId})`)
       .limit(1);
 
-    if (advisors[0]) {
-      const nowTs = now();
+    const nowTs = now();
 
+    if (advisors[0]) {
+      // Assign advisor but keep status as APPLICATION_SUBMITTED
       await this.db
         .update(peaceSealCompanies)
         .set({
           advisorUserId: advisors[0].userId,
-          status: PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS,
           updatedAt: nowTs,
         })
         .where(eq(peaceSealCompanies.id, companyId));
 
-      // Record status change in history
+      // Record advisor assignment in history (without changing status)
       await this.db.insert(peaceSealStatusHistory).values({
         id: ulid(),
         companyId,
-        status: PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS,
-        notes: "Advisor assigned automatically after payment confirmation",
+        status: PEACE_SEAL_STATUS.APPLICATION_SUBMITTED,
+        notes: "Advisor assigned automatically after questionnaire submission",
         changedByUserId: advisors[0].userId,
         createdAt: nowTs,
       });
     } else {
-      // No available advisors - keep application submitted and record a history note.
-      const nowTs = now();
-      await this.db
-        .update(peaceSealCompanies)
-        .set({
-          status: PEACE_SEAL_STATUS.APPLICATION_SUBMITTED,
-          updatedAt: nowTs,
-        })
-        .where(eq(peaceSealCompanies.id, companyId));
-
+      // No available advisors - record a history note but keep status as APPLICATION_SUBMITTED
       await this.db.insert(peaceSealStatusHistory).values({
         id: ulid(),
         companyId,
         status: PEACE_SEAL_STATUS.APPLICATION_SUBMITTED,
         notes:
           "No advisors available at the moment. Application queued for assignment.",
-        changedByUserId: fallbackUserId, // Use the company owner instead of "system"
+        changedByUserId: fallbackUserId,
         createdAt: nowTs,
       });
-      // Do not throw; allow payment confirmation to succeed.
+      // Do not throw; allow submission to succeed.
     }
   }
 
@@ -482,14 +615,15 @@ export class PeaceSealService {
       });
     }
 
-    // If questionnaire is completed, update status to indicate it's ready for advisor review
+    // If questionnaire is completed, update status to APPLICATION_SUBMITTED and assign advisor
     if (progress >= 100) {
-      // Get current company status and payment info to determine appropriate next status
+      // Get current company status, payment info, and employeeCount to determine appropriate next status
       const currentCompany = await this.db
         .select({
           status: peaceSealCompanies.status,
           advisorUserId: peaceSealCompanies.advisorUserId,
           paymentStatus: peaceSealCompanies.paymentStatus,
+          employeeCount: peaceSealCompanies.employeeCount,
         })
         .from(peaceSealCompanies)
         .where(eq(peaceSealCompanies.id, companyId))
@@ -498,32 +632,40 @@ export class PeaceSealService {
       let newStatus = currentCompany?.status;
       let statusNote = "Questionnaire completed";
       let preliminaryScore: number | null = null;
+      let shouldAssignAdvisor = false;
 
       // Determine appropriate status based on current state
       if (currentCompany?.status === PEACE_SEAL_STATUS.DRAFT) {
-        // If still in draft, move to application submitted (needs payment first)
+        // If still in draft, move to application submitted
         newStatus = PEACE_SEAL_STATUS.APPLICATION_SUBMITTED;
         statusNote =
           "Questionnaire completed - application submitted for review";
+        shouldAssignAdvisor = true; // Assign advisor when submitting for first time
       } else if (
         currentCompany?.status === PEACE_SEAL_STATUS.APPLICATION_SUBMITTED
       ) {
         // Keep as application_submitted - no auto-transition to under_review
         newStatus = PEACE_SEAL_STATUS.APPLICATION_SUBMITTED;
-        statusNote =
-          "Questionnaire completed - application submitted for review";
-
-        // If payment is completed, calculate preliminary score for directory display
-        if (currentCompany.paymentStatus === PAYMENT_STATUS.PAID) {
-          preliminaryScore = this.calculateScore(responses);
-          statusNote += ` - Preliminary score: ${preliminaryScore}/100`;
-        }
+        statusNote = "Questionnaire updated - application submitted for review";
       } else if (
         currentCompany?.status === PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS
       ) {
         // Already in audit, keep same status but update note
         newStatus = PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS;
         statusNote = "Questionnaire updated - ready for advisor review";
+      }
+
+      // If payment is completed, calculate preliminary score for directory display
+      if (
+        currentCompany?.paymentStatus === PAYMENT_STATUS.PAID &&
+        (newStatus === PEACE_SEAL_STATUS.APPLICATION_SUBMITTED ||
+          newStatus === PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS)
+      ) {
+        preliminaryScore = this.calculateScore(
+          responses,
+          currentCompany.employeeCount
+        );
+        statusNote += ` - Auto-score calculated: ${preliminaryScore}/100`;
       }
 
       // Update company status and preliminary score (if paid)
@@ -545,12 +687,17 @@ export class PeaceSealService {
         .set(updatePayload)
         .where(eq(peaceSealCompanies.id, companyId));
 
+      // Assign advisor if this is the first submission (status changed from DRAFT)
+      if (shouldAssignAdvisor && !currentCompany?.advisorUserId) {
+        await this.assignAdvisorAutomatically(companyId, userId);
+      }
+
       // Record in history (with preliminary score if applicable)
       await this.db.insert(peaceSealStatusHistory).values({
         id: ulid(),
         companyId,
         status: newStatus,
-        score: preliminaryScore, // Preliminary score for paid companies
+        score: preliminaryScore, // Auto-score for paid companies
         notes: statusNote,
         changedByUserId: userId,
         createdAt: nowTs,
@@ -639,7 +786,7 @@ export class PeaceSealService {
         expiresAt.setDate(
           expiresAt.getDate() + BUSINESS_RULES.CERTIFICATION_DURATION_DAYS
         );
-        updatePayload.expiresAt = expiresAt;
+        updatePayload.expiresAt = expiresAt.getTime(); // Convert to timestamp
       }
     }
 
@@ -671,8 +818,12 @@ export class PeaceSealService {
     };
   }
 
-  // Calculate score based on questionnaire responses (now private, used by advisors)
-  private calculateScore(responses: any): number {
+  // Calculate score based on questionnaire responses using weighted section-based scoring
+  // Matches "Automated Scoring System" from PEACE SEAL PROGRAM OVERVIEW
+  private calculateScore(
+    responses: any,
+    employeeCount?: number | null
+  ): number {
     if (!responses || typeof responses !== "object") {
       return 0;
     }
@@ -681,83 +832,11 @@ export class PeaceSealService {
     const parsedResponses =
       typeof responses === "string" ? JSON.parse(responses) : responses;
 
-    // New weight distribution matching the questionnaire config
-    const sectionWeights = {
-      ethicalPracticesGovernance: 0.3, // 30%
-      peaceAlignedFinancialPractices: 0.25, // 25%
-      employeeRightsWorkplaceCulture: 0.2, // 20%
-      socialImpactCommunityEngagement: 0.15, // 15%
-      globalPeaceCommitmentConflictAvoidance: 0.1, // 10%
-      // Other sections contribute smaller amounts
-      supplyChainEthics: 0.05,
-      internalPeaceInclusionPolicies: 0.04,
-      advocacyPublicPositioning: 0.03,
-      conflictFreeOperations: 0.02,
-      humanitarianContribution: 0.04,
-      transparencyReporting: 0.02,
-      environmentalResponsibility: 0.05,
-      publicFeedbackExternalReporting: 0.02,
-      environmentalPeacebuilding: 0.02, // Optional bonus
-    };
+    // Get scoring manifest based on company size
+    const sections = getScoringManifest(employeeCount);
 
-    let totalScore = 0;
-
-    // Section 2: Ethical Practices & Governance (30%)
-    const ethicsScore = this.evaluateEthicsGovernanceSection(parsedResponses);
-    totalScore += ethicsScore * sectionWeights.ethicalPracticesGovernance;
-
-    // Section 3: Peace-Aligned Financial Practices (25%)
-    const financeScore =
-      this.evaluateFinancialPracticesSection(parsedResponses);
-    totalScore += financeScore * sectionWeights.peaceAlignedFinancialPractices;
-
-    // Section 10: Employee Rights & Workplace Culture (20%)
-    const employeeScore = this.evaluateEmployeeRightsSection(parsedResponses);
-    totalScore += employeeScore * sectionWeights.employeeRightsWorkplaceCulture;
-
-    // Section 11: Social Impact & Community Engagement (15%)
-    const socialScore = this.evaluateSocialImpactSection(parsedResponses);
-    totalScore += socialScore * sectionWeights.socialImpactCommunityEngagement;
-
-    // Section 13: Global Peace Commitment & Conflict Avoidance (10%)
-    const peaceScore = this.evaluateGlobalPeaceSection(parsedResponses);
-    totalScore +=
-      peaceScore * sectionWeights.globalPeaceCommitmentConflictAvoidance;
-
-    // Additional smaller sections
-    totalScore +=
-      this.evaluateSupplyChainSection(parsedResponses) *
-      sectionWeights.supplyChainEthics;
-    totalScore +=
-      this.evaluateInternalPeaceSection(parsedResponses) *
-      sectionWeights.internalPeaceInclusionPolicies;
-    totalScore +=
-      this.evaluateAdvocacySection(parsedResponses) *
-      sectionWeights.advocacyPublicPositioning;
-    totalScore +=
-      this.evaluateConflictFreeSection(parsedResponses) *
-      sectionWeights.conflictFreeOperations;
-    totalScore +=
-      this.evaluateHumanitarianSection(parsedResponses) *
-      sectionWeights.humanitarianContribution;
-    totalScore +=
-      this.evaluateTransparencySection(parsedResponses) *
-      sectionWeights.transparencyReporting;
-    totalScore +=
-      this.evaluateEnvironmentalSection(parsedResponses) *
-      sectionWeights.environmentalResponsibility;
-    totalScore +=
-      this.evaluatePublicFeedbackSection(parsedResponses) *
-      sectionWeights.publicFeedbackExternalReporting;
-
-    // Optional bonus section
-    if (parsedResponses.environmentalPeacebuilding) {
-      totalScore +=
-        this.evaluateEnvironmentalPeacebuildingSection(parsedResponses) *
-        sectionWeights.environmentalPeacebuilding;
-    }
-
-    return Math.round(Math.max(0, Math.min(100, totalScore)));
+    // Calculate weighted score using new scoring system
+    return calculateWeightedScore(sections, parsedResponses, employeeCount);
   }
 
   // Section 2: Ethical Practices & Governance (30% weight)
@@ -1186,8 +1265,23 @@ export class PeaceSealService {
     // Parse questionnaire responses if they exist
     let parsedQuestionnaire: any = null;
     if (questionnaire && questionnaire.responses) {
+      // Get employee count from responses or company record
+      let employeeCount: number | undefined;
+      try {
+        const responses = JSON.parse(questionnaire.responses);
+        employeeCount = Number(
+          responses?.companyInformation?.employeeCount ||
+            company?.employeeCount ||
+            0
+        );
+      } catch (error) {
+        // Fallback to company record
+        employeeCount = Number(company?.employeeCount || 0);
+      }
+
       const parsedSections = parseQuestionnaireResponses(
-        questionnaire.responses
+        questionnaire.responses,
+        employeeCount
       );
       const stats = getQuestionnaireStats(parsedSections);
 
@@ -1261,7 +1355,7 @@ export class PeaceSealService {
           expiresAt.setDate(
             expiresAt.getDate() + BUSINESS_RULES.CERTIFICATION_DURATION_DAYS
           );
-          payload.expiresAt = expiresAt;
+          payload.expiresAt = expiresAt.getTime(); // Convert to timestamp
         }
       }
     }

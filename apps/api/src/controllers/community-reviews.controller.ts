@@ -12,7 +12,8 @@ export class CommunityReviewsController {
       const db = createDb(c.env.DB);
       const communityReviewsService = new CommunityReviewsService(
         db,
-        c.env.LINKEDIN_CLIENT_ID
+        // c.env.LINKEDIN_CLIENT_ID,
+        c.env.EMAIL_SERVICE
       );
       const user = c.get("user");
 
@@ -55,7 +56,8 @@ export class CommunityReviewsController {
       const db = createDb(c.env.DB);
       const communityReviewsService = new CommunityReviewsService(
         db,
-        c.env.LINKEDIN_CLIENT_ID
+        // c.env.LINKEDIN_CLIENT_ID
+        c.env.EMAIL_SERVICE
       );
       const url = new URL(c.req.url);
       const query = url.searchParams.get("q") || "";
@@ -83,7 +85,8 @@ export class CommunityReviewsController {
       const db = createDb(c.env.DB);
       const communityReviewsService = new CommunityReviewsService(
         db,
-        c.env.LINKEDIN_CLIENT_ID
+        // c.env.LINKEDIN_CLIENT_ID
+        c.env.EMAIL_SERVICE
       );
       const user = c.get("user");
 
@@ -148,7 +151,8 @@ export class CommunityReviewsController {
       const db = createDb(c.env.DB);
       const communityReviewsService = new CommunityReviewsService(
         db,
-        c.env.LINKEDIN_CLIENT_ID
+        // c.env.LINKEDIN_CLIENT_ID
+        c.env.EMAIL_SERVICE
       );
       const token = c.req.param("token");
 
@@ -173,7 +177,8 @@ export class CommunityReviewsController {
       const db = createDb(c.env.DB);
       const communityReviewsService = new CommunityReviewsService(
         db,
-        c.env.LINKEDIN_CLIENT_ID
+        // c.env.LINKEDIN_CLIENT_ID
+        c.env.EMAIL_SERVICE
       );
       const companyId = c.req.param("id");
       const url = new URL(c.req.url);
@@ -201,12 +206,13 @@ export class CommunityReviewsController {
       const db = createDb(c.env.DB);
       const communityReviewsService = new CommunityReviewsService(
         db,
-        c.env.LINKEDIN_CLIENT_ID
+        // c.env.LINKEDIN_CLIENT_ID
+        c.env.EMAIL_SERVICE
       );
       const user = c.get("user");
 
-      // Check permissions
-      if (!["admin", "superAdmin"].includes(user.role)) {
+      // Check permissions - allow advisors to list reviews for evaluation
+      if (!["admin", "superAdmin", "advisor"].includes(user.role)) {
         throw new HTTPException(403, { message: "Insufficient permissions" });
       }
 
@@ -232,7 +238,8 @@ export class CommunityReviewsController {
       const db = createDb(c.env.DB);
       const communityReviewsService = new CommunityReviewsService(
         db,
-        c.env.LINKEDIN_CLIENT_ID
+        // c.env.LINKEDIN_CLIENT_ID,
+        c.env.EMAIL_SERVICE
       );
       const user = c.get("user");
 
@@ -265,13 +272,14 @@ export class CommunityReviewsController {
       const db = createDb(c.env.DB);
       const communityReviewsService = new CommunityReviewsService(
         db,
-        c.env.LINKEDIN_CLIENT_ID
+        // c.env.LINKEDIN_CLIENT_ID
+        c.env.EMAIL_SERVICE
       );
       const reviewId = c.req.param("id");
       const user = c.get("user");
 
-      // Check permissions
-      if (!["admin", "superAdmin"].includes(user.role)) {
+      // Check permissions - allow advisors to view review details for evaluation
+      if (!["admin", "superAdmin", "advisor"].includes(user.role)) {
         throw new HTTPException(403, { message: "Insufficient permissions" });
       }
 
@@ -291,7 +299,8 @@ export class CommunityReviewsController {
       const db = createDb(c.env.DB);
       const communityReviewsService = new CommunityReviewsService(
         db,
-        c.env.LINKEDIN_CLIENT_ID
+        // c.env.LINKEDIN_CLIENT_ID
+        c.env.EMAIL_SERVICE
       );
       const reviewId = c.req.param("id");
       const { action, notes } = await c.req.json().catch(() => ({}));
