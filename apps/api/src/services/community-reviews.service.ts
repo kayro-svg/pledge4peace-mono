@@ -181,7 +181,7 @@ export class CommunityReviewsService {
   }
 
   // Create a review
-  async createReview(data: CreateReviewDTO) {
+  async createReview(data: CreateReviewDTO, baseUrl?: string) {
     const {
       companyId,
       userId, // Can be null for anonymous reviews
@@ -303,7 +303,7 @@ export class CommunityReviewsService {
 
     // Send verification email if needed
     if (verificationStatus === "pending" && reviewerEmail) {
-      await this.sendVerificationEmail(reviewId, reviewerEmail);
+      await this.sendVerificationEmail(reviewId, reviewerEmail, baseUrl);
     }
 
     // Update company aggregates - always recalculate to include all reviews
@@ -369,7 +369,7 @@ export class CommunityReviewsService {
   }
 
   // Send verification email
-  private async sendVerificationEmail(reviewId: string, email: string) {
+  private async sendVerificationEmail(reviewId: string, email: string, baseUrl?: string) {
     const token = crypto.randomUUID();
     const expiresAt = Date.now() + 24 * 60 * 60 * 1000; // 24 hour expiry
 
@@ -381,12 +381,12 @@ export class CommunityReviewsService {
       createdAt: now(),
     });
 
-    const baseUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+    const frontendUrl = baseUrl || process.env.FRONTEND_URL || "http://localhost:3000";
 
     await this.emailService.sendCommunityReviewVerificationEmail(
       email,
       token,
-      baseUrl
+      frontendUrl
     );
   }
 

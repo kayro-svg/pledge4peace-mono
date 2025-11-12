@@ -267,4 +267,32 @@ By accepting this policy, I, as the CEO or an authorized representative of this 
       signatoryTitle: true,
     },
   },
+  template_carbon_footprint_disclosure_or_sustainability_plan: {
+    title: "Carbon Footprint Disclosure or Sustainability Plan",
+    body: `# Sustainable Sourcing & Waste Management Policy
+As an organization, we recognize that protecting the environment is an essential part of building peace and justice for future generations. Our business practices must minimize harm, support sustainable development, and ensure that our operations contribute positively to people and the planet.
+
+## Our Commitments
+
+1. Sustainable Sourcing
+- We will prioritize suppliers and materials that align with ethical, conflict-free, and environmentally responsible standards.
+- We will actively avoid sourcing from industries linked to conflict, exploitation, or environmental destruction.
+- Whenever possible, we will choose local, fair-trade, or certified sustainable products and partners.
+
+2. Waste Reduction & Management
+- We will reduce waste at its source by adopting efficient processes, minimizing single-use items, and encouraging reuse and recycling.
+- We will dispose of waste responsibly, following local regulations and environmental guidelines.
+- We will seek opportunities to repurpose materials and reduce our carbon footprint through smart resource use.
+
+3. Continuous Improvement
+- We will regularly review our sourcing and waste practices to improve sustainability.
+- We will encourage employees, partners, and suppliers to share ideas that further reduce waste and improve environmental responsibility.
+
+By accepting this policy, I, the CEO/Owner or authorized representative of this organization, confirm that we will implement this Sustainable Sourcing & Waste Management Policy into our business moving forward.`,
+    signatureFields: {
+      signatoryName: true,
+      signatoryTitle: true,
+      onBehalfOf: true,
+    },
+  },
 };

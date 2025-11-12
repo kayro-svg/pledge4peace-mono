@@ -20,6 +20,9 @@ peaceSeal.get("/directory/:slug", (c) => controller.getCompanyBySlug(c));
 peaceSeal.post("/companies/:companyId/report", (c) =>
   controller.submitPublicReport(c)
 );
+peaceSeal.post("/reports/upload-document", (c) =>
+  controller.uploadReportDocument(c)
+);
 peaceSeal.get("/reports/reasons", (c) => controller.getReportReasons(c));
 
 // Community reviews routes (authentication required)
@@ -101,6 +104,9 @@ peaceSeal.post("/applications/:id/documents", (c) =>
 peaceSeal.post("/applications/:id/request-quote", (c) =>
   controller.requestQuote(c)
 );
+peaceSeal.post("/applications/:companyId/survey-invitations", (c) =>
+  controller.sendSurveyInvitations(c)
+);
 
 // Document management routes (authentication required)
 peaceSeal.use("/documents/*", authMiddleware);
@@ -116,6 +122,9 @@ peaceSeal.get("/admin/companies/:id", (c) => controller.adminGetCompany(c));
 peaceSeal.post("/admin/companies/:id/update", (c) => controller.adminUpdate(c));
 peaceSeal.post("/admin/companies/:id/confirm-payment", (c) =>
   controller.adminConfirmPayment(c)
+);
+peaceSeal.post("/admin/companies/:id/set-quote", (c) =>
+  controller.setQuoteAmount(c)
 );
 peaceSeal.post("/admin/companies/:id/score", (c) =>
   controller.advisorScoreQuestionnaire(c)

@@ -281,11 +281,26 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         label: "Employee Satisfaction Survey Summary (Optional)",
         type: "file",
         required: false,
-        fileTypes: [".pdf", ".doc", ".docx"],
-        maxFileSize: 10 * 1024 * 1024, // 10MB
-        helpText: "Upload survey summary or use our survey tool",
+        helpText:
+          "Upload survey summary or send survey invitations to employees",
         tooltipText:
-          "This survey helps your employees share honest, anonymous feedback about their workplace experience. It measures satisfaction, fairness, and culture, and sends them a secure link to rate your organization’s Peace Seal profile.",
+          "This survey helps your employees share honest, anonymous feedback about their workplace experience. It measures satisfaction, fairness, and culture, and sends them a secure link to rate your organization's Peace Seal profile.",
+        inputModes: [
+          {
+            kind: "file",
+            label: "Upload File",
+            fileTypes: [".pdf", ".doc", ".docx"],
+            maxFileSize: 10 * 1024 * 1024, // 10MB
+            helpText: "Upload a survey summary document",
+          },
+          {
+            kind: "survey",
+            label: "Send Survey Invitations",
+            helpText:
+              "Send email invitations to employees to complete the survey",
+          },
+        ],
+        completionMode: "any",
       },
     ],
   },
@@ -732,11 +747,26 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         label: "Employee Satisfaction Survey Summary (Optional)",
         type: "file",
         required: false,
-        fileTypes: [".pdf", ".doc", ".docx"],
-        maxFileSize: 10 * 1024 * 1024, // 10MB
-        helpText: "Upload survey summary or use our survey tool",
+        helpText:
+          "Upload survey summary or send survey invitations to employees",
         tooltipText:
-          "This survey helps your employees share honest, anonymous feedback about their workplace experience. It measures satisfaction, fairness, and culture, and sends them a secure link to rate your organization’s Peace Seal profile.",
+          "This survey helps your employees share honest, anonymous feedback about their workplace experience. It measures satisfaction, fairness, and culture, and sends them a secure link to rate your organization's Peace Seal profile.",
+        inputModes: [
+          {
+            kind: "file",
+            label: "Upload File",
+            fileTypes: [".pdf", ".doc", ".docx"],
+            maxFileSize: 10 * 1024 * 1024, // 10MB
+            helpText: "Upload a survey summary document",
+          },
+          {
+            kind: "survey",
+            label: "Send Survey Invitations",
+            helpText:
+              "Send email invitations to employees to complete the survey",
+          },
+        ],
+        completionMode: "any",
       },
     ],
   },
@@ -1213,11 +1243,26 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         label: "Employee Satisfaction Survey Summary (Optional)",
         type: "file",
         required: false,
-        fileTypes: [".pdf", ".doc", ".docx"],
-        maxFileSize: 10 * 1024 * 1024, // 10MB
-        helpText: "Upload survey summary or use our survey tool",
+        helpText:
+          "Upload survey summary or send survey invitations to employees",
         tooltipText:
-          "This survey helps your employees share honest, anonymous feedback about their workplace experience. It measures satisfaction, fairness, and culture, and sends them a secure link to rate your organization’s Peace Seal profile.",
+          "This survey helps your employees share honest, anonymous feedback about their workplace experience. It measures satisfaction, fairness, and culture, and sends them a secure link to rate your organization's Peace Seal profile.",
+        inputModes: [
+          {
+            kind: "file",
+            label: "Upload File",
+            fileTypes: [".pdf", ".doc", ".docx"],
+            maxFileSize: 10 * 1024 * 1024, // 10MB
+            helpText: "Upload a survey summary document",
+          },
+          {
+            kind: "survey",
+            label: "Send Survey Invitations",
+            helpText:
+              "Send email invitations to employees to complete the survey",
+          },
+        ],
+        completionMode: "any",
       },
     ],
   },
@@ -1285,6 +1330,9 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 15 * 1024 * 1024, // 15MB
         helpText: "Upload your disclosure or sign our sustainability plan",
+        hasTemplate: true,
+        templateId: "template_sustainable_sourcing",
+        templateType: "simple",
         tooltipText:
           "By providing this information, your organization commits to sourcing materials responsibly and managing waste sustainably. This includes using ethical, conflict-free suppliers, reducing single-use items, promoting recycling, and minimizing environmental harm.",
       },

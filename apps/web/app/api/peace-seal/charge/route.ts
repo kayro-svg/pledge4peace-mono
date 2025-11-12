@@ -19,13 +19,32 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate amount for Peace Seal certification
     const numAmount = parseFloat(amount);
-    if (isNaN(numAmount) || numAmount < 99 || numAmount > 499) {
+    if (isNaN(numAmount) || numAmount <= 0) {
       return NextResponse.json(
-        { error: "Peace Seal certification fee must be $99 or $499" },
+        { error: "Invalid amount" },
         { status: 400 }
       );
+    }
+
+    // Check if company has a quote - if so, allow any amount >= quote amount
+    // Note: We can't use getUserCompany here as it requires auth context
+    // Instead, we'll validate the amount on the backend during payment confirmation
+    // For now, allow amounts > 499 if provided (quote payments)
+    let isQuotePayment = false;
+    if (numAmount > 499) {
+      isQuotePayment = true;
+      // Backend will validate the quote amount matches during confirmation
+    }
+
+    // Standard validation for non-quote payments
+    if (!isQuotePayment) {
+      if (numAmount < 99 || numAmount > 499) {
+        return NextResponse.json(
+          { error: "Peace Seal certification fee must be $99 or $499" },
+          { status: 400 }
+        );
+      }
     }
 
     // If creating subscription for annual renewals

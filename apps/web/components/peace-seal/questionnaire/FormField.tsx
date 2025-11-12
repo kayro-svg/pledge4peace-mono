@@ -37,6 +37,7 @@ import {
 } from "@/types/questionnaire";
 import AgreementModal from "./AgreementModal";
 import BeneficialOwnershipModal from "./BeneficialOwnershipModal";
+import EmployeeSurveyModal from "./EmployeeSurveyModal";
 import { useEffect } from "react";
 import { getTemplates } from "@/lib/api/peace-seal";
 import {
@@ -77,6 +78,8 @@ interface FormFieldProps {
   error?: string;
   disabled?: boolean;
   companyId?: string;
+  companyName?: string;
+  questionnaire?: any; // Full questionnaire object to access company info
 }
 
 // Hook to generate Learn More URL
@@ -580,8 +583,17 @@ const MultiInputField = ({
   error,
   disabled,
   companyId,
+  companyName,
+  questionnaire,
 }: FormFieldProps) => {
   const [selectedMode, setSelectedMode] = useState<string | null>(null);
+  const [showSurveyModal, setShowSurveyModal] = useState(false);
+
+  // Get company name from questionnaire if not provided
+  const resolvedCompanyName =
+    companyName ||
+    (questionnaire?.companyInformation?.organizationName as string) ||
+    "your company";
 
   // Normalize value to CompositeValue
   const compositeValue: CompositeValue = (() => {
@@ -593,7 +605,8 @@ const MultiInputField = ({
       ("text" in value ||
         "url" in value ||
         "file" in value ||
-        "agreement" in value)
+        "agreement" in value ||
+        "survey" in value)
     ) {
       return value as CompositeValue;
     }
@@ -626,6 +639,7 @@ const MultiInputField = ({
         if (mode.kind === "url") return !!compositeValue.url;
         if (mode.kind === "file")
           return !!compositeValue.file || !!compositeValue.agreement;
+        if (mode.kind === "survey") return !!compositeValue.survey;
         return false;
       });
       setSelectedMode(modeWithValue?.kind || field.inputModes[0].kind);
@@ -634,10 +648,21 @@ const MultiInputField = ({
 
   const updateCompositeValue = useCallback(
     (updates: Partial<CompositeValue>) => {
-      onChange({
-        ...compositeValue,
-        ...updates,
-      });
+      // When switching modes, clear the other mode's value
+      const newValue = { ...compositeValue, ...updates };
+      
+      // If setting file/agreement, clear survey
+      if (updates.file !== undefined || updates.agreement !== undefined) {
+        newValue.survey = undefined;
+      }
+      
+      // If setting survey, clear file/agreement
+      if (updates.survey !== undefined) {
+        newValue.file = undefined;
+        newValue.agreement = undefined;
+      }
+      
+      onChange(newValue);
     },
     [compositeValue, onChange]
   );
@@ -668,7 +693,8 @@ const MultiInputField = ({
               !!compositeValue.text) ||
             (mode.kind === "url" && !!compositeValue.url) ||
             (mode.kind === "file" &&
-              (!!compositeValue.file || !!compositeValue.agreement));
+              (!!compositeValue.file || !!compositeValue.agreement)) ||
+            (mode.kind === "survey" && !!compositeValue.survey);
 
           return (
             <button
@@ -774,6 +800,97 @@ const MultiInputField = ({
               disabled={disabled}
               companyId={companyId}
             />
+          ) : currentMode.kind === "survey" ? (
+            <div className="space-y-3">
+              {currentMode.helpText && (
+                <p className="text-sm text-gray-600">{currentMode.helpText}</p>
+              )}
+              {compositeValue.survey ? (
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle2 className="h-5 w-5 text-green-500" />
+                          <p className="font-medium text-sm">
+                            Survey Invitations Sent
+                          </p>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-3">
+                          Sent on{" "}
+                          {new Date(
+                            compositeValue.survey.invitedAt
+                          ).toLocaleDateString()}
+                        </p>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">
+                            {compositeValue.survey.invitedCount} employee
+                            {compositeValue.survey.invitedCount !== 1
+                              ? "s"
+                              : ""}{" "}
+                            invited
+                          </p>
+                          <div className="max-h-32 overflow-y-auto border rounded p-2 bg-gray-50">
+                            {compositeValue.survey.invitations.map(
+                              (invitation, idx) => (
+                                <div
+                                  key={idx}
+                                  className="text-xs text-gray-600 py-1"
+                                >
+                                  {invitation.name} ({invitation.email})
+                                </div>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {!disabled && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            updateCompositeValue({ survey: undefined });
+                          }}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
+                  <Button
+                    type="button"
+                    onClick={() => setShowSurveyModal(true)}
+                    disabled={disabled || !companyId}
+                    className="bg-[#548281] hover:bg-[#2F4858]"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Send Survey Invitations
+                  </Button>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Send email invitations to employees to complete the survey
+                  </p>
+                </div>
+              )}
+              {companyId && (
+                <EmployeeSurveyModal
+                  open={showSurveyModal}
+                  onOpenChange={setShowSurveyModal}
+                  companyId={companyId}
+                  companyName={resolvedCompanyName}
+                  onSuccess={(invitationData) => {
+                    updateCompositeValue({
+                      survey: invitationData,
+                      file: undefined, // Clear file if survey is selected
+                    });
+                    setShowSurveyModal(false);
+                  }}
+                />
+              )}
+            </div>
           ) : null}
         </div>
       )}

@@ -71,7 +71,7 @@
           "bucket_name": "dev-p4p-cdn",
           "binding": "BUCKET",
           "preview_bucket_name": "dev-p4p-cdn",
-          "remote": true,
+          // "remote": true,
         },
       ],
     },

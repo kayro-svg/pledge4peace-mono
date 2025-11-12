@@ -6,6 +6,7 @@ import { DocumentService } from "../services/document.service";
 import { ReportsService } from "../services/reports.service";
 import { DocumentsController } from "./documents.controller";
 import { EmailService } from "../services/email.service";
+import { NotificationsService } from "../services/notifications.service";
 import {
   peaceSealCompanies,
   peaceSealQuestionnaires,
@@ -13,6 +14,7 @@ import {
 import { users } from "../db/schema/users";
 import { eq } from "drizzle-orm";
 import { logger } from "../utils/logger";
+import { AGREEMENT_TEXTS } from "../config/agreement-templates";
 
 export class PeaceSealController {
   // Public directory list with search/filter
@@ -152,17 +154,193 @@ export class PeaceSealController {
       );
 
       const authService = c.get("authService");
+      const baseUrl = c.env.BASE_URL || "https://www.pledge4peace.org";
 
+      // Send email notification to admins
       await authService.emailService.sendQuoteRequestEmailtoAdmin(
         result.name,
         employeeCount
       );
+
+      // Send in-app notifications to all advisors and admins
+      try {
+        const advisorsAndAdmins = await peaceSealService.getAdvisorsAndAdmins();
+        const notificationsService = new NotificationsService(db, c.env.KV);
+
+        await Promise.all(
+          advisorsAndAdmins.map((user) =>
+            notificationsService.create({
+              userId: user.id,
+              type: "quote_requested",
+              title: `New Quote Request: ${result.name}`,
+              body: `${result.name} has requested a custom quote for Peace Seal certification (50+ employees).`,
+              href: `/dashboard/peace-seal`,
+              meta: {
+                companyId: applicationId,
+                companyName: result.name,
+                employeeCount,
+              },
+              priority: "normal",
+            })
+          )
+        );
+
+        logger.log(
+          `Sent quote request notifications to ${advisorsAndAdmins.length} advisors/admins`
+        );
+      } catch (notificationError) {
+        // Don't fail the request if notifications fail
+        logger.error(
+          "Failed to send quote request notifications:",
+          notificationError
+        );
+      }
 
       return c.json(result);
     } catch (error) {
       if (error instanceof HTTPException) throw error;
       logger.error("Error requesting quote:", error);
       throw new HTTPException(500, { message: "Error requesting quote" });
+    }
+  };
+
+  // Applicant: send employee survey invitations
+  sendSurveyInvitations = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("companyId");
+      const { employees } = await c.req.json().catch(() => ({}));
+      const user = c.get("user");
+
+      if (!employees || !Array.isArray(employees) || employees.length === 0) {
+        throw new HTTPException(400, {
+          message: "employees array is required and must not be empty",
+        });
+      }
+
+      // Validate employee data
+      for (const employee of employees) {
+        if (!employee.name || !employee.email) {
+          throw new HTTPException(400, {
+            message: "Each employee must have name and email",
+          });
+        }
+        // Basic email validation
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employee.email)) {
+          throw new HTTPException(400, {
+            message: `Invalid email format: ${employee.email}`,
+          });
+        }
+      }
+
+      // Verify user owns the company or is admin
+      const company = await db
+        .select()
+        .from(peaceSealCompanies)
+        .where(eq(peaceSealCompanies.id, companyId))
+        .then((rows) => rows[0]);
+
+      if (!company) {
+        throw new HTTPException(404, { message: "Company not found" });
+      }
+
+      if (
+        company.createdByUserId !== user.id &&
+        !["admin", "superAdmin", "advisor"].includes(user.role)
+      ) {
+        throw new HTTPException(403, {
+          message:
+            "You do not have permission to send invitations for this company",
+        });
+      }
+
+      // Get email service
+      const authService = c.get("authService");
+      if (!authService || !authService.emailService) {
+        logger.error("Email service not available in authService");
+        throw new HTTPException(500, {
+          message: "Email service not available",
+        });
+      }
+      const emailService = authService.emailService;
+      const baseUrl = c.env.BASE_URL || "https://www.pledge4peace.org";
+
+      // Send emails to all employees
+      const emailPromises = employees.map(
+        async (employee: { name: string; email: string }) => {
+          try {
+            await emailService.sendEmployeeSurveyInvitationEmail(
+              employee.email,
+              employee.name,
+              company.name,
+              companyId,
+              baseUrl
+            );
+            // Success - Brevo returns JSON on success
+            return {
+              success: true,
+              email: employee.email,
+            };
+          } catch (error: any) {
+            logger.error(
+              `Failed to send invitation to ${employee.email}:`,
+              error
+            );
+            // Don't throw - continue with other emails
+            return {
+              success: false,
+              email: employee.email,
+              error: error.message || "Unknown error",
+            };
+          }
+        }
+      );
+
+      const results = await Promise.all(emailPromises);
+      const failed = results.filter((r) => !r.success);
+      const successCount = results.length - failed.length;
+
+      if (successCount === 0) {
+        const errorMessages = failed
+          .map((f) => `${f.email}: ${f.error}`)
+          .join("; ");
+        logger.error(
+          `Failed to send any survey invitations for company ${companyId}. Errors: ${errorMessages}`
+        );
+        throw new HTTPException(500, {
+          message:
+            failed.length > 0
+              ? `Failed to send invitations: ${failed[0].error}`
+              : "Failed to send any invitations. Please try again later.",
+        });
+      }
+
+      const invitedAt = new Date().toISOString();
+
+      logger.log(
+        `Sent ${successCount} survey invitations for company ${companyId}`
+      );
+
+      return c.json({
+        success: true,
+        invitedAt,
+        invitedCount: successCount,
+        invitations: employees.map((e: { name: string; email: string }) => ({
+          name: e.name,
+          email: e.email,
+        })),
+        failedCount: failed.length,
+        ...(failed.length > 0 && {
+          failed: failed.map((f) => ({ email: f.email, error: f.error })),
+        }),
+      });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error sending survey invitations:", error);
+      throw new HTTPException(500, {
+        message: "Error sending survey invitations",
+      });
     }
   };
 
@@ -414,6 +592,86 @@ export class PeaceSealController {
     }
   };
 
+  setQuoteAmount = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("id");
+      const { amountCents, notes } = await c.req.json().catch(() => ({}));
+      const user = c.get("user");
+
+      // Check permissions - only admin, advisor, and superAdmin can set quotes
+      if (!["admin", "advisor", "superAdmin"].includes(user.role)) {
+        throw new HTTPException(403, { message: "Insufficient permissions" });
+      }
+
+      if (!amountCents || typeof amountCents !== "number" || amountCents <= 0) {
+        throw new HTTPException(400, {
+          message: "amountCents is required and must be a positive number",
+        });
+      }
+
+      const result = await peaceSealService.setQuoteAmount(
+        companyId,
+        amountCents,
+        notes || null,
+        user.id
+      );
+
+      const authService = c.get("authService");
+      const baseUrl = c.env.BASE_URL || "https://www.pledge4peace.org";
+
+      // Send email and notification to company owner
+      if (result.ownerUser && result.ownerUser.email) {
+        try {
+          const paymentUrl = `${baseUrl}/peace-seal/pay-quote?companyId=${companyId}&amount=${amountCents}`;
+
+          // Send email notification
+          if (Number(result.ownerUser.notifyEmail ?? 1) !== 0) {
+            await authService.emailService.sendQuoteAmountEmail(
+              result.ownerUser.email,
+              result.company.name,
+              amountCents,
+              paymentUrl
+            );
+          }
+
+          // Send in-app notification
+          const notificationsService = new NotificationsService(db, c.env.KV);
+          await notificationsService.create({
+            userId: result.ownerUser.id,
+            type: "quote_available",
+            title: `Your Peace Seal Quote is Ready`,
+            body: `A custom quote of $${(amountCents / 100).toFixed(2)} has been prepared for ${result.company.name}. Click to proceed with payment.`,
+            href: `/peace-seal/pay-quote?companyId=${companyId}&amount=${amountCents}`,
+            meta: {
+              companyId,
+              companyName: result.company.name,
+              amountCents,
+            },
+            priority: "high",
+          });
+
+          logger.log(
+            `Quote amount set and notifications sent to company owner for company ${companyId}`
+          );
+        } catch (notificationError) {
+          // Don't fail the request if notifications fail
+          logger.error(
+            "Failed to send quote amount notifications:",
+            notificationError
+          );
+        }
+      }
+
+      return c.json({ success: true, company: result.company });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error setting quote amount:", error);
+      throw new HTTPException(500, { message: "Error setting quote amount" });
+    }
+  };
+
   // Admin: confirm manual payment for RFQ companies
   adminConfirmPayment = async (c: Context) => {
     try {
@@ -591,6 +849,57 @@ export class PeaceSealController {
       if (error instanceof HTTPException) throw error;
       logger.error("Error submitting report:", error);
       throw new HTTPException(500, { message: "Error submitting report" });
+    }
+  };
+
+  // Public: upload document for report evidence (no auth required)
+  uploadReportDocument = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const documentsController = new DocumentsController();
+
+      // Get form data
+      const formData = await c.req.formData();
+      const file = formData.get("file") as File;
+      const companyId = formData.get("companyId") as string;
+
+      // Validate required fields
+      if (!file || !companyId) {
+        throw new HTTPException(400, {
+          message: "Missing required fields: file, companyId",
+        });
+      }
+
+      // Validate file
+      if (file.size === 0) {
+        throw new HTTPException(400, {
+          message: "Empty file not allowed",
+        });
+      }
+
+      // Set a temporary user ID for report documents
+      // This allows the document upload to work without authentication
+      // The uploadedByUserId will be set to null in the documents controller for anonymous uploads
+      c.set("user", {
+        id: "report-user",
+        email: "report@example.com",
+        name: "Report User",
+        role: "user",
+      });
+
+      // Set required fields for documents controller
+      formData.set("documentType", "report_evidence");
+      formData.set("sectionId", "report");
+      formData.set("fieldId", "evidence");
+
+      // Delegate to documents controller
+      return await documentsController.uploadDocument(c);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error uploading report document:", error);
+      throw new HTTPException(500, {
+        message: "Error uploading report document",
+      });
     }
   };
 
@@ -866,8 +1175,8 @@ export class PeaceSealController {
       try {
         const emailService = new EmailService({
           apiKey: c.env.BREVO_API_KEY as string,
-          fromEmail: c.env.BREVO_FROM_EMAIL as string,
-          fromName: c.env.BREVO_FROM_NAME as string,
+          fromEmail: c.env.FROM_EMAIL as string,
+          fromName: c.env.FROM_NAME as string,
         });
 
         const baseUrl = c.env.BASE_URL || "https://www.pledge4peace.org";
@@ -1152,6 +1461,118 @@ export class PeaceSealController {
         userId: user.id,
         acceptanceData,
       });
+
+      // Send emails to beneficial ownership owners if this is a beneficial ownership agreement
+      if (templateId === "template_beneficial_ownership" && acceptanceData) {
+        try {
+          // Validate environment variables
+          const brevoApiKey = c.env.BREVO_API_KEY as string;
+          const brevoFromEmail = c.env.FROM_EMAIL as string;
+          const brevoFromName = (c.env.FROM_NAME as string) || "Pledge4Peace";
+
+          if (!brevoApiKey || !brevoFromEmail) {
+            logger.error(
+              "Missing Brevo configuration. Cannot send beneficial ownership emails.",
+              {
+                hasApiKey: !!brevoApiKey,
+                hasFromEmail: !!brevoFromEmail,
+              }
+            );
+            // Don't throw - agreement acceptance should still succeed
+          } else {
+            const emailService = new EmailService({
+              apiKey: brevoApiKey,
+              fromEmail: brevoFromEmail,
+              fromName: brevoFromName,
+            });
+
+            // Parse acceptance data to get owners
+            const owners = acceptanceData.owners || [];
+            const representativeName = user.name || "your representative";
+            const representativeEmail = user.email?.toLowerCase().trim();
+            // acceptedAt is a timestamp in milliseconds
+            const signedDate = new Date(result.acceptedAt);
+
+            // Get agreement text
+            const agreementText = AGREEMENT_TEXTS[templateId];
+            if (!agreementText) {
+              logger.error(
+                "Agreement text not found for template:",
+                templateId
+              );
+            } else {
+              // Filter owners: exclude the representative and only include those with valid emails
+              const ownersToNotify = owners.filter(
+                (owner: { name?: string; email?: string }) => {
+                  if (!owner.email || !owner.email.trim()) {
+                    return false;
+                  }
+                  const ownerEmail = owner.email.toLowerCase().trim();
+                  // Exclude the representative's email
+                  if (
+                    representativeEmail &&
+                    ownerEmail === representativeEmail
+                  ) {
+                    logger.log("Skipping email to representative:", ownerEmail);
+                    return false;
+                  }
+                  return true;
+                }
+              );
+
+              logger.log("Preparing to send beneficial ownership emails:", {
+                totalOwners: owners.length,
+                ownersToNotify: ownersToNotify.length,
+                representativeEmail,
+              });
+
+              // Send email to each owner (excluding the representative)
+              const emailPromises = ownersToNotify.map(
+                (owner: { name: string; email: string }) =>
+                  emailService
+                    .sendBeneficialOwnershipAgreementEmail(
+                      owner.email.trim(),
+                      owner.name || "Owner",
+                      representativeName,
+                      signedDate,
+                      agreementText.body
+                    )
+                    .then(() => {
+                      logger.log(
+                        "Successfully sent beneficial ownership email to:",
+                        owner.email
+                      );
+                    })
+                    .catch((emailError) => {
+                      logger.error(
+                        "Failed to send beneficial ownership email to:",
+                        owner.email,
+                        emailError
+                      );
+                      // Don't throw - we want to continue even if some emails fail
+                    })
+              );
+
+              // Wait for all emails to be sent (or fail gracefully)
+              await Promise.allSettled(emailPromises);
+
+              logger.log("Beneficial ownership emails sent:", {
+                companyId,
+                totalOwners: owners.length,
+                ownersToNotify: ownersToNotify.length,
+                emailsSent: emailPromises.length,
+                representativeEmail,
+              });
+            }
+          }
+        } catch (emailError) {
+          // Log error but don't fail the agreement acceptance
+          logger.error(
+            "Error sending beneficial ownership emails:",
+            emailError
+          );
+        }
+      }
 
       return c.json(result);
     } catch (error) {

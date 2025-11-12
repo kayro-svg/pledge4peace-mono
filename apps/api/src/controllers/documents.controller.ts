@@ -120,7 +120,7 @@ export class DocumentsController {
         mimeType: file.type,
         sectionId,
         fieldId,
-        uploadedByUserId: user.id === "community-review-user" ? null : user.id, // Null for anonymous community reviews
+        uploadedByUserId: (user.id === "community-review-user" || user.id === "report-user") ? null : user.id, // Null for anonymous uploads
         createdAt: Date.now(),
       });
 

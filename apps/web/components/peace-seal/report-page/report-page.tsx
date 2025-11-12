@@ -22,6 +22,7 @@ import {
   type ReportData,
   type ReportReasons,
 } from "@/lib/api/peace-seal";
+import EvidenceInput from "./EvidenceInput";
 
 type Props = {
   locale: string;
@@ -228,21 +229,15 @@ export default function ReportClient({
                 </p>
               </div>
 
-              <div>
-                <Label htmlFor="evidence">Supporting Evidence (Optional)</Label>
-                <Textarea
-                  id="evidence"
+              {company?.id && (
+                <EvidenceInput
                   value={form.evidence || ""}
-                  onChange={(e) =>
-                    setForm((p) => ({ ...p, evidence: e.target.value }))
+                  onChange={(value) =>
+                    setForm((p) => ({ ...p, evidence: value }))
                   }
-                  placeholder="Links to articles, documents, or other evidence..."
-                  rows={3}
+                  companyId={company.id}
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  URLs or document references.
-                </p>
-              </div>
+              )}
             </div>
 
             {/* Submit Button */}

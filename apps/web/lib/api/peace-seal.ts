@@ -3,6 +3,7 @@ import type {
   AgreementAcceptance,
   TemplateResource,
   AcceptAgreementRequest,
+  UploadResponse,
 } from "@/types/questionnaire";
 
 export type DirectoryItem = {
@@ -263,6 +264,19 @@ export async function adminUpdateCompany(
   );
 }
 
+export async function setQuoteAmount(
+  id: string,
+  payload: {
+    amountCents: number;
+    notes?: string;
+  }
+) {
+  return apiClient.post<{ success: true; company: Company }>(
+    `/peace-seal/admin/companies/${id}/set-quote`,
+    payload
+  );
+}
+
 export async function adminConfirmPayment(
   id: string,
   payload: {
@@ -360,6 +374,59 @@ export async function submitPublicReport(data: ReportData) {
   } catch (error) {
     console.error("Error submitting report:", error);
     throw error;
+  }
+}
+
+// Upload document for report evidence (no auth required)
+export async function uploadReportDocument(
+  file: File,
+  companyId: string
+): Promise<UploadResponse> {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("companyId", companyId);
+
+    // Use fetch directly for FormData uploads (apiClient forces JSON headers)
+    const apiUrl =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787/api";
+    const response = await fetch(
+      `${apiUrl}/peace-seal/reports/upload-document`,
+      {
+        method: "POST",
+        body: formData,
+        // No authentication headers needed for public report uploads
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let errorMessage = "Upload failed";
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorMessage;
+      } catch {
+        errorMessage = errorText || errorMessage;
+      }
+      return {
+        success: false,
+        error: errorMessage,
+      };
+    }
+
+    const result = await response.json();
+    return {
+      success: true,
+      fileId: result.documentId,
+      fileUrl: result.fileUrl,
+      fileName: result.fileName,
+    };
+  } catch (error: any) {
+    console.error("Error uploading report document:", error);
+    return {
+      success: false,
+      error: error?.message || "Upload failed",
+    };
   }
 }
 
@@ -936,4 +1003,34 @@ export async function getTemplates(filters?: {
   return apiClient.get<{ templates: TemplateResource[] }>(
     `/peace-seal/templates?${qs}`
   );
+}
+
+// Employee Survey Invitations
+export async function sendEmployeeSurveyInvitations(
+  companyId: string,
+  employees: Array<{ name: string; email: string }>
+) {
+  try {
+    const response = await apiClient.post<{
+      success: boolean;
+      invitedAt: string;
+      invitedCount: number;
+      invitations: Array<{ name: string; email: string }>;
+      failedCount?: number;
+      failed?: Array<{ email: string; error: string }>;
+      error?: string;
+    }>(`/peace-seal/applications/${companyId}/survey-invitations`, {
+      employees,
+    });
+    return response;
+  } catch (error: any) {
+    console.error("Error sending survey invitations:", error);
+    return {
+      success: false,
+      error: error?.message || "Failed to send survey invitations",
+      invitedAt: new Date().toISOString(),
+      invitedCount: 0,
+      invitations: [],
+    };
+  }
 }

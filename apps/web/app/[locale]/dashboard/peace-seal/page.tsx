@@ -7,6 +7,7 @@ import {
   adminGetCompany,
   adminUpdateCompany,
   adminConfirmPayment,
+  setQuoteAmount,
   advisorScoreQuestionnaire,
   getUserCompany,
   getCompanyQuestionnaire,
@@ -57,6 +58,7 @@ import {
   ExternalLink,
   Flag,
   MessageSquare,
+  DollarSign,
 } from "lucide-react";
 import { ReviewDetailsModal } from "@/components/peace-seal/review-details-modal";
 import { EvaluationModal } from "@/components/peace-seal/evaluation-modal";
@@ -130,7 +132,10 @@ type QuestionnaireData = {
   responses?: string;
 };
 
-function getStatusIcon(status: string) {
+function getStatusIcon(status: string, rfqStatus?: string | null) {
+  if (rfqStatus === "requested") {
+    return <Clock className="w-4 h-4 text-orange-600" />;
+  }
   switch (status) {
     case "verified":
       return <CheckCircle className="w-4 h-4 text-green-600" />;
@@ -147,7 +152,10 @@ function getStatusIcon(status: string) {
   }
 }
 
-function getStatusLabel(status: string): string {
+function getStatusLabel(status: string, rfqStatus?: string | null): string {
+  if (rfqStatus === "requested") {
+    return "Pending Quote";
+  }
   switch (status) {
     case "verified":
       return "Verified";
@@ -165,7 +173,10 @@ function getStatusLabel(status: string): string {
   }
 }
 
-function getStatusColor(status: string): string {
+function getStatusColor(status: string, rfqStatus?: string | null): string {
+  if (rfqStatus === "requested") {
+    return "bg-orange-50 text-orange-700 border-orange-200";
+  }
   switch (status) {
     case "verified":
       return "bg-green-50 text-green-700 border-green-200";
@@ -381,6 +392,9 @@ export default function PeaceSealDashboard() {
   const [updating, setUpdating] = useState(false);
   const [scoring, setScoring] = useState(false);
   const [manualScore, setManualScore] = useState<string>("");
+  const [quoteAmountCents, setQuoteAmountCents] = useState<number | null>(null);
+  const [quoteNotes, setQuoteNotes] = useState<string>("");
+  const [settingQuote, setSettingQuote] = useState(false);
 
   // Reports state
   const [companyReports, setCompanyReports] = useState<Report[]>([]);
@@ -649,6 +663,13 @@ export default function PeaceSealDashboard() {
           : ""
       );
 
+      // Prefill quote amount if already quoted
+      if (result.company.rfqQuotedAmountCents) {
+        setQuoteAmountCents(result.company.rfqQuotedAmountCents);
+      } else {
+        setQuoteAmountCents(null);
+      }
+
       // Load reports, issues, and reviews for this company
       await loadCompanyReports(companyId);
       await loadCompanyIssues(companyId);
@@ -662,6 +683,9 @@ export default function PeaceSealDashboard() {
     try {
       setLoadingReports(true);
       const reportsData = await getReports({ companyId });
+
+      console.log("Reports data:", reportsData);
+
       setCompanyReports(reportsData.items);
     } catch (error) {
       logger.error("Failed to load company reports:", error);
@@ -1411,11 +1435,17 @@ export default function PeaceSealDashboard() {
                               </td>
                               <td className="py-3">
                                 <Badge
-                                  className={`${getStatusColor(company.status)} border`}
+                                  className={`${getStatusColor(company.status, company.rfqStatus)} border`}
                                 >
                                   <div className="flex items-center gap-1">
-                                    {getStatusIcon(company.status)}
-                                    {getStatusLabel(company.status)}
+                                    {getStatusIcon(
+                                      company.status,
+                                      company.rfqStatus
+                                    )}
+                                    {getStatusLabel(
+                                      company.status,
+                                      company.rfqStatus
+                                    )}
                                   </div>
                                 </Badge>
                               </td>
@@ -1861,7 +1891,41 @@ export default function PeaceSealDashboard() {
                                                           <strong>
                                                             Evidence:
                                                           </strong>{" "}
-                                                          {report.evidence}
+                                                          {/* {report.evidence} */}
+                                                          {report.evidence?.startsWith(
+                                                            "https://"
+                                                          ) ? (
+                                                            <div className="flex items-center gap-2">
+                                                              <a
+                                                                href={
+                                                                  report.evidence
+                                                                }
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="text-blue-500 underline"
+                                                              >
+                                                                {
+                                                                  report.evidence
+                                                                }
+                                                              </a>
+                                                              <Button
+                                                                size="sm"
+                                                                variant="ghost"
+                                                                onClick={() =>
+                                                                  window.open(
+                                                                    report.evidence,
+                                                                    "_blank"
+                                                                  )
+                                                                }
+                                                                className="hover:bg-transparent"
+                                                              >
+                                                                <ExternalLink className="w-4 h-4 text-blue-500" />
+                                                                View
+                                                              </Button>
+                                                            </div>
+                                                          ) : (
+                                                            report.evidence
+                                                          )}
                                                         </p>
                                                       )}
                                                       <p className="text-xs text-gray-500">
@@ -2588,6 +2652,156 @@ export default function PeaceSealDashboard() {
                                           </div>
                                         )}
 
+                                        {/* Quote Management */}
+                                        {selectedCompany.company.rfqStatus ===
+                                          "requested" && (
+                                          <div className="border-t pt-4 mb-6">
+                                            <h4 className="font-medium mb-4 flex items-center gap-2">
+                                              <DollarSign className="w-5 h-5 text-orange-600" />
+                                              Quote Management
+                                            </h4>
+                                            <div className="p-4 border-2 border-orange-200 rounded-lg bg-orange-50">
+                                              <p className="text-sm text-orange-800 mb-4">
+                                                This company has requested a
+                                                custom quote. Set the quote
+                                                amount below to notify the
+                                                company.
+                                              </p>
+                                              <div className="space-y-4">
+                                                <div>
+                                                  <Label
+                                                    htmlFor="quote-amount"
+                                                    className="text-orange-900 font-medium"
+                                                  >
+                                                    Quote Amount *
+                                                  </Label>
+                                                  <MoneyInput
+                                                    id="quote-amount"
+                                                    valueCents={
+                                                      quoteAmountCents
+                                                    }
+                                                    onChangeCents={(cents) =>
+                                                      setQuoteAmountCents(cents)
+                                                    }
+                                                  />
+                                                  <p className="text-xs text-orange-700 mt-1">
+                                                    Enter the custom quote
+                                                    amount for this company
+                                                  </p>
+                                                </div>
+                                                <div>
+                                                  <Label
+                                                    htmlFor="quote-notes"
+                                                    className="text-orange-900 font-medium"
+                                                  >
+                                                    Notes (Optional)
+                                                  </Label>
+                                                  <Textarea
+                                                    id="quote-notes"
+                                                    value={quoteNotes}
+                                                    onChange={(e) =>
+                                                      setQuoteNotes(
+                                                        e.target.value
+                                                      )
+                                                    }
+                                                    placeholder="Add any notes about this quote..."
+                                                    rows={3}
+                                                    className="bg-white border-orange-300"
+                                                  />
+                                                </div>
+                                                <Button
+                                                  onClick={async () => {
+                                                    if (
+                                                      !quoteAmountCents ||
+                                                      quoteAmountCents <= 0
+                                                    ) {
+                                                      toast({
+                                                        title: "Error",
+                                                        description:
+                                                          "Quote amount is required",
+                                                        variant: "destructive",
+                                                      });
+                                                      return;
+                                                    }
+
+                                                    setSettingQuote(true);
+                                                    try {
+                                                      await setQuoteAmount(
+                                                        selectedCompany.company
+                                                          .id,
+                                                        {
+                                                          amountCents:
+                                                            quoteAmountCents,
+                                                          notes:
+                                                            quoteNotes.trim() ||
+                                                            undefined,
+                                                        }
+                                                      );
+
+                                                      toast({
+                                                        title: "Success",
+                                                        description:
+                                                          "Quote amount set successfully. The company has been notified.",
+                                                      });
+
+                                                      // Refresh company data
+                                                      await loadCompanyDetails(
+                                                        selectedCompany.company
+                                                          .id
+                                                      );
+                                                      setQuoteAmountCents(null);
+                                                      setQuoteNotes("");
+                                                    } catch (error) {
+                                                      logger.error(
+                                                        "Failed to set quote:",
+                                                        error
+                                                      );
+                                                      toast({
+                                                        title: "Error",
+                                                        description:
+                                                          "Failed to set quote amount",
+                                                        variant: "destructive",
+                                                      });
+                                                    } finally {
+                                                      setSettingQuote(false);
+                                                    }
+                                                  }}
+                                                  disabled={settingQuote}
+                                                  className="w-full bg-orange-600 hover:bg-orange-700"
+                                                >
+                                                  {settingQuote
+                                                    ? "Setting Quote..."
+                                                    : "Set Quote Amount"}
+                                                </Button>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {selectedCompany.company.rfqStatus ===
+                                          "quoted" && (
+                                          <div className="border-t pt-4 mb-6">
+                                            <h4 className="font-medium mb-4 flex items-center gap-2">
+                                              <DollarSign className="w-5 h-5 text-green-600" />
+                                              Quote Information
+                                            </h4>
+                                            <div className="p-4 border-2 border-green-200 rounded-lg bg-green-50">
+                                              <p className="text-sm text-green-800 mb-2">
+                                                Quote has been set for this
+                                                company.
+                                              </p>
+                                              <p className="text-lg font-semibold text-green-900">
+                                                Quote Amount: $
+                                                {(
+                                                  (selectedCompany.company
+                                                    .rfqQuotedAmountCents ||
+                                                    0) / 100
+                                                ).toFixed(2)}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        )}
+
                                         {/* Application Review & Management */}
                                         <div className="border-t pt-4">
                                           <h4 className="font-medium mb-4">
@@ -2794,7 +3008,7 @@ export default function PeaceSealDashboard() {
                                             )}
 
                                           {/* Admin Payment Confirmation */}
-                                          {["admin", "superAdmin"].includes(
+                                          {/* {["admin", "superAdmin"].includes(
                                             session?.user?.role || ""
                                           ) &&
                                             selectedCompany.company
@@ -2819,12 +3033,6 @@ export default function PeaceSealDashboard() {
                                                       >
                                                         Amount (cents) *
                                                       </Label>
-                                                      {/* <Input
-                                                    id="payment-amount"
-                                                    type="number"
-                                                    placeholder="e.g., 49900 for $499"
-                                                    className="bg-white border-blue-300"
-                                                  /> */}
                                                       <MoneyInput
                                                         id="payment-amount"
                                                         valueCents={
@@ -2928,7 +3136,7 @@ export default function PeaceSealDashboard() {
                                                   </Button>
                                                 </div>
                                               </div>
-                                            )}
+                                            )} */}
 
                                           {selectedCompany.questionnaire &&
                                             !selectedCompany.questionnaire

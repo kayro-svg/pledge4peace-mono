@@ -236,7 +236,8 @@ export default function QuestionnaireForm({
         ("text" in value ||
           "url" in value ||
           "file" in value ||
-          "agreement" in value)
+          "agreement" in value ||
+          "survey" in value)
       ) {
         const composite = value as any;
         const completionMode = field.completionMode || "any";
@@ -249,6 +250,8 @@ export default function QuestionnaireForm({
             if (mode.kind === "url") return !!composite.url;
             if (mode.kind === "file")
               return !!(composite.file || composite.agreement);
+            if (mode.kind === "survey")
+              return !!(composite.survey && composite.survey.invitedCount > 0);
             return false;
           });
         } else {
@@ -270,6 +273,9 @@ export default function QuestionnaireForm({
             }
             if (mode.kind === "file") {
               return !!(composite.file || composite.agreement);
+            }
+            if (mode.kind === "survey") {
+              return !!(composite.survey && composite.survey.invitedCount > 0);
             }
             return false;
           });
@@ -548,6 +554,7 @@ export default function QuestionnaireForm({
                     error={fieldErrors[field.id]}
                     disabled={isSaving || isCompleted}
                     companyId={companyId}
+                    questionnaire={questionnaire}
                   />
                 );
               })}

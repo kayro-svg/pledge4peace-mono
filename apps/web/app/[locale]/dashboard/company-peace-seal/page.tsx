@@ -40,6 +40,7 @@ import { logger } from "@/lib/utils/logger";
 import QuestionnaireForm from "@/components/peace-seal/questionnaire/QuestionnaireForm";
 import { toast } from "@/hooks/use-toast";
 import { useRouter, useSearchParams } from "next/navigation";
+import { formatTimestampDate } from "@/lib/utils/peace-seal-utils";
 
 type UserCompany = {
   id: string;
@@ -52,6 +53,8 @@ type UserCompany = {
   score?: number | null;
   paymentStatus: string;
   paymentAmountCents?: number | null;
+  rfqStatus?: string | null;
+  rfqQuotedAmountCents?: number | null;
   createdAt: string | number;
   updatedAt: string | number;
   verifiedAt?: string | number | null;
@@ -623,6 +626,66 @@ export default function CompanyPeaceSealDashboard() {
             </CardContent>
           </Card>
 
+          {/* Quote Status Card */}
+          {userCompany.rfqStatus === "requested" && (
+            <Card className="mb-6 border-l-4 border-l-orange-500">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <Clock className="w-5 h-5 text-orange-600" />
+                  <div>
+                    <h2 className="text-xl">Quote Requested</h2>
+                    <p className="text-sm font-normal text-gray-600 mt-1">
+                      Your quote request is being reviewed. We&apos;ll notify you
+                      once your custom quote is ready.
+                    </p>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+            </Card>
+          )}
+
+          {userCompany.rfqStatus === "quoted" &&
+            userCompany.paymentStatus !== "paid" && (
+              <Card className="mb-6 border-l-4 border-l-green-500">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-3">
+                    <DollarSign className="w-5 h-5 text-green-600" />
+                    <div>
+                      <h2 className="text-xl">Quote Available</h2>
+                      <p className="text-sm font-normal text-gray-600 mt-1">
+                        Your custom quote is ready. Complete payment to proceed
+                        with your Peace Seal certification.
+                      </p>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">
+                        Quote Amount
+                      </p>
+                      <p className="text-3xl font-bold text-[#548281]">
+                        $
+                        {(
+                          (userCompany.rfqQuotedAmountCents || 0) / 100
+                        ).toFixed(2)}
+                      </p>
+                    </div>
+                    <Button
+                      onClick={() => {
+                        window.location.href = `/peace-seal/pay-quote?companyId=${userCompany.id}&amount=${userCompany.rfqQuotedAmountCents}`;
+                      }}
+                      size="lg"
+                      className="bg-[#548281] hover:bg-[#2F4858]"
+                    >
+                      Pay Now
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
           {/* Main Content Tabs */}
           <Tabs
             value={activeTab}
@@ -695,7 +758,7 @@ export default function CompanyPeaceSealDashboard() {
                         Member Since
                       </div>
                       <p className="text-lg">
-                        {new Date(userCompany.createdAt).toLocaleDateString()}
+                        {formatTimestampDate(userCompany.createdAt)}
                       </p>
                     </div>
                   </div>

@@ -71,8 +71,8 @@ export class AdvisorEvaluationController {
             // Create EmailService and send notification
             const emailService = new EmailService({
               apiKey: c.env.BREVO_API_KEY as string,
-              fromEmail: c.env.BREVO_FROM_EMAIL as string,
-              fromName: c.env.BREVO_FROM_NAME as string,
+              fromEmail: c.env.FROM_EMAIL as string,
+              fromName: c.env.FROM_NAME as string,
             });
 
             const baseUrl = c.env.BASE_URL || "https://www.pledge4peace.org";

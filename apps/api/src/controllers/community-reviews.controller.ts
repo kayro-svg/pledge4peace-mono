@@ -10,10 +10,16 @@ export class CommunityReviewsController {
   createOrFindCompany = async (c: Context) => {
     try {
       const db = createDb(c.env.DB);
+      const authService = c.get("authService");
+      if (!authService || !authService.emailService) {
+        throw new HTTPException(500, {
+          message: "Email service not available",
+        });
+      }
       const communityReviewsService = new CommunityReviewsService(
         db,
         // c.env.LINKEDIN_CLIENT_ID,
-        c.env.EMAIL_SERVICE
+        authService.emailService
       );
       const user = c.get("user");
 
@@ -83,10 +89,16 @@ export class CommunityReviewsController {
   createReview = async (c: Context) => {
     try {
       const db = createDb(c.env.DB);
+      const authService = c.get("authService");
+      if (!authService || !authService.emailService) {
+        throw new HTTPException(500, {
+          message: "Email service not available",
+        });
+      }
       const communityReviewsService = new CommunityReviewsService(
         db,
         // c.env.LINKEDIN_CLIENT_ID
-        c.env.EMAIL_SERVICE
+        authService.emailService
       );
       const user = c.get("user");
 
@@ -121,20 +133,26 @@ export class CommunityReviewsController {
         });
       }
 
-      const review = await communityReviewsService.createReview({
-        companyId,
-        userId: user?.id || null, // Allow null for anonymous reviews
-        role,
-        verificationMethod,
-        reviewerName,
-        reviewerEmail,
-        signedDisclosure: Boolean(signedDisclosure),
-        answers,
-        verificationDocumentUrl,
-        experienceDescription,
-        oidcIdToken,
-        oidcAccessToken,
-      });
+      const baseUrl =
+        c.env.BASE_URL || c.env.FRONTEND_URL || "https://www.pledge4peace.org";
+
+      const review = await communityReviewsService.createReview(
+        {
+          companyId,
+          userId: user?.id || null, // Allow null for anonymous reviews
+          role,
+          verificationMethod,
+          reviewerName,
+          reviewerEmail,
+          signedDisclosure: Boolean(signedDisclosure),
+          answers,
+          verificationDocumentUrl,
+          experienceDescription,
+          oidcIdToken,
+          oidcAccessToken,
+        },
+        baseUrl
+      );
 
       return c.json({ review });
     } catch (error) {
@@ -149,10 +167,16 @@ export class CommunityReviewsController {
   confirmVerification = async (c: Context) => {
     try {
       const db = createDb(c.env.DB);
+      const authService = c.get("authService");
+      if (!authService || !authService.emailService) {
+        throw new HTTPException(500, {
+          message: "Email service not available",
+        });
+      }
       const communityReviewsService = new CommunityReviewsService(
         db,
         // c.env.LINKEDIN_CLIENT_ID
-        c.env.EMAIL_SERVICE
+        authService.emailService
       );
       const token = c.req.param("token");
 
@@ -236,10 +260,16 @@ export class CommunityReviewsController {
   getMyReviews = async (c: Context) => {
     try {
       const db = createDb(c.env.DB);
+      const authService = c.get("authService");
+      if (!authService || !authService.emailService) {
+        throw new HTTPException(500, {
+          message: "Email service not available",
+        });
+      }
       const communityReviewsService = new CommunityReviewsService(
         db,
         // c.env.LINKEDIN_CLIENT_ID,
-        c.env.EMAIL_SERVICE
+        authService.emailService
       );
       const user = c.get("user");
 

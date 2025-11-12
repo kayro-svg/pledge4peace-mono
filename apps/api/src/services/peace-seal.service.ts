@@ -264,6 +264,8 @@ export class PeaceSealService {
         employeeCount: peaceSealCompanies.employeeCount,
         paymentStatus: peaceSealCompanies.paymentStatus,
         status: peaceSealCompanies.status,
+        rfqStatus: peaceSealCompanies.rfqStatus,
+        rfqQuotedAmountCents: peaceSealCompanies.rfqQuotedAmountCents,
       })
       .from(peaceSealCompanies)
       .where(eq(peaceSealCompanies.id, companyId))
@@ -286,24 +288,43 @@ export class PeaceSealService {
       return { success: true, message: "Payment already confirmed" };
     }
 
-    // Validate payment amount matches expected amount using new pricing tiers
-    const expectedAmount = company.employeeCount
-      ? getPaymentAmountByEmployees(company.employeeCount)
-      : BUSINESS_RULES.PAYMENT_SMALL_COMPANY;
+    // Check if this is a quote payment
+    const isQuotePayment = company.rfqStatus === "quoted";
 
-    // Block RFQ companies from paying online
-    if (expectedAmount === null) {
-      throw new HTTPException(400, {
-        message:
-          "Companies with more than 50 employees must request a quote and cannot pay online",
-      });
-    }
+    if (isQuotePayment) {
+      // For quote payments, validate amount matches quote amount
+      if (!company.rfqQuotedAmountCents) {
+        throw new HTTPException(400, {
+          message: "Quote amount not found for this company",
+        });
+      }
 
-    if (Math.abs(amountCents - expectedAmount) > 100) {
-      // Allow $1 tolerance for fees
-      throw new HTTPException(400, {
-        message: `Payment amount ${amountCents} does not match expected ${expectedAmount}`,
-      });
+      // Allow small tolerance for fees (up to $1 difference)
+      if (Math.abs(amountCents - company.rfqQuotedAmountCents) > 100) {
+        throw new HTTPException(400, {
+          message: `Payment amount must match quote amount of $${(company.rfqQuotedAmountCents / 100).toFixed(2)}`,
+        });
+      }
+    } else {
+      // Validate payment amount matches expected amount using new pricing tiers
+      const expectedAmount = company.employeeCount
+        ? getPaymentAmountByEmployees(company.employeeCount)
+        : BUSINESS_RULES.PAYMENT_SMALL_COMPANY;
+
+      // Block RFQ companies from paying online (unless they have a quote)
+      if (expectedAmount === null) {
+        throw new HTTPException(400, {
+          message:
+            "Companies with more than 50 employees must request a quote and cannot pay online",
+        });
+      }
+
+      if (Math.abs(amountCents - expectedAmount) > 100) {
+        // Allow $1 tolerance for fees
+        throw new HTTPException(400, {
+          message: `Payment amount ${amountCents} does not match expected ${expectedAmount}`,
+        });
+      }
     }
 
     const nowTs = now();
@@ -315,17 +336,25 @@ export class PeaceSealService {
     );
     const expiresAtTs = expiresAt.getTime(); // Convert to timestamp
 
+    // Prepare update payload
+    const updatePayload: any = {
+      paymentStatus: PAYMENT_STATUS.PAID,
+      paymentAmountCents: amountCents,
+      paymentTransactionId: transactionId,
+      paymentDate: nowTs,
+      expiresAt: expiresAtTs,
+      updatedAt: nowTs,
+    };
+
+    // If this is a quote payment, update rfqStatus to "accepted"
+    if (isQuotePayment) {
+      updatePayload.rfqStatus = "accepted";
+    }
+
     // Update payment status ONLY - do NOT change application status or assign advisor
     await this.db
       .update(peaceSealCompanies)
-      .set({
-        paymentStatus: PAYMENT_STATUS.PAID,
-        paymentAmountCents: amountCents,
-        paymentTransactionId: transactionId,
-        paymentDate: nowTs,
-        expiresAt: expiresAtTs,
-        updatedAt: nowTs,
-      })
+      .set(updatePayload)
       .where(eq(peaceSealCompanies.id, companyId));
 
     // If questionnaire is already submitted (status is APPLICATION_SUBMITTED), calculate auto-score
@@ -395,6 +424,86 @@ export class PeaceSealService {
       .where(eq(peaceSealCompanies.id, applicationId));
 
     return company;
+  }
+
+  async getAdvisorsAndAdmins() {
+    return await this.db
+      .select({
+        id: users.id,
+        email: users.email,
+        name: users.name,
+        role: users.role,
+      })
+      .from(users)
+      .where(inArray(users.role as any, ["advisor", "admin", "superAdmin"]))
+      .then((r) => r || []);
+  }
+
+  async setQuoteAmount(
+    companyId: string,
+    amountCents: number,
+    notes: string | null,
+    adminUserId: string
+  ) {
+    const company = await this.db
+      .select({
+        id: peaceSealCompanies.id,
+        name: peaceSealCompanies.name,
+        createdByUserId: peaceSealCompanies.createdByUserId,
+        rfqStatus: peaceSealCompanies.rfqStatus,
+      })
+      .from(peaceSealCompanies)
+      .where(eq(peaceSealCompanies.id, companyId))
+      .then((r) => r[0]);
+
+    if (!company) {
+      throw new HTTPException(404, { message: "Company not found" });
+    }
+
+    if (company.rfqStatus !== "requested") {
+      throw new HTTPException(400, {
+        message: "Company has not requested a quote",
+      });
+    }
+
+    const nowTs = now();
+    await this.db
+      .update(peaceSealCompanies)
+      .set({
+        rfqStatus: "quoted",
+        rfqQuotedAmountCents: amountCents,
+        updatedAt: nowTs,
+      })
+      .where(eq(peaceSealCompanies.id, companyId));
+
+    // Get company owner for notifications
+    let ownerUser: {
+      id: string;
+      email: string;
+      name: string;
+      notifyEmail: number | null;
+    } | null = null;
+    if (company.createdByUserId) {
+      ownerUser = await this.db
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+          notifyEmail: users.notifyEmail,
+        })
+        .from(users)
+        .where(eq(users.id, company.createdByUserId))
+        .then((r) => r[0] || null);
+    }
+
+    return {
+      company: {
+        ...company,
+        rfqStatus: "quoted" as const,
+        rfqQuotedAmountCents: amountCents,
+      },
+      ownerUser,
+    };
   }
 
   // Admin: Confirm manual payment for RFQ companies - only updates payment status

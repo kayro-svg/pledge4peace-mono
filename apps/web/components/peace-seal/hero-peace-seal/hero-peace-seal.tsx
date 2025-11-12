@@ -121,6 +121,7 @@ export default function HeroPeaceSeal({ data }: HeroPeaceSealProps) {
                 router.push("/peace-seal/apply");
               }}
               isModal
+              preSelectedUserType="organization"
             />
           </div>
         </DialogContent>

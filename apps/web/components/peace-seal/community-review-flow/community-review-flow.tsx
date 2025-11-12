@@ -135,7 +135,7 @@ const PEACE_SEAL_QUESTIONS = {
   publicFeedbackReputation: [
     {
       id: "respondsToFeedback",
-      question: "How does the company respond to feedback or complaints?",
+      question: "Does the company respond to feedback or complaints?",
     },
     {
       id: "respectsStakeholders",
@@ -639,10 +639,18 @@ export function CommunityReviewFlow({
 
       await createReview(reviewData);
 
-      toast({
-        title: "Review submitted successfully!",
-        description: "Your review has been submitted and will be processed.",
-      });
+      // Show appropriate message based on verification method
+      if (verificationMethod === "email" && reviewerEmail) {
+        toast({
+          title: "Review submitted successfully!",
+          description: `Your review has been submitted. Please check your email (${reviewerEmail}) to verify your review.`,
+        });
+      } else {
+        toast({
+          title: "Review submitted successfully!",
+          description: "Your review has been submitted and will be processed.",
+        });
+      }
 
       setCurrentStep("complete");
     } catch (error: unknown) {
@@ -894,9 +902,12 @@ export function CommunityReviewFlow({
         <CardHeader>
           <CardTitle>Review Questions</CardTitle>
           <CardDescription>
-            Please answer the questions that apply to your role as a {role}. You
+            {/* Please answer the questions that apply to your role as a {role}. You
             can skip questions that don&apos;t apply by selecting
-            &quot;N/A&quot;.
+            &quot;N/A&quot;. */}
+            Please answer the questions that apply to your role as a {role}. You
+            can skip questions that don&apos;t apply to you or that you&apos;re
+            not sure about by selecting &quot;N/A&quot;.
           </CardDescription>
         </CardHeader>
         <CardContent>

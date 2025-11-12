@@ -12,6 +12,14 @@ export interface QuestionnaireField {
   fileTypes?: string[];
   maxFileSize?: number;
   multiple?: boolean;
+  inputModes?: Array<{
+    kind: string;
+    label?: string;
+    helpText?: string;
+    fileTypes?: string[];
+    maxFileSize?: number;
+  }>;
+  completionMode?: "any" | "all";
 }
 
 export interface QuestionnaireSection {
@@ -228,9 +236,22 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         label: "Employee Satisfaction Survey Summary (Optional)",
         type: "file",
         required: false,
-        fileTypes: [".pdf", ".doc", ".docx"],
-        maxFileSize: 10 * 1024 * 1024,
-        helpText: "Upload survey summary or use our survey tool",
+        helpText: "Upload survey summary or send survey invitations to employees",
+        inputModes: [
+          {
+            kind: "file",
+            label: "Upload File",
+            fileTypes: [".pdf", ".doc", ".docx"],
+            maxFileSize: 10 * 1024 * 1024,
+            helpText: "Upload a survey summary document",
+          },
+          {
+            kind: "survey",
+            label: "Send Survey Invitations",
+            helpText: "Send email invitations to employees to complete the survey",
+          },
+        ],
+        completionMode: "any",
       },
     ],
   },
@@ -547,9 +568,22 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         label: "Employee Satisfaction Survey Summary (Optional)",
         type: "file",
         required: false,
-        fileTypes: [".pdf", ".doc", ".docx"],
-        maxFileSize: 10 * 1024 * 1024,
-        helpText: "Upload survey summary or use our survey tool",
+        helpText: "Upload survey summary or send survey invitations to employees",
+        inputModes: [
+          {
+            kind: "file",
+            label: "Upload File",
+            fileTypes: [".pdf", ".doc", ".docx"],
+            maxFileSize: 10 * 1024 * 1024,
+            helpText: "Upload a survey summary document",
+          },
+          {
+            kind: "survey",
+            label: "Send Survey Invitations",
+            helpText: "Send email invitations to employees to complete the survey",
+          },
+        ],
+        completionMode: "any",
       },
     ],
   },
@@ -902,9 +936,22 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         label: "Employee Satisfaction Survey Summary (Optional)",
         type: "file",
         required: false,
-        fileTypes: [".pdf", ".doc", ".docx"],
-        maxFileSize: 10 * 1024 * 1024,
-        helpText: "Upload survey summary or use our survey tool",
+        helpText: "Upload survey summary or send survey invitations to employees",
+        inputModes: [
+          {
+            kind: "file",
+            label: "Upload File",
+            fileTypes: [".pdf", ".doc", ".docx"],
+            maxFileSize: 10 * 1024 * 1024,
+            helpText: "Upload a survey summary document",
+          },
+          {
+            kind: "survey",
+            label: "Send Survey Invitations",
+            helpText: "Send email invitations to employees to complete the survey",
+          },
+        ],
+        completionMode: "any",
       },
     ],
   },

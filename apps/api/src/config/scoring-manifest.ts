@@ -6,7 +6,7 @@ export interface ScoringField {
   id: string;
   required: boolean;
   inputModes?: Array<{
-    kind: "text" | "textarea" | "url" | "file";
+    kind: "text" | "textarea" | "url" | "file" | "survey";
   }>;
   completionMode?: "any" | "all";
   isOptionalBonus?: boolean; // Fields that contribute to the +5% optional bonus
@@ -78,7 +78,13 @@ export const SMALL_BUSINESS_SCORING: ScoringSection[] = [
     fields: [
       { id: "fairWagePractices", required: true },
       { id: "antiHarassmentPolicy", required: true },
-      { id: "employeeSatisfactionSurvey", required: false, isOptionalBonus: true },
+      {
+        id: "employeeSatisfactionSurvey",
+        required: false,
+        isOptionalBonus: true,
+        inputModes: [{ kind: "file" }, { kind: "survey" }],
+        completionMode: "any",
+      },
     ],
   },
   // Section 4: Social Impact & Community Engagement (10%)
@@ -178,7 +184,13 @@ export const MEDIUM_BUSINESS_SCORING: ScoringSection[] = [
       { id: "whistleblowerProtectionPolicy", required: true },
       { id: "fairWagePractices", required: true },
       { id: "mentalHealthPrograms", required: false, isOptionalBonus: true },
-      { id: "employeeSatisfactionSurvey", required: false, isOptionalBonus: true },
+      {
+        id: "employeeSatisfactionSurvey",
+        required: false,
+        isOptionalBonus: true,
+        inputModes: [{ kind: "file" }, { kind: "survey" }],
+        completionMode: "any",
+      },
     ],
   },
   {
@@ -272,7 +284,13 @@ export const LARGE_BUSINESS_SCORING: ScoringSection[] = [
       { id: "mentalHealthPrograms", required: true },
       { id: "whistleblowerProtectionPolicy", required: true },
       { id: "internalMediationProgram", required: false, isOptionalBonus: true },
-      { id: "employeeSatisfactionSurvey", required: false, isOptionalBonus: true },
+      {
+        id: "employeeSatisfactionSurvey",
+        required: false,
+        isOptionalBonus: true,
+        inputModes: [{ kind: "file" }, { kind: "survey" }],
+        completionMode: "any",
+      },
     ],
   },
   {

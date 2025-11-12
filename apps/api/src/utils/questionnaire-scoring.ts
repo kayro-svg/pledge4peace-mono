@@ -25,13 +25,15 @@ export function isFieldCompleted(
       ("text" in value ||
         "url" in value ||
         "file" in value ||
-        "agreement" in value)
+        "agreement" in value ||
+        "survey" in value)
     ) {
       const composite = value as {
         text?: string;
         url?: string;
         file?: unknown;
         agreement?: unknown;
+        survey?: { invitedCount?: number };
       };
       const completionMode = field.completionMode || "any";
 
@@ -55,6 +57,13 @@ export function isFieldCompleted(
           if (mode.kind === "file") {
             return !!(composite.file || composite.agreement);
           }
+          if (mode.kind === "survey") {
+            return !!(
+              composite.survey &&
+              composite.survey.invitedCount &&
+              composite.survey.invitedCount > 0
+            );
+          }
           return false;
         });
       } else {
@@ -76,6 +85,13 @@ export function isFieldCompleted(
           }
           if (mode.kind === "file") {
             return !!(composite.file || composite.agreement);
+          }
+          if (mode.kind === "survey") {
+            return !!(
+              composite.survey &&
+              composite.survey.invitedCount &&
+              composite.survey.invitedCount > 0
+            );
           }
           return false;
         });

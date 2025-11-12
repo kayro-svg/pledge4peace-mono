@@ -193,14 +193,21 @@ export interface QuestionnaireSection {
 }
 
 // Multi-input support types
+export interface SurveyInvitationData {
+  invitedAt: string; // ISO timestamp
+  invitedCount: number;
+  invitations: Array<{ name: string; email: string }>;
+}
+
 export interface CompositeValue {
   text?: string;
   url?: string;
   file?: FileUpload;
   agreement?: AgreementAcceptance;
+  survey?: SurveyInvitationData;
 }
 
-export type InputKind = "text" | "textarea" | "url" | "file";
+export type InputKind = "text" | "textarea" | "url" | "file" | "survey";
 
 export interface InputModeConfig {
   kind: InputKind;
