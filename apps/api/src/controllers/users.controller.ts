@@ -109,9 +109,10 @@ export class UsersController {
         filters.push(or(like(users.email, pattern), like(users.name, pattern)));
       }
       // By default, only list moderators, advisors and admins. Allow including users for targeted searches.
-      const defaultRoles: Array<"user" | "moderator" | "advisor" | "admin"> = includeUsers
-        ? ["user", "moderator", "advisor", "admin"]
-        : ["moderator", "advisor", "admin"];
+      const defaultRoles: Array<"user" | "moderator" | "advisor" | "admin"> =
+        includeUsers
+          ? ["user", "moderator", "advisor", "admin"]
+          : ["moderator", "advisor", "admin"];
       const roleFilterList =
         role && ["user", "moderator", "advisor", "admin"].includes(role)
           ? [role as "user" | "moderator" | "advisor" | "admin"]

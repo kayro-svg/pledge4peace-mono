@@ -99,13 +99,13 @@ const COMPANY_INFORMATION_SECTION: QuestionnaireSection = {
       helpText:
         "List all countries where your organization operates (comma-separated)",
     },
-    {
-      id: "employeeCount",
-      label: "Size (number of employees)",
-      type: "number",
-      required: true,
-      placeholder: "e.g., 150",
-    },
+    // {
+    //   id: "employeeCount",
+    //   label: "Size (number of employees)",
+    //   type: "number",
+    //   required: true,
+    //   placeholder: "e.g., 150",
+    // },
     {
       id: "annualRevenueRange",
       label: "Annual Revenue Range (optional)",
@@ -236,7 +236,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         label: "Employee Satisfaction Survey Summary (Optional)",
         type: "file",
         required: false,
-        helpText: "Upload survey summary or send survey invitations to employees",
+        helpText:
+          "Upload survey summary or send survey invitations to employees",
         inputModes: [
           {
             kind: "file",
@@ -248,7 +249,8 @@ export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
           {
             kind: "survey",
             label: "Send Survey Invitations",
-            helpText: "Send email invitations to employees to complete the survey",
+            helpText:
+              "Send email invitations to employees to complete the survey",
           },
         ],
         completionMode: "any",
@@ -568,7 +570,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         label: "Employee Satisfaction Survey Summary (Optional)",
         type: "file",
         required: false,
-        helpText: "Upload survey summary or send survey invitations to employees",
+        helpText:
+          "Upload survey summary or send survey invitations to employees",
         inputModes: [
           {
             kind: "file",
@@ -580,7 +583,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
           {
             kind: "survey",
             label: "Send Survey Invitations",
-            helpText: "Send email invitations to employees to complete the survey",
+            helpText:
+              "Send email invitations to employees to complete the survey",
           },
         ],
         completionMode: "any",
@@ -936,7 +940,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         label: "Employee Satisfaction Survey Summary (Optional)",
         type: "file",
         required: false,
-        helpText: "Upload survey summary or send survey invitations to employees",
+        helpText:
+          "Upload survey summary or send survey invitations to employees",
         inputModes: [
           {
             kind: "file",
@@ -948,7 +953,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
           {
             kind: "survey",
             label: "Send Survey Invitations",
-            helpText: "Send email invitations to employees to complete the survey",
+            helpText:
+              "Send email invitations to employees to complete the survey",
           },
         ],
         completionMode: "any",

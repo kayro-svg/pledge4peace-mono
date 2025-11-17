@@ -1,41 +1,15 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { useAuthSession } from "@/hooks/use-auth-session";
-import {
-  adminListCompanies,
-  adminGetCompany,
-  adminUpdateCompany,
-  adminConfirmPayment,
-  setQuoteAmount,
-  advisorScoreQuestionnaire,
-  getUserCompany,
-  getCompanyQuestionnaire,
-  getReports,
-  resolveReport,
-  getBadgeLevel,
-  adminListReviews,
-  adminVerifyReview,
-  getEvaluationsForAdvisor,
-  getCompanyIssues,
-  type Report,
-  type CommunityReview,
-  type ReviewEvaluation,
-  type CompanyIssue,
-} from "@/lib/api/peace-seal";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { MoneyInput } from "@/components/money-input/money-input";
+import { CompanyResponseModal } from "@/components/peace-seal/company-response-modal";
+import { EvaluationModal } from "@/components/peace-seal/evaluation-modal";
+import { formatQuestionnaireValue } from "@/components/peace-seal/peace-seal-apply/format-questionnaire-value";
+import { PeaceSealCenter } from "@/components/peace-seal/peace-seal-center";
+import { ResolutionModal } from "@/components/peace-seal/resolution-modal";
+import { ReviewDetailsModal } from "@/components/peace-seal/review-details-modal";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -43,97 +17,77 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
-  Building,
-  FileText,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertTriangle,
-  Eye,
-  Edit,
-  Upload,
-  Award,
-  AlertCircle,
-  ExternalLink,
-  Flag,
-  MessageSquare,
-  DollarSign,
-} from "lucide-react";
-import { ReviewDetailsModal } from "@/components/peace-seal/review-details-modal";
-import { EvaluationModal } from "@/components/peace-seal/evaluation-modal";
-import { CompanyResponseModal } from "@/components/peace-seal/company-response-modal";
-import { ResolutionModal } from "@/components/peace-seal/resolution-modal";
-import { PeaceSealCenter } from "@/components/peace-seal/peace-seal-center";
-import { logger } from "@/lib/utils/logger";
-import { useToast } from "@/hooks/use-toast";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import type {
-  ParsedQuestionnaireSection,
-  ParsedQuestionnaireResponse,
+import { Textarea } from "@/components/ui/textarea";
+import { useAuthSession } from "@/hooks/use-auth-session";
+import { useToast } from "@/hooks/use-toast";
+import type { ParsedQuestionnaireSection } from "@/lib/api/peace-seal";
+import {
+  adminGetCompany,
+  adminListCompanies,
+  adminListReviews,
+  adminUpdateCompany,
+  adminVerifyReview,
+  advisorScoreQuestionnaire,
+  approveCompanyResponse,
+  getBadgeLevel,
+  getCompanyIssues,
+  getCompanyQuestionnaire,
+  getEvaluationsForAdvisor,
+  getReports,
+  getUserCompany,
+  resolveReport,
+  setQuoteAmount,
+  updateEvaluation,
+  type CommunityReview,
+  type CompanyIssue,
+  type Report,
+  type ReviewEvaluation,
 } from "@/lib/api/peace-seal";
-import { updateEvaluation, approveCompanyResponse } from "@/lib/api/peace-seal";
-import { MoneyInput } from "@/components/money-input/money-input";
+import { logger } from "@/lib/utils/logger";
 import {
   formatTimestampDate,
   formatTimestampDateTime,
 } from "@/lib/utils/peace-seal-utils";
-
-type CompanyItem = {
-  id: string;
-  slug: string;
-  name: string;
-  country?: string | null;
-  website?: string | null;
-  industry?: string | null;
-  employeeCount?: number | null;
-  status: string;
-  score?: number | null;
-  paymentStatus: string;
-  paymentAmountCents?: number | null;
-  paymentDate?: string | number | null;
-  rfqStatus?: string | null;
-  rfqRequestedAt?: string | number | null;
-  rfqQuotedAmountCents?: number | null;
-  createdAt: string | number;
-  updatedAt: string | number;
-  lastReviewedAt?: string | number | null;
-  advisorUserId?: string | null;
-  notes?: string | null;
-  expiresAt?: string | number | null;
-  communityListed?: number | null;
-  employeeRatingAvg?: number | null;
-  employeeRatingCount?: number | null;
-  overallRatingAvg?: number | null;
-  overallRatingCount?: number | null;
-};
-
-type UserCompany = {
-  id: string;
-  slug: string;
-  name: string;
-  country?: string | null;
-  industry?: string | null;
-  employeeCount?: number | null;
-  status: string;
-  score?: number | null;
-  paymentStatus: string;
-  paymentAmountCents?: number | null;
-  createdAt: string | number;
-  updatedAt: string | number;
-  verifiedAt?: string | number | null;
-  expiresAt?: string | number | null;
-};
-
-type QuestionnaireData = {
-  id: string;
-  progress: number;
-  completedAt?: string;
-  responses?: string;
-};
+import {
+  CompanyItem,
+  formatFieldName,
+  getStatusColor,
+  getStatusLabel,
+  QuestionnaireData,
+  UserCompany,
+} from "@/utils/advisors-peace-seal-utils";
+import {
+  AlertCircle,
+  AlertTriangle,
+  Award,
+  Building,
+  CheckCircle,
+  Clock,
+  DollarSign,
+  Edit,
+  ExternalLink,
+  Eye,
+  FileText,
+  Flag,
+  MessageSquare,
+  Upload,
+  XCircle,
+} from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
 
 function getStatusIcon(status: string, rfqStatus?: string | null) {
   if (rfqStatus === "requested") {
+    // return <Clock className="w-4 h-4 text-orange-600" />;
     return <Clock className="w-4 h-4 text-orange-600" />;
   }
   switch (status) {
@@ -150,191 +104,6 @@ function getStatusIcon(status: string, rfqStatus?: string | null) {
     default:
       return <FileText className="w-4 h-4 text-gray-600" />;
   }
-}
-
-function getStatusLabel(status: string, rfqStatus?: string | null): string {
-  if (rfqStatus === "requested") {
-    return "Pending Quote";
-  }
-  switch (status) {
-    case "verified":
-      return "Verified";
-    case "conditional":
-      return "Conditional";
-    case "did_not_pass":
-      return "Failed";
-    case "under_review":
-      return "Under Review";
-    case "audit_in_progress":
-      return "In Progress";
-    case "application_submitted":
-    default:
-      return "Submitted";
-  }
-}
-
-function getStatusColor(status: string, rfqStatus?: string | null): string {
-  if (rfqStatus === "requested") {
-    return "bg-orange-50 text-orange-700 border-orange-200";
-  }
-  switch (status) {
-    case "verified":
-      return "bg-green-50 text-green-700 border-green-200";
-    case "conditional":
-      return "bg-orange-50 text-orange-700 border-orange-200";
-    case "did_not_pass":
-      return "bg-red-50 text-red-700 border-red-200";
-    case "under_review":
-      return "bg-yellow-50 text-yellow-700 border-yellow-200";
-    case "audit_in_progress":
-      return "bg-blue-50 text-blue-700 border-blue-200";
-    case "application_submitted":
-    default:
-      return "bg-gray-50 text-gray-700 border-gray-200";
-  }
-}
-
-// Helper function to format field labels as fallback
-function formatFieldName(fieldName: string): string {
-  return fieldName
-    .replace(/([A-Z])/g, " $1")
-    .replace(/^./, (str) => str.toUpperCase())
-    .trim();
-}
-
-function formatQuestionnaireValue(
-  response: ParsedQuestionnaireResponse
-): React.ReactNode {
-  const { answer, isEmpty } = response;
-
-  if (isEmpty || answer === null || answer === undefined || answer === "") {
-    return <span className="text-gray-400 italic">Not provided</span>;
-  }
-
-  if (typeof answer === "boolean") {
-    return (
-      <span
-        className={`font-medium ${answer ? "text-green-600" : "text-red-600"}`}
-      >
-        {answer ? "Yes" : "No"}
-      </span>
-    );
-  }
-
-  if (Array.isArray(answer)) {
-    return answer.length > 0 ? (
-      <div className="space-y-1">
-        {answer.map((item, index) => (
-          <div key={index} className="text-sm bg-gray-50 px-2 py-1 rounded">
-            {String(item)}
-          </div>
-        ))}
-      </div>
-    ) : (
-      <span className="text-gray-400 italic">None provided</span>
-    );
-  }
-
-  if (typeof answer === "object" && answer !== null) {
-    const answerObj = answer as Record<string, unknown>;
-
-    // Handle agreement objects
-    if ("type" in answerObj && answerObj.type === "agreement") {
-      const agreementObj = answerObj as {
-        type: string;
-        templateId: string;
-        acceptedAt: string;
-        id?: string | null;
-      };
-
-      return (
-        <div className="flex items-center gap-2 p-3 bg-green-50 rounded border border-green-200">
-          <CheckCircle className="w-4 h-4 text-green-600" />
-          <div>
-            <div className="text-green-800 font-medium">Agreement Accepted</div>
-            <div className="text-xs text-green-600">
-              Accepted on {formatTimestampDate(agreementObj.acceptedAt)}
-            </div>
-          </div>
-        </div>
-      );
-    }
-
-    // Handle file objects
-    if ("type" in answerObj && answerObj.type === "file") {
-      const fileObj = answerObj as {
-        type: string;
-        name: string;
-        size?: number | null;
-        url?: string | null;
-        id?: string | null;
-        mimeType?: string | null;
-      };
-      return (
-        <div className="flex items-center justify-between p-3 bg-blue-50 rounded border border-blue-200">
-          <div className="flex items-center gap-2">
-            <FileText className="w-4 h-4 text-blue-600" />
-            <div>
-              <div className="text-blue-800 font-medium">{fileObj.name}</div>
-              <div className="text-xs text-blue-600 space-x-2">
-                {fileObj.size && (
-                  <span>{(fileObj.size / 1024).toFixed(1)} KB</span>
-                )}
-                {fileObj.mimeType && <span>• {fileObj.mimeType}</span>}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {fileObj.url ? (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 px-2 text-xs"
-                onClick={() => window.open(fileObj.url!, "_blank")}
-              >
-                <ExternalLink className="w-3 h-3 mr-1" />
-                View File
-              </Button>
-            ) : (
-              <span className="text-xs text-gray-500 italic">
-                File uploaded
-              </span>
-            )}
-          </div>
-        </div>
-      );
-    }
-
-    // For other objects, show key-value pairs in a readable format
-    return (
-      <div className="space-y-1">
-        {Object.entries(answer).map(([k, v]) => (
-          <div key={k} className="text-sm">
-            <span className="font-semibold text-gray-700">
-              {formatFieldName(k)}:
-              <br />{" "}
-            </span>
-            <span className="text-gray-600">{String(v || "—")}</span>
-          </div>
-        ))}
-      </div>
-    );
-  }
-
-  const stringValue = String(answer);
-
-  // Handle long text with better formatting
-  if (stringValue.length > 200) {
-    return (
-      <div className="bg-gray-50 p-3 rounded border">
-        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
-          {stringValue}
-        </p>
-      </div>
-    );
-  }
-
-  return <span className="text-gray-700">{stringValue}</span>;
 }
 
 export default function PeaceSealDashboard() {
@@ -386,6 +155,22 @@ export default function PeaceSealDashboard() {
       createdAt: string;
     }>;
   } | null>(null);
+
+  const getCompanySize = (employeeCount: number | null | undefined): string => {
+    if (!employeeCount) return "Not Provided";
+
+    switch (true) {
+      case employeeCount <= 20:
+        return "Small Business (1 - 20 employees)";
+      case employeeCount <= 50:
+        return "Medium Business (21 - 50 employees)";
+      case employeeCount > 50:
+        return "Large Business (+50 employees)";
+      default:
+        return "Not Provided";
+    }
+  };
+
   const [updateForm, setUpdateForm] = useState({
     status: "",
   });
@@ -1565,9 +1350,13 @@ export default function PeaceSealDashboard() {
                                                   .industry || "—"}
                                               </p>
                                               <p>
-                                                <strong>Employees:</strong>{" "}
-                                                {selectedCompany.company
-                                                  .employeeCount || "—"}
+                                                <strong>Company Size:</strong>{" "}
+                                                {/* {selectedCompany.company
+                                                  .employeeCount || "—"} */}
+                                                {getCompanySize(
+                                                  selectedCompany.company
+                                                    .employeeCount
+                                                )}
                                               </p>
                                               <p>
                                                 <strong>Website:</strong>{" "}
@@ -3006,137 +2795,6 @@ export default function PeaceSealDashboard() {
                                                 </div>
                                               </div>
                                             )}
-
-                                          {/* Admin Payment Confirmation */}
-                                          {/* {["admin", "superAdmin"].includes(
-                                            session?.user?.role || ""
-                                          ) &&
-                                            selectedCompany.company
-                                              .rfqStatus === "requested" &&
-                                            selectedCompany.company
-                                              .paymentStatus !== "paid" && (
-                                              <div className="p-4 border-2 border-blue-200 rounded-lg bg-blue-50 mt-4">
-                                                <h5 className="font-medium mb-3 text-blue-900">
-                                                  💳 Admin Payment Confirmation
-                                                </h5>
-                                                <p className="text-sm text-blue-800 mb-4">
-                                                  Confirm manual payment for
-                                                  this company.
-                                                </p>
-
-                                                <div className="space-y-4">
-                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div>
-                                                      <Label
-                                                        htmlFor="payment-amount"
-                                                        className="text-blue-900 font-medium"
-                                                      >
-                                                        Amount (cents) *
-                                                      </Label>
-                                                      <MoneyInput
-                                                        id="payment-amount"
-                                                        valueCents={
-                                                          selectedCompany
-                                                            .company
-                                                            .paymentAmountCents ||
-                                                          null
-                                                        }
-                                                        onChangeCents={(
-                                                          cents
-                                                        ) => {
-                                                          setUpdateForm(
-                                                            (prev) => ({
-                                                              ...prev,
-                                                              paymentAmountCents:
-                                                                cents || null,
-                                                            })
-                                                          );
-                                                        }}
-                                                      />
-                                                    </div>
-                                                    <div>
-                                                      <Label
-                                                        htmlFor="payment-tx-id"
-                                                        className="text-blue-900 font-medium"
-                                                      >
-                                                        Transaction ID
-                                                        (optional)
-                                                      </Label>
-                                                      <Input
-                                                        id="payment-tx-id"
-                                                        placeholder="External transaction reference"
-                                                        className="bg-white border-blue-300"
-                                                      />
-                                                    </div>
-                                                  </div>
-
-                                                  <Button
-                                                    className="w-full bg-blue-600 hover:bg-blue-700"
-                                                    onClick={async () => {
-                                                      const amountInput =
-                                                        document.getElementById(
-                                                          "payment-amount"
-                                                        ) as HTMLInputElement;
-                                                      const txIdInput =
-                                                        document.getElementById(
-                                                          "payment-tx-id"
-                                                        ) as HTMLInputElement;
-
-                                                      if (!amountInput.value) {
-                                                        toast({
-                                                          title: "Error",
-                                                          description:
-                                                            "Amount is required",
-                                                          variant:
-                                                            "destructive",
-                                                        });
-                                                        return;
-                                                      }
-
-                                                      try {
-                                                        await adminConfirmPayment(
-                                                          selectedCompany
-                                                            .company.id,
-                                                          {
-                                                            amountCents:
-                                                              parseInt(
-                                                                amountInput.value
-                                                              ),
-                                                            transactionId:
-                                                              txIdInput.value ||
-                                                              undefined,
-                                                          }
-                                                        );
-
-                                                        toast({
-                                                          title: "Success",
-                                                          description:
-                                                            "Payment confirmed successfully",
-                                                        });
-
-                                                        // Refresh company data
-                                                        await loadCompanyDetails(
-                                                          selectedCompany
-                                                            .company.id
-                                                        );
-                                                        amountInput.value = "";
-                                                        txIdInput.value = "";
-                                                      } catch {
-                                                        toast({
-                                                          title: "Error",
-                                                          description:
-                                                            "Failed to confirm payment",
-                                                          variant:
-                                                            "destructive",
-                                                        });
-                                                      }
-                                                    }}
-                                                  >
-                                                    Confirm Payment
-                                                  </Button>
-                                                </div>
-                                              </div>
-                                            )} */}
 
                                           {selectedCompany.questionnaire &&
                                             !selectedCompany.questionnaire

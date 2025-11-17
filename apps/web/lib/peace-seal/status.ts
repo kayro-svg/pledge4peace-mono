@@ -5,6 +5,7 @@ export type CompanyStatus =
   | "conditional"
   | "did_not_pass"
   | "application_submitted"
+  | "application_started"
   | "audit_in_progress"
   | "under_review"
   | "draft"
@@ -16,6 +17,7 @@ const LABEL: Record<CompanyStatus | string, string> = {
   did_not_pass: "Did Not Pass Audit",
   conditional: "Conditional Approval",
   application_submitted: "Application Submitted",
+  application_started: "Application Started",
   audit_in_progress: "Audit in Progress",
   under_review: "Under Review",
   draft: "Application in Progress",
@@ -28,6 +30,7 @@ const PILL: Record<CompanyStatus | string, string> = {
   conditional: "border-orange-200 bg-orange-50 text-orange-800",
   did_not_pass: "border-red-200 bg-red-50 text-red-800",
   application_submitted: "border-yellow-200 bg-yellow-50 text-yellow-800",
+  application_started: "border-amber-200 bg-amber-50 text-amber-800",
   audit_in_progress: "border-yellow-200 bg-yellow-50 text-yellow-800",
   under_review: "border-yellow-200 bg-yellow-50 text-yellow-800",
   draft: "border-gray-200 bg-gray-50 text-gray-700",

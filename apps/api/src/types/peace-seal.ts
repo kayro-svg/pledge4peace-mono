@@ -2,8 +2,9 @@
 // Centralized validation and enum definitions
 
 export const PEACE_SEAL_STATUS = {
-  DRAFT: "draft", // Application created but payment not completed
-  APPLICATION_SUBMITTED: "application_submitted",
+  DRAFT: "draft", // Application created but questionnaire not completed
+  APPLICATION_STARTED: "application_started", // Questionnaire completed but payment not completed
+  APPLICATION_SUBMITTED: "application_submitted", // Both questionnaire and payment completed
   AUDIT_IN_PROGRESS: "audit_in_progress",
   VERIFIED: "verified", // Changed from audit_completed for clarity
   CONDITIONAL: "conditional",
@@ -68,7 +69,11 @@ export type ReportReason = (typeof REPORT_REASONS)[keyof typeof REPORT_REASONS];
 // Status transition rules
 export const STATUS_TRANSITIONS: Record<PeaceSealStatus, PeaceSealStatus[]> = {
   [PEACE_SEAL_STATUS.DRAFT]: [
-    PEACE_SEAL_STATUS.APPLICATION_SUBMITTED, // After questionnaire submission (progress 100)
+    PEACE_SEAL_STATUS.APPLICATION_STARTED, // After questionnaire completion (progress 100) but payment not completed
+    PEACE_SEAL_STATUS.APPLICATION_SUBMITTED, // After both questionnaire completion and payment
+  ],
+  [PEACE_SEAL_STATUS.APPLICATION_STARTED]: [
+    PEACE_SEAL_STATUS.APPLICATION_SUBMITTED, // After payment is completed
   ],
   [PEACE_SEAL_STATUS.APPLICATION_SUBMITTED]: [
     PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS,

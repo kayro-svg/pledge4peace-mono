@@ -269,7 +269,7 @@ export default function MyReviewsDashboard() {
                   reviewing companies you've worked with or interacted with.
                 </p>
                 <Button
-                  onClick={() => window.open("/peace-seal", "_blank")}
+                  onClick={() => window.open("/peace-seal/directory", "_blank")}
                   className="flex items-center gap-2 mx-auto"
                   size="lg"
                 >

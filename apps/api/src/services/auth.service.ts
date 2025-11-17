@@ -336,6 +336,12 @@ export class AuthService {
       name: user.name,
       emailVerified: user.emailVerified === 1,
       image: user.image,
+      userType: user.userType || null,
+      office: user.office || null,
+      organization: user.organization || null,
+      nonprofit: user.nonprofit || null,
+      institution: user.institution || null,
+      otherRole: user.otherRole || null,
       // Incluir role en la respuesta del perfil
       role: user.role || "user",
     };

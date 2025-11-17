@@ -24,6 +24,8 @@ interface QuestionnaireFormProps {
   onComplete?: (data: any) => void;
   isCompleted?: boolean;
   employeeCount?: number;
+  submitLabel?: string; // Custom label for submit button
+  submitIcon?: "check" | "arrow"; // Icon type for submit button
 }
 
 // Section Navigation Sidebar
@@ -194,6 +196,8 @@ export default function QuestionnaireForm({
   onComplete = () => {},
   isCompleted = false,
   employeeCount = 0,
+  submitLabel,
+  submitIcon = "check",
 }: QuestionnaireFormProps) {
   const {
     questionnaire,
@@ -584,17 +588,6 @@ export default function QuestionnaireForm({
 
                   {isLastSection ? (
                     <div className="space-y-3">
-                      {/* {!canSubmit && (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                          <div className="flex items-center gap-2 text-yellow-800 text-sm">
-                            <AlertTriangle className="w-4 h-4" />
-                            <span className="font-medium">
-                              Completa todos los campos requeridos para enviar
-                              la aplicación
-                            </span>
-                          </div>
-                        </div>
-                      )} */}
                       <Button
                         onClick={handleComplete}
                         disabled={isSaving || !canSubmit || isCompleted}
@@ -604,11 +597,15 @@ export default function QuestionnaireForm({
                             : "bg-gray-400 cursor-not-allowed"
                         }`}
                       >
-                        <CheckCircle className="w-4 h-4 mr-2" />
+                        {submitIcon === "arrow" ? (
+                          <ChevronRight className="w-4 h-4 mr-2" />
+                        ) : (
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                        )}
                         {isSaving
                           ? "Submitting..."
                           : canSubmit
-                            ? "Submit Application for Review"
+                            ? submitLabel || "Submit Application for Review"
                             : "Complete Required Fields"}
                       </Button>
                     </div>

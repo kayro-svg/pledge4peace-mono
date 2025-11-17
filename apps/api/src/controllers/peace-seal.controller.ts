@@ -1152,6 +1152,23 @@ export class PeaceSealController {
         throw new HTTPException(404, { message: "User not found" });
       }
 
+      // Check questionnaire status before calling confirmPayment
+      const questionnaire = await db
+        .select({
+          progress: peaceSealQuestionnaires.progress,
+          responses: peaceSealQuestionnaires.responses,
+        })
+        .from(peaceSealQuestionnaires)
+        .where(eq(peaceSealQuestionnaires.companyId, companyId))
+        .then((r) => r[0]);
+
+      logger.log("confirmPaymentWebhook - Pre-check:", {
+        companyId,
+        currentPaymentStatus: company.paymentStatus,
+        questionnaireExists: !!questionnaire,
+        questionnaireProgress: questionnaire?.progress,
+      });
+
       // Call the service method using the company owner's ID
       const result = await peaceSealService.confirmPayment(
         companyId,
@@ -1160,15 +1177,51 @@ export class PeaceSealController {
         company.createdByUserId as string // Use company owner as the user
       );
 
+      // Verify the update was successful by reading back the company
+      const updatedCompany = await db
+        .select({
+          status: peaceSealCompanies.status,
+          paymentStatus: peaceSealCompanies.paymentStatus,
+          score: peaceSealCompanies.score,
+        })
+        .from(peaceSealCompanies)
+        .where(eq(peaceSealCompanies.id, companyId))
+        .then((r) => r[0]);
+
+      logger.log("confirmPaymentWebhook - Post-update verification:", {
+        companyId,
+        status: updatedCompany?.status,
+        paymentStatus: updatedCompany?.paymentStatus,
+        score: updatedCompany?.score,
+      });
+
       // If subscription was created, store the subscription ID
+      // IMPORTANT: Read current notes first to append, not overwrite
       if (subscriptionId) {
+        const currentCompany = await db
+          .select({ notes: peaceSealCompanies.notes })
+          .from(peaceSealCompanies)
+          .where(eq(peaceSealCompanies.id, companyId))
+          .then((r) => r[0]);
+
+        const existingNotes = currentCompany?.notes || "";
+        const subscriptionNote = `Subscription ID: ${subscriptionId}`;
+        const updatedNotes = existingNotes
+          ? `${existingNotes}\n${subscriptionNote}`
+          : subscriptionNote;
+
         await db
           .update(peaceSealCompanies)
           .set({
-            // Store subscription ID in notes or a custom field
-            notes: `Subscription ID: ${subscriptionId}`,
+            notes: updatedNotes,
+            updatedAt: Date.now(),
           })
           .where(eq(peaceSealCompanies.id, companyId));
+
+        logger.log("confirmPaymentWebhook - Subscription ID stored:", {
+          companyId,
+          subscriptionId,
+        });
       }
 
       // Send confirmation email to the user

@@ -71,13 +71,6 @@ const COMPANY_INFORMATION_SECTION: QuestionnaireSection = {
         "List all countries where your organization operates (comma-separated)",
     },
     {
-      id: "employeeCount",
-      label: "Size (number of employees)",
-      type: "number",
-      required: true,
-      placeholder: "e.g., 150",
-    },
-    {
       id: "annualRevenueRange",
       label: "Annual Revenue Range (optional)",
       type: "select",
@@ -727,8 +720,11 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024, // 10MB
         helpText: "Payroll summary or self-declaration",
+        hasTemplate: true,
+        templateId: "template_fair_wage_declaration",
+        templateType: "simple",
         tooltipText:
-          "This declaration should confirm your organization’s commitment to pay all employees fairly and ethically. It ensures wages meet or exceed living standards, promotes equal pay for equal work, and prohibits exploitation or wage discrimination.",
+          "By providing this information, you confirm your organization’s commitment to fair and ethical pay. This includes a living wage, ensuring equal pay for equal work, maintaining transparency in compensation, offering fair benefits, and rejecting all forms of labor exploitation. This declaration supports dignity, justice, and peace in the workplace.",
       },
       // Optional fields (+5%)
       {

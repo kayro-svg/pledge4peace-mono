@@ -30,6 +30,7 @@ import {
 } from "../utils/questionnaire-parser";
 import { getScoringManifest } from "../config/scoring-manifest";
 import { calculateWeightedScore } from "../utils/questionnaire-scoring";
+import { logger } from "../utils/logger";
 
 export interface CreateApplicationDTO {
   name: string;
@@ -351,51 +352,113 @@ export class PeaceSealService {
       updatePayload.rfqStatus = "accepted";
     }
 
-    // Update payment status ONLY - do NOT change application status or assign advisor
-    await this.db
-      .update(peaceSealCompanies)
-      .set(updatePayload)
-      .where(eq(peaceSealCompanies.id, companyId));
+    // Check questionnaire status to determine if we should transition to APPLICATION_SUBMITTED
+    const questionnaire = await this.db
+      .select({
+        responses: peaceSealQuestionnaires.responses,
+        progress: peaceSealQuestionnaires.progress,
+      })
+      .from(peaceSealQuestionnaires)
+      .where(eq(peaceSealQuestionnaires.companyId, companyId))
+      .then((r) => r[0]);
 
-    // If questionnaire is already submitted (status is APPLICATION_SUBMITTED), calculate auto-score
-    if (company.status === PEACE_SEAL_STATUS.APPLICATION_SUBMITTED) {
-      // Get questionnaire to calculate score
-      const questionnaire = await this.db
+    logger.log("confirmPayment - Company state before update:", {
+      companyId,
+      currentStatus: company.status,
+      currentPaymentStatus: company.paymentStatus,
+      questionnaireExists: !!questionnaire,
+      questionnaireProgress: questionnaire?.progress,
+      employeeCount: company.employeeCount,
+    });
+
+    // If questionnaire is completed, transition to APPLICATION_SUBMITTED and calculate score
+    if (
+      questionnaire &&
+      questionnaire.progress >= 100 &&
+      (company.status === PEACE_SEAL_STATUS.DRAFT ||
+        company.status === PEACE_SEAL_STATUS.APPLICATION_STARTED)
+    ) {
+      // Calculate auto-score
+      const autoScore = this.calculateScore(
+        questionnaire.responses,
+        company.employeeCount
+      );
+
+      logger.log("confirmPayment - Calculating score and transitioning:", {
+        companyId,
+        autoScore,
+        currentStatus: company.status,
+        newStatus: PEACE_SEAL_STATUS.APPLICATION_SUBMITTED,
+        questionnaireProgress: questionnaire.progress,
+      });
+
+      // Transition to APPLICATION_SUBMITTED and set score
+      updatePayload.status = PEACE_SEAL_STATUS.APPLICATION_SUBMITTED;
+      updatePayload.score = autoScore;
+
+      // Update company with payment and status/score
+      await this.db
+        .update(peaceSealCompanies)
+        .set(updatePayload)
+        .where(eq(peaceSealCompanies.id, companyId));
+
+      logger.log("confirmPayment - Company updated successfully:", {
+        companyId,
+        updatePayload,
+      });
+
+      // Auto-assign advisor if not already assigned
+      const currentCompany = await this.db
         .select({
-          responses: peaceSealQuestionnaires.responses,
-          progress: peaceSealQuestionnaires.progress,
+          advisorUserId: peaceSealCompanies.advisorUserId,
         })
-        .from(peaceSealQuestionnaires)
-        .where(eq(peaceSealQuestionnaires.companyId, companyId))
+        .from(peaceSealCompanies)
+        .where(eq(peaceSealCompanies.id, companyId))
         .then((r) => r[0]);
 
-      if (questionnaire && questionnaire.progress >= 100) {
-        // Calculate auto-score
-        const autoScore = this.calculateScore(
-          questionnaire.responses,
-          company.employeeCount
-        );
-
-        // Update score
-        await this.db
-          .update(peaceSealCompanies)
-          .set({
-            score: autoScore,
-            updatedAt: nowTs,
-          })
-          .where(eq(peaceSealCompanies.id, companyId));
-
-        // Record in history
-        await this.db.insert(peaceSealStatusHistory).values({
-          id: ulid(),
-          companyId,
-          status: company.status,
-          score: autoScore,
-          notes: `Payment confirmed - Auto-score calculated: ${autoScore}/100`,
-          changedByUserId: userId,
-          createdAt: nowTs,
-        });
+      if (!currentCompany?.advisorUserId) {
+        await this.assignAdvisorAutomatically(companyId, userId);
       }
+
+      // Record in history
+      await this.db.insert(peaceSealStatusHistory).values({
+        id: ulid(),
+        companyId,
+        status: PEACE_SEAL_STATUS.APPLICATION_SUBMITTED,
+        score: autoScore,
+        notes: `Payment confirmed - Application submitted for review - Auto-score calculated: ${autoScore}/100`,
+        changedByUserId: userId,
+        createdAt: nowTs,
+      });
+    } else {
+      logger.log(
+        "confirmPayment - Questionnaire not completed or wrong status, only updating payment:",
+        {
+          companyId,
+          questionnaireProgress: questionnaire?.progress,
+          currentStatus: company.status,
+          updatePayload,
+        }
+      );
+
+      // Questionnaire not completed yet - just update payment status
+      await this.db
+        .update(peaceSealCompanies)
+        .set(updatePayload)
+        .where(eq(peaceSealCompanies.id, companyId));
+
+      // Record payment confirmation in history
+      await this.db.insert(peaceSealStatusHistory).values({
+        id: ulid(),
+        companyId,
+        status: company.status,
+        notes:
+          questionnaire && questionnaire.progress >= 100
+            ? "Payment confirmed - waiting for questionnaire completion"
+            : "Payment confirmed - waiting for questionnaire completion",
+        changedByUserId: userId,
+        createdAt: nowTs,
+      });
     }
 
     return { success: true };
@@ -542,73 +605,122 @@ export class PeaceSealService {
     );
     const expiresAtTs = expiresAt.getTime(); // Convert to timestamp
 
-    // Update payment status ONLY - do NOT change application status or assign advisor
-    await this.db
-      .update(peaceSealCompanies)
-      .set({
-        paymentStatus: PAYMENT_STATUS.PAID,
-        paymentAmountCents: amountCents,
-        paymentTransactionId: transactionId,
-        paymentDate: nowTs,
-        expiresAt: expiresAtTs,
-        updatedAt: nowTs,
+    // Check questionnaire status to determine if we should transition to APPLICATION_SUBMITTED
+    const questionnaire = await this.db
+      .select({
+        responses: peaceSealQuestionnaires.responses,
+        progress: peaceSealQuestionnaires.progress,
       })
-      .where(eq(peaceSealCompanies.id, companyId));
+      .from(peaceSealQuestionnaires)
+      .where(eq(peaceSealQuestionnaires.companyId, companyId))
+      .then((r) => r[0]);
 
-    // If questionnaire is already submitted (status is APPLICATION_SUBMITTED), calculate auto-score
-    if (company.status === PEACE_SEAL_STATUS.APPLICATION_SUBMITTED) {
-      // Get questionnaire to calculate score
-      const questionnaire = await this.db
+    const updatePayload: any = {
+      paymentStatus: PAYMENT_STATUS.PAID,
+      paymentAmountCents: amountCents,
+      paymentTransactionId: transactionId,
+      paymentDate: nowTs,
+      expiresAt: expiresAtTs,
+      updatedAt: nowTs,
+    };
+
+    // If questionnaire is completed, transition to APPLICATION_SUBMITTED and calculate score
+    if (
+      questionnaire &&
+      questionnaire.progress >= 100 &&
+      (company.status === PEACE_SEAL_STATUS.DRAFT ||
+        company.status === PEACE_SEAL_STATUS.APPLICATION_STARTED)
+    ) {
+      // Calculate auto-score
+      const autoScore = this.calculateScore(
+        questionnaire.responses,
+        company.employeeCount
+      );
+
+      // Transition to APPLICATION_SUBMITTED and set score
+      updatePayload.status = PEACE_SEAL_STATUS.APPLICATION_SUBMITTED;
+      updatePayload.score = autoScore;
+
+      // Update company with payment and status/score
+      await this.db
+        .update(peaceSealCompanies)
+        .set(updatePayload)
+        .where(eq(peaceSealCompanies.id, companyId));
+
+      // Auto-assign advisor if not already assigned
+      const currentCompany = await this.db
         .select({
-          responses: peaceSealQuestionnaires.responses,
-          progress: peaceSealQuestionnaires.progress,
+          advisorUserId: peaceSealCompanies.advisorUserId,
         })
-        .from(peaceSealQuestionnaires)
-        .where(eq(peaceSealQuestionnaires.companyId, companyId))
+        .from(peaceSealCompanies)
+        .where(eq(peaceSealCompanies.id, companyId))
         .then((r) => r[0]);
 
-      if (questionnaire && questionnaire.progress >= 100) {
-        // Calculate auto-score
-        const autoScore = this.calculateScore(
-          questionnaire.responses,
-          company.employeeCount
-        );
-
-        // Update score
-        await this.db
-          .update(peaceSealCompanies)
-          .set({
-            score: autoScore,
-            updatedAt: nowTs,
-          })
-          .where(eq(peaceSealCompanies.id, companyId));
-
-        // Record in history
-        await this.db.insert(peaceSealStatusHistory).values({
-          id: ulid(),
-          companyId,
-          status: company.status,
-          score: autoScore,
-          notes: `Payment confirmed manually by admin - Auto-score calculated: ${autoScore}/100 - Amount: $${amountCents / 100}`,
-          changedByUserId: adminUserId,
-          createdAt: nowTs,
-        });
-
-        return { success: true };
+      if (!currentCompany?.advisorUserId) {
+        await this.assignAdvisorAutomatically(companyId, adminUserId);
       }
+
+      // Record in history
+      await this.db.insert(peaceSealStatusHistory).values({
+        id: ulid(),
+        companyId,
+        status: PEACE_SEAL_STATUS.APPLICATION_SUBMITTED,
+        score: autoScore,
+        notes: `Payment confirmed manually by admin - Application submitted for review - Auto-score calculated: ${autoScore}/100 - Amount: $${amountCents / 100}`,
+        changedByUserId: adminUserId,
+        createdAt: nowTs,
+      });
+
+      return { success: true };
+    } else if (
+      company.status === PEACE_SEAL_STATUS.APPLICATION_SUBMITTED &&
+      questionnaire &&
+      questionnaire.progress >= 100
+    ) {
+      // Already submitted - recalculate score
+      const autoScore = this.calculateScore(
+        questionnaire.responses,
+        company.employeeCount
+      );
+
+      updatePayload.score = autoScore;
+
+      await this.db
+        .update(peaceSealCompanies)
+        .set(updatePayload)
+        .where(eq(peaceSealCompanies.id, companyId));
+
+      // Record in history
+      await this.db.insert(peaceSealStatusHistory).values({
+        id: ulid(),
+        companyId,
+        status: company.status,
+        score: autoScore,
+        notes: `Payment confirmed manually by admin - Auto-score recalculated: ${autoScore}/100 - Amount: $${amountCents / 100}`,
+        changedByUserId: adminUserId,
+        createdAt: nowTs,
+      });
+
+      return { success: true };
+    } else {
+      // Questionnaire not completed yet - just update payment status
+      await this.db
+        .update(peaceSealCompanies)
+        .set(updatePayload)
+        .where(eq(peaceSealCompanies.id, companyId));
+
+      // Record payment confirmation in history
+      await this.db.insert(peaceSealStatusHistory).values({
+        id: ulid(),
+        companyId,
+        status: company.status,
+        notes: `Payment confirmed manually by admin - Amount: $${amountCents / 100}${questionnaire && questionnaire.progress >= 100 ? " - waiting for questionnaire completion" : ""}`,
+        changedByUserId: adminUserId,
+        createdAt: nowTs,
+      });
+
+      return { success: true };
     }
-
-    // Record in history
-    await this.db.insert(peaceSealStatusHistory).values({
-      id: ulid(),
-      companyId,
-      status: company.status,
-      notes: `Payment confirmed manually by admin - Amount: $${amountCents / 100}`,
-      changedByUserId: adminUserId,
-      createdAt: nowTs,
-    });
-
-    return { success: true };
   }
 
   // Auto-assign advisor to company (does NOT change status - status should be APPLICATION_SUBMITTED)
@@ -724,7 +836,7 @@ export class PeaceSealService {
       });
     }
 
-    // If questionnaire is completed, update status to APPLICATION_SUBMITTED and assign advisor
+    // If questionnaire is completed, update status based on payment status
     if (progress >= 100) {
       // Get current company status, payment info, and employeeCount to determine appropriate next status
       const currentCompany = await this.db
@@ -738,43 +850,112 @@ export class PeaceSealService {
         .where(eq(peaceSealCompanies.id, companyId))
         .then((r) => r[0]);
 
+      logger.log(
+        "saveQuestionnaire - Questionnaire completed, checking company state:",
+        {
+          companyId,
+          progress,
+          currentStatus: currentCompany?.status,
+          currentPaymentStatus: currentCompany?.paymentStatus,
+          employeeCount: currentCompany?.employeeCount,
+        }
+      );
+
       let newStatus = currentCompany?.status;
       let statusNote = "Questionnaire completed";
       let preliminaryScore: number | null = null;
       let shouldAssignAdvisor = false;
 
-      // Determine appropriate status based on current state
-      if (currentCompany?.status === PEACE_SEAL_STATUS.DRAFT) {
-        // If still in draft, move to application submitted
-        newStatus = PEACE_SEAL_STATUS.APPLICATION_SUBMITTED;
-        statusNote =
-          "Questionnaire completed - application submitted for review";
-        shouldAssignAdvisor = true; // Assign advisor when submitting for first time
-      } else if (
-        currentCompany?.status === PEACE_SEAL_STATUS.APPLICATION_SUBMITTED
-      ) {
-        // Keep as application_submitted - no auto-transition to under_review
-        newStatus = PEACE_SEAL_STATUS.APPLICATION_SUBMITTED;
-        statusNote = "Questionnaire updated - application submitted for review";
-      } else if (
-        currentCompany?.status === PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS
-      ) {
-        // Already in audit, keep same status but update note
-        newStatus = PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS;
-        statusNote = "Questionnaire updated - ready for advisor review";
-      }
+      // Determine appropriate status based on payment status and current state
+      if (currentCompany?.paymentStatus === PAYMENT_STATUS.PAID) {
+        // Payment is completed - move to APPLICATION_SUBMITTED
+        if (
+          currentCompany?.status === PEACE_SEAL_STATUS.DRAFT ||
+          currentCompany?.status === PEACE_SEAL_STATUS.APPLICATION_STARTED
+        ) {
+          newStatus = PEACE_SEAL_STATUS.APPLICATION_SUBMITTED;
+          statusNote =
+            "Questionnaire completed - application submitted for review";
+          shouldAssignAdvisor = true; // Assign advisor when submitting for first time
 
-      // If payment is completed, calculate preliminary score for directory display
-      if (
-        currentCompany?.paymentStatus === PAYMENT_STATUS.PAID &&
-        (newStatus === PEACE_SEAL_STATUS.APPLICATION_SUBMITTED ||
-          newStatus === PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS)
-      ) {
-        preliminaryScore = this.calculateScore(
-          responses,
-          currentCompany.employeeCount
-        );
-        statusNote += ` - Auto-score calculated: ${preliminaryScore}/100`;
+          // Calculate auto-score since payment is completed
+          preliminaryScore = this.calculateScore(
+            responses,
+            currentCompany.employeeCount
+          );
+          statusNote += ` - Auto-score calculated: ${preliminaryScore}/100`;
+
+          logger.log(
+            "saveQuestionnaire - Payment completed, calculating score:",
+            {
+              companyId,
+              preliminaryScore,
+              newStatus,
+              employeeCount: currentCompany.employeeCount,
+            }
+          );
+        } else if (
+          currentCompany?.status === PEACE_SEAL_STATUS.APPLICATION_SUBMITTED
+        ) {
+          // Keep as application_submitted - no auto-transition to under_review
+          newStatus = PEACE_SEAL_STATUS.APPLICATION_SUBMITTED;
+          statusNote =
+            "Questionnaire updated - application submitted for review";
+
+          // Recalculate score since questionnaire was updated
+          preliminaryScore = this.calculateScore(
+            responses,
+            currentCompany.employeeCount
+          );
+          statusNote += ` - Auto-score recalculated: ${preliminaryScore}/100`;
+        } else if (
+          currentCompany?.status === PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS
+        ) {
+          // Already in audit, keep same status but update note
+          newStatus = PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS;
+          statusNote = "Questionnaire updated - ready for advisor review";
+        }
+      } else {
+        // Payment not completed - move to APPLICATION_STARTED
+        if (currentCompany?.status === PEACE_SEAL_STATUS.DRAFT) {
+          newStatus = PEACE_SEAL_STATUS.APPLICATION_STARTED;
+          statusNote =
+            "Questionnaire completed - awaiting payment to submit for review";
+          // Do not assign advisor or calculate score until payment is completed
+        } else if (
+          currentCompany?.status === PEACE_SEAL_STATUS.APPLICATION_STARTED
+        ) {
+          // Payment completed but status still APPLICATION_STARTED - transition to APPLICATION_SUBMITTED
+          // This can happen if payment was confirmed before questionnaire was saved
+          newStatus = PEACE_SEAL_STATUS.APPLICATION_SUBMITTED;
+          statusNote =
+            "Questionnaire completed - application submitted for review";
+          shouldAssignAdvisor = true;
+
+          // Calculate auto-score since payment is completed
+          preliminaryScore = this.calculateScore(
+            responses,
+            currentCompany.employeeCount
+          );
+          statusNote += ` - Auto-score calculated: ${preliminaryScore}/100`;
+
+          logger.log(
+            "saveQuestionnaire - Payment completed but status was APPLICATION_STARTED, transitioning:",
+            {
+              companyId,
+              preliminaryScore,
+              newStatus,
+              employeeCount: currentCompany.employeeCount,
+            }
+          );
+        } else if (
+          currentCompany?.status === PEACE_SEAL_STATUS.APPLICATION_SUBMITTED ||
+          currentCompany?.status === PEACE_SEAL_STATUS.AUDIT_IN_PROGRESS
+        ) {
+          // Already submitted/in review - keep status but note payment issue
+          newStatus = currentCompany.status;
+          statusNote = "Questionnaire updated";
+        }
       }
 
       // Update company status and preliminary score (if paid)
@@ -791,12 +972,20 @@ export class PeaceSealService {
         updatePayload.score = preliminaryScore;
       }
 
+      logger.log("saveQuestionnaire - Updating company with:", {
+        companyId,
+        updatePayload,
+        newStatus,
+        preliminaryScore,
+        shouldAssignAdvisor,
+      });
+
       await this.db
         .update(peaceSealCompanies)
         .set(updatePayload)
         .where(eq(peaceSealCompanies.id, companyId));
 
-      // Assign advisor if this is the first submission (status changed from DRAFT)
+      // Assign advisor if this is the first submission (status changed to APPLICATION_SUBMITTED)
       if (shouldAssignAdvisor && !currentCompany?.advisorUserId) {
         await this.assignAdvisorAutomatically(companyId, userId);
       }
@@ -933,19 +1122,52 @@ export class PeaceSealService {
     responses: any,
     employeeCount?: number | null
   ): number {
-    if (!responses || typeof responses !== "object") {
+    if (!responses) {
+      logger.log("calculateScore - No responses provided", { employeeCount });
       return 0;
     }
 
     // Parse if string
-    const parsedResponses =
-      typeof responses === "string" ? JSON.parse(responses) : responses;
+    let parsedResponses: any;
+    try {
+      parsedResponses =
+        typeof responses === "string" ? JSON.parse(responses) : responses;
+    } catch (error) {
+      logger.error("calculateScore - Failed to parse responses:", error);
+      return 0;
+    }
+
+    if (
+      !parsedResponses ||
+      typeof parsedResponses !== "object" ||
+      Array.isArray(parsedResponses)
+    ) {
+      logger.log("calculateScore - Invalid parsed responses format", {
+        type: typeof parsedResponses,
+        isArray: Array.isArray(parsedResponses),
+        employeeCount,
+      });
+      return 0;
+    }
 
     // Get scoring manifest based on company size
     const sections = getScoringManifest(employeeCount);
 
     // Calculate weighted score using new scoring system
-    return calculateWeightedScore(sections, parsedResponses, employeeCount);
+    const score = calculateWeightedScore(
+      sections,
+      parsedResponses,
+      employeeCount
+    );
+
+    logger.log("calculateScore - Score calculated:", {
+      score,
+      employeeCount,
+      sectionsCount: sections.length,
+      hasResponses: !!parsedResponses,
+    });
+
+    return score;
   }
 
   // Section 2: Ethical Practices & Governance (30% weight)

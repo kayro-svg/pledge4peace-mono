@@ -239,12 +239,12 @@ export default function PublicCompanyProfile({
                     {company.industry}
                   </div>
                 )}
-                {company.employeeCount && (
+                {/* {company.employeeCount && (
                   <div className="flex items-center gap-1">
                     <Users className="w-4 h-4" />+{company.employeeCount}{" "}
                     employees
                   </div>
-                )}
+                )} */}
               </div>
             </div>
 
@@ -385,6 +385,24 @@ export default function PublicCompanyProfile({
                     </div>
                   </div>
                 )}
+
+                {!isCommunityListed(company) &&
+                  (company.status === "draft" ||
+                    company.status === "application_started") && (
+                    <div className="mt-4 flex items-start gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-amber-800">
+                      <Info className="w-5 h-5 mt-0.5" />
+                      <div className="text-sm">
+                        <p className="font-medium">
+                          The company has initiated the Peace Seal certification
+                          process.
+                        </p>
+                        <p className="mt-1">
+                          This company has started its Peace Seal application,
+                          but it is not yet complete.
+                        </p>
+                      </div>
+                    </div>
+                  )}
               </div>
 
               {/* Company Details Grid */}

@@ -835,10 +835,10 @@ export class EmailService {
       sender: { name: this.fromName, email: this.fromEmail },
       to: [
         // { email: "info@pledge4peace.org", name: "Pledge4Peace Admin" },
-        // {
-        //   email: "shelsys@pledge4peace.org",
-        //   name: "Shelsys Rivera - Marketing Chief",
-        // },
+        {
+          email: "shelsys@pledge4peace.org",
+          name: "Shelsys Rivera - Marketing Chief",
+        },
         {
           email: "kayrov@weversity.org",
           name: "kayro developer",

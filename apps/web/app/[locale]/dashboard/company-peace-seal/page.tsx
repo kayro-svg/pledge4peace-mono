@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useAuthSession } from "@/hooks/use-auth-session";
 import {
   getUserCompany,
@@ -29,7 +29,6 @@ import {
   DollarSign,
   Building,
   Globe,
-  Users,
   ExternalLink,
   PlayCircle,
   ArrowLeft,
@@ -40,7 +39,14 @@ import { logger } from "@/lib/utils/logger";
 import QuestionnaireForm from "@/components/peace-seal/questionnaire/QuestionnaireForm";
 import { toast } from "@/hooks/use-toast";
 import { useRouter, useSearchParams } from "next/navigation";
-import { formatTimestampDate } from "@/lib/utils/peace-seal-utils";
+import {
+  formatTimestampDate,
+  numberToBusinessSize,
+  requiresRFQ,
+} from "@/lib/utils/peace-seal-utils";
+import PaymentForm from "@/components/peace-seal/peace-seal-apply/payment-form";
+import { QuoteNotice } from "@/components/peace-seal/peace-seal-apply/quote-notice";
+import { requestQuote } from "@/lib/api/peace-seal";
 
 type UserCompany = {
   id: string;
@@ -104,6 +110,10 @@ function getStatusLabel(status: string): string {
       return "Audit in Progress";
     case "application_submitted":
       return "Application Submitted";
+    case "application_started":
+      return "Application Started - Payment Pending";
+    case "draft":
+      return "Draft - In Progress";
     default:
       return "Draft";
   }
@@ -124,6 +134,10 @@ function getStatusColor(status: string): string {
       return "bg-blue-50 text-blue-700 border-blue-200";
     case "application_submitted":
       return "bg-purple-50 text-purple-700 border-purple-200";
+    case "application_started":
+      return "bg-amber-50 text-amber-700 border-amber-200";
+    case "draft":
+      return "bg-gray-50 text-gray-700 border-gray-200";
     default:
       return "bg-gray-50 text-gray-700 border-gray-200";
   }
@@ -143,10 +157,14 @@ function getStatusDescription(status: string): string {
       return "Your application is being reviewed by our advisors.";
     case "audit_in_progress":
       return "An advisor is auditing your application and documents.";
+    case "draft":
+      return "Your application is in progress. Complete the questionnaire to continue.";
+    case "application_started":
+      return "Your questionnaire is complete. Complete payment to submit your application for review.";
     case "application_submitted":
       return "Your application has been sent and is waiting for review.";
     default:
-      return "Your application is in draft. Complete the questionnaire to send it.";
+      return "Your application is in draft. Complete the questionnaire to continue.";
   }
 }
 
@@ -183,6 +201,18 @@ export default function CompanyPeaceSealDashboard() {
   // Check if user is a company (will be determined after loading company data)
   const isUser = session?.user?.role === "user";
   const userEmail = session?.user?.email;
+
+  // Calculate business size and payment amount (hooks must be before early returns)
+  const businessSize = userCompany
+    ? numberToBusinessSize(userCompany.employeeCount || 0)
+    : null;
+  const needsRFQ = businessSize ? requiresRFQ(businessSize) : false;
+  const paymentAmount = useMemo(() => {
+    if (!businessSize) return 99; // Default to small company
+    if (businessSize === "small") return 99;
+    if (businessSize === "medium") return 499;
+    return null; // RFQ for large businesses
+  }, [businessSize]);
 
   const loadUserCompanyData = useCallback(async () => {
     if (!isUser) return;
@@ -246,19 +276,31 @@ export default function CompanyPeaceSealDashboard() {
     setShowQuestionnaire(true);
   };
 
-  const handleQuestionnaireComplete = (data: unknown) => {
+  const handleQuestionnaireComplete = async (data: unknown) => {
     logger.info("Questionnaire completed:", data);
     setShowQuestionnaire(false);
 
-    // Show success message
-    toast({
-      title: "Application Submitted",
-      description:
-        "Your application has been sent for review by our advisors. We'll notify you about the progress of your Peace Seal certification.",
-    });
-
     // Reload company data to get updated status
-    loadUserCompanyData();
+    await loadUserCompanyData();
+
+    // Wait a bit for state to update, then determine next step
+    setTimeout(() => {
+      // Use the updated userCompany from state (will be available in next render)
+      // For now, show a generic message and scroll to payment section
+      toast({
+        title: "Questionnaire Completed",
+        description:
+          "Your questionnaire is complete. Complete payment below to submit your application for review. We'll notify you about the progress once submitted.",
+      });
+
+      // Scroll to payment section if available
+      setTimeout(() => {
+        const paymentSection = document.getElementById("payment-section");
+        if (paymentSection) {
+          paymentSection.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 300);
+    }, 100);
   };
 
   const handleBackToDashboard = () => {
@@ -420,6 +462,55 @@ export default function CompanyPeaceSealDashboard() {
 
   const isCompleted = questionnaire?.progress === 100;
 
+  // Determine if payment block should be shown
+  const shouldShowPaymentBlock =
+    isCompleted &&
+    userCompany?.status === "application_started" &&
+    userCompany?.paymentStatus !== "paid" &&
+    !needsRFQ;
+
+  // Handle payment success
+  const handlePaymentSuccess = async () => {
+    toast({
+      title: "Payment Confirmed",
+      description:
+        "Your payment has been confirmed! Your application has been submitted for review. You will be notified about the progress of your Peace Seal certification.",
+    });
+    // Reload company data to reflect updated status
+    await loadUserCompanyData();
+  };
+
+  // Handle payment error
+  const handlePaymentError = (message: string) => {
+    toast({
+      title: "Payment Failed",
+      description: `Payment failed: ${message}`,
+      variant: "destructive",
+    });
+  };
+
+  // Handle quote request
+  const handleRequestQuote = async () => {
+    if (!userCompany) return;
+    try {
+      const employeeCount = userCompany.employeeCount || 100;
+      await requestQuote(userCompany.id, employeeCount);
+      toast({
+        title: "Quote Requested",
+        description:
+          "Your quote request has been submitted. You will be notified once your custom quote is ready.",
+      });
+      await loadUserCompanyData();
+    } catch (error) {
+      logger.error("Failed to request quote:", error);
+      toast({
+        title: "Error",
+        description: "Failed to request quote. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Show questionnaire form if user wants to continue/start application
   if (showQuestionnaire && userCompany) {
     return (
@@ -510,6 +601,7 @@ export default function CompanyPeaceSealDashboard() {
                   onComplete={handleQuestionnaireComplete}
                   isCompleted={isCompleted}
                   employeeCount={effectiveEmployeeCount}
+                  submitLabel="Continue with payment"
                 />
               );
             })()}
@@ -597,16 +689,26 @@ export default function CompanyPeaceSealDashboard() {
                     <DollarSign className="w-4 h-4" />
                     Payment Status
                   </div>
-                  <Badge
-                    variant={
-                      userCompany.paymentStatus === "paid"
-                        ? "default"
-                        : "secondary"
-                    }
-                    className="text-sm px-3 py-1"
-                  >
-                    {userCompany.paymentStatus === "paid" ? "Paid" : "Pending"}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge
+                      variant={
+                        userCompany.paymentStatus === "paid"
+                          ? "default"
+                          : "secondary"
+                      }
+                      className="text-sm px-3 py-1"
+                    >
+                      {userCompany.paymentStatus === "paid"
+                        ? "Paid"
+                        : "Pending"}
+                    </Badge>
+                    {userCompany.paymentStatus !== "paid" &&
+                      userCompany.status === "application_started" && (
+                        <span className="text-xs text-gray-500">
+                          Complete payment below
+                        </span>
+                      )}
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -635,8 +737,8 @@ export default function CompanyPeaceSealDashboard() {
                   <div>
                     <h2 className="text-xl">Quote Requested</h2>
                     <p className="text-sm font-normal text-gray-600 mt-1">
-                      Your quote request is being reviewed. We&apos;ll notify you
-                      once your custom quote is ready.
+                      Your quote request is being reviewed. We&apos;ll notify
+                      you once your custom quote is ready.
                     </p>
                   </div>
                 </CardTitle>
@@ -662,9 +764,7 @@ export default function CompanyPeaceSealDashboard() {
                 <CardContent>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-gray-600 mb-1">
-                        Quote Amount
-                      </p>
+                      <p className="text-sm text-gray-600 mb-1">Quote Amount</p>
                       <p className="text-3xl font-bold text-[#548281]">
                         $
                         {(
@@ -838,24 +938,85 @@ export default function CompanyPeaceSealDashboard() {
                             <span className="text-sm font-medium">
                               {userCompany.status === "application_submitted"
                                 ? "Application sent and in review"
-                                : userCompany.status === "under_review"
-                                  ? "In review! An advisor has been assigned and is reviewing your application."
-                                  : userCompany.status === "audit_in_progress"
-                                    ? "In audit! Your advisor is evaluating the questionnaire responses."
-                                    : userCompany.status === "verified"
-                                      ? "Congratulations! Peace Seal certified!"
-                                      : userCompany.status === "conditional"
-                                        ? "Conditional approval - Review comments from the advisor"
-                                        : userCompany.status === "did_not_pass"
-                                          ? "Not approved - Review comments and apply again"
+                                : userCompany.status === "application_started"
+                                  ? "Questionnaire completed - Complete payment below to submit for review"
+                                  : userCompany.status === "under_review"
+                                    ? "In review! An advisor has been assigned and is reviewing your application."
+                                    : userCompany.status === "audit_in_progress"
+                                      ? "In audit! Your advisor is evaluating the questionnaire responses."
+                                      : userCompany.status === "verified"
+                                        ? "Congratulations! Peace Seal certified!"
+                                        : userCompany.status === "conditional"
+                                          ? "Conditional approval - Review comments from the advisor"
                                           : userCompany.status ===
-                                              "audit_completed"
-                                            ? "Congratulations! Peace Seal certified!"
-                                            : "Application completed and sent for review!"}
+                                              "did_not_pass"
+                                            ? "Not approved - Review comments and apply again"
+                                            : userCompany.status ===
+                                                "audit_completed"
+                                              ? "Congratulations! Peace Seal certified!"
+                                              : "Questionnaire completed!"}
                             </span>
                           </div>
                         )}
                       </div>
+
+                      {/* Payment Section - Show when questionnaire is complete and payment is pending */}
+                      {shouldShowPaymentBlock && (
+                        <div
+                          id="payment-section"
+                          className="pt-6 border-t space-y-4"
+                        >
+                          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div className="flex items-center gap-2 text-blue-800 mb-2">
+                              <DollarSign className="w-5 h-5" />
+                              <span className="text-sm font-medium">
+                                Complete Payment to Submit Application
+                              </span>
+                            </div>
+                            <p className="text-blue-700 text-sm mb-4">
+                              Your questionnaire is complete. Complete payment
+                              below to submit your application for review.
+                            </p>
+                            <PaymentForm
+                              amount={paymentAmount || 0}
+                              companyName={userCompany.name}
+                              companyId={userCompany.id}
+                              onSuccess={handlePaymentSuccess}
+                              onError={handlePaymentError}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* RFQ Section - Show when questionnaire is complete and RFQ is needed */}
+                      {isCompleted &&
+                        userCompany?.status === "application_started" &&
+                        userCompany?.paymentStatus !== "paid" &&
+                        needsRFQ &&
+                        !userCompany?.rfqStatus && (
+                          <div
+                            id="payment-section"
+                            className="pt-6 border-t space-y-4"
+                          >
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                              <div className="flex items-center gap-2 text-blue-800 mb-2">
+                                <DollarSign className="w-5 h-5" />
+                                <span className="text-sm font-medium">
+                                  Request Custom Quote
+                                </span>
+                              </div>
+                              <p className="text-blue-700 text-sm mb-4">
+                                Your questionnaire is complete. Companies with
+                                more than 50 employees require a custom quote.
+                                Request your quote below to proceed with
+                                payment.
+                              </p>
+                              <QuoteNotice
+                                onRequestQuote={handleRequestQuote}
+                              />
+                            </div>
+                          </div>
+                        )}
 
                       {/* Application Details */}
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
