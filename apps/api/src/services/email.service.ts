@@ -443,14 +443,14 @@ export class EmailService {
       },
       to: [
         {
-          // email: "info@pledge4peace.org",
-          email: "kayrov@weversity.org",
+          email: "info@pledge4peace.org",
+          // email: "kayrov@weversity.org",
           name: "Pledge4Peace Admin",
         },
-        // {
-        //   email: "shelsys@pledge4peace.org",
-        //   name: "Shelsys Rivera - Marketing Chief",
-        // },
+        {
+          email: "shelsys@pledge4peace.org",
+          name: "Shelsys Rivera - Marketing Chief",
+        },
       ],
       subject: "New User Registration - Pledge4Peace",
       htmlContent: `
@@ -508,18 +508,18 @@ export class EmailService {
         email: this.fromEmail,
       },
       to: [
-        // {
-        //   email: "info@pledge4peace.org",
-        //   name: "Pledge4Peace Admin",
-        // },
-        // {
-        //   email: "shelsys@pledge4peace.org",
-        //   name: "Shelsys Rivera - Marketing Chief",
-        // },
         {
-          email: "kayrov@weversity.org",
-          name: "kayro developer",
-        }
+          email: "info@pledge4peace.org",
+          name: "Pledge4Peace Admin",
+        },
+        {
+          email: "shelsys@pledge4peace.org",
+          name: "Shelsys Rivera - Marketing Chief",
+        },
+        // {
+        //   email: "kayrov@weversity.org",
+        //   name: "kayro developer",
+        // }
       ],
       subject: `New Contact Form Submission: ${contactData.subject}`,
       htmlContent: `
@@ -583,18 +583,18 @@ export class EmailService {
         email: this.fromEmail,
       },
       to: [
-        // {
-        //   email: "info@pledge4peace.org",
-        //   name: "Pledge4Peace Admin",
-        // },
-        // {
-        //   email: "shelsys@pledge4peace.org",
-        //   name: "Shelsys Rivera - Marketing Chief",
-        // },
         {
-          email: "kayrov@weversity.org",
-          name: "kayro developer",
-        }
+          email: "info@pledge4peace.org",
+          name: "Pledge4Peace Admin",
+        },
+        {
+          email: "shelsys@pledge4peace.org",
+          name: "Shelsys Rivera - Marketing Chief",
+        },
+        // {
+        //   email: "kayrov@weversity.org",
+        //   name: "kayro developer",
+        // }
       ],
       subject: `New Volunteer Application from ${volunteerData.name}`,
       htmlContent: `
@@ -669,18 +669,18 @@ export class EmailService {
         email: this.fromEmail,
       },
       to: [
-        // {
-        //   email: "info@pledge4peace.org",
-        //   name: "Pledge4Peace Admin",
-        // },
-        // {
-        //   email: "shelsys@pledge4peace.org",
-        //   name: "Shelsys Rivera - Marketing Chief",
-        // },
         {
-          email: "kayrov@weversity.org",
-          name: "kayro developer",
+          email: "info@pledge4peace.org",
+          name: "Pledge4Peace Admin",
         },
+        {
+          email: "shelsys@pledge4peace.org",
+          name: "Shelsys Rivera - Marketing Chief",
+        },
+        // {
+        //   email: "kayrov@weversity.org",
+        //   name: "kayro developer",
+        // },
       ],
       subject: `New Pledge from ${pledgeData.userName}`,
       htmlContent: `
@@ -738,9 +738,9 @@ export class EmailService {
     const body = {
       sender: { name: this.fromName, email: this.fromEmail },
       to: [
-        // { email: "info@pledge4peace.org", name: "Pledge4Peace Admin" },
-        // { email: "shelsys@pledge4peace.org", name: "Shelsys Rivera" },
-        { email: "kayrov@weversity.org", name: "kayro developer" },
+        { email: "info@pledge4peace.org", name: "Pledge4Peace Admin" },
+        { email: "shelsys@pledge4peace.org", name: "Shelsys Rivera" },
+        // { email: "kayrov@weversity.org", name: "kayro developer" },
       ],
       subject: `New solution submitted for moderation – ${payload.title}`,
       htmlContent: `
@@ -842,11 +842,11 @@ export class EmailService {
     const body = {
       sender: { name: this.fromName, email: this.fromEmail },
       to: [
-        // { email: "info@pledge4peace.org", name: "Pledge4Peace Admin" },
-        // {
-        //   email: "shelsys@pledge4peace.org",
-        //   name: "Shelsys Rivera - Marketing Chief",
-        // },
+        { email: "info@pledge4peace.org", name: "Pledge4Peace Admin" },
+        {
+          email: "shelsys@pledge4peace.org",
+          name: "Shelsys Rivera - Marketing Chief",
+        },
         {
           email: "kayrov@weversity.org",
           name: "kayro developer",
