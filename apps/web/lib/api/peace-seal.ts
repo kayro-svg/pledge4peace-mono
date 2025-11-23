@@ -550,6 +550,7 @@ export type CreateReviewData = {
   experienceDescription?: string;
   oidcIdToken?: string;
   oidcAccessToken?: string;
+  turnstileToken?: string;
 };
 
 // Community Reviews API Functions

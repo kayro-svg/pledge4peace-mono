@@ -6,7 +6,10 @@ interface VolunteerApplication {
   availability: string;
 }
 
-export async function submitVolunteerApplication(data: VolunteerApplication) {
+export async function submitVolunteerApplication(
+  data: VolunteerApplication,
+  turnstileToken?: string
+) {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/volunteer/apply`,
     {
@@ -14,7 +17,7 @@ export async function submitVolunteerApplication(data: VolunteerApplication) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, turnstileToken }),
     }
   );
 

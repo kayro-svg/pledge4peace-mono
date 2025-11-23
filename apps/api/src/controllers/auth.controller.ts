@@ -2,6 +2,7 @@ import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { logger } from "../utils/logger";
+import { verifyTurnstileToken } from "../utils/turnstile";
 
 // Validation for registration
 const registerSchema = z.object({
@@ -14,12 +15,14 @@ const registerSchema = z.object({
   nonprofit: z.string().optional(),
   institution: z.string().optional(),
   otherRole: z.string().optional(),
+  turnstileToken: z.string().optional(),
 });
 
 // Validation for login
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string(),
+  turnstileToken: z.string().optional(),
 });
 
 // Validation for email verification
@@ -54,6 +57,23 @@ export class AuthController {
         logger.error("Errores de validación:", validation.error.format());
         // Devolvemos JSON 400
         return c.json({ message: "Invalid input data" }, 400);
+      }
+
+      // Verify Turnstile
+      const turnstileSecret = c.env.TURNSTILE_SECRET_KEY;
+      if (turnstileSecret && validation.data.turnstileToken) {
+        const ip = c.req.header("CF-Connecting-IP");
+        const isValid = await verifyTurnstileToken(
+          validation.data.turnstileToken,
+          turnstileSecret,
+          ip
+        );
+        if (!isValid) {
+          return c.json({ message: "Invalid captcha" }, 400);
+        }
+      } else if (turnstileSecret && !validation.data.turnstileToken) {
+        // Enforce captcha if secret is present
+        return c.json({ message: "Captcha required" }, 400);
       }
       const frontendBase = c.env.FRONTEND_URL; // ej. "http://localhost:3000"
       if (!frontendBase) {

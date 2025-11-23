@@ -4,6 +4,7 @@ import { Context } from "hono";
 import { CommunityReviewsService } from "../services/community-reviews.service";
 import { logger } from "../utils/logger";
 import { DocumentsController } from "./documents.controller";
+import { verifyTurnstileToken } from "../utils/turnstile";
 
 export class CommunityReviewsController {
   // Create or find company for community listing
@@ -117,7 +118,24 @@ export class CommunityReviewsController {
         experienceDescription,
         oidcIdToken,
         oidcAccessToken,
+        turnstileToken,
       } = await c.req.json().catch(() => ({}));
+
+      // Verify Turnstile
+      const turnstileSecret = c.env.TURNSTILE_SECRET_KEY;
+      if (turnstileSecret && turnstileToken) {
+        const ip = c.req.header("CF-Connecting-IP");
+        const isValid = await verifyTurnstileToken(
+          turnstileToken,
+          turnstileSecret,
+          ip
+        );
+        if (!isValid) {
+          return c.json({ message: "Invalid captcha" }, 400);
+        }
+      } else if (turnstileSecret && !turnstileToken) {
+        return c.json({ message: "Captcha required" }, 400);
+      }
 
       if (!companyId || !role || !signedDisclosure || !answers) {
         throw new HTTPException(400, {

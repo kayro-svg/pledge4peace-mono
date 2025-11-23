@@ -36,6 +36,7 @@ import {
 } from "@/lib/api/peace-seal";
 import { Upload, CheckCircle } from "lucide-react";
 import { LinkedInVerificationModal } from "@/components/peace-seal/linkedin-verification-modal";
+import { TurnstileWidget } from "@/components/ui/turnstile";
 
 type CommunityReviewFlowProps = {
   companyId: string;
@@ -207,6 +208,7 @@ export function CommunityReviewFlow({
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [signedDisclosure, setSignedDisclosure] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   // LinkedIn verification state
   const [linkedinVerified, setLinkedinVerified] = useState(false);
@@ -580,6 +582,13 @@ export function CommunityReviewFlow({
           });
           return;
         }
+        if (!turnstileToken) {
+          toast({
+            title: "Please complete the captcha verification",
+            variant: "destructive",
+          });
+          return;
+        }
         handleSubmit();
         break;
       }
@@ -635,6 +644,7 @@ export function CommunityReviewFlow({
             oidcIdToken: linkedinIdToken,
             oidcAccessToken: linkedinAccessToken,
           }),
+        turnstileToken: turnstileToken || undefined,
       };
 
       await createReview(reviewData);
@@ -1014,6 +1024,10 @@ export function CommunityReviewFlow({
             I have read and agree to the anonymous disclosure agreement above.
             This is required to submit the review.
           </label>
+        </div>
+
+        <div className="pt-4">
+          <TurnstileWidget onVerify={setTurnstileToken} />
         </div>
       </CardContent>
     </Card>

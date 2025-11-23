@@ -10,6 +10,7 @@ import { logger } from "@/lib/utils/logger";
 import { submitContactForm } from "@/lib/api/contact";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { TurnstileWidget } from "../ui/turnstile";
 
 interface ContactFormData {
   name: string;
@@ -22,12 +23,17 @@ export function ContactForm() {
   const form = useForm<ContactFormData>();
   const [isLoading, setIsLoading] = useState(false);
   const t = useTranslations("Contact_Page");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const onSubmit = async (data: ContactFormData) => {
     logger.log("Contact form submitted:", data);
+    if (!turnstileToken) {
+      toast.error("Please complete the captcha verification");
+      return;
+    }
     setIsLoading(true);
 
     try {
-      await submitContactForm(data);
+      await submitContactForm(data, turnstileToken);
       toast.success(
         "Thank you for your message! We've received your inquiry and will get back to you soon."
       );
@@ -87,6 +93,9 @@ export function ContactForm() {
         />
 
         <div>
+          <div className="flex justify-center mb-4">
+            <TurnstileWidget onVerify={setTurnstileToken} />
+          </div>
           <Button
             type="submit"
             className="bg-[#2f4858] hover:bg-[#1e2f38] text-white w-full"

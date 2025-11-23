@@ -5,7 +5,7 @@ interface ContactForm {
   message: string;
 }
 
-export async function submitContactForm(data: ContactForm) {
+export async function submitContactForm(data: ContactForm, turnstileToken?: string) {
   const response = await fetch(
     `${process.env.NEXT_PUBLIC_API_URL}/contact/submit`,
     {
@@ -13,7 +13,7 @@ export async function submitContactForm(data: ContactForm) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, turnstileToken }),
     }
   );
 

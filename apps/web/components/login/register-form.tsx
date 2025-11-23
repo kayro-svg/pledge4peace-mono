@@ -21,6 +21,7 @@ import {
 } from "../ui/select";
 import { Label } from "../ui/label";
 import { useTranslations } from "next-intl";
+import { TurnstileWidget } from "../ui/turnstile";
 
 interface RegisterFormData {
   name: string;
@@ -58,6 +59,7 @@ export default function RegisterForm({
   const [userType, setUserType] = useState(preSelectedUserType || "");
   const userTypeRef = useRef<HTMLButtonElement>(null);
   const t = useTranslations("Register_Page");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   // Set pre-selected user type on mount
   useEffect(() => {
@@ -84,6 +86,11 @@ export default function RegisterForm({
         return;
       }
 
+      if (!turnstileToken) {
+        toast.error("Please complete the captcha verification");
+        return;
+      }
+
       // Clear any existing errors - handled by react-hook-form
 
       setIsLoading(true);
@@ -100,7 +107,7 @@ export default function RegisterForm({
         nonprofit: data.nonprofit,
         institution: data.institution,
         otherRole: data.otherRole,
-      });
+      }, turnstileToken);
 
       const registerData = await registerResponse.json();
 
@@ -341,7 +348,9 @@ export default function RegisterForm({
             </Link> */}
           </label>
         </div>
-
+        <div className="flex justify-center">
+          <TurnstileWidget onVerify={setTurnstileToken} />
+        </div>
         <div>
           <Button
             type="submit"

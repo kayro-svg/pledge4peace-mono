@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { submitVolunteerApplication } from "@/lib/api/volunteer";
 import { logger } from "@/lib/utils/logger";
 import { useTranslations } from "next-intl";
+import { TurnstileWidget } from "@/components/ui/turnstile";
 
 interface VolunteerFormData {
   name: string;
@@ -22,13 +23,19 @@ export default function JoinOurTeamForm() {
   const t = useTranslations("Volunteering_Page");
   const form = useForm<VolunteerFormData>();
   const [isLoading, setIsLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const onSubmit = async (data: VolunteerFormData) => {
     logger.log("Volunteer form submitted:", data);
     setIsLoading(true);
+    if (!turnstileToken) {
+      toast.error("Please complete the captcha verification");
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      await submitVolunteerApplication(data);
+      await submitVolunteerApplication(data, turnstileToken);
       toast.success(
         "Thank you for your volunteer application! We'll be in touch soon."
       );
@@ -132,6 +139,10 @@ export default function JoinOurTeamForm() {
                 placeholder={t("form_availability_placeholder")}
                 {...form.register("availability", { required: true })}
               />
+            </div>
+
+           <div className="md:col-span-2 flex justify-center">
+              <TurnstileWidget onVerify={setTurnstileToken} />
             </div>
 
             <div className="md:col-span-2">

@@ -2,6 +2,7 @@ import { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
 import { z } from "zod";
 import { logger } from "../utils/logger";
+import { verifyTurnstileToken } from "../utils/turnstile";
 
 // Validation for volunteer application
 const volunteerApplicationSchema = z.object({
@@ -10,6 +11,7 @@ const volunteerApplicationSchema = z.object({
   about: z.string().min(10),
   skills: z.string().min(10),
   availability: z.string().min(5),
+  turnstileToken: z.string().optional(),
 });
 
 export class VolunteerController {
@@ -24,6 +26,22 @@ export class VolunteerController {
           validation.error.format()
         );
         return c.json({ message: "Invalid input data" }, 400);
+      }
+
+      // Verify Turnstile
+      const turnstileSecret = c.env.TURNSTILE_SECRET_KEY;
+      if (turnstileSecret && validation.data.turnstileToken) {
+        const ip = c.req.header("CF-Connecting-IP");
+        const isValid = await verifyTurnstileToken(
+          validation.data.turnstileToken,
+          turnstileSecret,
+          ip
+        );
+        if (!isValid) {
+          return c.json({ message: "Invalid captcha" }, 400);
+        }
+      } else if (turnstileSecret && !validation.data.turnstileToken) {
+        return c.json({ message: "Captcha required" }, 400);
       }
 
       const { name, email, about, skills, availability } = validation.data;
