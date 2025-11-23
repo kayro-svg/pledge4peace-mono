@@ -479,7 +479,7 @@ export default function Page() {
             ) : series && series.length > 0 ? (
               <Card>
                 <CardHeader>
-                  <CardTitle>Last 30 days</CardTitle>
+                  <CardTitle>Interactions from the last 30 days</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <ChartContainer
