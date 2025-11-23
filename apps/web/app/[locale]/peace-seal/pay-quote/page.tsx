@@ -12,7 +12,7 @@ import Link from "next/link";
 import { logger } from "@/lib/utils/logger";
 
 export default function PayQuotePage() {
-  const { status, session } = useAuthSession();
+  const { status } = useAuthSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -207,6 +207,7 @@ export default function PayQuotePage() {
           companyId={company.id}
           onSuccess={handlePaymentSuccess}
           onError={handlePaymentError}
+          isQuotePayment={true}
         />
       </div>
     </main>

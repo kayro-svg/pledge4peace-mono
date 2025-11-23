@@ -12,6 +12,7 @@ interface PaymentFormProps {
   companyId: string;
   onSuccess: (result: { transactionId: string; amount: number }) => void;
   onError: (message: string) => void;
+  isQuotePayment?: boolean;
 }
 
 export default function PaymentForm({
@@ -20,6 +21,7 @@ export default function PaymentForm({
   companyId,
   onSuccess,
   onError,
+  isQuotePayment = false,
 }: PaymentFormProps) {
   const [clientToken, setClientToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -125,13 +127,16 @@ export default function PaymentForm({
               companyName,
               companyId,
               createSubscription: true,
+              isQuotePayment,
             }}
           />
         </div>
 
         {/* Payment Benefits */}
         <div className="border-t pt-4">
-          <h4 className="font-medium text-gray-900 mb-3">What's included:</h4>
+          <h4 className="font-medium text-gray-900 mb-3">
+            What&apos;s included:
+          </h4>
           <ul className="space-y-2 text-sm text-gray-600">
             <li className="flex items-center gap-2">
               <CheckCircle className="w-4 h-4 text-green-600" />

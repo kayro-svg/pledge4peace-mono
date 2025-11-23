@@ -16,6 +16,7 @@ interface Props {
     companyName: string;
     companyId: string;
     createSubscription: boolean;
+    isQuotePayment?: boolean;
   };
   donorInfo?: {
     firstName: string;
@@ -164,6 +165,7 @@ export default function DropInPayment({
             companyName: peaceSealPayment.companyName,
             companyId: peaceSealPayment.companyId,
             createSubscription: peaceSealPayment.createSubscription,
+            isQuotePayment: peaceSealPayment.isQuotePayment || false,
           }),
         });
         logger.log("Peace Seal payment response:", res);

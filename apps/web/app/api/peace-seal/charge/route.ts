@@ -10,6 +10,7 @@ export async function POST(req: NextRequest) {
       companyName,
       companyId,
       createSubscription = false,
+      isQuotePayment = false,
     } = await req.json();
 
     if (!nonce || !amount || !companyId) {
@@ -21,30 +22,30 @@ export async function POST(req: NextRequest) {
 
     const numAmount = parseFloat(amount);
     if (isNaN(numAmount) || numAmount <= 0) {
-      return NextResponse.json(
-        { error: "Invalid amount" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
     }
 
-    // Check if company has a quote - if so, allow any amount >= quote amount
-    // Note: We can't use getUserCompany here as it requires auth context
-    // Instead, we'll validate the amount on the backend during payment confirmation
-    // For now, allow amounts > 499 if provided (quote payments)
-    let isQuotePayment = false;
-    if (numAmount > 499) {
-      isQuotePayment = true;
-      // Backend will validate the quote amount matches during confirmation
-    }
+    // Determine if this is a quote payment (explicit flag or heuristic for backward compatibility)
+    const isQuote = !!isQuotePayment || numAmount > 499;
 
-    // Standard validation for non-quote payments
-    if (!isQuotePayment) {
-      if (numAmount < 99 || numAmount > 499) {
+    // Standard validation for non-quote payments (fixed tiers only)
+    if (!isQuote) {
+      if (numAmount !== 99 && numAmount !== 499) {
         return NextResponse.json(
           { error: "Peace Seal certification fee must be $99 or $499" },
           { status: 400 }
         );
       }
+    } else {
+      // For quote payments, allow any reasonable positive amount (including low test amounts like $1 or $5)
+      // Enforce upper bound to prevent obvious misconfigurations
+      if (numAmount > 100000) {
+        return NextResponse.json(
+          { error: "Quote amount exceeds maximum allowed" },
+          { status: 400 }
+        );
+      }
+      // Backend will validate the quote amount matches rfqQuotedAmountCents during confirmation
     }
 
     // If creating subscription for annual renewals
@@ -53,7 +54,8 @@ export async function POST(req: NextRequest) {
         nonce,
         numAmount,
         companyName,
-        companyId
+        companyId,
+        isQuote
       );
     }
 
@@ -163,7 +165,8 @@ async function handleSubscriptionPayment(
   nonce: string,
   amount: number,
   companyName: string,
-  companyId: string
+  companyId: string,
+  isQuote: boolean
 ) {
   try {
     // First, create a customer with the payment method
@@ -209,12 +212,28 @@ async function handleSubscriptionPayment(
       );
     }
 
-    // Determine plan ID based on amount
-    const planId =
-      amount === 99
-        ? process.env.BT_PEACE_SEAL_SMALL_PLAN_ID || "peace_seal_small_annual"
-        : process.env.BT_PEACE_SEAL_MEDIUM_PLAN_ID ||
-          "peace_seal_medium_annual";
+    // Determine plan ID based on payment type
+    let planId: string;
+    if (isQuote) {
+      // All quote payments (RFQ companies) use the large plan, regardless of amount
+      // This includes low test amounts like $1 or $5 for production testing
+      planId =
+        process.env.BT_PEACE_SEAL_LARGE_PLAN_ID || "peace_seal_large_annual";
+    } else {
+      // Fixed-tier payments: small or medium based on amount
+      planId =
+        amount === 99
+          ? process.env.BT_PEACE_SEAL_SMALL_PLAN_ID || "peace_seal_small_annual"
+          : process.env.BT_PEACE_SEAL_MEDIUM_PLAN_ID ||
+            "peace_seal_medium_annual";
+    }
+
+    logger.log("Peace Seal subscription plan selection:", {
+      companyId,
+      amount,
+      isQuote,
+      planId,
+    });
 
     // Check if plan exists
     const plansResponse = await gateway.plan.all();
