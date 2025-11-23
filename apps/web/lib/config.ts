@@ -1,7 +1,8 @@
 import { logger } from "./utils/logger";
 
 // Use the environment variable if available, otherwise use the default URL for development
-export const API_URL = process.env.NEXT_PUBLIC_API_URL!;
+export const API_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787/api";
 
 // Log the API URL being used
 logger.log(`[Config] Using API URL: ${API_URL}`);

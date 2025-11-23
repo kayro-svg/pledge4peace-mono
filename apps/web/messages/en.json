@@ -32,7 +32,7 @@
     "userType": "I am a",
     "userType_placeholder": "Select your role",
     "agreeToTerms": "I agree to the",
-    "termsOfService": "Terms of Service",
+    "termsOfService": "Terms and Conditions",
     "privacyPolicy": "Privacy Policy",
     "creatingAccount": "Creating account...",
     "signUp": "Sign Up",
@@ -45,7 +45,7 @@
     "office": "Office/Position",
     "office_placeholder": "e.g., Mayor, City Council, State Representative",
     "nonprofit_placeholder": "e.g., Red Cross, Amnesty International, Local NGO",
-    "organization_placeholder": "e.g., Local Bussiness, Startup, Multi-National Corporation",
+    "organization_placeholder": "Your business name",
     "institution": "Educational Institution",
     "institution_placeholder": "e.g., Harvard University, Local High School",
     "otherRole": "Please specify your role",
@@ -238,7 +238,8 @@
     "events": "Events",
     "footer_paragraph1": "501c3 NonProfit Aiming to Solve World's Biggest Problems Through Pledge.",
     "footer_paragraph2": "Our goal is to address the world's biggest challenges with a new approach where we bring the silent majority from around the world to pledge to visit and invest to create peace.",
-    "footer_copyright": "© 2025 Pledge4Peace.org. All rights reserved."
+    "footer_copyright": "© 2025 Pledge4Peace.org. All rights reserved.",
+    "peaceSealFooterLink": "Peace Seal Certification"
   },
   "toastMessages": {
     "solutionDeleted": "Solution deleted successfully",

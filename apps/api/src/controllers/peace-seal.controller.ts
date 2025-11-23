@@ -1,0 +1,1714 @@
+import { HTTPException } from "hono/http-exception";
+import { createDb } from "../db";
+import { Context } from "hono";
+import { PeaceSealService } from "../services/peace-seal.service";
+import { DocumentService } from "../services/document.service";
+import { ReportsService } from "../services/reports.service";
+import { DocumentsController } from "./documents.controller";
+import { EmailService } from "../services/email.service";
+import { NotificationsService } from "../services/notifications.service";
+import {
+  peaceSealCompanies,
+  peaceSealQuestionnaires,
+} from "../db/schema/peace-seal";
+import { users } from "../db/schema/users";
+import { eq } from "drizzle-orm";
+import { logger } from "../utils/logger";
+import { AGREEMENT_TEXTS } from "../config/agreement-templates";
+
+export class PeaceSealController {
+  // Public directory list with search/filter
+  directory = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+
+      const url = new URL(c.req.url);
+      const filters = {
+        q: url.searchParams.get("q") || undefined,
+        country: url.searchParams.get("country") || undefined,
+        status: url.searchParams.get("status") || undefined,
+        page: parseInt(url.searchParams.get("page") || "1"),
+        limit: parseInt(url.searchParams.get("limit") || "100"),
+      };
+
+      const result = await peaceSealService.getDirectory(filters);
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching directory:", error);
+      throw new HTTPException(500, { message: "Error fetching directory" });
+    }
+  };
+
+  // Public company profile by slug
+  getCompanyBySlug = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const slug = c.req.param("slug");
+
+      const company = await peaceSealService.getCompanyBySlug(slug);
+      return c.json({ company });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching company by slug:", error);
+      throw new HTTPException(500, { message: "Error fetching company" });
+    }
+  };
+
+  // Applicant: start application (auth required)
+  startApplication = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const { name, country, website, industry, employeeCount, businessSize } =
+        await c.req.json().catch(() => ({}));
+
+      if (!name) {
+        throw new HTTPException(400, { message: "Company name is required" });
+      }
+
+      // Convert businessSize to employeeCount if provided, otherwise use employeeCount directly
+      let finalEmployeeCount: number | undefined;
+      if (businessSize) {
+        // Convert business size string to representative number
+        switch (businessSize) {
+          case "small":
+            finalEmployeeCount = 10; // Representative of 1-20 range
+            break;
+          case "medium":
+            finalEmployeeCount = 35; // Representative of 21-50 range
+            break;
+          case "large":
+            finalEmployeeCount = 100; // Representative of 50+ range
+            break;
+          default:
+            finalEmployeeCount = employeeCount
+              ? Number(employeeCount)
+              : undefined;
+        }
+      } else {
+        finalEmployeeCount = employeeCount ? Number(employeeCount) : undefined;
+      }
+
+      const user = c.get("user");
+      const application = await peaceSealService.createApplication({
+        name,
+        country,
+        website,
+        industry,
+        employeeCount: finalEmployeeCount,
+        createdByUserId: user.id,
+      });
+
+      return c.json({ id: application.id, slug: application.slug });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error creating application:", error);
+      throw new HTTPException(500, { message: "Error creating application" });
+    }
+  };
+
+  // Applicant: confirm payment after Braintree sale
+  confirmPayment = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("id");
+      const { transactionId, amountCents } = await c.req
+        .json()
+        .catch(() => ({}));
+
+      if (!transactionId || !amountCents) {
+        throw new HTTPException(400, {
+          message: "transactionId and amountCents required",
+        });
+      }
+
+      const user = c.get("user");
+      const result = await peaceSealService.confirmPayment(
+        companyId,
+        String(transactionId),
+        Number(amountCents),
+        user.id
+      );
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error confirming payment:", error);
+      throw new HTTPException(500, { message: "Error confirming payment" });
+    }
+  };
+
+  requestQuote = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const applicationId = c.req.param("id");
+      const { employeeCount } = await c.req.json().catch(() => ({}));
+      const result = await peaceSealService.requestQuote(
+        applicationId,
+        employeeCount
+      );
+
+      const authService = c.get("authService");
+      const baseUrl = c.env.BASE_URL || "https://www.pledge4peace.org";
+
+      // Send email notification to admins
+      await authService.emailService.sendQuoteRequestEmailtoAdmin(
+        result.name,
+        employeeCount
+      );
+
+      // Send in-app notifications to all advisors and admins
+      try {
+        const advisorsAndAdmins = await peaceSealService.getAdvisorsAndAdmins();
+        const notificationsService = new NotificationsService(db, c.env.KV);
+
+        await Promise.all(
+          advisorsAndAdmins.map((user) =>
+            notificationsService.create({
+              userId: user.id,
+              type: "quote_requested",
+              title: `New Quote Request: ${result.name}`,
+              body: `${result.name} has requested a custom quote for Peace Seal certification (50+ employees).`,
+              href: `/dashboard/peace-seal`,
+              meta: {
+                companyId: applicationId,
+                companyName: result.name,
+                employeeCount,
+              },
+              priority: "normal",
+            })
+          )
+        );
+
+        logger.log(
+          `Sent quote request notifications to ${advisorsAndAdmins.length} advisors/admins`
+        );
+      } catch (notificationError) {
+        // Don't fail the request if notifications fail
+        logger.error(
+          "Failed to send quote request notifications:",
+          notificationError
+        );
+      }
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error requesting quote:", error);
+      throw new HTTPException(500, { message: "Error requesting quote" });
+    }
+  };
+
+  // Applicant: send employee survey invitations
+  sendSurveyInvitations = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("companyId");
+      const { employees } = await c.req.json().catch(() => ({}));
+      const user = c.get("user");
+
+      if (!employees || !Array.isArray(employees) || employees.length === 0) {
+        throw new HTTPException(400, {
+          message: "employees array is required and must not be empty",
+        });
+      }
+
+      // Validate employee data
+      for (const employee of employees) {
+        if (!employee.name || !employee.email) {
+          throw new HTTPException(400, {
+            message: "Each employee must have name and email",
+          });
+        }
+        // Basic email validation
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employee.email)) {
+          throw new HTTPException(400, {
+            message: `Invalid email format: ${employee.email}`,
+          });
+        }
+      }
+
+      // Verify user owns the company or is admin
+      const company = await db
+        .select()
+        .from(peaceSealCompanies)
+        .where(eq(peaceSealCompanies.id, companyId))
+        .then((rows) => rows[0]);
+
+      if (!company) {
+        throw new HTTPException(404, { message: "Company not found" });
+      }
+
+      if (
+        company.createdByUserId !== user.id &&
+        !["admin", "superAdmin", "advisor"].includes(user.role)
+      ) {
+        throw new HTTPException(403, {
+          message:
+            "You do not have permission to send invitations for this company",
+        });
+      }
+
+      // Get email service
+      const authService = c.get("authService");
+      if (!authService || !authService.emailService) {
+        logger.error("Email service not available in authService");
+        throw new HTTPException(500, {
+          message: "Email service not available",
+        });
+      }
+      const emailService = authService.emailService;
+      const baseUrl = c.env.BASE_URL || "https://www.pledge4peace.org";
+
+      // Send emails to all employees
+      const emailPromises = employees.map(
+        async (employee: { name: string; email: string }) => {
+          try {
+            await emailService.sendEmployeeSurveyInvitationEmail(
+              employee.email,
+              employee.name,
+              company.name,
+              companyId,
+              baseUrl
+            );
+            // Success - Brevo returns JSON on success
+            return {
+              success: true,
+              email: employee.email,
+            };
+          } catch (error: any) {
+            logger.error(
+              `Failed to send invitation to ${employee.email}:`,
+              error
+            );
+            // Don't throw - continue with other emails
+            return {
+              success: false,
+              email: employee.email,
+              error: error.message || "Unknown error",
+            };
+          }
+        }
+      );
+
+      const results = await Promise.all(emailPromises);
+      const failed = results.filter((r) => !r.success);
+      const successCount = results.length - failed.length;
+
+      if (successCount === 0) {
+        const errorMessages = failed
+          .map((f) => `${f.email}: ${f.error}`)
+          .join("; ");
+        logger.error(
+          `Failed to send any survey invitations for company ${companyId}. Errors: ${errorMessages}`
+        );
+        throw new HTTPException(500, {
+          message:
+            failed.length > 0
+              ? `Failed to send invitations: ${failed[0].error}`
+              : "Failed to send any invitations. Please try again later.",
+        });
+      }
+
+      const invitedAt = new Date().toISOString();
+
+      logger.log(
+        `Sent ${successCount} survey invitations for company ${companyId}`
+      );
+
+      return c.json({
+        success: true,
+        invitedAt,
+        invitedCount: successCount,
+        invitations: employees.map((e: { name: string; email: string }) => ({
+          name: e.name,
+          email: e.email,
+        })),
+        failedCount: failed.length,
+        ...(failed.length > 0 && {
+          failed: failed.map((f) => ({ email: f.email, error: f.error })),
+        }),
+      });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error sending survey invitations:", error);
+      throw new HTTPException(500, {
+        message: "Error sending survey invitations",
+      });
+    }
+  };
+
+  // Applicant: save questionnaire incrementally
+  saveQuestionnaire = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("id");
+      const { responses, progress } = await c.req.json().catch(() => ({}));
+      const user = c.get("user");
+
+      const result = await peaceSealService.saveQuestionnaire({
+        companyId,
+        responses,
+        progress: progress ? Number(progress) : 0,
+        userId: user.id,
+      });
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error saving questionnaire:", error);
+      throw new HTTPException(500, { message: "Error saving questionnaire" });
+    }
+  };
+
+  // Applicant: validate questionnaire
+  validateQuestionnaire = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const { responses } = await c.req.json().catch(() => ({}));
+
+      const validation = peaceSealService.validateQuestionnaire(responses);
+      return c.json(validation);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error validating questionnaire:", error);
+      throw new HTTPException(500, {
+        message: "Error validating questionnaire",
+      });
+    }
+  };
+
+  // Applicant: list my applications
+  getMyApplications = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const user = c.get("user");
+
+      const result = await peaceSealService.getMyApplications(user.id);
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching my applications:", error);
+      throw new HTTPException(500, { message: "Error fetching applications" });
+    }
+  };
+
+  // User: get my company
+  getMyCompany = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const user = c.get("user");
+
+      // Find company where this user is the creator
+      const company = await db
+        .select()
+        .from(peaceSealCompanies)
+        .where(eq(peaceSealCompanies.createdByUserId, user.id))
+        .then((r) => r[0]);
+
+      if (!company) {
+        throw new HTTPException(404, {
+          message: "No company associated with user",
+        });
+      }
+
+      return c.json({ company });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching user company:", error);
+      throw new HTTPException(500, { message: "Error fetching company" });
+    }
+  };
+
+  // User: get company questionnaire
+  getCompanyQuestionnaire = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const user = c.get("user");
+      const companyId = c.req.param("companyId");
+
+      // Check if user has access to this company
+      // For regular users, verify they own the company; for advisors/admins, allow access
+      if (!["advisor", "admin", "superAdmin"].includes(user.role || "")) {
+        // For regular users, verify they created this company
+        const company = await db
+          .select({ createdByUserId: peaceSealCompanies.createdByUserId })
+          .from(peaceSealCompanies)
+          .where(eq(peaceSealCompanies.id, companyId))
+          .then((r) => r[0]);
+
+        if (!company || company.createdByUserId !== user.id) {
+          throw new HTTPException(403, {
+            message: "Access denied to this company",
+          });
+        }
+      }
+
+      const questionnaire = await db
+        .select()
+        .from(peaceSealQuestionnaires)
+        .where(eq(peaceSealQuestionnaires.companyId, companyId))
+        .then((r) => r[0]);
+
+      if (!questionnaire) {
+        throw new HTTPException(404, { message: "Questionnaire not found" });
+      }
+
+      return c.json(questionnaire);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching company questionnaire:", error);
+      throw new HTTPException(500, { message: "Error fetching questionnaire" });
+    }
+  };
+
+  // Admin/Advisor: list companies for management
+  adminListCompanies = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const user = c.get("user");
+
+      const url = new URL(c.req.url);
+      const filters = {
+        status: url.searchParams.get("status") || undefined,
+        assignedToMe: url.searchParams.get("assignedToMe") === "true",
+        communityListed:
+          url.searchParams.get("communityListed") === "true"
+            ? true
+            : url.searchParams.get("communityListed") === "false"
+              ? false
+              : undefined,
+        page: Math.max(parseInt(url.searchParams.get("page") || "1"), 1),
+        limit: Math.min(
+          Math.max(parseInt(url.searchParams.get("limit") || "20"), 1),
+          100
+        ),
+        userId: user.id,
+        userRole: user.role,
+      };
+
+      const result = await peaceSealService.adminListCompanies(filters);
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching admin companies:", error);
+      throw new HTTPException(500, { message: "Error fetching companies" });
+    }
+  };
+
+  // Admin/Advisor: get company details for management
+  adminGetCompany = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const user = c.get("user");
+      const companyId = c.req.param("id");
+
+      const result = await peaceSealService.adminGetCompany(
+        companyId,
+        user.role
+      );
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching admin company:", error);
+      throw new HTTPException(500, {
+        message: "Error fetching company details",
+      });
+    }
+  };
+
+  // Advisor: Manually score questionnaire after review
+  advisorScoreQuestionnaire = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("id");
+      const { manualScore, notes } = await c.req.json().catch(() => ({}));
+      const user = c.get("user");
+
+      // Validate manual score - it's now required
+      if (
+        typeof manualScore !== "number" ||
+        manualScore < 0 ||
+        manualScore > 100
+      ) {
+        throw new HTTPException(400, {
+          message: "Manual score is required and must be between 0 and 100",
+        });
+      }
+
+      const result = await peaceSealService.advisorScoreQuestionnaire(
+        companyId,
+        user.id,
+        user.role,
+        manualScore,
+        notes
+      );
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error scoring questionnaire:", error);
+      throw new HTTPException(500, { message: "Error scoring questionnaire" });
+    }
+  };
+
+  // Admin/Advisor: update status/score/notes/assign advisor
+  adminUpdate = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("id");
+      const { status, score, notes, advisorUserId } = await c.req
+        .json()
+        .catch(() => ({}));
+      const user = c.get("user");
+
+      const result = await peaceSealService.adminUpdate({
+        companyId,
+        status,
+        score: typeof score === "number" ? score : undefined,
+        notes,
+        advisorUserId,
+        changedByUserId: user.id,
+      });
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error updating company:", error);
+      throw new HTTPException(500, { message: "Error updating company" });
+    }
+  };
+
+  setQuoteAmount = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("id");
+      const { amountCents, notes } = await c.req.json().catch(() => ({}));
+      const user = c.get("user");
+
+      // Check permissions - only admin, advisor, and superAdmin can set quotes
+      if (!["admin", "advisor", "superAdmin"].includes(user.role)) {
+        throw new HTTPException(403, { message: "Insufficient permissions" });
+      }
+
+      if (!amountCents || typeof amountCents !== "number" || amountCents <= 0) {
+        throw new HTTPException(400, {
+          message: "amountCents is required and must be a positive number",
+        });
+      }
+
+      const result = await peaceSealService.setQuoteAmount(
+        companyId,
+        amountCents,
+        notes || null,
+        user.id
+      );
+
+      const authService = c.get("authService");
+      const baseUrl = c.env.BASE_URL || "https://www.pledge4peace.org";
+
+      // Send email and notification to company owner
+      if (result.ownerUser && result.ownerUser.email) {
+        try {
+          const paymentUrl = `${baseUrl}/peace-seal/pay-quote?companyId=${companyId}&amount=${amountCents}`;
+
+          // Send email notification
+          if (Number(result.ownerUser.notifyEmail ?? 1) !== 0) {
+            await authService.emailService.sendQuoteAmountEmail(
+              result.ownerUser.email,
+              result.company.name,
+              amountCents,
+              paymentUrl
+            );
+          }
+
+          // Send in-app notification
+          const notificationsService = new NotificationsService(db, c.env.KV);
+          await notificationsService.create({
+            userId: result.ownerUser.id,
+            type: "quote_available",
+            title: `Your Peace Seal Quote is Ready`,
+            body: `A custom quote of $${(amountCents / 100).toFixed(2)} has been prepared for ${result.company.name}. Click to proceed with payment.`,
+            href: `/peace-seal/pay-quote?companyId=${companyId}&amount=${amountCents}`,
+            meta: {
+              companyId,
+              companyName: result.company.name,
+              amountCents,
+            },
+            priority: "high",
+          });
+
+          logger.log(
+            `Quote amount set and notifications sent to company owner for company ${companyId}`
+          );
+        } catch (notificationError) {
+          // Don't fail the request if notifications fail
+          logger.error(
+            "Failed to send quote amount notifications:",
+            notificationError
+          );
+        }
+      }
+
+      return c.json({ success: true, company: result.company });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error setting quote amount:", error);
+      throw new HTTPException(500, { message: "Error setting quote amount" });
+    }
+  };
+
+  // Admin: confirm manual payment for RFQ companies
+  adminConfirmPayment = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("id");
+      const { amountCents, transactionId } = await c.req
+        .json()
+        .catch(() => ({}));
+      const user = c.get("user");
+
+      // Check permissions - only admin and superAdmin can confirm payments
+      if (!["admin", "superAdmin"].includes(user.role)) {
+        throw new HTTPException(403, { message: "Insufficient permissions" });
+      }
+
+      if (!amountCents || typeof amountCents !== "number") {
+        throw new HTTPException(400, {
+          message: "amountCents is required and must be a number",
+        });
+      }
+
+      const result = await peaceSealService.adminConfirmPayment(
+        companyId,
+        amountCents,
+        transactionId || null,
+        user.id
+      );
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error confirming payment:", error);
+      throw new HTTPException(500, { message: "Error confirming payment" });
+    }
+  };
+
+  // Document Management (Legacy - for JSON uploads with pre-uploaded files)
+  // uploadDocument = async (c: Context) => {
+  //   try {
+  //     const db = createDb(c.env.DB);
+  //     const documentService = new DocumentService(db);
+  //     const companyId = c.req.param("id");
+  //     const { documentType, fileName, fileUrl, fileSize } = await c.req
+  //       .json()
+  //       .catch(() => ({}));
+  //     const user = c.get("user");
+
+  //     if (!documentType || !fileName || !fileUrl) {
+  //       throw new HTTPException(400, {
+  //         message: "documentType, fileName, and fileUrl are required",
+  //       });
+  //     }
+
+  //     const result = await documentService.uploadDocument({
+  //       companyId,
+  //       documentType,
+  //       fileName,
+  //       fileUrl,
+  //       fileSize,
+  //       uploadedByUserId: user.id,
+  //     });
+
+  //     return c.json(result);
+  //   } catch (error) {
+  //     if (error instanceof HTTPException) throw error;
+  //     logger.error("Error uploading document:", error);
+  //     throw new HTTPException(500, { message: "Error uploading document" });
+  //   }
+  // };
+
+  // Get documents for a company
+  getDocuments = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const documentService = new DocumentService(db);
+      const companyId = c.req.param("id");
+      const url = new URL(c.req.url);
+
+      const filters = {
+        companyId,
+        documentType: url.searchParams.get("documentType") || undefined,
+        verifiedOnly: url.searchParams.get("verifiedOnly") === "true",
+      };
+
+      const result = await documentService.getDocuments(filters);
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching documents:", error);
+      throw new HTTPException(500, { message: "Error fetching documents" });
+    }
+  };
+
+  // Advisor: verify document
+  verifyDocument = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const documentService = new DocumentService(db);
+      const documentId = c.req.param("documentId");
+      const { verified } = await c.req.json().catch(() => ({}));
+      const user = c.get("user");
+
+      // Check if user has advisor role or higher
+      if (!["advisor", "admin", "superAdmin"].includes(user.role)) {
+        throw new HTTPException(403, { message: "Insufficient permissions" });
+      }
+
+      const result = await documentService.verifyDocument({
+        documentId,
+        advisorUserId: user.id,
+        verified: Boolean(verified),
+      });
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error verifying document:", error);
+      throw new HTTPException(500, { message: "Error verifying document" });
+    }
+  };
+
+  // Delete document
+  deleteDocument = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const documentService = new DocumentService(db);
+      const documentId = c.req.param("documentId");
+      const user = c.get("user");
+
+      const result = await documentService.deleteDocument(
+        documentId,
+        user.id,
+        user.role
+      );
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error deleting document:", error);
+      throw new HTTPException(500, { message: "Error deleting document" });
+    }
+  };
+
+  // Public: submit report about a company
+  submitPublicReport = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const reportsService = new ReportsService(db);
+      const {
+        companyId,
+        reporterEmail,
+        reporterName,
+        reason,
+        description,
+        evidence,
+      } = await c.req.json().catch(() => ({}));
+
+      if (!companyId || !reason) {
+        throw new HTTPException(400, {
+          message: "companyId and reason are required",
+        });
+      }
+
+      const result = await reportsService.createReport({
+        companyId,
+        reporterEmail,
+        reporterName,
+        reason,
+        description,
+        evidence,
+      });
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error submitting report:", error);
+      throw new HTTPException(500, { message: "Error submitting report" });
+    }
+  };
+
+  // Public: upload document for report evidence (no auth required)
+  uploadReportDocument = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const documentsController = new DocumentsController();
+
+      // Get form data
+      const formData = await c.req.formData();
+      const file = formData.get("file") as File;
+      const companyId = formData.get("companyId") as string;
+
+      // Validate required fields
+      if (!file || !companyId) {
+        throw new HTTPException(400, {
+          message: "Missing required fields: file, companyId",
+        });
+      }
+
+      // Validate file
+      if (file.size === 0) {
+        throw new HTTPException(400, {
+          message: "Empty file not allowed",
+        });
+      }
+
+      // Set a temporary user ID for report documents
+      // This allows the document upload to work without authentication
+      // The uploadedByUserId will be set to null in the documents controller for anonymous uploads
+      c.set("user", {
+        id: "report-user",
+        email: "report@example.com",
+        name: "Report User",
+        role: "user",
+      });
+
+      // Set required fields for documents controller
+      formData.set("documentType", "report_evidence");
+      formData.set("sectionId", "report");
+      formData.set("fieldId", "evidence");
+
+      // Delegate to documents controller
+      return await documentsController.uploadDocument(c);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error uploading report document:", error);
+      throw new HTTPException(500, {
+        message: "Error uploading report document",
+      });
+    }
+  };
+
+  // Admin: get reports
+  getReports = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const reportsService = new ReportsService(db);
+      const user = c.get("user");
+
+      const url = new URL(c.req.url);
+      const filters = {
+        companyId: url.searchParams.get("companyId") || undefined,
+        status: url.searchParams.get("status") || undefined,
+        page: parseInt(url.searchParams.get("page") || "1"),
+        limit: parseInt(url.searchParams.get("limit") || "20"),
+      };
+
+      const result = await reportsService.getReports(filters, user.role);
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching reports:", error);
+      throw new HTTPException(500, { message: "Error fetching reports" });
+    }
+  };
+
+  // Admin: resolve report
+  resolveReport = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const reportsService = new ReportsService(db);
+      const reportId = c.req.param("reportId");
+      const { resolution, resolutionNotes } = await c.req
+        .json()
+        .catch(() => ({}));
+      const user = c.get("user");
+
+      // Check permissions
+      if (!["admin", "superAdmin"].includes(user.role)) {
+        throw new HTTPException(403, { message: "Insufficient permissions" });
+      }
+
+      if (!resolution || !["resolved", "dismissed"].includes(resolution)) {
+        throw new HTTPException(400, {
+          message: "Valid resolution (resolved/dismissed) is required",
+        });
+      }
+
+      const result = await reportsService.resolveReport({
+        reportId,
+        resolution,
+        resolutionNotes,
+        resolvedByUserId: user.id,
+      });
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error resolving report:", error);
+      throw new HTTPException(500, { message: "Error resolving report" });
+    }
+  };
+
+  // Get report reasons
+  getReportReasons = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const reportsService = new ReportsService(db);
+
+      const reasons = reportsService.getReportReasons();
+      return c.json({ reasons });
+    } catch (error) {
+      logger.error("Error fetching report reasons:", error);
+      throw new HTTPException(500, {
+        message: "Error fetching report reasons",
+      });
+    }
+  };
+
+  // Statistics and metrics
+  getStatistics = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const reportsService = new ReportsService(db);
+      const user = c.get("user");
+
+      // Check permissions
+      if (!["advisor", "admin", "superAdmin"].includes(user.role)) {
+        throw new HTTPException(403, { message: "Insufficient permissions" });
+      }
+
+      const [peaceSealStats, reportStats] = await Promise.all([
+        peaceSealService.getStatistics(),
+        reportsService.getReportStatistics(),
+      ]);
+
+      return c.json({
+        peaceSeal: peaceSealStats,
+        reports: reportStats,
+      });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching statistics:", error);
+      throw new HTTPException(500, { message: "Error fetching statistics" });
+    }
+  };
+
+  // Check expiring certifications (for cron jobs)
+  checkExpiringCertifications = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+
+      const expiring = await peaceSealService.checkExpiringCertifications();
+
+      // Here you would integrate with your email service to send reminders
+      // For each expiring company, send renewal reminder
+      for (const company of expiring) {
+        try {
+          // Send email reminder (integrate with your email service)
+          logger.log(
+            `Renewal reminder needed for company: ${company.name} (${company.id})`
+          );
+
+          // Mark as reminder sent
+          await peaceSealService.markRenewalReminderSent(company.id);
+        } catch (emailError) {
+          logger.error(
+            `Failed to send renewal reminder for company ${company.id}:`,
+            emailError
+          );
+        }
+      }
+
+      return c.json({
+        checked: expiring.length,
+        reminders: expiring.map((c) => ({
+          id: c.id,
+          name: c.name,
+          expiresAt: c.expiresAt,
+        })),
+      });
+    } catch (error) {
+      logger.error("Error checking expiring certifications:", error);
+      throw new HTTPException(500, {
+        message: "Error checking expiring certifications",
+      });
+    }
+  };
+
+  // Webhook for payment processing (Braintree)
+  handlePaymentWebhook = async (c: Context) => {
+    try {
+      const body = await c.req.json().catch(() => ({}));
+
+      // Validate webhook signature (implement based on Braintree docs)
+      // const signature = c.req.header("X-Braintree-Signature");
+      // if (!this.validateWebhookSignature(body, signature)) {
+      //   throw new HTTPException(401, { message: "Invalid webhook signature" });
+      // }
+
+      logger.log("Payment webhook received:", body);
+
+      // Process the webhook event based on type
+      if (body.kind === "transaction") {
+        const transaction = body.transaction;
+
+        if (transaction.status === "submitted_for_settlement") {
+          // Payment was successful
+          // Find the company by custom_fields or order_id and update payment status
+          logger.log(`Payment confirmed for transaction: ${transaction.id}`);
+
+          // You would implement the logic to match transaction to company
+          // and call confirmPayment method
+        }
+      }
+
+      return c.json({ received: true });
+    } catch (error) {
+      logger.error("Error processing payment webhook:", error);
+      // Don't throw error for webhooks to avoid retries
+      return c.json({ error: "Webhook processing failed" }, 500);
+    }
+  };
+
+  // Confirm payment from webhook (service authentication)
+  confirmPaymentWebhook = async (c: Context) => {
+    try {
+      // Validate service token
+      const authHeader = c.req.header("Authorization");
+      const serviceToken = c.env.WEBHOOK_AUTH_TOKEN; // Use environment from context
+
+      logger.log("Webhook payment confirmation attempt:", {
+        hasAuthHeader: !!authHeader,
+        hasServiceToken: !!serviceToken,
+        companyId: c.req.param("id"),
+      });
+
+      if (!serviceToken || authHeader !== `Bearer ${serviceToken}`) {
+        logger.error("Invalid service token for webhook:", {
+          expectedToken: serviceToken ? "present" : "missing",
+          receivedAuth: authHeader ? "present" : "missing",
+        });
+        throw new HTTPException(401, { message: "Invalid service token" });
+      }
+
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("id");
+      const { transactionId, amountCents, subscriptionId } = await c.req
+        .json()
+        .catch(() => ({}));
+
+      if (!transactionId || !amountCents) {
+        throw new HTTPException(400, {
+          message: "transactionId and amountCents required",
+        });
+      }
+
+      // Get company details to find the owner
+      const company = await db
+        .select({
+          id: peaceSealCompanies.id,
+          name: peaceSealCompanies.name,
+          createdByUserId: peaceSealCompanies.createdByUserId,
+          paymentStatus: peaceSealCompanies.paymentStatus,
+        })
+        .from(peaceSealCompanies)
+        .where(eq(peaceSealCompanies.id, companyId))
+        .then((r) => r[0]);
+
+      if (!company) {
+        throw new HTTPException(404, { message: "Company not found" });
+      }
+
+      // Get user details for email
+      const user = await db
+        .select({
+          id: users.id,
+          email: users.email,
+          name: users.name,
+        })
+        .from(users)
+        .where(eq(users.id, company.createdByUserId as string))
+        .then((r) => r[0]);
+
+      if (!user) {
+        throw new HTTPException(404, { message: "User not found" });
+      }
+
+      // Check questionnaire status before calling confirmPayment
+      const questionnaire = await db
+        .select({
+          progress: peaceSealQuestionnaires.progress,
+          responses: peaceSealQuestionnaires.responses,
+        })
+        .from(peaceSealQuestionnaires)
+        .where(eq(peaceSealQuestionnaires.companyId, companyId))
+        .then((r) => r[0]);
+
+      logger.log("confirmPaymentWebhook - Pre-check:", {
+        companyId,
+        currentPaymentStatus: company.paymentStatus,
+        questionnaireExists: !!questionnaire,
+        questionnaireProgress: questionnaire?.progress,
+      });
+
+      // Call the service method using the company owner's ID
+      const result = await peaceSealService.confirmPayment(
+        companyId,
+        String(transactionId),
+        Number(amountCents),
+        company.createdByUserId as string // Use company owner as the user
+      );
+
+      // Verify the update was successful by reading back the company
+      const updatedCompany = await db
+        .select({
+          status: peaceSealCompanies.status,
+          paymentStatus: peaceSealCompanies.paymentStatus,
+          score: peaceSealCompanies.score,
+        })
+        .from(peaceSealCompanies)
+        .where(eq(peaceSealCompanies.id, companyId))
+        .then((r) => r[0]);
+
+      logger.log("confirmPaymentWebhook - Post-update verification:", {
+        companyId,
+        status: updatedCompany?.status,
+        paymentStatus: updatedCompany?.paymentStatus,
+        score: updatedCompany?.score,
+      });
+
+      // If subscription was created, store the subscription ID
+      // IMPORTANT: Read current notes first to append, not overwrite
+      if (subscriptionId) {
+        const currentCompany = await db
+          .select({ notes: peaceSealCompanies.notes })
+          .from(peaceSealCompanies)
+          .where(eq(peaceSealCompanies.id, companyId))
+          .then((r) => r[0]);
+
+        const existingNotes = currentCompany?.notes || "";
+        const subscriptionNote = `Subscription ID: ${subscriptionId}`;
+        const updatedNotes = existingNotes
+          ? `${existingNotes}\n${subscriptionNote}`
+          : subscriptionNote;
+
+        await db
+          .update(peaceSealCompanies)
+          .set({
+            notes: updatedNotes,
+            updatedAt: Date.now(),
+          })
+          .where(eq(peaceSealCompanies.id, companyId));
+
+        logger.log("confirmPaymentWebhook - Subscription ID stored:", {
+          companyId,
+          subscriptionId,
+        });
+      }
+
+      // Send confirmation email to the user
+      try {
+        const emailService = new EmailService({
+          apiKey: c.env.BREVO_API_KEY as string,
+          fromEmail: c.env.FROM_EMAIL as string,
+          fromName: c.env.FROM_NAME as string,
+        });
+
+        const baseUrl = c.env.BASE_URL || "https://www.pledge4peace.org";
+
+        await emailService.sendPeaceSealPaymentConfirmation(
+          user.email,
+          user.name,
+          company.name,
+          baseUrl
+        );
+
+        logger.log("Peace Seal payment confirmation email sent:", {
+          userEmail: user.email,
+          companyName: company.name,
+        });
+      } catch (emailError) {
+        logger.error(
+          "Failed to send peace seal payment confirmation email:",
+          emailError
+        );
+        // Don't fail the payment confirmation if email fails
+      }
+
+      logger.log("Webhook payment confirmation successful:", {
+        companyId,
+        transactionId,
+        subscriptionId,
+      });
+
+      return c.json({ success: true, result });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error confirming webhook payment:", error);
+      throw new HTTPException(500, { message: "Error confirming payment" });
+    }
+  };
+
+  // Get document types and counts for a company
+  getDocumentTypesCount = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const documentService = new DocumentService(db);
+      const companyId = c.req.param("id");
+
+      const result = await documentService.getDocumentTypesCounts(companyId);
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching document types count:", error);
+      throw new HTTPException(500, {
+        message: "Error fetching document types count",
+      });
+    }
+  };
+
+  // Check document requirements based on questionnaire
+  checkDocumentRequirements = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const documentService = new DocumentService(db);
+      const companyId = c.req.param("id");
+      const { responses } = await c.req.json().catch(() => ({}));
+
+      const result = await documentService.checkDocumentRequirements(
+        companyId,
+        responses
+      );
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error checking document requirements:", error);
+      throw new HTTPException(500, {
+        message: "Error checking document requirements",
+      });
+    }
+  };
+
+  // Upload document for application (with R2 integration)
+  uploadApplicationDocument = async (c: Context) => {
+    try {
+      console.log("=== UPLOAD APPLICATION DOCUMENT CALLED ===");
+      logger.log(
+        "uploadApplicationDocument called with companyId:",
+        c.req.param("id")
+      );
+
+      const db = createDb(c.env.DB);
+      const user = c.get("user");
+      const companyId = c.req.param("id");
+
+      logger.log("User authenticated:", { userId: user?.id, companyId });
+
+      // Verify that the user owns this application first
+      const company = await db
+        .select({
+          createdByUserId: peaceSealCompanies.createdByUserId,
+        })
+        .from(peaceSealCompanies)
+        .where(eq(peaceSealCompanies.id, companyId))
+        .then((r) => r[0]);
+
+      if (!company || company.createdByUserId !== user.id) {
+        throw new HTTPException(403, { message: "Not authorized" });
+      }
+
+      // Now delegate to documents controller - it will handle the FormData and R2 upload
+      const documentsController = new DocumentsController();
+      return await documentsController.uploadDocument(c);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error uploading application document:", error);
+      throw new HTTPException(500, { message: "Error uploading document" });
+    }
+  };
+
+  // Test R2 connection (development only)
+  testR2Connection = async (c: Context) => {
+    try {
+      logger.log("Testing R2 connection");
+
+      const bucket = c.env.BUCKET;
+      const environment = c.env.NODE_ENV;
+
+      if (!bucket) {
+        return c.json({
+          success: false,
+          error: "R2 bucket binding not found",
+          environment,
+        });
+      }
+
+      // Try to list objects (just to test connectivity)
+      try {
+        const testFileName = `test/connectivity-test-${Date.now()}.txt`;
+        const testContent = "R2 connectivity test";
+
+        // Upload a test file
+        await bucket.put(testFileName, testContent, {
+          httpMetadata: {
+            contentType: "text/plain",
+          },
+        });
+
+        logger.log("Test file uploaded successfully");
+
+        // Try to read it back
+        const testObject = await bucket.get(testFileName);
+
+        if (testObject) {
+          logger.log("Test file retrieved successfully");
+
+          // Clean up test file
+          await bucket.delete(testFileName);
+          logger.log("Test file deleted successfully");
+
+          return c.json({
+            success: true,
+            message: "R2 connection successful",
+            environment,
+            bucketName:
+              environment === "production" ? "prod-p4p-cdn" : "dev-p4p-cdn",
+          });
+        } else {
+          return c.json({
+            success: false,
+            error: "Could not retrieve test file",
+            environment,
+          });
+        }
+      } catch (r2Error) {
+        logger.error("R2 operation failed:", r2Error);
+        return c.json({
+          success: false,
+          error: `R2 operation failed: ${r2Error instanceof Error ? r2Error.message : "Unknown error"}`,
+          environment,
+        });
+      }
+    } catch (error) {
+      logger.error("Error testing R2 connection:", error);
+      return c.json({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
+  // Test FormData parsing (development only)
+  testFormData = async (c: Context) => {
+    try {
+      console.log("=== TEST FORMDATA CALLED ===");
+
+      const formData = await c.req.formData();
+      const file = formData.get("file") as File;
+      const companyId = formData.get("companyId") as string;
+
+      console.log("FormData received:", {
+        hasFile: !!file,
+        fileName: file?.name,
+        fileSize: file?.size,
+        companyId,
+      });
+
+      return c.json({
+        success: true,
+        message: "FormData received successfully",
+        hasFile: !!file,
+        fileName: file?.name,
+        fileSize: file?.size,
+        companyId,
+      });
+    } catch (error) {
+      console.error("Error in testFormData:", error);
+      return c.json({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
+  // Test FormData parsing with auth (development only)
+  testAuthFormData = async (c: Context) => {
+    try {
+      console.log("=== TEST AUTH FORMDATA CALLED ===");
+
+      const user = c.get("user");
+      console.log("User from auth middleware:", {
+        userId: user?.id,
+        userEmail: user?.email,
+      });
+
+      const formData = await c.req.formData();
+      const file = formData.get("file") as File;
+      const companyId = formData.get("companyId") as string;
+
+      console.log("FormData received with auth:", {
+        hasFile: !!file,
+        fileName: file?.name,
+        fileSize: file?.size,
+        companyId,
+        userId: user?.id,
+      });
+
+      return c.json({
+        success: true,
+        message: "Authenticated FormData received successfully",
+        hasFile: !!file,
+        fileName: file?.name,
+        fileSize: file?.size,
+        companyId,
+        userId: user?.id,
+      });
+    } catch (error) {
+      console.error("Error in testAuthFormData:", error);
+      return c.json({
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+    }
+  };
+
+  // Accept an agreement template
+  acceptAgreement = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("companyId");
+      const { sectionId, fieldId, templateId, acceptanceData } =
+        await c.req.json();
+      const user = c.get("user");
+
+      if (!sectionId || !fieldId || !templateId) {
+        throw new HTTPException(400, {
+          message: "sectionId, fieldId, and templateId are required",
+        });
+      }
+
+      const result = await peaceSealService.acceptAgreement({
+        companyId,
+        sectionId,
+        fieldId,
+        templateId,
+        userId: user.id,
+        acceptanceData,
+      });
+
+      // Send emails to beneficial ownership owners if this is a beneficial ownership agreement
+      if (templateId === "template_beneficial_ownership" && acceptanceData) {
+        try {
+          // Validate environment variables
+          const brevoApiKey = c.env.BREVO_API_KEY as string;
+          const brevoFromEmail = c.env.FROM_EMAIL as string;
+          const brevoFromName = (c.env.FROM_NAME as string) || "Pledge4Peace";
+
+          if (!brevoApiKey || !brevoFromEmail) {
+            logger.error(
+              "Missing Brevo configuration. Cannot send beneficial ownership emails.",
+              {
+                hasApiKey: !!brevoApiKey,
+                hasFromEmail: !!brevoFromEmail,
+              }
+            );
+            // Don't throw - agreement acceptance should still succeed
+          } else {
+            const emailService = new EmailService({
+              apiKey: brevoApiKey,
+              fromEmail: brevoFromEmail,
+              fromName: brevoFromName,
+            });
+
+            // Parse acceptance data to get owners
+            const owners = acceptanceData.owners || [];
+            const representativeName = user.name || "your representative";
+            const representativeEmail = user.email?.toLowerCase().trim();
+            // acceptedAt is a timestamp in milliseconds
+            const signedDate = new Date(result.acceptedAt);
+
+            // Get agreement text
+            const agreementText = AGREEMENT_TEXTS[templateId];
+            if (!agreementText) {
+              logger.error(
+                "Agreement text not found for template:",
+                templateId
+              );
+            } else {
+              // Filter owners: exclude the representative and only include those with valid emails
+              const ownersToNotify = owners.filter(
+                (owner: { name?: string; email?: string }) => {
+                  if (!owner.email || !owner.email.trim()) {
+                    return false;
+                  }
+                  const ownerEmail = owner.email.toLowerCase().trim();
+                  // Exclude the representative's email
+                  if (
+                    representativeEmail &&
+                    ownerEmail === representativeEmail
+                  ) {
+                    logger.log("Skipping email to representative:", ownerEmail);
+                    return false;
+                  }
+                  return true;
+                }
+              );
+
+              logger.log("Preparing to send beneficial ownership emails:", {
+                totalOwners: owners.length,
+                ownersToNotify: ownersToNotify.length,
+                representativeEmail,
+              });
+
+              // Send email to each owner (excluding the representative)
+              const emailPromises = ownersToNotify.map(
+                (owner: { name: string; email: string }) =>
+                  emailService
+                    .sendBeneficialOwnershipAgreementEmail(
+                      owner.email.trim(),
+                      owner.name || "Owner",
+                      representativeName,
+                      signedDate,
+                      agreementText.body
+                    )
+                    .then(() => {
+                      logger.log(
+                        "Successfully sent beneficial ownership email to:",
+                        owner.email
+                      );
+                    })
+                    .catch((emailError) => {
+                      logger.error(
+                        "Failed to send beneficial ownership email to:",
+                        owner.email,
+                        emailError
+                      );
+                      // Don't throw - we want to continue even if some emails fail
+                    })
+              );
+
+              // Wait for all emails to be sent (or fail gracefully)
+              await Promise.allSettled(emailPromises);
+
+              logger.log("Beneficial ownership emails sent:", {
+                companyId,
+                totalOwners: owners.length,
+                ownersToNotify: ownersToNotify.length,
+                emailsSent: emailPromises.length,
+                representativeEmail,
+              });
+            }
+          }
+        } catch (emailError) {
+          // Log error but don't fail the agreement acceptance
+          logger.error(
+            "Error sending beneficial ownership emails:",
+            emailError
+          );
+        }
+      }
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error accepting agreement:", error);
+      throw new HTTPException(500, { message: "Error accepting agreement" });
+    }
+  };
+
+  // Get agreement acceptances for a company
+  getAgreementAcceptances = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("companyId");
+      const user = c.get("user");
+
+      // Verify ownership
+      const company = await db
+        .select({ createdByUserId: peaceSealCompanies.createdByUserId })
+        .from(peaceSealCompanies)
+        .where(eq(peaceSealCompanies.id, companyId))
+        .then((r) => r[0]);
+
+      if (!company || company.createdByUserId !== user.id) {
+        throw new HTTPException(403, { message: "Not allowed" });
+      }
+
+      const acceptances =
+        await peaceSealService.getAgreementAcceptances(companyId);
+      return c.json({ acceptances });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching agreement acceptances:", error);
+      throw new HTTPException(500, {
+        message: "Error fetching agreement acceptances",
+      });
+    }
+  };
+
+  // Delete an agreement acceptance
+  deleteAgreementAcceptance = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+      const companyId = c.req.param("companyId");
+      const acceptanceId = c.req.param("acceptanceId");
+      const user = c.get("user");
+
+      const result = await peaceSealService.deleteAgreementAcceptance(
+        companyId,
+        acceptanceId,
+        user.id
+      );
+
+      return c.json(result);
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error deleting agreement acceptance:", error);
+      throw new HTTPException(500, {
+        message: "Error deleting agreement acceptance",
+      });
+    }
+  };
+
+  // Get templates
+  getTemplates = async (c: Context) => {
+    try {
+      const db = createDb(c.env.DB);
+      const peaceSealService = new PeaceSealService(db);
+
+      const url = new URL(c.req.url);
+      const filters = {
+        category: url.searchParams.get("category") || undefined,
+        resourceType: url.searchParams.get("resourceType") || "template",
+      };
+
+      const templates = await peaceSealService.getTemplates(filters);
+      return c.json({ templates });
+    } catch (error) {
+      if (error instanceof HTTPException) throw error;
+      logger.error("Error fetching templates:", error);
+      throw new HTTPException(500, { message: "Error fetching templates" });
+    }
+  };
+}

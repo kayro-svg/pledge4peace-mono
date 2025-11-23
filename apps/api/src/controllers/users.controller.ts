@@ -108,13 +108,14 @@ export class UsersController {
         const pattern = `%${q}%`;
         filters.push(or(like(users.email, pattern), like(users.name, pattern)));
       }
-      // By default, only list moderators and admins. Allow including users for targeted searches.
-      const defaultRoles: Array<"user" | "moderator" | "admin"> = includeUsers
-        ? ["user", "moderator", "admin"]
-        : ["moderator", "admin"];
+      // By default, only list moderators, advisors and admins. Allow including users for targeted searches.
+      const defaultRoles: Array<"user" | "moderator" | "advisor" | "admin"> =
+        includeUsers
+          ? ["user", "moderator", "advisor", "admin"]
+          : ["moderator", "advisor", "admin"];
       const roleFilterList =
-        role && ["user", "moderator", "admin"].includes(role)
-          ? [role as "user" | "moderator" | "admin"]
+        role && ["user", "moderator", "advisor", "admin"].includes(role)
+          ? [role as "user" | "moderator" | "advisor" | "admin"]
           : defaultRoles;
       filters.push(inArray(users.role as any, roleFilterList as any));
 
@@ -171,7 +172,7 @@ export class UsersController {
       const schema = z
         .object({
           userId: z.string().min(1),
-          role: z.enum(["user", "moderator", "admin"]),
+          role: z.enum(["user", "moderator", "advisor", "admin"]),
         })
         .strict();
       const validation = schema.safeParse(body);

@@ -1,0 +1,1264 @@
+// Questionnaire configuration for Peace Seal
+// Backend version - simplified to match frontend size-based schemas
+
+export interface QuestionnaireField {
+  id: string;
+  label: string;
+  type: string;
+  required: boolean;
+  placeholder?: string;
+  helpText?: string;
+  options?: string[];
+  fileTypes?: string[];
+  maxFileSize?: number;
+  multiple?: boolean;
+  inputModes?: Array<{
+    kind: string;
+    label?: string;
+    helpText?: string;
+    fileTypes?: string[];
+    maxFileSize?: number;
+  }>;
+  completionMode?: "any" | "all";
+}
+
+export interface QuestionnaireSection {
+  id: string;
+  title: string;
+  description: string;
+  weight: number;
+  fields: QuestionnaireField[];
+  isOptional?: boolean;
+}
+
+// Helper function to determine company size
+export function getCompanySize(
+  employeeCount: number
+): "small" | "medium" | "large" {
+  if (employeeCount <= 20) return "small";
+  if (employeeCount <= 50) return "medium";
+  return "large";
+}
+
+// Common Section 1: Company Information (All Sizes)
+const COMPANY_INFORMATION_SECTION: QuestionnaireSection = {
+  id: "companyInformation",
+  title: "Company Information",
+  description: "Basic information about your organization",
+  weight: 0,
+  fields: [
+    {
+      id: "organizationName",
+      label: "Organization/Business Name",
+      type: "text",
+      required: true,
+      placeholder: "Enter your organization name",
+    },
+    {
+      id: "website",
+      label: "Website",
+      type: "url",
+      required: true,
+      placeholder: "https://example.com",
+    },
+    {
+      id: "contactEmail",
+      label: "Contact Email",
+      type: "email",
+      required: true,
+      placeholder: "contact@example.com",
+    },
+    {
+      id: "contactPhone",
+      label: "Contact Phone",
+      type: "text",
+      required: false,
+      placeholder: "+1 (555) 123-4567",
+    },
+    {
+      id: "contactName",
+      label: "Contact Name",
+      type: "text",
+      required: true,
+      placeholder: "Full name of person in charge",
+      helpText:
+        "Name of the person responsible for this Peace Seal application",
+    },
+    {
+      id: "headquartersCountry",
+      label: "Headquarters Country",
+      type: "select",
+      required: true,
+    },
+    {
+      id: "countriesOfOperations",
+      label: "Countries of Operations (Optional)",
+      type: "textarea",
+      required: false,
+      placeholder: "e.g., United States, Canada, Mexico, United Kingdom",
+      helpText:
+        "List all countries where your organization operates (comma-separated)",
+    },
+    // {
+    //   id: "employeeCount",
+    //   label: "Size (number of employees)",
+    //   type: "number",
+    //   required: true,
+    //   placeholder: "e.g., 150",
+    // },
+    {
+      id: "annualRevenueRange",
+      label: "Annual Revenue Range (optional)",
+      type: "select",
+      required: false,
+      options: [
+        "Under $1M",
+        "$1M - $10M",
+        "$10M - $100M",
+        "$100M - $1B",
+        "Over $1B",
+        "Prefer not to disclose",
+      ],
+    },
+  ],
+};
+
+// SMALL BUSINESS (1-20 Employees) CONFIGURATION
+export const SMALL_BUSINESS_SECTIONS: QuestionnaireSection[] = [
+  COMPANY_INFORMATION_SECTION,
+  {
+    id: "ethicalPracticesGovernance",
+    title: "Ethical Practices & Governance",
+    description: "Your governance structure and ethical policies",
+    weight: 15,
+    fields: [
+      {
+        id: "peacePledgeDeclaration",
+        label: "Signed CEO/Owner Peace Pledge Declaration",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf"],
+        maxFileSize: 5 * 1024 * 1024,
+        helpText: "Sign the Peace Pledge Declaration electronically",
+      },
+      {
+        id: "hrHandbook",
+        label:
+          "HR or Employee Handbook (with anti-discrimination & fair wage policies)",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your HR handbook or use our sample template",
+      },
+      {
+        id: "ownershipStructure",
+        label: "Ownership Structure",
+        type: "select",
+        required: true,
+        options: [
+          "Sole Proprietorship (single owner)",
+          "Partnership (two or more owners)",
+          "Limited Partnership (LP)",
+          "Limited Liability Partnership (LLP)",
+          "Corporation (owners are shareholders with limited liability)",
+          "Limited Liability Company (LLC) (blend of partnership and corporate features)",
+          "Nonprofit Corporation",
+          "Cooperative",
+          "Other",
+        ],
+      },
+      {
+        id: "supplierSelfDeclaration",
+        label:
+          "Supplier Self-Declaration (no ties to arms/conflict industries)",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf"],
+        maxFileSize: 5 * 1024 * 1024,
+        helpText: "Upload supplier declaration or sign our template",
+      },
+      {
+        id: "companyValuesStatement",
+        label: "Public Statement of Company Values",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx", ".jpg", ".png"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your public statement of values or provide text",
+      },
+      {
+        id: "donationReceipts",
+        label: "Donation Receipts to Peacebuilding Organizations (Optional)",
+        type: "file",
+        required: false,
+        fileTypes: [".pdf", ".jpg", ".png"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload up to 3 donation receipts",
+      },
+      {
+        id: "diversityBreakdown",
+        label: "Simple Diversity Breakdown (Optional)",
+        type: "file",
+        required: false,
+        fileTypes: [".pdf", ".doc", ".docx", ".jpg", ".png"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your diversity breakdown or describe it",
+      },
+    ],
+  },
+  {
+    id: "employeeRightsWorkplaceCulture",
+    title: "Employee Rights & Workplace Culture",
+    description: "Your employee rights and workplace culture policies",
+    weight: 10,
+    fields: [
+      {
+        id: "fairWagePractices",
+        label: "Proof of Fair Wage Practices",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Payroll summary or self-declaration",
+      },
+      {
+        id: "antiHarassmentPolicy",
+        label: "Signed Anti-Harassment and Anti-Discrimination Policy",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf"],
+        maxFileSize: 5 * 1024 * 1024,
+        helpText: "Upload your policy or sign our template",
+      },
+      {
+        id: "employeeSatisfactionSurvey",
+        label: "Employee Satisfaction Survey Summary (Optional)",
+        type: "file",
+        required: false,
+        helpText:
+          "Upload survey summary or send survey invitations to employees",
+        inputModes: [
+          {
+            kind: "file",
+            label: "Upload File",
+            fileTypes: [".pdf", ".doc", ".docx"],
+            maxFileSize: 10 * 1024 * 1024,
+            helpText: "Upload a survey summary document",
+          },
+          {
+            kind: "survey",
+            label: "Send Survey Invitations",
+            helpText:
+              "Send email invitations to employees to complete the survey",
+          },
+        ],
+        completionMode: "any",
+      },
+    ],
+  },
+  {
+    id: "socialImpactCommunityEngagement",
+    title: "Social Impact & Community Engagement",
+    description: "Your community engagement and social impact initiatives",
+    weight: 10,
+    fields: [
+      {
+        id: "communityContribution",
+        label: "Evidence of Community Contribution",
+        type: "textarea",
+        required: true,
+        placeholder: "Describe at least one community contribution...",
+        helpText: "Local donation, volunteering initiative, etc.",
+      },
+      {
+        id: "employeeVolunteerPrograms",
+        label: "Employee Volunteer Programs (Optional)",
+        type: "textarea",
+        required: false,
+        placeholder: "Describe volunteer hours and program initiatives...",
+        helpText: "Employee volunteer mandatory hours or programs",
+      },
+    ],
+  },
+  {
+    id: "environmentalResponsibility",
+    title: "Environmental Responsibility",
+    description: "Your environmental policies and sustainability practices",
+    weight: 5,
+    fields: [
+      {
+        id: "sustainableSourcingStatement",
+        label: "Signed Statement on Sustainable Sourcing or Waste Management",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf"],
+        maxFileSize: 5 * 1024 * 1024,
+        helpText: "Upload your statement or sign our template",
+      },
+      {
+        id: "recyclingRenewableInitiatives",
+        label:
+          "Participation in Local Recycling/Renewable Initiatives (Optional)",
+        type: "textarea",
+        required: false,
+        placeholder: "Describe your recycling and renewable energy programs...",
+        helpText: "Local recycling/renewable initiatives",
+      },
+    ],
+  },
+  {
+    id: "transparencyPublicAccountability",
+    title: "Transparency & Public Accountability",
+    description: "Your transparency practices and public accountability",
+    weight: 5,
+    fields: [
+      {
+        id: "universalValuesCommitment",
+        label: "Foundation in Universal Values",
+        type: "textarea",
+        required: true,
+        placeholder: "Our commitment to universal values is...",
+        helpText:
+          "Share how your organization upholds universal values such as human dignity, justice, equality, and protection of human rights",
+      },
+      {
+        id: "respectLifeNonViolence",
+        label: "Respect for Life and Non-Violence",
+        type: "textarea",
+        required: true,
+        placeholder: "Our pledge to respect life and non-violence is...",
+        helpText:
+          "Describe how your company ensures respect for life and promotes non-violence in operations, policies, and workplace culture",
+      },
+      {
+        id: "justStableSocieties",
+        label: "Promoting Just and Stable Societies",
+        type: "textarea",
+        required: true,
+        placeholder: "Our role in fostering just and stable societies is...",
+        helpText:
+          "Explain how your business contributes to fairness, trust, and stability through just laws, equitable structures, and practices",
+      },
+      {
+        id: "educationForPeace",
+        label: "Education for Peace",
+        type: "textarea",
+        required: true,
+        placeholder: "Our efforts in education for peace are...",
+        helpText:
+          "Detail how your company invests in education, training, or awareness that promotes tolerance, cross-cultural understanding, and sustainable development",
+      },
+      {
+        id: "ethicalConductInAction",
+        label: "Ethical Conduct in Action",
+        type: "textarea",
+        required: true,
+        placeholder: "Our ethical conduct in practice is...",
+        helpText:
+          "Provide examples of how your organization upholds ethical standards in everyday operations",
+      },
+      {
+        id: "rejectionViolenceHate",
+        label: "Rejection of Violence and Hate",
+        type: "textarea",
+        required: true,
+        placeholder: "Our commitment to reject violence and hate is...",
+        helpText:
+          "Confirm that your business explicitly rejects violence, terrorism, and hate speech",
+      },
+      {
+        id: "internationalCooperationLaw",
+        label: "International Cooperation and Law",
+        type: "textarea",
+        required: true,
+        placeholder: "Our approach to international cooperation and law is...",
+        helpText:
+          "Explain how your company respects international law and engages in cooperation to resolve disputes peacefully",
+      },
+      {
+        id: "humanCenteredDevelopment",
+        label: "Human-Centered Development",
+        type: "textarea",
+        required: true,
+        placeholder: "Our focus on human-centered development is...",
+        helpText:
+          "Share how your business prioritizes people's well-being, opportunities, and inclusion over profit alone",
+      },
+      {
+        id: "externalReviewAgreement",
+        label: "Agree to External Review by Pledge4Peace on Request",
+        type: "select",
+        required: true,
+        options: ["Yes", "No"],
+        helpText: "Agreement to external review",
+      },
+    ],
+  },
+  {
+    id: "globalPeaceCommitmentConflictAvoidance",
+    title: "Global Peace Commitment & Conflict Avoidance",
+    description: "Your commitment to global peace and conflict avoidance",
+    weight: 5,
+    fields: [
+      {
+        id: "noArmsTiesDeclaration",
+        label:
+          "Declaration of No Ties with Arms Industries or Sanctioned Regimes",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf"],
+        maxFileSize: 5 * 1024 * 1024,
+        helpText: "Sign the declaration",
+      },
+      {
+        id: "peaceInitiativesSupport",
+        label: "Evidence of Support for Peace Initiatives (Optional)",
+        type: "file",
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        required: false,
+        helpText: "Local or international peace initiatives",
+      },
+    ],
+  },
+  {
+    id: "publicFeedbackExternalReporting",
+    title: "Public Feedback & External Reporting System",
+    description: "Your public reputation and feedback management",
+    weight: 5,
+    fields: [
+      {
+        id: "googleWebsiteReviews",
+        label: "Google/Website Reviews Link",
+        type: "url",
+        required: true,
+        placeholder: "https://google.com/maps/yourcompany",
+        helpText: "Provide link to your Google Reviews or website reviews",
+      },
+      {
+        id: "complaintResolutionProcess",
+        label: "Process Documentation for Complaint Resolution (Optional)",
+        type: "file",
+        required: false,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload process documentation or opt in to use our mediation",
+      },
+    ],
+  },
+];
+
+// MEDIUM BUSINESS (21-50 Employees) CONFIGURATION
+export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
+  COMPANY_INFORMATION_SECTION,
+  {
+    id: "ethicalPracticesGovernance",
+    title: "Ethical Practices & Governance",
+    description: "Your governance structure and ethical policies",
+    weight: 20,
+    fields: [
+      {
+        id: "peacePledgeDeclaration",
+        label: "Signed CEO/Owner Peace Pledge Declaration",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf"],
+        maxFileSize: 5 * 1024 * 1024,
+        helpText: "Sign the Peace Pledge Declaration electronically",
+      },
+      {
+        id: "boardApprovedPeacePolicy",
+        label: "Board-Approved Peace & Human Rights Policy",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your policy or use our sample template",
+      },
+      {
+        id: "beneficialOwnershipPolicy",
+        label: "Anti-corruption: Company Beneficial Ownership Policy",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your policy or use our template",
+      },
+      {
+        id: "supplierVendorCodeOfConduct",
+        label: "Supplier/Vendor Code of Conduct",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your code of conduct or sign our template",
+      },
+      {
+        id: "companyValuesStatement",
+        label: "Public Statement of Company Values",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx", ".jpg", ".png"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your public statement of values or provide text",
+      },
+      {
+        id: "noLobbyingDeclaration",
+        label: "Declaration of No Lobbying for War/Conflict Policies",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf"],
+        maxFileSize: 5 * 1024 * 1024,
+        helpText: "Upload your declaration or sign our template",
+      },
+      {
+        id: "esgReport",
+        label: "ESG Report or Corporate Ethics Statement (Optional)",
+        type: "file",
+        required: false,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 20 * 1024 * 1024,
+        helpText: "Upload your ESG report or corporate ethics statement",
+      },
+    ],
+  },
+  {
+    id: "employeeRightsWorkplaceCulture",
+    title: "Employee Rights & Workplace Culture",
+    description: "Your employee rights and workplace culture policies",
+    weight: 15,
+    fields: [
+      {
+        id: "equalOpportunityPolicy",
+        label: "Equal Opportunity Employment (EOE) Policy",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your policy or sign our template",
+      },
+      {
+        id: "whistleblowerProtectionPolicy",
+        label: "Whistleblower Protection Policy",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your policy or sign our template",
+      },
+      {
+        id: "fairWagePractices",
+        label: "Proof of Fair Wage Practices",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Payroll summary or self-declaration",
+      },
+      {
+        id: "mentalHealthPrograms",
+        label:
+          "Mental Health Program or Conflict Resolution Training (Optional)",
+        type: "textarea",
+        required: false,
+        placeholder: "Describe your mental health programs...",
+        helpText: "Mental health program or conflict resolution training",
+      },
+      {
+        id: "employeeSatisfactionSurvey",
+        label: "Employee Satisfaction Survey Summary (Optional)",
+        type: "file",
+        required: false,
+        helpText:
+          "Upload survey summary or send survey invitations to employees",
+        inputModes: [
+          {
+            kind: "file",
+            label: "Upload File",
+            fileTypes: [".pdf", ".doc", ".docx"],
+            maxFileSize: 10 * 1024 * 1024,
+            helpText: "Upload a survey summary document",
+          },
+          {
+            kind: "survey",
+            label: "Send Survey Invitations",
+            helpText:
+              "Send email invitations to employees to complete the survey",
+          },
+        ],
+        completionMode: "any",
+      },
+    ],
+  },
+  {
+    id: "socialImpactCommunityEngagement",
+    title: "Social Impact & Community Engagement",
+    description: "Your community engagement and social impact initiatives",
+    weight: 10,
+    fields: [
+      {
+        id: "ngoPartnerships",
+        label:
+          "Proof of Donation or Partnership with NGO/Community Organization",
+        type: "textarea",
+        required: true,
+        placeholder: "Describe your NGO partnerships and donations...",
+        helpText:
+          "At least one donation or partnership with NGO/community organization",
+      },
+      {
+        id: "employeeVolunteerPrograms",
+        label: "Employee Volunteer Programs",
+        type: "textarea",
+        required: true,
+        placeholder: "Describe volunteer hours and program initiatives...",
+        helpText: "Employee volunteer mandatory hours or programs",
+      },
+      {
+        id: "csrReport",
+        label: "CSR Report (Optional)",
+        type: "file",
+        required: false,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 20 * 1024 * 1024,
+        helpText: "Basic acceptable CSR report",
+      },
+    ],
+  },
+  {
+    id: "environmentalResponsibility",
+    title: "Environmental Responsibility",
+    description: "Your environmental policies and sustainability practices",
+    weight: 5,
+    fields: [
+      {
+        id: "carbonFootprintDisclosure",
+        label: "Carbon Footprint Disclosure or Sustainability Plan",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 15 * 1024 * 1024,
+        helpText: "Upload your disclosure or sign our sustainability plan",
+      },
+      {
+        id: "greenBusinessCertification",
+        label: "Green Business or Equivalent Certification (Optional)",
+        type: "file",
+        required: false,
+        fileTypes: [".pdf", ".jpg", ".png"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your green business certification",
+      },
+    ],
+  },
+  {
+    id: "transparencyPublicAccountability",
+    title: "Transparency & Public Accountability",
+    description: "Your transparency practices and public accountability",
+    weight: 5,
+    fields: [
+      {
+        id: "universalValuesCommitment",
+        label: "Foundation in Universal Values",
+        type: "textarea",
+        required: true,
+        placeholder: "Our commitment to universal values is...",
+        helpText:
+          "Share how your organization upholds universal values such as human dignity, justice, equality, and protection of human rights",
+      },
+      {
+        id: "respectLifeNonViolence",
+        label: "Respect for Life and Non-Violence",
+        type: "textarea",
+        required: true,
+        placeholder: "Our pledge to respect life and non-violence is...",
+        helpText:
+          "Describe how your company ensures respect for life and promotes non-violence in operations, policies, and workplace culture",
+      },
+      {
+        id: "justStableSocieties",
+        label: "Promoting Just and Stable Societies",
+        type: "textarea",
+        required: true,
+        placeholder: "Our role in fostering just and stable societies is...",
+        helpText:
+          "Explain how your business contributes to fairness, trust, and stability through just laws, equitable structures, and practices",
+      },
+      {
+        id: "educationForPeace",
+        label: "Education for Peace",
+        type: "textarea",
+        required: true,
+        placeholder: "Our efforts in education for peace are...",
+        helpText:
+          "Detail how your company invests in education, training, or awareness that promotes tolerance, cross-cultural understanding, and sustainable development",
+      },
+      {
+        id: "ethicalConductInAction",
+        label: "Ethical Conduct in Action",
+        type: "textarea",
+        required: true,
+        placeholder: "Our ethical conduct in practice is...",
+        helpText:
+          "Provide examples of how your organization upholds ethical standards in everyday operations",
+      },
+      {
+        id: "rejectionViolenceHate",
+        label: "Rejection of Violence and Hate",
+        type: "textarea",
+        required: true,
+        placeholder: "Our commitment to reject violence and hate is...",
+        helpText:
+          "Confirm that your business explicitly rejects violence, terrorism, and hate speech",
+      },
+      {
+        id: "internationalCooperationLaw",
+        label: "International Cooperation and Law",
+        type: "textarea",
+        required: true,
+        placeholder: "Our approach to international cooperation and law is...",
+        helpText:
+          "Explain how your company respects international law and engages in cooperation to resolve disputes peacefully",
+      },
+      {
+        id: "humanCenteredDevelopment",
+        label: "Human-Centered Development",
+        type: "textarea",
+        required: true,
+        placeholder: "Our focus on human-centered development is...",
+        helpText:
+          "Share how your business prioritizes people's well-being, opportunities, and inclusion over profit alone",
+      },
+      {
+        id: "externalReviewAgreement",
+        label: "Agree to External Review by Pledge4Peace on Request",
+        type: "select",
+        required: true,
+        options: ["Yes", "No"],
+        helpText: "Agreement to external review",
+      },
+    ],
+  },
+  {
+    id: "globalPeaceCommitmentConflictAvoidance",
+    title: "Global Peace Commitment & Conflict Avoidance",
+    description: "Your commitment to global peace and conflict avoidance",
+    weight: 5,
+    fields: [
+      {
+        id: "noArmsTiesDeclaration",
+        label:
+          "Declaration of No Ties with Arms Industries or Sanctioned Regimes",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf"],
+        maxFileSize: 5 * 1024 * 1024,
+        helpText: "Sign the declaration",
+      },
+      {
+        id: "peaceInitiativesSupport",
+        label: "Evidence of Support for Peace Initiatives",
+        type: "textarea",
+        required: true,
+        placeholder: "Describe your support for peace initiatives...",
+        helpText: "Local or international peace initiatives",
+      },
+      {
+        id: "peacebuildingAdvocacy",
+        label:
+          "Public Advocacy for Peacebuilding or Mediation Efforts (Optional)",
+        type: "textarea",
+        required: false,
+        placeholder: "Describe your peacebuilding and mediation advocacy...",
+        helpText: "Add links to publications",
+      },
+    ],
+  },
+  {
+    id: "publicFeedbackExternalReporting",
+    title: "Public Feedback & External Reporting System",
+    description: "Your public reputation and feedback management",
+    weight: 5,
+    fields: [
+      {
+        id: "complaintResolutionProcess",
+        label: "Process Documentation for Complaint Resolution",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload process documentation or opt in to use our mediation",
+      },
+      {
+        id: "resolutionChannels",
+        label:
+          "Resolution Channels Available for Everyone and Publicly Accessible",
+        type: "textarea",
+        required: true,
+        placeholder: "Provide links to your resolution channels...",
+        helpText: "Add any link where you display your resolution channels",
+      },
+      {
+        id: "googleWebsiteReviews",
+        label: "Google/Website Reviews Link (Optional)",
+        type: "url",
+        required: false,
+        placeholder: "https://google.com/maps/yourcompany",
+        helpText: "Provide link to your Google Reviews or website reviews",
+      },
+    ],
+  },
+];
+
+// LARGE BUSINESS (50+ Employees) CONFIGURATION
+export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
+  COMPANY_INFORMATION_SECTION,
+  {
+    id: "ethicalPracticesGovernance",
+    title: "Ethical Practices & Governance",
+    description: "Your governance structure and ethical policies",
+    weight: 20,
+    fields: [
+      {
+        id: "peacePledgeDeclaration",
+        label: "Signed CEO/Authorized Representative Peace Pledge Declaration",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf"],
+        maxFileSize: 5 * 1024 * 1024,
+        helpText: "Sign the Peace Pledge Declaration electronically",
+      },
+      {
+        id: "boardApprovedPeacePolicy",
+        label: "Board-Approved Peace & Human Rights Policy",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your policy or use our sample template",
+      },
+      {
+        id: "beneficialOwnershipPolicy",
+        label: "Anti-corruption: Company Beneficial Ownership Policy",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your policy or use our template",
+      },
+      {
+        id: "supplierVendorCodeOfConduct",
+        label: "Supplier/Vendor Code of Conduct",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your code of conduct or sign our template",
+      },
+      {
+        id: "companyValuesStatement",
+        label: "Public Statement of Company Values",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx", ".jpg", ".png"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your public statement of values or provide text",
+      },
+      {
+        id: "noLobbyingDeclaration",
+        label: "Declaration of No Lobbying for War/Conflict Policies",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf"],
+        maxFileSize: 5 * 1024 * 1024,
+        helpText: "Upload your declaration or sign our template",
+      },
+      {
+        id: "fullEsgReport",
+        label: "Full ESG or CSR Report with Third-Party Validation (Optional)",
+        type: "file",
+        required: false,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 50 * 1024 * 1024,
+        helpText:
+          "Upload your full ESG or CSR report with third-party validation",
+      },
+    ],
+  },
+  {
+    id: "employeeRightsWorkplaceCulture",
+    title: "Employee Rights & Workplace Culture",
+    description: "Your employee rights and workplace culture policies",
+    weight: 15,
+    fields: [
+      {
+        id: "equalOpportunityPolicy",
+        label: "Equal Opportunity Employment (EOE) Policy",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your policy or sign our template",
+      },
+      {
+        id: "fairWagePractices",
+        label: "Proof of Fair Wage Practices",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Payroll summary or self-declaration",
+      },
+      {
+        id: "mentalHealthPrograms",
+        label: "Mental Health Program or Conflict Resolution Training",
+        type: "textarea",
+        required: true,
+        placeholder: "Describe your mental health programs...",
+        helpText: "Mental health program or conflict resolution training",
+      },
+      {
+        id: "whistleblowerProtectionPolicy",
+        label: "Whistleblower Protection Policy",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your policy or sign our template",
+      },
+      {
+        id: "internalMediationProgram",
+        label: "Internal Mediation or Peace Education Program (Optional)",
+        type: "textarea",
+        required: false,
+        placeholder: "Describe your internal mediation programs...",
+        helpText: "Internal mediation or peace education program",
+      },
+      {
+        id: "employeeSatisfactionSurvey",
+        label: "Employee Satisfaction Survey Summary (Optional)",
+        type: "file",
+        required: false,
+        helpText:
+          "Upload survey summary or send survey invitations to employees",
+        inputModes: [
+          {
+            kind: "file",
+            label: "Upload File",
+            fileTypes: [".pdf", ".doc", ".docx"],
+            maxFileSize: 10 * 1024 * 1024,
+            helpText: "Upload a survey summary document",
+          },
+          {
+            kind: "survey",
+            label: "Send Survey Invitations",
+            helpText:
+              "Send email invitations to employees to complete the survey",
+          },
+        ],
+        completionMode: "any",
+      },
+    ],
+  },
+  {
+    id: "socialImpactCommunityEngagement",
+    title: "Social Impact & Community Engagement",
+    description: "Your community engagement and social impact initiatives",
+    weight: 10,
+    fields: [
+      {
+        id: "csrImpactReport",
+        label: "CSR or Impact Report (Annual)",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 30 * 1024 * 1024,
+        helpText: "Upload your annual CSR or impact report",
+      },
+      {
+        id: "humanitarianDonations",
+        label: "Records of Donations to Humanitarian/Peace Initiatives",
+        type: "textarea",
+        required: true,
+        placeholder: "Describe your humanitarian donations and initiatives...",
+        helpText: "Records of donations to humanitarian/peace initiatives",
+      },
+      {
+        id: "employeeVolunteerPrograms",
+        label: "Employee Volunteer Programs",
+        type: "textarea",
+        required: true,
+        placeholder: "Describe volunteer hours and program initiatives...",
+        helpText: "Employee volunteer mandatory hours or programs",
+      },
+      {
+        id: "peacebuildingNgoPartnerships",
+        label: "Partnerships with Peacebuilding NGOs (Optional)",
+        type: "textarea",
+        required: false,
+        placeholder: "Describe your peacebuilding NGO partnerships...",
+        helpText: "Partnerships with peacebuilding NGOs",
+      },
+    ],
+  },
+  {
+    id: "environmentalResponsibility",
+    title: "Environmental Responsibility",
+    description: "Your environmental policies and sustainability practices",
+    weight: 5,
+    fields: [
+      {
+        id: "carbonFootprintDisclosure",
+        label: "Carbon Footprint Disclosure or Sustainability Plan",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 15 * 1024 * 1024,
+        helpText: "Upload your disclosure or sign our sustainability plan",
+      },
+      {
+        id: "peaceLinkedEnvironmentalInitiatives",
+        label: "Peace-Linked Environmental Initiatives (Optional)",
+        type: "textarea",
+        required: false,
+        placeholder: "Describe your peace-linked environmental initiatives...",
+        helpText: "e.g., indigenous land protection",
+      },
+      {
+        id: "greenBusinessCertification",
+        label: "Green Business or Equivalent Certification (Optional)",
+        type: "file",
+        required: false,
+        fileTypes: [".pdf", ".jpg", ".png"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload your green business certification",
+      },
+    ],
+  },
+  {
+    id: "transparencyPublicAccountability",
+    title: "Transparency & Public Accountability",
+    description: "Your transparency practices and public accountability",
+    weight: 5,
+    fields: [
+      {
+        id: "universalValuesCommitment",
+        label: "Foundation in Universal Values",
+        type: "textarea",
+        required: true,
+        placeholder: "Our commitment to universal values is...",
+        helpText:
+          "Share how your organization upholds universal values such as human dignity, justice, equality, and protection of human rights",
+      },
+      {
+        id: "respectLifeNonViolence",
+        label: "Respect for Life and Non-Violence",
+        type: "textarea",
+        required: true,
+        placeholder: "Our pledge to respect life and non-violence is...",
+        helpText:
+          "Describe how your company ensures respect for life and promotes non-violence in operations, policies, and workplace culture",
+      },
+      {
+        id: "justStableSocieties",
+        label: "Promoting Just and Stable Societies",
+        type: "textarea",
+        required: true,
+        placeholder: "Our role in fostering just and stable societies is...",
+        helpText:
+          "Explain how your business contributes to fairness, trust, and stability through just laws, equitable structures, and practices",
+      },
+      {
+        id: "educationForPeace",
+        label: "Education for Peace",
+        type: "textarea",
+        required: true,
+        placeholder: "Our efforts in education for peace are...",
+        helpText:
+          "Detail how your company invests in education, training, or awareness that promotes tolerance, cross-cultural understanding, and sustainable development",
+      },
+      {
+        id: "ethicalConductInAction",
+        label: "Ethical Conduct in Action",
+        type: "textarea",
+        required: true,
+        placeholder: "Our ethical conduct in practice is...",
+        helpText:
+          "Provide examples of how your organization upholds ethical standards in everyday operations",
+      },
+      {
+        id: "rejectionViolenceHate",
+        label: "Rejection of Violence and Hate",
+        type: "textarea",
+        required: true,
+        placeholder: "Our commitment to reject violence and hate is...",
+        helpText:
+          "Confirm that your business explicitly rejects violence, terrorism, and hate speech",
+      },
+      {
+        id: "internationalCooperationLaw",
+        label: "International Cooperation and Law",
+        type: "textarea",
+        required: true,
+        placeholder: "Our approach to international cooperation and law is...",
+        helpText:
+          "Explain how your company respects international law and engages in cooperation to resolve disputes peacefully",
+      },
+      {
+        id: "humanCenteredDevelopment",
+        label: "Human-Centered Development",
+        type: "textarea",
+        required: true,
+        placeholder: "Our focus on human-centered development is...",
+        helpText:
+          "Share how your business prioritizes people's well-being, opportunities, and inclusion over profit alone",
+      },
+      {
+        id: "transparentFundingDisclosures",
+        label: "Transparent Funding Disclosures",
+        type: "textarea",
+        required: true,
+        placeholder: "Describe your transparent funding disclosures...",
+        helpText: "Transparent funding disclosures",
+      },
+      {
+        id: "externalReviewAgreement",
+        label: "Agree to External Review by Pledge4Peace on Request",
+        type: "select",
+        required: true,
+        options: ["Yes", "No"],
+        helpText: "Agreement to external review",
+      },
+      {
+        id: "independentThirdPartyAudits",
+        label: "Independent Third-Party Audits Published Publicly (Optional)",
+        type: "textarea",
+        required: false,
+        placeholder: "List your public audits...",
+        helpText: "Independent third-party audits published publicly",
+      },
+    ],
+  },
+  {
+    id: "globalPeaceCommitmentConflictAvoidance",
+    title: "Global Peace Commitment & Conflict Avoidance",
+    description: "Your commitment to global peace and conflict avoidance",
+    weight: 5,
+    fields: [
+      {
+        id: "noArmsTiesDeclaration",
+        label:
+          "Declaration of No Ties with Arms Industries or Sanctioned Regimes",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf"],
+        maxFileSize: 5 * 1024 * 1024,
+        helpText: "Sign the declaration",
+      },
+      {
+        id: "peaceInitiativesSupport",
+        label: "Evidence of Support for Peace Initiatives",
+        type: "textarea",
+        required: true,
+        placeholder: "Describe your support for peace initiatives...",
+        helpText: "Local or international peace initiatives",
+      },
+      {
+        id: "peacebuildingAdvocacy",
+        label:
+          "Public Advocacy for Peacebuilding or Mediation Efforts (Optional)",
+        type: "textarea",
+        required: false,
+        placeholder: "Describe your peacebuilding and mediation advocacy...",
+        helpText: "Add public links to publications",
+      },
+    ],
+  },
+  {
+    id: "publicFeedbackExternalReporting",
+    title: "Public Feedback & External Reporting System",
+    description: "Your public reputation and feedback management",
+    weight: 5,
+    fields: [
+      {
+        id: "complaintResolutionProcess",
+        label: "Process Documentation for Complaint Resolution",
+        type: "file",
+        required: true,
+        fileTypes: [".pdf", ".doc", ".docx"],
+        maxFileSize: 10 * 1024 * 1024,
+        helpText: "Upload process documentation or opt in to use our mediation",
+      },
+      {
+        id: "resolutionChannels",
+        label:
+          "Resolution Channels Available for Everyone and Publicly Accessible",
+        type: "textarea",
+        required: true,
+        placeholder: "Provide links to your resolution channels...",
+        helpText: "Add any link where you display your resolution channels",
+      },
+      {
+        id: "googleWebsiteReviews",
+        label: "Google/Website Reviews Link (Optional)",
+        type: "url",
+        required: false,
+        placeholder: "https://google.com/maps/yourcompany",
+        helpText: "Provide link to your Google Reviews or website reviews",
+      },
+    ],
+  },
+];
+
+// Main function to get questionnaire sections based on company size
+export function getQuestionnaireSections(
+  employeeCount: number
+): QuestionnaireSection[] {
+  const size = getCompanySize(employeeCount);
+
+  switch (size) {
+    case "small":
+      return SMALL_BUSINESS_SECTIONS;
+    case "medium":
+      return MEDIUM_BUSINESS_SECTIONS;
+    case "large":
+      return LARGE_BUSINESS_SECTIONS;
+    default:
+      return SMALL_BUSINESS_SECTIONS; // Default to small business
+  }
+}
+
+// Legacy export for backward compatibility - uses small business schema
+export const QUESTIONNAIRE_SECTIONS = SMALL_BUSINESS_SECTIONS;
+
+// Helper function to create field mappings
+export const createFieldMappings = () => {
+  const fieldToQuestionMap: Record<string, string> = {};
+  const fieldToSectionMap: Record<string, string> = {};
+
+  // Build mappings from all size schemas
+  const allSections = [
+    ...SMALL_BUSINESS_SECTIONS,
+    ...MEDIUM_BUSINESS_SECTIONS,
+    ...LARGE_BUSINESS_SECTIONS,
+  ];
+
+  // Use a Set to track unique field IDs (in case same field appears in multiple schemas)
+  const seenFields = new Set<string>();
+
+  allSections.forEach((section) => {
+    section.fields.forEach((field) => {
+      const fieldKey = `${section.id}.${field.id}`;
+      if (!seenFields.has(fieldKey)) {
+        fieldToQuestionMap[field.id] = field.label;
+        fieldToSectionMap[field.id] = section.title;
+        seenFields.add(fieldKey);
+      }
+    });
+  });
+
+  return { fieldToQuestionMap, fieldToSectionMap };
+};
+
+export const { fieldToQuestionMap, fieldToSectionMap } = createFieldMappings();

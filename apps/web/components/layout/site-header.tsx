@@ -15,9 +15,8 @@ import {
   Heart,
   Mail,
   ChevronRight,
-  LayoutDashboardIcon,
+  Shield,
 } from "lucide-react";
-import { Button } from "../ui/button";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { LanguageSwitcher } from "./language-switcher";
@@ -36,11 +35,17 @@ export default function SiteHeader() {
     return pathname === path ? "text-[#548281]" : "text-[#2F4858]";
   };
 
+  const handlePeaceSealClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    router.push("/peace-seal");
+  };
+
   const menuItems = [
     { icon: Home, label: t("home"), href: "/" },
     { icon: Info, label: t("about"), href: "/about" },
     { icon: Heart, label: t("volunteer"), href: "/volunteer" },
     { icon: Mail, label: t("contact"), href: "/contact" },
+    { icon: Shield, label: "Peace Seal", href: "/peace-seal" },
   ];
 
   return (
@@ -86,6 +91,12 @@ export default function SiteHeader() {
           >
             {t("contact")}
           </Link>
+          <button
+            onClick={handlePeaceSealClick}
+            className={`text-base lg:text-lg font-medium ${isActive("/peace-seal")} hover:text-[#698D8B] transition-colors active:text-brand-500`}
+          >
+            Peace Seal
+          </button>
         </nav>
 
         {/* Authentication and Mobile Menu Toggle */}
@@ -160,28 +171,57 @@ export default function SiteHeader() {
           <ul className="space-y-1">
             {menuItems.map((item, index) => (
               <li key={index}>
-                <Link
-                  href={item.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className={`
-                    flex items-center justify-between px-8 py-4 transition-colors duration-200 group
-                    ${
-                      pathname === item.href
-                        ? "bg-[#548281]/5 text-[#548281] border-r-2 border-[#548281]"
-                        : "text-[#2F4858] hover:bg-gray-50"
-                    }
-                  `}
-                >
-                  <div className="flex items-center space-x-4">
-                    <item.icon
-                      className={`h-4 w-4 ${pathname === item.href ? "text-[#548281]" : "text-gray-500"}`}
+                {item.href === "/peace-seal" ? (
+                  <button
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      handlePeaceSealClick({
+                        preventDefault: () => {},
+                      } as React.MouseEvent);
+                    }}
+                    className={`
+                      flex items-center justify-between px-8 py-4 transition-colors duration-200 group w-full
+                      ${
+                        pathname === item.href
+                          ? "bg-[#548281]/5 text-[#548281] border-r-2 border-[#548281]"
+                          : "text-[#2F4858] hover:bg-gray-50"
+                      }
+                    `}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <item.icon
+                        className={`h-4 w-4 ${pathname === item.href ? "text-[#548281]" : "text-gray-500"}`}
+                      />
+                      <span className="font-light">{item.label}</span>
+                    </div>
+                    <ChevronRight
+                      className={`h-4 w-4 transition-opacity ${pathname === item.href ? "opacity-100 text-[#548281]" : "opacity-0 group-hover:opacity-100 text-gray-400"}`}
                     />
-                    <span className="font-light">{item.label}</span>
-                  </div>
-                  <ChevronRight
-                    className={`h-4 w-4 transition-opacity ${pathname === item.href ? "opacity-100 text-[#548281]" : "opacity-0 group-hover:opacity-100 text-gray-400"}`}
-                  />
-                </Link>
+                  </button>
+                ) : (
+                  <Link
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`
+                      flex items-center justify-between px-8 py-4 transition-colors duration-200 group
+                      ${
+                        pathname === item.href
+                          ? "bg-[#548281]/5 text-[#548281] border-r-2 border-[#548281]"
+                          : "text-[#2F4858] hover:bg-gray-50"
+                      }
+                    `}
+                  >
+                    <div className="flex items-center space-x-4">
+                      <item.icon
+                        className={`h-4 w-4 ${pathname === item.href ? "text-[#548281]" : "text-gray-500"}`}
+                      />
+                      <span className="font-light">{item.label}</span>
+                    </div>
+                    <ChevronRight
+                      className={`h-4 w-4 transition-opacity ${pathname === item.href ? "opacity-100 text-[#548281]" : "opacity-0 group-hover:opacity-100 text-gray-400"}`}
+                    />
+                  </Link>
+                )}
               </li>
             ))}
           </ul>

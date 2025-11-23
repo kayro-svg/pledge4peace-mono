@@ -32,7 +32,7 @@
     "userType": "Selecciona tu rol",
     "userType_placeholder": "Selecciona tu rol",
     "agreeToTerms": "Acepto los",
-    "termsOfService": "Términos de Servicio",
+    "termsOfService": "Términos y Condiciones",
     "privacyPolicy": "Política de Privacidad",
     "creatingAccount": "Creando cuenta...",
     "signUp": "Regístrate",
@@ -42,10 +42,10 @@
     "other": "Otro (por favor especifica)",
     "office": "Cargo/Puesto",
     "office_placeholder": "e.g., Mayor, Consejo Municipal, Representante Estatal",
-    "organization": "Nombre de la Organización",
+    "organization": "Negocio/Organización",
     "nonprofit": "Organización Sin Fines de Lucro",
     "nonprofit_placeholder": "e.g., Cruz Roja, Amnistía Internacional, ONG Local",
-    "organization_placeholder": "e.g., Negocio Local, Startup, Corporación Multinacional",
+    "organization_placeholder": "Nombre de tu negocio",
     "institution": "Institución Educativa",
     "institution_placeholder": "e.g., Universidad Harvard, Escuela Secundaria Local",
     "otherRole": "Por favor especifica tu rol",
@@ -239,7 +239,8 @@
     "events": "Eventos",
     "footer_paragraph1": "501c3 NonProfit que busca resolver los problemas más grandes del mundo a través de la promesa.",
     "footer_paragraph2": "Nuestra meta es abordar los desafíos más grandes del mundo con una nueva aproximación donde llevamos al mayor número de personas del mundo a comprometerse a visitar y invertir para crear paz.",
-    "footer_copyright": "© 2025 Pledge4Peace.org. Todos los derechos reservados."
+    "footer_copyright": "© 2025 Pledge4Peace.org. Todos los derechos reservados.",
+    "peaceSealFooterLink": "Certificación de Peace Seal"
   },
   "toastMessages": {
     "solutionDeleted": "Solución eliminada correctamente",

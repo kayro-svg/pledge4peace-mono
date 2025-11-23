@@ -27,6 +27,7 @@ export async function POST(req: NextRequest) {
       lastName: donorInfo?.lastName,
       email: donorInfo?.email,
       paymentMethodNonce: nonce,
+      customFields: { payment_type: "donation" },
     });
 
     if (!customerResult.success) {

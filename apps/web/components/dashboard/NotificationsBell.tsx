@@ -12,7 +12,7 @@ import {
 // import { getCampaigns } from "@/lib/sanity/queries";
 import { useLocale } from "next-intl";
 import { apiClient } from "@/lib/api-client";
-import { API_ENDPOINTS } from "@/lib/config";
+import { API_ENDPOINTS, API_URL } from "@/lib/config";
 import { useOptimizedSession } from "@/hooks/use-optimized-session";
 import { Link as I18nLink } from "@/i18n/navigation";
 
@@ -160,7 +160,7 @@ export function NotificationsBell() {
       slug = slugMapRef.current[campaignId];
       if (!slug) {
         try {
-          const resp = await fetch(`/api/campaign-slugs`, {
+          const resp = await fetch(`${API_URL}/campaign-slugs`, {
             next: { revalidate: 3600 },
           });
           if (resp.ok) {

@@ -8,10 +8,13 @@ import {
   MessageSquareHeartIcon,
   FileCodeIcon,
   ScanEye,
+  Shield,
+  LucideIcon,
+  MessageSquare,
 } from "lucide-react";
 import * as React from "react";
 
-import { NavMain } from "@/components/dashboard/nav-main";
+import { NavMain, NavItem } from "@/components/dashboard/nav-main";
 import { NavSecondary } from "@/components/dashboard/nav-secondary";
 import {
   Sidebar,
@@ -28,8 +31,14 @@ import { NavUser } from "./nav-user";
 import { User } from "next-auth";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuthSession } from "@/hooks/use-auth-session";
+import { useState, useEffect } from "react";
+import { getUserCompany } from "@/lib/api/peace-seal";
 
-const data = {
+const data: {
+  user: { name: string; email: string; avatar: string };
+  navMain: NavItem[];
+  navSecondary: { title: string; url: string; icon: LucideIcon }[];
+} = {
   user: {
     name: "shadcn",
     email: "m@example.com",
@@ -68,6 +77,24 @@ const data = {
       url: "/dashboard/roles",
       icon: LayoutDashboardIcon,
       type: "adminOnly" as const,
+    },
+    {
+      title: "Peace Seal - Advisors",
+      url: "/dashboard/peace-seal",
+      icon: Shield,
+      type: "advisorOnly" as const, // Advisors/Admins/SuperAdmin
+    },
+    // Peace seal for companies
+    {
+      title: "Peace Seal",
+      url: "/dashboard/company-peace-seal",
+      icon: Shield,
+    },
+    // My Reviews for community reviewers
+    {
+      title: "My Reviews",
+      url: "/dashboard/my-reviews",
+      icon: MessageSquare,
     },
   ],
   // navClouds: [
@@ -158,6 +185,66 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const router = useRouter();
   const isMobile = useIsMobile();
   const { session } = useAuthSession();
+  const [hasPeaceSealCompany, setHasPeaceSealCompany] = useState<
+    boolean | null
+  >(null);
+
+  // Check if user has a company associated and reviews
+  useEffect(() => {
+    async function checkUserStatus() {
+      if (session?.user?.role !== "user") {
+        setHasPeaceSealCompany(false);
+        return;
+      }
+
+      // Check for company
+      try {
+        const company = await getUserCompany();
+        // Check if it's a Peace Seal company (not just community listed)
+        const isPeaceSealCompany =
+          company.communityListed === 0 || company.communityListed === null;
+        setHasPeaceSealCompany(isPeaceSealCompany);
+      } catch {
+        setHasPeaceSealCompany(false);
+      }
+    }
+
+    if (session) {
+      checkUserStatus();
+    }
+  }, [session]);
+
+  // Filter navigation items based on user role and company status
+  const filteredNavItems = data.navMain.filter((item) => {
+    // Show Peace Seal for companies only if they have a Peace Seal company (not just community listed)
+    if (item.url === "/dashboard/company-peace-seal") {
+      return session?.user?.role === "user" && hasPeaceSealCompany === true;
+    }
+
+    // Show My Reviews for regular users who don't have Peace Seal companies
+    // This allows users to access the page even if they haven't made reviews yet
+    if (item.url === "/dashboard/my-reviews") {
+      return session?.user?.role === "user" && hasPeaceSealCompany !== true;
+    }
+
+    // Handle other role-based filtering
+    if (item.type === "privileged") {
+      return ["moderator", "admin", "superAdmin"].includes(
+        session?.user?.role || ""
+      );
+    }
+    if (item.type === "adminOnly") {
+      return ["admin", "superAdmin"].includes(session?.user?.role || "");
+    }
+    if (item.type === "advisorOnly") {
+      return ["advisor", "admin", "superAdmin"].includes(
+        session?.user?.role || ""
+      );
+    }
+
+    return true;
+  });
+
   return (
     <Sidebar
       side={isMobile ? "right" : "left"}
@@ -190,7 +277,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={filteredNavItems} />
         {/* <NavDocuments items={data.documents} /> */}
         <NavSecondary items={data.navSecondary} className="mt-auto" />
       </SidebarContent>

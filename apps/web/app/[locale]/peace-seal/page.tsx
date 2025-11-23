@@ -1,10 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getPeaceSealHomePage } from "@/lib/sanity/queries";
-import { Check, ChevronRight } from "lucide-react";
+import { Check } from "lucide-react";
 import { unstable_cache } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
 import VideoFrame from "@/components/peace-seal/video-frame.lazy";
+import HeroPeaceSeal from "@/components/peace-seal/hero-peace-seal/hero-peace-seal";
 
 export const dynamic = "force-static";
 export const revalidate = 1800;
@@ -23,58 +24,7 @@ export default async function PeaceSealPage(params: { locale: "en" | "es" }) {
   return (
     <main className="min-h-screen w-full text-[#2F4858]">
       {/* ---------- HERO ---------- */}
-      <section
-        className="relative overflow-hidden h-[500px] md:h-[600px] flex flex-row justify-start items-end md:items-center px-4 pb-7 md:pb-0 sm:px-6 lg:pl-32"
-        aria-label="Hero Peace Seal"
-      >
-        {/* Background image of Earth */}
-        <div className="absolute inset-0 -z-10">
-          <video
-            autoPlay
-            muted
-            loop
-            playsInline
-            preload="metadata"
-            className="w-full h-full object-cover"
-          >
-            <source src={data.heroVideo?.asset.url} type="video/webm" />
-          </video>
-          <div
-            className="absolute inset-0
-     bg-[linear-gradient(to_right,rgba(0,0,0,1)_0%,rgba(0,0,0,.99)_50%,transparent_70%)] md:bg-[linear-gradient(to_right,rgba(0,0,0,1)_0%,rgba(0,0,0,.95)_40%,transparent_75%)]"
-          />
-        </div>
-
-        <div className="max-w-7xl">
-          <div className="w-fit rounded-full bg-white/10 px-3 py-1 sm:px-4 backdrop-blur text-xs font-medium tracking-wide text-white">
-            {/* Pro-Peace. Pro-Business. */}
-            {data.heroTagline}
-          </div>
-          <div className="flex flex-col gap-0">
-            <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold text-white leading-tight mt-3 sm:mt-4">
-              {data.heroHeading}
-            </h1>
-            <p className="mt-2 max-w-xl text-white/90 text-xs lg:text-sm leading-relaxed">
-              {data.heroSubheading}
-            </p>
-          </div>
-          <div className="w-1/3 sm:w-1/4 h-1 bg-[#86AC9D] mt-3 sm:mt-4 rounded-full" />
-          <p className="mt-3 sm:mt-4 max-w-[35ch] sm:max-w-sm md:max-w-xl text-white/90 text-base md:text-lg leading-snug sm:leading-relaxed">
-            {data.heroDescription}
-          </p>
-
-          <div className="mt-5 sm:mt-6">
-            <Link
-              className="inline-flex items-center rounded-full bg-[#548281] hover:bg-[#2F4858] text-white px-5 sm:px-6 py-3 text-sm sm:text-base"
-              href={data.heroPrimaryButtonLink}
-            >
-              {data.heroPrimaryButtonText}
-              <ChevronRight className="ml-2 h-4 w-4 sm:h-5 sm:w-5" />
-            </Link>
-          </div>
-        </div>
-      </section>
-
+      <HeroPeaceSeal data={data} />
       {/* ---------- VALUE PROMISE ---------- */}
       <section className="bg-white pb-5 overflow-visible">
         <div className="mx-auto max-w-7xl justify-center px-4 items-start sm:px-6 lg:px-8 py-12 sm:py-14 md:py-16 flex flex-col lg:flex-row gap-8 lg:gap-8 overflow-visible">
@@ -472,7 +422,7 @@ export default async function PeaceSealPage(params: { locale: "en" | "es" }) {
                 <div className="mt-5 sm:mt-6">
                   <Link
                     className="rounded-full inline-flex items-center bg-white hover:bg-[#2F4858] text-[#548281] hover:text-white font-bold px-6 sm:px-8 py-3 text-base transition-all duration-300"
-                    href="/login"
+                    href="/peace-seal/apply"
                   >
                     {data.finalCtaButtonText}
                   </Link>

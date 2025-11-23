@@ -11,6 +11,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { logger } from "@/lib/utils/logger";
 import { useTranslations } from "next-intl";
+import { TurnstileWidget } from "../ui/turnstile";
 
 interface LoginFormData {
   email: string;
@@ -21,16 +22,19 @@ interface LoginFormData {
 interface LoginFormProps {
   onSwitchToRegister: () => void;
   onLoginSuccess?: () => void;
+  onLoadingChange?: (isLoading: boolean) => void;
 }
 
 export default function LoginForm({
   onSwitchToRegister,
   onLoginSuccess,
+  onLoadingChange,
 }: LoginFormProps) {
   const form = useForm<LoginFormData>();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const t = useTranslations("Login_Page");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const handleLoginSuccess = () => {
     if (onLoginSuccess) {
       onLoginSuccess();
@@ -45,10 +49,17 @@ export default function LoginForm({
     logger.log("data", data);
 
     try {
+      if (!turnstileToken) {
+        toast.error("Please complete the captcha verification");
+        return;
+      }
+
       setIsLoading(true);
+      onLoadingChange?.(true);
       const result = await signIn("credentials", {
         email: data.email,
         password: data.password,
+        turnstileToken,
         redirect: false,
       });
 
@@ -62,6 +73,7 @@ export default function LoginForm({
       toast.error("An error occurred during login");
     } finally {
       setIsLoading(false);
+      onLoadingChange?.(false);
     }
   };
 
@@ -130,7 +142,9 @@ export default function LoginForm({
             </Link>
           </div>
         </div>
-
+        <div className="flex justify-center">
+          <TurnstileWidget onVerify={setTurnstileToken} />
+        </div>
         <div>
           <Button
             type="submit"

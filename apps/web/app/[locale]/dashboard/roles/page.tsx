@@ -19,7 +19,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useSession } from "next-auth/react";
 
-type Role = "user" | "moderator" | "admin" | "superAdmin";
+type Role = "user" | "moderator" | "advisor" | "admin" | "superAdmin";
 
 export default function Page() {
   const { session } = useAuthSession();
@@ -158,6 +158,7 @@ export default function Page() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="moderator">Moderator</SelectItem>
+                <SelectItem value="advisor">Advisor</SelectItem>
                 {(session?.user?.role === "superAdmin" ||
                   session?.user?.role === "admin") && (
                   <SelectItem value="admin">Admin</SelectItem>
@@ -298,6 +299,7 @@ export default function Page() {
                               <SelectItem value="moderator">
                                 Moderator
                               </SelectItem>
+                              <SelectItem value="advisor">Advisor</SelectItem>
                               {(session?.user?.role === "admin" ||
                                 session?.user?.role === "superAdmin") && (
                                 <SelectItem value="admin">Admin</SelectItem>

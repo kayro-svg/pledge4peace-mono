@@ -14,6 +14,7 @@ interface Env {
   JWT_SECRET: string;
   KV: KVNamespace;
   FROM_EMAIL: string;
+  FROM_NAME?: string;
 }
 
 type Bindings = Env;

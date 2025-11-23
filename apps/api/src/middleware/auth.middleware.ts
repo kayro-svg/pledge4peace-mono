@@ -8,7 +8,8 @@ export interface AuthUser {
   email: string;
   name: string;
   image?: string;
-  role: "user" | "moderator" | "admin" | "superAdmin";
+  role: "user" | "moderator" | "advisor" | "admin" | "superAdmin";
+  companyId?: string;
 }
 
 declare module "hono" {
@@ -159,5 +160,33 @@ export function checkResourceOwnership(resourceUserId: string, c: Context) {
     throw new HTTPException(403, {
       message: "Not authorized to modify this resource",
     });
+  }
+}
+
+/**
+ * Helper para verificar si el usuario actual es advisor
+ */
+export function isAdvisor(c: Context): boolean {
+  try {
+    const user = getAuthUser(c);
+    return user.role === "advisor";
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Helper para verificar si el usuario es advisor o superior (para Peace Seal)
+ */
+export function isAdvisorOrAdmin(c: Context): boolean {
+  try {
+    const user = getAuthUser(c);
+    return (
+      user.role === "advisor" ||
+      user.role === "admin" ||
+      user.role === "superAdmin"
+    );
+  } catch {
+    return false;
   }
 }

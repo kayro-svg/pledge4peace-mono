@@ -22,7 +22,7 @@ export default function SiteFooter() {
               alt="Pledge4Peace.org"
               width={200}
               height={40}
-                style={{ width: "auto", height: "auto" }}
+              style={{ width: "auto", height: "auto" }}
               className="h-8 sm:h-10 w-auto transition-all duration-300 hover:opacity-80 mb-2"
             />
 
@@ -56,6 +56,10 @@ export default function SiteFooter() {
                   { href: "/volunteer#volunteer-form", label: t("volunteer") },
                   { href: "/articles", label: t("articlesNews") },
                   { href: "/events", label: t("events") },
+                  {
+                    href: "/peace-seal",
+                    label: t("peaceSealFooterLink"),
+                  },
                 ]}
               />
             </div>
@@ -162,7 +166,7 @@ export default function SiteFooter() {
                   className="w-9 h-9 md:w-8 md:h-8"
                 />
               </Link>
-              <Link 
+              <Link
                 href="https://www.linkedin.com/groups/14488545/"
                 target="_blank"
                 rel="noopener noreferrer me"

@@ -3,20 +3,25 @@ import { Metadata } from "next";
 // Define metadata for each locale
 const metadata: Record<string, Metadata> = {
   en: {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://pledge4peace.org"),
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_SITE_URL || "https://pledge4peace.org"
+    ),
     title:
       "Pledge4Peace | Global Campaigns for Peace, Democracy & Human Rights",
     description:
       "Join Pledge4Peace: the only platform with people-powered solutions on global conflicts. Vote to strengthen peace and democracy. Take action today.",
-    keywords: "peace, democracy, human rights, global campaigns, social justice, conflict resolution, community action",
+    keywords:
+      "peace, democracy, human rights, global campaigns, social justice, conflict resolution, community action",
     authors: [{ name: "Pledge4Peace" }],
     creator: "Pledge4Peace",
     publisher: "Pledge4Peace",
-    
+
     // Open Graph metadata for social sharing
     openGraph: {
-      title: "Pledge4Peace | Global Campaigns for Peace, Democracy & Human Rights",
-      description: "Join Pledge4Peace: the only platform with people-powered solutions on global conflicts. Vote to strengthen peace and democracy. Take action today.",
+      title:
+        "Pledge4Peace | Global Campaigns for Peace, Democracy & Human Rights",
+      description:
+        "Join Pledge4Peace: the only platform with people-powered solutions on global conflicts. Vote to strengthen peace and democracy. Take action today.",
       url: "https://pledge4peace.org",
       siteName: "Pledge4Peace",
       type: "website",
@@ -34,8 +39,10 @@ const metadata: Record<string, Metadata> = {
     // Twitter Card metadata
     twitter: {
       card: "summary_large_image",
-      title: "Pledge4Peace | Global Campaigns for Peace, Democracy & Human Rights",
-      description: "Join Pledge4Peace: the only platform with people-powered solutions on global conflicts. Vote to strengthen peace and democracy. Take action today.",
+      title:
+        "Pledge4Peace | Global Campaigns for Peace, Democracy & Human Rights",
+      description:
+        "Join Pledge4Peace: the only platform with people-powered solutions on global conflicts. Vote to strengthen peace and democracy. Take action today.",
       creator: "@Pledge4Peace",
       site: "@Pledge4Peace",
       images: ["/p4p_logo_renewed.png"],
@@ -55,11 +62,11 @@ const metadata: Record<string, Metadata> = {
     other: {
       "og:see_also": [
         "https://www.youtube.com/@Pledge4Peace",
-        "https://www.linkedin.com/groups/14488545/",
+        "https://www.linkedin.com/company/pledge4peace-org",
         "https://www.facebook.com/share/1F8FxiQ6Hh/",
         "https://x.com/pledge4peaceorg",
         "https://www.instagram.com/pledge4peaceorg",
-        "https://www.tiktok.com/@pledge4peace5"
+        "https://www.tiktok.com/@pledge4peace5",
       ].join(","),
     },
 
@@ -94,20 +101,25 @@ const metadata: Record<string, Metadata> = {
     manifest: "/site.webmanifest",
   },
   es: {
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://pledge4peace.org"),
+    metadataBase: new URL(
+      process.env.NEXT_PUBLIC_SITE_URL || "https://pledge4peace.org"
+    ),
     title:
       "Pledge4Peace | Campañas Globales para la Paz, Democracia & Derechos Humanos",
     description:
       "Únete a Pledge4Peace: la única plataforma con soluciones impulsadas por la gente en conflictos globales. Vota para fortalecer la paz y la democracia. ¡Toma acción hoy!",
-    keywords: "paz, democracia, derechos humanos, campañas globales, justicia social, resolución de conflictos, acción comunitaria",
+    keywords:
+      "paz, democracia, derechos humanos, campañas globales, justicia social, resolución de conflictos, acción comunitaria",
     authors: [{ name: "Pledge4Peace" }],
     creator: "Pledge4Peace",
     publisher: "Pledge4Peace",
-    
+
     // Open Graph metadata for social sharing
     openGraph: {
-      title: "Pledge4Peace | Campañas Globales para la Paz, Democracia & Derechos Humanos",
-      description: "Únete a Pledge4Peace: la única plataforma con soluciones impulsadas por la gente en conflictos globales. Vota para fortalecer la paz y la democracia. ¡Toma acción hoy!",
+      title:
+        "Pledge4Peace | Campañas Globales para la Paz, Democracia & Derechos Humanos",
+      description:
+        "Únete a Pledge4Peace: la única plataforma con soluciones impulsadas por la gente en conflictos globales. Vota para fortalecer la paz y la democracia. ¡Toma acción hoy!",
       url: "https://pledge4peace.org/es",
       siteName: "Pledge4Peace",
       type: "website",
@@ -125,8 +137,10 @@ const metadata: Record<string, Metadata> = {
     // Twitter Card metadata
     twitter: {
       card: "summary_large_image",
-      title: "Pledge4Peace | Campañas Globales para la Paz, Democracia & Derechos Humanos",
-      description: "Únete a Pledge4Peace: la única plataforma con soluciones impulsadas por la gente en conflictos globales. Vota para fortalecer la paz y la democracia. ¡Toma acción hoy!",
+      title:
+        "Pledge4Peace | Campañas Globales para la Paz, Democracia & Derechos Humanos",
+      description:
+        "Únete a Pledge4Peace: la única plataforma con soluciones impulsadas por la gente en conflictos globales. Vota para fortalecer la paz y la democracia. ¡Toma acción hoy!",
       creator: "@Pledge4Peace",
       site: "@Pledge4Peace",
       images: ["/p4p_logo_renewed.png"],
@@ -150,7 +164,7 @@ const metadata: Record<string, Metadata> = {
         "https://www.facebook.com/share/1F8FxiQ6Hh/",
         "https://x.com/pledge4peaceorg",
         "https://www.instagram.com/pledge4peaceorg",
-        "https://www.tiktok.com/@pledge4peace5"
+        "https://www.tiktok.com/@pledge4peace5",
       ].join(","),
     },
 

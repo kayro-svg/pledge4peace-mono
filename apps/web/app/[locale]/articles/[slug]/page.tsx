@@ -167,7 +167,7 @@ export default async function ArticlePage({ params }: ArticlePageProps) {
       },
       sameAs: [
         "https://www.youtube.com/@Pledge4Peace",
-        "https://www.linkedin.com/groups/14488545/",
+        "https://www.linkedin.com/company/pledge4peace-org",
         "https://www.facebook.com/share/1F8FxiQ6Hh/",
         "https://x.com/pledge4peaceorg",
         "https://www.instagram.com/pledge4peaceorg",

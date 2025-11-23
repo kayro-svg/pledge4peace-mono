@@ -38,7 +38,7 @@ const nextConfig = {
       exclude: ['error'] // Keep console.error for important errors
     } : false,
   },
-  allowedDevOrigins: ['local-origin.dev', '*.local-origin.dev'],
+  allowedDevOrigins: ['local-origin.dev', '*.local-origin.dev', '1b09a9b8b99f.ngrok-free.app'],
 }
 
 const withNextIntl = createNextIntlPlugin();

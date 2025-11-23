@@ -45,6 +45,21 @@ class ApiClient {
       return this.cachedToken;
     }
 
+    // Try to get token from NextAuth session
+    try {
+      const { getSession } = await import("next-auth/react");
+      const session = await getSession();
+
+      if (session?.accessToken) {
+        // Cache the token for 5 minutes to avoid repeated session calls
+        this.cachedToken = session.accessToken as string;
+        this.tokenExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes
+        return this.cachedToken;
+      }
+    } catch (error) {
+      console.warn("Failed to get session token:", error);
+    }
+
     // Clear expired token
     this.cachedToken = null;
     this.tokenExpiry = 0;
@@ -91,36 +106,29 @@ class ApiClient {
     try {
       const response = await fetch(`${this.baseURL}${endpoint}`, config);
 
-      // Handle 401 errors
-      if (response.status === 401) {
-        const errorData = await response.json().catch(() => ({}));
+      // Determine content type first
+      const isJson = response.headers
+        .get("content-type")
+        ?.includes("application/json");
 
+      // Read the body only once
+      const body = isJson ? await response.json() : await response.text();
+
+      // Handle 401 errors after reading the body
+      if (response.status === 401) {
         // Check if it's a token expiration issue
+        const errorMessage =
+          typeof body === "string" ? body : body?.error || body?.message || "";
+
         if (
-          errorData.message?.toLowerCase().includes("token") ||
-          errorData.message?.toLowerCase().includes("expired") ||
-          errorData.error?.toLowerCase().includes("token") ||
-          errorData.message === "Token expired"
+          errorMessage.toLowerCase().includes("token") ||
+          errorMessage.toLowerCase().includes("expired") ||
+          errorMessage === "Token expired"
         ) {
           await this.handleAuthError();
           throw new Error("Session expired");
         }
       }
-
-      // if (!response.ok) {
-      //   const errorData = await response.json();
-      //   throw new Error(
-      //     errorData.message || `HTTP error! status: ${response.status}`
-      //   );
-      // }
-
-      // return await response.json();
-      const isJson = response.headers
-        .get("content-type")
-        ?.includes("application/json");
-
-      // cuerpo parseado o texto plano según corresponda
-      const body = isJson ? await response.json() : await response.text();
 
       if (!response.ok) {
         // body puede ser objeto ({error, message}) o string
@@ -131,7 +139,6 @@ class ApiClient {
       }
 
       // para peticiones OK devolvemos el cuerpo ya parseado o en texto
-      // (ajusta el tipo de retorno si sólo admites JSON en respuestas exitosas)
       return body as unknown as T;
     } catch (error) {
       if (error instanceof Error && error.message === "Session expired") {

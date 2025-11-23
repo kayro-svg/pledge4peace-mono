@@ -21,6 +21,7 @@ import {
 } from "../ui/select";
 import { Label } from "../ui/label";
 import { useTranslations } from "next-intl";
+import { TurnstileWidget } from "../ui/turnstile";
 
 interface RegisterFormData {
   name: string;
@@ -40,19 +41,34 @@ interface RegisterFormProps {
   onSwitchToLogin: () => void;
   isModal?: boolean;
   onRegisterSuccess?: () => void;
+  preSelectedUserType?: string;
+  onLoadingChange?: (isLoading: boolean) => void;
 }
 
 export default function RegisterForm({
   onSwitchToLogin,
   isModal,
   onRegisterSuccess,
+  preSelectedUserType,
+  onLoadingChange,
 }: RegisterFormProps) {
   const form = useForm<RegisterFormData>();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const router = useRouter();
-  const [userType, setUserType] = useState("");
+  const [userType, setUserType] = useState(preSelectedUserType || "");
   const userTypeRef = useRef<HTMLButtonElement>(null);
   const t = useTranslations("Register_Page");
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+
+  // Set pre-selected user type on mount
+  useEffect(() => {
+    if (preSelectedUserType) {
+      setUserType(preSelectedUserType);
+      form.setValue("userType", preSelectedUserType);
+    }
+  }, [preSelectedUserType, form]);
+
   // Handle form errors and focus
   useEffect(() => {
     if (form.formState.errors.userType) {
@@ -70,9 +86,15 @@ export default function RegisterForm({
         return;
       }
 
+      if (!turnstileToken) {
+        toast.error("Please complete the captcha verification");
+        return;
+      }
+
       // Clear any existing errors - handled by react-hook-form
 
       setIsLoading(true);
+      onLoadingChange?.(true);
 
       // Register the user usando la función reutilizable
       const registerResponse = await registerUser({
@@ -85,7 +107,7 @@ export default function RegisterForm({
         nonprofit: data.nonprofit,
         institution: data.institution,
         otherRole: data.otherRole,
-      });
+      }, turnstileToken);
 
       const registerData = await registerResponse.json();
 
@@ -98,6 +120,7 @@ export default function RegisterForm({
       );
 
       // Automatically sign in after registration
+      setIsLoggingIn(true);
       const result = await signIn("credentials", {
         email: data.email,
         password: data.password,
@@ -106,6 +129,9 @@ export default function RegisterForm({
 
       if (result?.error) {
         toast.error("Failed to sign in after registration");
+        setIsLoggingIn(false);
+        setIsLoading(false);
+        onLoadingChange?.(false);
         return;
       }
       // Tras registro + login exitoso: si estamos en modal y tenemos callback, úsalo.
@@ -120,8 +146,12 @@ export default function RegisterForm({
       toast.error(
         error instanceof Error ? error.message : "Registration failed"
       );
+      setIsLoggingIn(false);
+      onLoadingChange?.(false);
     } finally {
       setIsLoading(false);
+      setIsLoggingIn(false);
+      onLoadingChange?.(false);
     }
   };
 
@@ -303,26 +333,35 @@ export default function RegisterForm({
             className="ml-2 block text-sm text-gray-700"
           >
             {t("agreeToTerms")}{" "}
-            <Link href="/terms" className="text-[#698D8B] hover:text-[#548281]">
+            <Link
+              href="/terms-and-conditions"
+              className="text-[#698D8B] hover:text-[#548281]"
+            >
               {t("termsOfService")}
             </Link>{" "}
-            and{" "}
+            {/* and{" "}
             <Link
               href="/privacy"
               className="text-[#698D8B] hover:text-[#548281]"
             >
               {t("privacyPolicy")}
-            </Link>
+            </Link> */}
           </label>
         </div>
-
+        <div className="flex justify-center">
+          <TurnstileWidget onVerify={setTurnstileToken} />
+        </div>
         <div>
           <Button
             type="submit"
             className="w-full bg-[#548281] hover:bg-[#2F4858] text-white font-medium py-2.5"
-            disabled={isLoading}
+            disabled={isLoading || isLoggingIn}
           >
-            {isLoading ? t("creatingAccount") : t("signUp")}
+            {isLoggingIn
+              ? "Logging you in..."
+              : isLoading
+                ? t("creatingAccount")
+                : t("signUp")}
           </Button>
         </div>
       </form>

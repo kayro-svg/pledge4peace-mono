@@ -143,7 +143,7 @@ export function CampaignDetailContent({
       logo: `${baseUrl}/p4p_logo_renewed.png`,
       sameAs: [
         "https://www.youtube.com/@Pledge4Peace",
-        "https://www.linkedin.com/groups/14488545/",
+        "https://www.linkedin.com/company/pledge4peace-org",
         "https://www.facebook.com/share/1F8FxiQ6Hh/",
         "https://x.com/pledge4peaceorg",
         "https://www.instagram.com/pledge4peaceorg",

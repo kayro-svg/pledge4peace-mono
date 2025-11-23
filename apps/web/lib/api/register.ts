@@ -12,10 +12,10 @@ interface RegisterFormData {
   otherRole?: string;
 }
 
-export async function register(data: RegisterFormData) {
+export async function register(data: RegisterFormData, turnstileToken?: string) {
   return await fetch(API_ENDPOINTS.auth.register, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body: JSON.stringify({ ...data, turnstileToken }),
   });
 }
