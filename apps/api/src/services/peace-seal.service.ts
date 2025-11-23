@@ -5,6 +5,9 @@ import {
   peaceSealStatusHistory,
   peaceSealReports,
   peaceSealDocuments,
+} from "../db/schema/peace-seal";
+import { AGREEMENT_TEXTS } from "../config/agreement-templates";
+import {
   peaceSealAgreementAcceptances,
   peaceSealCenterResources,
   peaceSealReviews,
@@ -1965,12 +1968,8 @@ export class PeaceSealService {
       throw new HTTPException(403, { message: "Not allowed" });
     }
 
-    // Verify template exists
-    const template = await this.db
-      .select()
-      .from(peaceSealCenterResources)
-      .where(eq(peaceSealCenterResources.id, templateId))
-      .then((r) => r[0]);
+    // Verify template exists in code config
+    const template = AGREEMENT_TEXTS[templateId];
 
     if (!template) {
       throw new HTTPException(404, { message: "Template not found" });
@@ -2055,12 +2054,17 @@ export class PeaceSealService {
       )
       .where(eq(peaceSealAgreementAcceptances.companyId, companyId));
 
-    return acceptances.map((acc) => ({
-      ...acc,
-      acceptanceData: acc.acceptanceData
-        ? JSON.parse(acc.acceptanceData)
-        : null,
-    }));
+    return acceptances.map((acc) => {
+      const configTemplate = AGREEMENT_TEXTS[acc.templateId];
+      return {
+        ...acc,
+        templateTitle: configTemplate?.title || acc.templateTitle || "Unknown Agreement",
+        templateBody: configTemplate?.body,
+        acceptanceData: acc.acceptanceData
+          ? JSON.parse(acc.acceptanceData)
+          : null,
+      };
+    });
   }
 
   // Delete an agreement acceptance

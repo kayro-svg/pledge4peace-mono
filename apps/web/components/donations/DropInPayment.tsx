@@ -17,6 +17,12 @@ interface Props {
     companyId: string;
     createSubscription: boolean;
   };
+  donorInfo?: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    isAnonymous: boolean;
+  };
 }
 
 export default function DropInPayment({
@@ -26,6 +32,7 @@ export default function DropInPayment({
   clientToken,
   isRecurring = false,
   peaceSealPayment,
+  donorInfo,
 }: Props) {
   const enable3DS = process.env.NEXT_PUBLIC_ENABLE_3DS === "false"; // TODO: Change to TRUE when 3d secure is ready to be used
   const hostRef = useRef<HTMLDivElement>(null);
@@ -181,6 +188,7 @@ export default function DropInPayment({
             nonce,
             amount,
             paymentMethod: "card_or_paypal",
+            donorInfo,
           }),
         });
         logger.log("Donation payment response:", res);

@@ -59,6 +59,7 @@ export default function Page() {
   const [donations, setDonations] = useState<{
     count: number;
     totalAmount: number;
+    donors: any[];
   } | null>(null);
   const [lastActivityAt, setLastActivityAt] = useState<string | null>(null);
   const [pledgesTable, setPledgesTable] = useState<{
@@ -121,6 +122,7 @@ export default function Page() {
           setDonations({
             count: dm.data.count,
             totalAmount: dm.data.totalAmount,
+            donors: dm.data.donors,
           });
         } else {
           setDonations(null);
@@ -295,6 +297,53 @@ export default function Page() {
                       )}
                     </CardContent>
                   </Card>
+                </div>
+                </div> 
+
+              {/* Recent Donations Table */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs uppercase tracking-wide text-muted-foreground">
+                    Recent Donations (30d)
+                  </span>
+                </div>
+                <div className="overflow-x-auto rounded-md border">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted/50 text-muted-foreground">
+                      <tr>
+                        <th className="text-left p-2">Donor</th>
+                        <th className="text-left p-2">Email</th>
+                        <th className="text-right p-2">Amount</th>
+                        <th className="text-right p-2">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {donations?.donors?.map((donor) => (
+                        <tr key={donor.id} className="border-t">
+                          <td className="p-2">
+                            {donor.firstName} {donor.lastName}
+                          </td>
+                          <td className="p-2">{donor.email}</td>
+                          <td className="p-2 text-right">
+                            ${parseFloat(donor.amount).toFixed(2)}
+                          </td>
+                          <td className="p-2 text-right">
+                            {new Date(donor.date).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))}
+                      {(!donations?.donors || donations.donors.length === 0) && (
+                        <tr>
+                          <td
+                            className="p-4 text-center text-muted-foreground"
+                            colSpan={4}
+                          >
+                            No donations found in the last 30 days
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 

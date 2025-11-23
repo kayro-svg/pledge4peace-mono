@@ -254,9 +254,7 @@ export const peaceSealAgreementAcceptances = sqliteTable(
       .references(() => peaceSealCompanies.id),
     sectionId: text("section_id").notNull(),
     fieldId: text("field_id").notNull(),
-    templateId: text("template_id")
-      .notNull()
-      .references(() => peaceSealCenterResources.id),
+    templateId: text("template_id").notNull(),
     acceptedByUserId: text("accepted_by_user_id")
       .notNull()
       .references(() => users.id),

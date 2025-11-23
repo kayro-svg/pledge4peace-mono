@@ -64,6 +64,7 @@ export async function POST(req: NextRequest) {
         amount: amount,
         paymentMethodToken,
         options: { submitForSettlement: true },
+        customFields: { payment_type: "donation" },
       });
 
       if (result.success) {
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest) {
       amount: amount,
       paymentMethodNonce: nonce,
       options: { submitForSettlement: true },
+      customFields: { payment_type: "donation" },
       ...(donorInfo && {
         customer: {
           firstName: donorInfo.firstName,

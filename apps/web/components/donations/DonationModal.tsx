@@ -537,6 +537,7 @@ export default function DonationModal({ isOpen, onClose }: DonationModalProps) {
               onError={handlePaymentError}
               clientToken={clientToken}
               isRecurring={donationType === "recurring"}
+              donorInfo={donorInfo}
             />
           )}
         </>
