@@ -82,6 +82,7 @@ function getPeaceSealCompanyInfo(notification: unknown) {
     companyId: customFields?.company_id,
     companyName: customFields?.company_name,
     paymentType: customFields?.payment_type,
+    couponCode: customFields?.coupon_code,
   };
 }
 
@@ -90,7 +91,8 @@ function getPeaceSealCompanyInfo(notification: unknown) {
  */
 async function processPeaceSealPayment(notification: unknown) {
   try {
-    const { companyId, companyName } = getPeaceSealCompanyInfo(notification);
+    const { companyId, companyName, couponCode } =
+      getPeaceSealCompanyInfo(notification);
 
     if (!companyId) {
       logger.error(
@@ -111,6 +113,10 @@ async function processPeaceSealPayment(notification: unknown) {
       return;
     }
 
+    // Determine discount info if coupon was used
+    const discountCode = couponCode || undefined;
+    const discountPercent = discountCode === "CYBER30" ? 30 : undefined;
+
     // Call backend to confirm payment and assign advisor
     const backendApiUrl =
       process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787/api";
@@ -126,6 +132,8 @@ async function processPeaceSealPayment(notification: unknown) {
           transactionId: transaction.id,
           amountCents: Math.round(parseFloat(transaction.amount) * 100),
           subscriptionId: notif.subscription?.id,
+          discountCode,
+          discountPercent,
         }),
       }
     );

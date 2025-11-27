@@ -2,17 +2,20 @@
 
 import DropInPayment from "@/components/donations/DropInPayment";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { logger } from "@/lib/utils/logger";
-import { CheckCircle, CreditCard } from "lucide-react";
+import { CheckCircle, CreditCard, Tag, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface PaymentFormProps {
-  amount: number;
+  amount: number; // Keep for display/backward compatibility
   companyName: string;
   companyId: string;
   onSuccess: (result: { transactionId: string; amount: number }) => void;
   onError: (message: string) => void;
   isQuotePayment?: boolean;
+  tier?: "small" | "medium"; // New: tier for subscription payments
 }
 
 export default function PaymentForm({
@@ -22,9 +25,27 @@ export default function PaymentForm({
   onSuccess,
   onError,
   isQuotePayment = false,
+  tier, // New: tier for subscription payments
 }: PaymentFormProps) {
   const [clientToken, setClientToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [couponCode, setCouponCode] = useState("");
+  const [couponApplied, setCouponApplied] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [displayAmount, setDisplayAmount] = useState(amount);
+
+  // Check if discounts UI should be enabled (matches backend flag)
+  const discountsUiEnabled =
+    process.env.NEXT_PUBLIC_BT_DISCOUNTS_ENABLED === "true";
+
+  // Update displayAmount when amount prop changes
+  useEffect(() => {
+    if (couponApplied) {
+      setDisplayAmount(amount * 0.7);
+    } else {
+      setDisplayAmount(amount);
+    }
+  }, [amount, couponApplied]);
 
   // Fetch Braintree client token
   useEffect(() => {
@@ -62,6 +83,38 @@ export default function PaymentForm({
     onError(message);
   };
 
+  const handleApplyCoupon = () => {
+    const normalized = couponCode.trim().toUpperCase();
+    setCouponError(null);
+
+    if (!normalized) {
+      setCouponApplied(false);
+      setDisplayAmount(amount);
+      return;
+    }
+
+    if (normalized === "CYBER30" && !isQuotePayment) {
+      setCouponApplied(true);
+      setDisplayAmount(amount * 0.7);
+      setCouponError(null);
+    } else {
+      setCouponApplied(false);
+      setDisplayAmount(amount);
+      if (isQuotePayment) {
+        setCouponError("Coupons are not available for quote payments");
+      } else {
+        setCouponError("Invalid coupon code");
+      }
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponCode("");
+    setCouponApplied(false);
+    setCouponError(null);
+    setDisplayAmount(amount);
+  };
+
   if (loading) {
     return (
       <Card>
@@ -97,8 +150,28 @@ export default function PaymentForm({
         <div className="bg-gray-50 rounded-lg p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="font-medium">Peace Seal Certification</span>
-            <span className="text-2xl font-bold text-[#2F4858]">${amount}</span>
+            <div className="text-right">
+              {couponApplied ? (
+                <>
+                  <div className="text-sm text-gray-500 line-through">
+                    ${amount.toFixed(2)}
+                  </div>
+                  <span className="text-2xl font-bold text-[#548281]">
+                    ${displayAmount.toFixed(2)}
+                  </span>
+                </>
+              ) : (
+                <span className="text-2xl font-bold text-[#2F4858]">
+                  ${amount.toFixed(2)}
+                </span>
+              )}
+            </div>
           </div>
+          {couponApplied && (
+            <div className="mb-2 text-sm text-green-600 font-medium">
+              Discount CYBER30 (-30%) applied
+            </div>
+          )}
           <div className="text-sm text-gray-600">
             <p>
               Company: <span className="font-bold">{companyName}</span>
@@ -106,6 +179,70 @@ export default function PaymentForm({
             <p>Annual certification fee</p>
           </div>
         </div>
+
+        {/* Coupon Code Field - Only show for small/medium (not RFQ) and when discounts are enabled */}
+        {!isQuotePayment && discountsUiEnabled && (
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-700">
+              Coupon Code (Optional)
+            </label>
+            <div className="flex gap-2">
+              <div className="flex-1 relative">
+                <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  type="text"
+                  placeholder="Enter coupon code"
+                  value={couponCode}
+                  onChange={(e) => {
+                    setCouponCode(e.target.value);
+                    setCouponError(null);
+                    if (couponApplied) {
+                      setCouponApplied(false);
+                      setDisplayAmount(amount);
+                    }
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleApplyCoupon();
+                    }
+                  }}
+                  className="pl-10"
+                  disabled={loading}
+                />
+              </div>
+              {couponApplied ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleRemoveCoupon}
+                  disabled={loading}
+                  className="flex items-center gap-1"
+                >
+                  <X className="w-4 h-4" />
+                  Remove
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleApplyCoupon}
+                  disabled={loading || !couponCode.trim()}
+                >
+                  Apply
+                </Button>
+              )}
+            </div>
+            {couponError && (
+              <p className="text-sm text-red-600">{couponError}</p>
+            )}
+            {couponApplied && (
+              <p className="text-sm text-green-600 font-medium">
+                ✓ Coupon applied successfully!
+              </p>
+            )}
+          </div>
+        )}
 
         {/* Peace Seal Payment Component */}
         <div>
@@ -119,7 +256,7 @@ export default function PaymentForm({
             createSubscription={true} // Set to true to enable annual subscriptions
           /> */}
           <DropInPayment
-            amount={amount.toString()}
+            amount={displayAmount.toFixed(2)}
             onSuccess={handlePaymentSuccess}
             onError={handlePaymentError}
             clientToken={clientToken}
@@ -128,6 +265,10 @@ export default function PaymentForm({
               companyId,
               createSubscription: true,
               isQuotePayment,
+              couponCode: couponApplied
+                ? couponCode.trim().toUpperCase()
+                : undefined,
+              tier, // Send tier for subscription payments (backend will use this to determine base amount)
             }}
           />
         </div>
