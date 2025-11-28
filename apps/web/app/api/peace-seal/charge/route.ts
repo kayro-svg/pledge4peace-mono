@@ -267,10 +267,9 @@ async function handleSubscriptionPayment(
       // Small = 99, Medium = 499 (hard-coded in calling function)
       planId =
         baseAmount === 99
-          ? process.env.BT_PEACE_SEAL_SMALL_PLAN_ID ||
-            "peace_seal_small_annual_new"
+          ? process.env.BT_PEACE_SEAL_SMALL_PLAN_ID || "peace_seal_small_annual"
           : process.env.BT_PEACE_SEAL_MEDIUM_PLAN_ID ||
-            "peace_seal_medium_annual_new";
+            "peace_seal_medium_annual";
     }
 
     // Feature flag to enable/disable discount logic
@@ -302,6 +301,7 @@ async function handleSubscriptionPayment(
     let plansResponse;
     try {
       plansResponse = await gateway.plan.all();
+      logger.log("Plans response:", { plansResponse });
     } catch (error: any) {
       logger.error("Failed to fetch plans:", {
         error: error.message,
@@ -321,6 +321,7 @@ async function handleSubscriptionPayment(
 
     const planList = plansResponse.plans || [];
     const planExists = planList.some((p: { id: string }) => p.id === planId);
+    logger.log("Plan exists:", { planExists });
 
     if (!planExists) {
       logger.error(`Peace Seal plan '${planId}' does not exist`, {
@@ -432,16 +433,17 @@ async function handleSubscriptionPayment(
     // - Plans are $0.00 USD (like monthly_donation_plan)
     // - Send effective amount as price (user-selected amount with discount applied in code)
     // - Format as string (Braintree expects string for price)
+
     const subscriptionData = {
       paymentMethodToken: paymentMethod.token,
       planId,
-      price: effectiveAmount.toString(), // Send effective amount (like donation route sends amount)
-      customFields: {
-        company_id: companyId,
-        company_name: companyName || "",
-        payment_type: isQuote ? "peace_seal_annual_quote" : "peace_seal_annual",
-        coupon_code: shouldApplyDiscount ? promo?.couponCode : undefined,
-      },
+      price: effectiveAmount.toFixed(2),
+      id: `peace_seal_${companyId}_${Date.now()}`,
+      // customFields: {
+      //   company_id: companyId,
+      //   company_name: companyName || "",
+      //   payment_type: isQuote ? "peace_seal_annual_quote" : "peace_seal_annual",
+      // },
     };
 
     // Create subscription with effective price (plans are $0.00, so price is always required)
@@ -460,7 +462,7 @@ async function handleSubscriptionPayment(
           paymentMethodToken: subscriptionData.paymentMethodToken
             ? "present"
             : "missing",
-          customFields: subscriptionData.customFields,
+          // customFields: subscriptionData.customFields,
         },
       });
       return NextResponse.json(
