@@ -541,6 +541,12 @@ export default function ApplyPage({ initialUserData }: ApplyPageProps) {
                   companyId={application.id}
                   onSuccess={handlePaymentSuccess}
                   onError={handlePaymentError}
+                  tier={
+                    companyForm.businessSize === "small" ||
+                    companyForm.businessSize === "medium"
+                      ? companyForm.businessSize
+                      : undefined
+                  }
                 />
               ))}
 

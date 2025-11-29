@@ -123,23 +123,23 @@ function getStatusColor(status: string): string {
   switch (status) {
     case "verified":
     case "audit_completed": // Legacy support
-      return "bg-green-50 text-green-700 border-green-200";
+      return "bg-green-50 text-green-700 border-green-200 hover:bg-green-100 hover:text-green-800 hover:border-green-300";
     case "conditional":
-      return "bg-orange-50 text-orange-700 border-orange-200";
+      return "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 hover:text-orange-800 hover:border-orange-300";
     case "did_not_pass":
-      return "bg-red-50 text-red-700 border-red-200";
+      return "bg-red-50 text-red-700 border-red-200 hover:bg-red-100 hover:text-red-800 hover:border-red-300";
     case "under_review":
-      return "bg-yellow-50 text-yellow-700 border-yellow-200";
+      return "bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 hover:text-yellow-800 hover:border-yellow-300";
     case "audit_in_progress":
-      return "bg-blue-50 text-blue-700 border-blue-200";
+      return "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100 hover:text-blue-800 hover:border-blue-300";
     case "application_submitted":
-      return "bg-purple-50 text-purple-700 border-purple-200";
+      return "bg-purple-50 text-purple-700 border-purple-200 hover:bg-purple-100 hover:text-purple-800 hover:border-purple-300";
     case "application_started":
-      return "bg-amber-50 text-amber-700 border-amber-200";
+      return "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:text-amber-800 hover:border-amber-300";
     case "draft":
-      return "bg-gray-50 text-gray-700 border-gray-200";
+      return "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-800 hover:border-gray-300";
     default:
-      return "bg-gray-50 text-gray-700 border-gray-200";
+      return "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-800 hover:border-gray-300";
   }
 }
 
@@ -983,6 +983,12 @@ export default function CompanyPeaceSealDashboard() {
                               companyId={userCompany.id}
                               onSuccess={handlePaymentSuccess}
                               onError={handlePaymentError}
+                              tier={
+                                businessSize === "small" ||
+                                businessSize === "medium"
+                                  ? businessSize
+                                  : undefined
+                              }
                             />
                           </div>
                         </div>

@@ -17,6 +17,8 @@ interface Props {
     companyId: string;
     createSubscription: boolean;
     isQuotePayment?: boolean;
+    couponCode?: string;
+    tier?: "small" | "medium"; // Tier for subscription payments (small=99, medium=499)
   };
   donorInfo?: {
     firstName: string;
@@ -160,12 +162,14 @@ export default function DropInPayment({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             nonce,
-            amount,
+            amount, // Keep for backward compatibility and display
             paymentMethod: "card_or_paypal",
             companyName: peaceSealPayment.companyName,
             companyId: peaceSealPayment.companyId,
             createSubscription: peaceSealPayment.createSubscription,
             isQuotePayment: peaceSealPayment.isQuotePayment || false,
+            couponCode: peaceSealPayment.couponCode,
+            tier: peaceSealPayment.tier, // Send tier for subscription payments
           }),
         });
         logger.log("Peace Seal payment response:", res);

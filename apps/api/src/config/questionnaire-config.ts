@@ -475,6 +475,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024,
         helpText: "Upload your policy or use our sample template",
+        // Note: Frontend uses templateId: "template_board_peace_policy"
+        // This must exist in agreement-templates.ts for acceptance to work
       },
       {
         id: "beneficialOwnershipPolicy",
@@ -493,6 +495,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024,
         helpText: "Upload your code of conduct or sign our template",
+        // Note: Frontend uses templateId: "template_supplier_code_of_conduct"
+        // This must exist in agreement-templates.ts for acceptance to work
       },
       {
         id: "companyValuesStatement",
@@ -511,6 +515,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf"],
         maxFileSize: 5 * 1024 * 1024,
         helpText: "Upload your declaration or sign our template",
+        // Note: Frontend uses templateId: "template_no_lobbying"
+        // This must exist in agreement-templates.ts for acceptance to work
       },
       {
         id: "esgReport",
@@ -537,6 +543,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024,
         helpText: "Upload your policy or sign our template",
+        // Note: Frontend uses templateId: "template_equal_opportunity"
+        // This must exist in agreement-templates.ts for acceptance to work
       },
       {
         id: "whistleblowerProtectionPolicy",
@@ -546,6 +554,8 @@ export const MEDIUM_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024,
         helpText: "Upload your policy or sign our template",
+        // Note: Frontend uses templateId: "template_whistleblower_protection"
+        // This must exist in agreement-templates.ts for acceptance to work
       },
       {
         id: "fairWagePractices",
@@ -837,6 +847,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024,
         helpText: "Upload your policy or use our sample template",
+        // Note: Frontend uses templateId: "template_board_peace_policy"
+        // This must exist in agreement-templates.ts for acceptance to work
       },
       {
         id: "beneficialOwnershipPolicy",
@@ -855,6 +867,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024,
         helpText: "Upload your code of conduct or sign our template",
+        // Note: Frontend uses templateId: "template_supplier_code_of_conduct"
+        // This must exist in agreement-templates.ts for acceptance to work
       },
       {
         id: "companyValuesStatement",
@@ -873,6 +887,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf"],
         maxFileSize: 5 * 1024 * 1024,
         helpText: "Upload your declaration or sign our template",
+        // Note: Frontend uses templateId: "template_no_lobbying"
+        // This must exist in agreement-templates.ts for acceptance to work
       },
       {
         id: "fullEsgReport",
@@ -900,6 +916,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024,
         helpText: "Upload your policy or sign our template",
+        // Note: Frontend uses templateId: "template_equal_opportunity"
+        // This must exist in agreement-templates.ts for acceptance to work
       },
       {
         id: "fairWagePractices",
@@ -926,6 +944,8 @@ export const LARGE_BUSINESS_SECTIONS: QuestionnaireSection[] = [
         fileTypes: [".pdf", ".doc", ".docx"],
         maxFileSize: 10 * 1024 * 1024,
         helpText: "Upload your policy or sign our template",
+        // Note: Frontend uses templateId: "template_whistleblower_protection"
+        // This must exist in agreement-templates.ts for acceptance to work
       },
       {
         id: "internalMediationProgram",

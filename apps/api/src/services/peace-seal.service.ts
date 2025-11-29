@@ -259,7 +259,8 @@ export class PeaceSealService {
     companyId: string,
     transactionId: string,
     amountCents: number,
-    userId: string
+    userId: string,
+    discount?: { discountCode?: string; discountPercent?: number }
   ) {
     // Verify ownership and get company details
     const company = await this.db
@@ -323,10 +324,30 @@ export class PeaceSealService {
         });
       }
 
-      if (Math.abs(amountCents - expectedAmount) > 100) {
+      // Check if discount is applicable (CYBER30 for small/medium companies)
+      const hasValidDiscount =
+        discount?.discountCode === "CYBER30" &&
+        discount?.discountPercent === 30;
+
+      let expectedAmountToCompare = expectedAmount;
+      if (hasValidDiscount) {
+        // Calculate discounted amount (30% off)
+        expectedAmountToCompare = Math.round(
+          expectedAmount * (1 - discount.discountPercent / 100)
+        );
+        logger.log("confirmPayment - Applying discount:", {
+          companyId,
+          originalAmount: expectedAmount,
+          discountedAmount: expectedAmountToCompare,
+          discountCode: discount.discountCode,
+          discountPercent: discount.discountPercent,
+        });
+      }
+
+      if (Math.abs(amountCents - expectedAmountToCompare) > 100) {
         // Allow $1 tolerance for fees
         throw new HTTPException(400, {
-          message: `Payment amount ${amountCents} does not match expected ${expectedAmount}`,
+          message: `Payment amount ${amountCents} does not match expected ${expectedAmountToCompare}${hasValidDiscount ? " (with discount)" : ""}`,
         });
       }
     }

@@ -1111,9 +1111,13 @@ export class PeaceSealController {
       const db = createDb(c.env.DB);
       const peaceSealService = new PeaceSealService(db);
       const companyId = c.req.param("id");
-      const { transactionId, amountCents, subscriptionId } = await c.req
-        .json()
-        .catch(() => ({}));
+      const {
+        transactionId,
+        amountCents,
+        subscriptionId,
+        discountCode,
+        discountPercent,
+      } = await c.req.json().catch(() => ({}));
 
       if (!transactionId || !amountCents) {
         throw new HTTPException(400, {
@@ -1174,7 +1178,8 @@ export class PeaceSealController {
         companyId,
         String(transactionId),
         Number(amountCents),
-        company.createdByUserId as string // Use company owner as the user
+        company.createdByUserId as string, // Use company owner as the user
+        discountPercent ? { discountCode, discountPercent } : undefined
       );
 
       // Verify the update was successful by reading back the company
