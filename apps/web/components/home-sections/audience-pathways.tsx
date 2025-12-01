@@ -11,9 +11,13 @@ export function AudiencePathways() {
     <section id="audience-pathways" className="w-full py-16">
       <div className="grid md:grid-cols-2">
         {/* Activists Side */}
-        <Link
-          href="/campaigns"
-          className="group relative bg-[#548281] p-10 md:p-16 min-h-[320px] flex flex-col justify-center hover:bg-[#2F4858]  transition-colors duration-300"
+        <div
+          onClick={() => {
+            document.getElementById("projects-section")?.scrollIntoView({
+              behavior: "smooth",
+            });
+          }}
+          className="group relative bg-[#548281] p-10 md:p-16 min-h-[320px] flex flex-col justify-center hover:bg-[#2F4858] transition-colors duration-300 cursor-pointer"
         >
           <div className="max-w-md">
             <div className="flex items-center gap-3 mb-4">
@@ -32,21 +36,12 @@ export function AudiencePathways() {
               millions working toward a better world.
             </p>
 
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                document.getElementById("projects-section")?.scrollIntoView({
-                  behavior: "smooth",
-                });
-              }}
-              className="flex items-center group-hover:text-[#8dc6bf] text-white font-medium gap-2 group-hover:gap-3 transition-all duration-300 w-fit"
-            >
+            <div className="flex items-center group-hover:text-[#8dc6bf] text-white font-medium gap-2 group-hover:gap-3 transition-all duration-300 w-fit">
               <span>View Campaigns</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
-            </button>
+            </div>
           </div>
-        </Link>
+        </div>
 
         {/* Businesses Side */}
         <Link
