@@ -9,6 +9,7 @@ import HeroSection from "./hero/hero-section";
 import HowItWorksSection from "./how-it-works-section";
 import ProjectsSection from "./projects-section";
 import WaysToSupportSection from "./ways-to-support";
+import { AudiencePathways } from "./audience-pathways";
 
 interface HomeSectionsPageProps {
   data: SanityHomePage;
@@ -35,6 +36,7 @@ export default function HomeSectionsPage({
   return (
     <main className="min-h-screen bg-[#FDFDF0] w-full">
       <HeroSection data={data?.heroSection} />
+      <AudiencePathways />
       <HowItWorksSection data={data?.howItWorksSection} />
 
       {/* Esta sección tiene id="projects-section" internamente */}

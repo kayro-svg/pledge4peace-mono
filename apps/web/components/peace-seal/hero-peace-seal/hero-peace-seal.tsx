@@ -10,9 +10,10 @@ import AuthContainer from "@/components/login/auth-container";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
-import { ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthSession } from "@/hooks/use-auth-session";
+import { ScrollToSectionButton } from "@/components/peace-seal/scroll-to-section-button";
 
 interface HeroPeaceSealProps {
   data: any;
@@ -103,6 +104,20 @@ export default function HeroPeaceSeal({ data }: HeroPeaceSealProps) {
             />
           </div>
         </div>
+        {/* Scroll indicator */}
+        {/* <button
+          onClick={() => scrollToSection("values")}
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white/60 hover:text-white transition-colors animate-bounce"
+          aria-label="Scroll to next section"
+        >
+          <ChevronDown className="h-8 w-8" />
+        </button> */}
+        <ScrollToSectionButton
+          sectionId="values"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 bg-transparent border-none hover:bg-transparent text-white/60 hover:text-white transition-colors animate-bounce"
+        >
+          <ChevronDown className="h-10 w-10" />
+        </ScrollToSectionButton>
       </section>
 
       <Dialog open={showLoginModal} onOpenChange={setShowLoginModal}>
