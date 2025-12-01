@@ -1,11 +1,12 @@
+import HeroPeaceSeal from "@/components/peace-seal/hero-peace-seal/hero-peace-seal";
+import { ScrollToSectionButton } from "@/components/peace-seal/scroll-to-section-button";
+import { VideoPlayerWithOverlay } from "@/components/peace-seal/video-player-with-overlay";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getPeaceSealHomePage } from "@/lib/sanity/queries";
-import { Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { unstable_cache } from "next/cache";
 import Image from "next/image";
 import Link from "next/link";
-import VideoFrame from "@/components/peace-seal/video-frame.lazy";
-import HeroPeaceSeal from "@/components/peace-seal/hero-peace-seal/hero-peace-seal";
 
 export const dynamic = "force-static";
 export const revalidate = 1800;
@@ -21,12 +22,57 @@ export default async function PeaceSealPage(params: { locale: "en" | "es" }) {
   const { locale } = params;
   const data = await getPeaceSealHomePageCached(locale);
 
+  const perksDummyData = [
+    // Global Spotlight
+    {
+      number: "01",
+      icon: data?.perks[0]?.icon?.asset?.url,
+      title: data?.perks[0]?.label,
+      description: "Featured placement in the Peace Seal Global Directory",
+    },
+    //Peace Seal Badge & Certificate
+    {
+      number: "02",
+      icon: data?.perks[1]?.icon?.asset?.url,
+      title: data?.perks[1]?.label,
+      description: "Display your commitment proudly",
+    },
+    //Peace Business Network Access
+    {
+      number: "03",
+      icon: data?.perks[2]?.icon?.asset?.url,
+      title: data?.perks[2]?.label,
+      description: "Connect with like-minded organizations",
+    },
+    //Investor Visibility
+    {
+      number: "04",
+      icon: data?.perks[3]?.icon?.asset?.url,
+      title: data?.perks[3]?.label,
+      description: "Attract impact-focused investors",
+    },
+    //Advisors & Coaching
+    {
+      number: "05",
+      icon: data?.perks[4]?.icon?.asset?.url,
+      title: data?.perks[4]?.label || "",
+      description: "Access to expert guidance on peace practices",
+    },
+    // Peace Leadership Awards Eligibility
+    {
+      number: "06",
+      icon: data?.perks[5]?.icon?.asset?.url || "",
+      title: data?.perks[5]?.label,
+      description: "Eligibility for Peace Leadership Awards",
+    },
+  ];
+
   return (
     <main className="min-h-screen w-full text-[#2F4858]">
       {/* ---------- HERO ---------- */}
       <HeroPeaceSeal data={data} />
       {/* ---------- VALUE PROMISE ---------- */}
-      <section className="bg-white pb-5 overflow-visible">
+      <section id="values" className="bg-white pb-5 overflow-visible">
         <div className="mx-auto max-w-7xl justify-center px-4 items-start sm:px-6 lg:px-8 py-12 sm:py-14 md:py-16 flex flex-col lg:flex-row gap-8 lg:gap-8 overflow-visible">
           {/* mini collage / map + photo */}
           <div className="flex relative w-full h-[17rem] lg:h-96 overflow-visible">
@@ -54,32 +100,71 @@ export default async function PeaceSealPage(params: { locale: "en" | "es" }) {
             <p className="mt-3 sm:mt-4 text-base leading-relaxed">
               {data.valueParagraph}
             </p>
+            <ScrollToSectionButton
+              sectionId="what-is"
+              className="text-primary p-0 h-auto font-semibold group mt-4 bg-transparent hover:text-[#86AC9D] hover:bg-transparent transition-colors duration-300 flex items-left justify-left w-fit"
+            >
+              Discover what the Peace Seal means
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </ScrollToSectionButton>
           </div>
         </div>
       </section>
 
       {/* ---------- WHAT IS ---------- */}
-      <section className="bg-gradient-to-br from-[#F97173]/5 to-[#FDFDF0]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14 md:py-16 grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-10">
-          <div>
-            <p className="text-3xl lg:text-2xl xl:text-3xl font-bold leading-tight">
-              {data.whatIsHeadingTop}
-            </p>
-            <h3 className="text-[#86AC9D] text-4xl xl:text-5xl font-bold mb-2 sm:mb-4 leading-tight">
-              {data.whatIsHeadingMain}
-            </h3>
-            <div className="w-1/3 sm:w-1/4 h-1 bg-[#86AC9D] mt-3 sm:mt-4 rounded-full" />
-            <p className="mt-3 sm:mt-4 text-base leading-relaxed">
-              {data.whatIsDescription}
-            </p>
-          </div>
+      <section
+        id="what-is"
+        className="bg-gradient-to-br from-[#F97173]/5 to-[#FDFDF0]"
+      >
+        <section id="what-is" className="py-20 md:py-28 bg-[#FDFDF0]">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-5xl font-bold mb-4">
+                <HighlightPart
+                  text={data.whatIsHeadingTop + " " + data.whatIsHeadingMain}
+                  part={data.whatIsHeadingMain}
+                  className="text-[#86AC9D]"
+                />
+              </h2>
+              <p className="text-muted-foreground text-base md:text-lg max-w-3xl mx-auto">
+                {data.whatIsDescription}
+              </p>
+            </div>
 
-          {/* video mock */}
-          <VideoFrame videoId={data.whatIsVideoId} />
-        </div>
+            {/* Main large video */}
+            <div className="max-w-5xl mx-auto mb-12">
+              <VideoPlayerWithOverlay
+                videoId={data.whatIsVideoId}
+                title="Understanding the Peace Seal"
+                subtitle="Watch the full video"
+                labelsPosition="bottom"
+              />
+            </div>
+
+            {/* Transition to next section */}
+            <div className="text-center bg-card border border-border rounded-2xl p-8 max-w-3xl mx-auto shadow-sm">
+              <p className="text-muted-foreground mb-4">
+                Now that you understand what the Peace Seal is, discover the
+                powerful benefits it brings to your business.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <ScrollToSectionButton sectionId="why-need" className="group">
+                  See Why Your Business Needs It
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                </ScrollToSectionButton>
+                <ScrollToSectionButton sectionId="rewards" variant="outline">
+                  See the Benefits
+                </ScrollToSectionButton>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* ---------- WHY NEEDS ---------- */}
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14 md:py-16">
+        <div
+          id="why-need"
+          className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14 md:py-16"
+        >
           <div className="flex flex-col items-center text-center">
             <h3 className="text-3xl lg:text-4xl xl:text-5xl font-bold mb-2 sm:mb-4 leading-tight">
               <HighlightPart
@@ -110,11 +195,35 @@ export default async function PeaceSealPage(params: { locale: "en" | "es" }) {
                 />
               ))}
           </div>
+          <div className="text-center mt-12">
+            <p className="text-muted-foreground mb-4">
+              Ready to see how simple the process is?
+            </p>
+            {/* <Button
+              onClick={() => scrollToSection("how-it-works")}
+              variant="outline"
+              className="group"
+            >
+              Learn How It Works
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </Button> */}
+            <ScrollToSectionButton
+              variant="outline"
+              sectionId="how-it-works"
+              className="group"
+            >
+              Learn How It Works
+              <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+            </ScrollToSectionButton>
+          </div>
         </div>
       </section>
 
       {/* ---------- HOW IT WORKS ---------- */}
-      <section className="bg-gradient-to-bl from-white to-[#A1F971]/10">
+      <section
+        id="how-it-works"
+        className="bg-gradient-to-bl from-white to-[#A1F971]/10"
+      >
         <div className="mx-auto max-w-7xl px-4 lg:px-8 py-12 sm:py-14 md:py-16">
           <div className="flex flex-col items-center text-center">
             <h3 className="text-3xl lg:text-4xl xl:text-5xl font-bold mb-2 sm:mb-4 leading-tight">
@@ -198,98 +307,66 @@ export default async function PeaceSealPage(params: { locale: "en" | "es" }) {
       </section>
 
       {/* ---------- UNLOCK REWARDS ---------- */}
-      <section className="bg-[#FDFDF0]">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-12 sm:py-14 md:py-16">
-          <h3 className="text-center text-3xl lg:text-4xl xl:text-5xl font-bold mb-2 sm:mb-4 leading-tight">
-            <HighlightPart
-              text={data.rewardsTitle}
-              part="Exclusive"
-              className="text-[#86AC9D]"
-            />
-          </h3>
-          <p className="mt-2 text-center text-base leading-relaxed max-w-2xl mx-auto">
-            {data.rewardsDescription}
-          </p>
-          <div className="mt-6 sm:mt-8">
-            <VideoFrame videoId={data.rewardsVideoId} />
+      <section id="rewards" className="bg-[#FDFDF0] mb-12 gap-0">
+        <div className="container mx-auto px-4 py-12">
+          <div className="text-center mb-16">
+            <h3 className="text-3xl lg:text-4xl xl:text-5xl font-bold mb-2 sm:mb-4 leading-tight">
+              <HighlightPart
+                text={data.rewardsTitle}
+                part="Exclusive"
+                className="text-[#86AC9D]"
+              />
+            </h3>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              {data.rewardsDescription}
+            </p>
           </div>
-          <div className="mt-6 sm:mt-8 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-            <Perk
-              label={data.perks[0].label}
-              icon={
-                <Image
-                  src={data.perks[0].icon.asset.url}
-                  alt="Global Spotlight"
-                  width={35}
-                  height={30}
+
+          <div className="grid lg:grid-cols-2 gap-12 items-start max-w-6xl mx-auto">
+            {/* Steps */}
+            <div className="space-y-6">
+              {perksDummyData.map((perk, index) => (
+                <Perk
+                  key={index}
+                  label={perk.title}
+                  icon={
+                    <Image
+                      src={perk.icon}
+                      alt={perk.title}
+                      width={35}
+                      height={35}
+                    />
+                  }
+                  description={perk.description}
                 />
-              }
-            />
-            <Perk
-              label={data.perks[1].label}
-              icon={
-                <Image
-                  src={data.perks[1].icon.asset.url}
-                  alt="Peace Seal Badge & Certificate"
-                  width={35}
-                  height={35}
+              ))}
+            </div>
+
+            {/* Secondary Video - smaller */}
+            <div className="lg:sticky lg:top-24">
+              <div className="max-w-5xl mx-auto mb-12">
+                <VideoPlayerWithOverlay
+                  videoId={data.rewardsVideoId}
+                  title="The benefits of the Peace Seal"
+                  subtitle="Watch the full video"
+                  labelsPosition="top"
                 />
-              }
-            />
-            <Perk
-              label={data.perks[2].label}
-              icon={
-                <Image
-                  src={data.perks[2].icon.asset.url}
-                  alt="Peace Business Network Access"
-                  width={35}
-                  height={35}
-                />
-              }
-            />
-            <Perk
-              label={data.perks[3].label}
-              icon={
-                <Image
-                  src={data.perks[3].icon.asset.url}
-                  alt="Investor Visibility"
-                  width={35}
-                  height={35}
-                />
-              }
-            />
-            <Perk
-              label={data.perks[4].label}
-              icon={
-                <Image
-                  src={data.perks[4].icon.asset.url}
-                  alt="Advisors & Coaching"
-                  width={35}
-                  height={35}
-                />
-              }
-            />
-            <Perk
-              label={data.perks[5].label}
-              icon={
-                <Image
-                  src={data.perks[5].icon.asset.url}
-                  alt="Peace Events Access Eligibility"
-                  width={35}
-                  height={35}
-                />
-              }
-            />
+              </div>
+
+              <p className="text-sm text-muted-foreground mt-4 text-center">
+                Watch: The benefits of the Peace Seal explained in 1 minute
+              </p>
+            </div>
           </div>
-          <AssessmentCTASection
-            title={data.startFreeAssessmentTitle}
-            description={data.startFreeAssessmentDescription}
-            pros={(data?.startFreeAssessmentPros ?? [])
-              .map((x: any) => x?.text)
-              .filter(Boolean)}
-            buttonText={data.startFreeAssessmentButtonText}
-          />
         </div>
+        <AssessmentCTASection
+          title={data.startFreeAssessmentTitle}
+          description={data.startFreeAssessmentDescription}
+          pros={(data?.startFreeAssessmentPros ?? [])
+            .map((x: any) => x?.text)
+            .filter(Boolean)}
+          buttonText={data.startFreeAssessmentButtonText}
+        />
       </section>
 
       {/* ---------- ADVANTAGE ---------- */}
@@ -490,18 +567,25 @@ function StepCard({
   );
 }
 
-function Perk({ label, icon }: { label: string; icon: React.ReactNode }) {
+function Perk({
+  label,
+  icon,
+  description,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  description: string;
+}) {
   return (
-    <div className="flex flex-col items-center justify-center gap-2 rounded-lg sm:rounded-xl border border-black/10 bg-white px-2 sm:px-3 py-3 text-center text-xs sm:text-sm shadow-sm">
-      <div className="flex justify-center items-center p-2 rounded-full bg-white border-2 border-[#86AC9D] h-12 w-12 sm:h-16 sm:w-16">
+    <div className="flex flex-row items-start md:items-center justify-start rounded-lg sm:rounded-xl border border-black/10 bg-white px-2 md:px-4 py-5 md:py-4 text-center text-sm sm:text-base shadow-sm gap-4 h-full md:h-[90px]">
+      <div className="flex justify-center items-center p-2 rounded-full bg-white border-2 border-[#86AC9D] h-12 w-12 sm:h-16 sm:w-16 shrink-0">
         {icon}
       </div>
 
       {/* 2 líneas fijas: xs => 2rem, sm => 2.5rem */}
-      <div className="flex items-center justify-center h-8 sm:h-10">
-        <span className="block max-w-[10rem] sm:max-w-[12rem] text-xs sm:text-sm leading-4 sm:leading-5 text-center line-clamp-2 break-words">
-          {label}
-        </span>
+      <div className="flex flex-col items-start justify-start gap-2">
+        <span className="text-lg leading-5 text-start">{label}</span>
+        <p className="text-sm text-start">{description}</p>
       </div>
     </div>
   );
