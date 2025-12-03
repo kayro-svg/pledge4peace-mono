@@ -1,9 +1,9 @@
+/* Import custom performance and category styles */
+@import "../styles/category-colors.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import custom performance and category styles */
-@import "../styles/category-colors.css";
 
 @layer base {
   :root {
