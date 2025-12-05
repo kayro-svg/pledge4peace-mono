@@ -18,8 +18,9 @@ const getPeaceSealHomePageCached = unstable_cache(
   { revalidate: 1800 }
 );
 
-export default async function PeaceSealPage(params: { locale: "en" | "es" }) {
-  const { locale } = params;
+export default async function PeaceSealPage(params: { locale: "en" | "es" } | Promise<{ locale: "en" | "es" }>) {
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const { locale } = resolvedParams;
   const data = await getPeaceSealHomePageCached(locale);
 
   const perksDummyData = [

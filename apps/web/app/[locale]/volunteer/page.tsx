@@ -15,9 +15,10 @@ export function generateStaticParams() {
 export default async function VolunteerPage({
   params,
 }: {
-  params: { locale: any };
+  params: { locale: any } | Promise<{ locale: any }>;
 }) {
-  const { locale } = params;
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const { locale } = resolvedParams;
   // Fetch data from Sanity CMS
   const volunteerData = await getVolunteerPageData(locale as "en" | "es");
 

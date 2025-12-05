@@ -77,6 +77,11 @@ export async function listDirectory(params?: {
 
 export async function getCompanyBySlug(slug: string): Promise<Company> {
   try {
+    console.log(
+      "getCompanyBySlug request to /peace-seal/directory/:slug",
+      slug
+    );
+
     // Use apiClient for consistent URL handling (public endpoints don't need auth)
     const response = await apiClient.get<{ company: Company }>(
       `/peace-seal/directory/${slug}`

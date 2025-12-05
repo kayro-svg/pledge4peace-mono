@@ -13,26 +13,22 @@
 -- Pragma to check table info
 -- SELECT name FROM pragma_table_info('peace_seal_reviews');
 
--- Add author_type field (anonymous|verified) if not exists
--- ALTER TABLE peace_seal_reviews ADD COLUMN author_type TEXT DEFAULT 'anonymous';
+-- Add author_type field (anonymous|verified)
+ALTER TABLE peace_seal_reviews ADD COLUMN author_type TEXT DEFAULT 'anonymous';
 
--- Add is_verified_author field (0|1) if not exists
--- ALTER TABLE peace_seal_reviews ADD COLUMN is_verified_author INTEGER DEFAULT 0;
+-- Add is_verified_author field (0|1)
+ALTER TABLE peace_seal_reviews ADD COLUMN is_verified_author INTEGER DEFAULT 0;
 
--- Add rating field (1-5 stars) if not exists
--- ALTER TABLE peace_seal_reviews ADD COLUMN rating INTEGER;
+-- Add rating field (1-5 stars)
+ALTER TABLE peace_seal_reviews ADD COLUMN rating INTEGER;
 
--- Add low_rating_reason field if not exists
--- ALTER TABLE peace_seal_reviews ADD COLUMN low_rating_reason TEXT;
+-- Add low_rating_reason field
+ALTER TABLE peace_seal_reviews ADD COLUMN low_rating_reason TEXT;
 
--- Add evidence_url field if not exists
--- ALTER TABLE peace_seal_reviews ADD COLUMN evidence_url TEXT;
+-- Add evidence_url field
+ALTER TABLE peace_seal_reviews ADD COLUMN evidence_url TEXT;
 
--- Add is_flagged field (0|1) if not exists
--- ALTER TABLE peace_seal_reviews ADD COLUMN is_flagged INTEGER DEFAULT 0;
+-- Add is_flagged field (0|1)
+ALTER TABLE peace_seal_reviews ADD COLUMN is_flagged INTEGER DEFAULT 0;
 
--- Add experience_description field if not exists
--- ALTER TABLE peace_seal_reviews ADD COLUMN experience_description TEXT;
-
--- This migration is now a no-op since the columns are already defined in the schema
--- and likely added through schema synchronization or a previous migration attempt
+-- Note: experience_description was added in migration 0029_add_experience_description.sql
