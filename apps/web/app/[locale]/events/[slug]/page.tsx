@@ -5,13 +5,14 @@ import { SanityConference } from "@/lib/types";
 import { logger } from "@/lib/utils/logger";
 
 interface Props {
-  params: { locale: "en" | "es"; slug: string };
+  params: { locale: "en" | "es"; slug: string } | Promise<{ locale: "en" | "es"; slug: string }>;
 }
 
 export const revalidate = 60; // ISR (opcional)
 
 export default async function EventPage({ params }: Props) {
-  const { locale, slug } = params;
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const { locale, slug } = resolvedParams;
 
   const event: SanityConference | null = await getConferenceBySlug(
     slug,

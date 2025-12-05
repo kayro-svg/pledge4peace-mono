@@ -18,9 +18,10 @@ export function generateStaticParams() {
 export async function generateMetadata({
   params,
 }: {
-  params: { locale: any };
+  params: { locale: any } | Promise<{ locale: any }>;
 }): Promise<Metadata> {
-  const locale = await params.locale;
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const { locale } = resolvedParams;
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://pledge4peace.org";
   const aboutUrl = locale === "en" ? `${baseUrl}/about` : `${baseUrl}/${locale}/about`;
 
@@ -84,9 +85,10 @@ export async function generateMetadata({
 export default async function AboutPage({
   params,
 }: {
-  params: { locale: any };
+  params: { locale: any } | Promise<{ locale: any }>;
 }) {
-  const locale = await params.locale;
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const { locale } = resolvedParams;
 
   // Fetch data with the current locale
   const aboutData = await getAboutPageData(locale as "en" | "es");

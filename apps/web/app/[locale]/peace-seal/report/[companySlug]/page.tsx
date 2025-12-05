@@ -1,10 +1,11 @@
 import ReportClient from "@/components/peace-seal/report-page/report-page";
 import { getReportReasons, getCompanyBySlug } from "@/lib/api/peace-seal";
 
-type Props = { params: { locale: string; companySlug: string } };
+type Props = { params: { locale: string; companySlug: string } | Promise<{ locale: string; companySlug: string }> };
 
 export default async function Page({ params }: Props) {
-  const { locale, companySlug } = params;
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const { locale, companySlug } = resolvedParams;
 
   const [reasons, company] = await Promise.all([
     getReportReasons(),

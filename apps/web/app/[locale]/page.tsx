@@ -20,9 +20,10 @@ const getCampaignsCached = unstable_cache(
 export default async function HomePage({
   params,
 }: {
-  params: { locale: any };
+  params: { locale: any } | Promise<{ locale: any }>;
 }) {
-  const { locale } = params;
+  const resolvedParams = params instanceof Promise ? await params : params;
+  const { locale } = resolvedParams;
 
   // Fetch data with the current locale
   // const homeData = await getHomePageData(locale as "en" | "es");
